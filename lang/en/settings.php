@@ -1,0 +1,90 @@
+<?php
+
+return [
+    // General
+    'title'           => 'Settings',
+    'general'         => 'General Settings',
+    'general_desc'    => 'Configure application-wide settings.',
+    'save_settings'   => 'Save Settings',
+
+    // Sidebar
+    'general_settings'=> 'General',
+    'companies'       => 'Companies',
+    'users'           => 'Users',
+    'roles'           => 'Roles',
+    'permissions'     => 'Permissions',
+
+    // Companies
+    'company_name'    => 'Company Name',
+    'new_company'     => 'New Company',
+    'no_companies'    => 'No companies found.',
+    'tax_id'          => 'Tax ID',
+    'website'         => 'Website',
+    'phone'           => 'Phone',
+    'street'          => 'Street',
+    'city'            => 'City',
+    'state'           => 'State',
+    'zip'             => 'ZIP Code',
+    'country'         => 'Country',
+    'currency'        => 'Currency',
+    'logo'            => 'Logo',
+    'general_info'    => 'General Information',
+    'address'         => 'Address',
+    'company_created' => 'Company created.',
+    'company_updated' => 'Company updated.',
+    'company_archived'  => 'Company archived.',
+    'company_unarchived'=> 'Company unarchived.',
+    'company_deleted'   => 'Company deleted.',
+    'assign_users'    => 'Assigned Users',
+    'sync_users'      => 'Save Users',
+
+    // Users
+    'new_user'        => 'New User',
+    'no_users'        => 'No users found.',
+    'job_position'    => 'Job Position',
+    'password'        => 'Password',
+    'password_hint'   => 'Leave blank to keep current password.',
+    'user_active'     => 'Active',
+    'user_created'    => 'User created.',
+    'user_updated'    => 'User updated.',
+    'user_deleted'    => 'User deleted.',
+    'default_company' => 'Default Company',
+    'assigned_roles'  => 'Assigned Roles',
+
+    // Roles
+    'new_role'        => 'New Role',
+    'no_roles'        => 'No roles found.',
+    'role_name'       => 'Role Name',
+    'role_key'        => 'Key',
+    'role_created'    => 'Role created.',
+    'role_updated'    => 'Role updated.',
+    'role_deleted'    => 'Role deleted.',
+    'role_permissions'=> 'Permissions',
+
+    // Permissions
+    'no_permissions'     => 'No permissions found.',
+    'permission_name'    => 'Permission',
+    'permission_key'     => 'Key',
+    'permission_module'  => 'Module',
+    'permission_desc'    => 'Description',
+    'permissions_desc'   => 'All system permissions, grouped by module. Assign them via Roles.',
+
+    // Extra UI strings
+    'company_info'       => 'Company Information',
+    'contact_details'    => 'Contact Details',
+    'contact_info'       => 'Contact Information',
+    'internal_notes'     => 'Internal Notes',
+    'notes_placeholder'  => 'Add internal notes...',
+    'no_address'         => 'No address provided.',
+    'no_users_assigned'  => 'No users assigned.',
+    'manage'             => 'Manage',
+    'archived_notice'    => 'This company is archived.',
+    'user_info'          => 'User Information',
+    'password_set_hint'  => 'Set a secure password for this user.',
+    'confirm_password'   => 'Confirm Password',
+    'role_details'       => 'Role Details',
+    'select_all'         => 'Select All',
+    'clear_all'          => 'Clear All',
+    'key_hint'           => 'Lowercase letters, numbers, underscores only.',
+    'no_roles_create'    => 'No roles available.',
+];

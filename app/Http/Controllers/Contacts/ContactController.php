@@ -7,7 +7,6 @@ use App\Http\Requests\Contacts\StoreContactRequest;
 use App\Http\Requests\Contacts\UpdateContactRequest;
 use App\Models\Contacts\Contact;
 use App\Models\Contacts\Tag;
-use App\Models\Settings\Company;
 use App\Services\Company\CompanyContextService;
 use App\Services\Contacts\ContactService;
 use App\Helpers\SearchFilters;
@@ -84,12 +83,11 @@ class ContactController extends Controller
         $this->authorize('create', Contact::class);
 
         $activeCompanyIds = $this->companyContext->getActiveCompanyIds();
-        $companies = Company::whereIn('id', $activeCompanyIds)->active()->orderBy('name')->get();
         $defaultCompanyId = count($activeCompanyIds) === 1 ? $activeCompanyIds[0] : null;
         $tags = Tag::orderBy('name')->get();
         $contacts = Contact::active()->orderBy('name')->get(['id', 'name']);
 
-        return view('contacts.create', compact('companies', 'defaultCompanyId', 'tags', 'contacts'));
+        return view('contacts.create', compact('defaultCompanyId', 'tags', 'contacts'));
     }
 
     public function store(StoreContactRequest $request)
@@ -122,12 +120,11 @@ class ContactController extends Controller
         $this->authorize('update', $contact);
 
         $contact->load(['company', 'tags', 'children', 'parent']);
-        $companies = Company::active()->orderBy('name')->get();
         $tags = Tag::orderBy('name')->get();
         $contacts = Contact::active()->where('id', '!=', $contact->id)->orderBy('name')->get(['id', 'name']);
         $relatedContactIds = $contact->children->pluck('id')->toArray();
 
-        return view('contacts.edit', compact('contact', 'companies', 'tags', 'contacts', 'relatedContactIds'));
+        return view('contacts.edit', compact('contact', 'tags', 'contacts', 'relatedContactIds'));
     }
 
     public function write(UpdateContactRequest $request, Contact $contact)

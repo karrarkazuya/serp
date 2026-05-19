@@ -128,4 +128,14 @@ class CompanyController extends Controller
 
         return back()->with('success', 'Users updated.');
     }
+
+    public function addComment(Request $request, Company $company)
+    {
+        $this->authorize('comment', $company);
+
+        $request->validate(['body' => 'required|string|max:5000']);
+        $company->logComment($request->body);
+
+        return back()->with('success', 'Comment added.');
+    }
 }

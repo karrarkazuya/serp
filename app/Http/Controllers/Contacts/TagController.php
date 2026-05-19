@@ -7,6 +7,7 @@ use App\Models\Contacts\Tag;
 use App\Helpers\SearchFilters;
 use App\Helpers\SortsTable;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 
 class TagController extends Controller
 {
@@ -64,7 +65,7 @@ class TagController extends Controller
     {
         abort_unless($request->user()->hasPermission('contacts.write'), 403);
 
-        $tag = Tag::create($this->validatedData($request));
+        $tag = DB::transaction(fn () => Tag::create($this->validatedData($request)));
 
         return redirect()
             ->route('contacts.tags.index')
@@ -82,7 +83,7 @@ class TagController extends Controller
     {
         abort_unless($request->user()->hasPermission('contacts.write'), 403);
 
-        $tag->update($this->validatedData($request, $tag));
+        DB::transaction(fn () => $tag->update($this->validatedData($request, $tag)));
 
         return redirect()
             ->route('contacts.tags.index')
@@ -97,7 +98,7 @@ class TagController extends Controller
             return back()->with('error', 'Tags assigned to contacts cannot be deleted.');
         }
 
-        $tag->delete();
+        DB::transaction(fn () => $tag->delete());
 
         return redirect()
             ->route('contacts.tags.index')

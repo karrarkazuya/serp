@@ -1,0 +1,169 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<odoo>
+  <template id="workflow_activity_pdf_manual">
+    <t t-call="web.basic_layout">
+      <div class="page">
+        <h2 style="text-align:center;"><t t-esc="report_name"/></h2>
+        <p style="text-align:center;">
+          <t t-esc="parameters['date_from']"/> →
+          <t t-esc="parameters['date_to']"/>
+          <t t-if="parameters.get('department_name')">
+            | <t t-esc="parameters['department_name']"/>
+          </t>
+        </p>
+        <table class="table table-sm table-bordered">
+          <thead>
+            <tr>
+              <th>User</th>
+              <th>Tickets Opened</th>
+              <th>Tickets Closed</th>
+              <th>Response Time (avg/hrs)</th>
+              <th>Tasks Completed</th>
+              <th>Task Duration (avg/hrs)</th>
+              <th>Procedures Started</th>
+            </tr>
+          </thead>
+          <tbody>
+            <t t-foreach="data" t-as="item" t-key="item['partner_id']">
+              <tr>
+                <td><t t-esc="item['user_name']"/></td>
+                <td><t t-esc="item['tickets_opened']"/></td>
+                <td><t t-esc="item['tickets_closed']"/></td>
+                <td><t t-esc="item['response_time']"/></td>
+                <td><t t-esc="item['tasks_completed']"/></td>
+                <td><t t-esc="item['task_duration']"/></td>
+                <td><t t-esc="item['procedures_started']"/></td>
+              </tr>
+            </t>
+          </tbody>
+        </table>
+      </div>
+    </t>
+  </template>
+
+  <template id="workflow_procedure_performance_pdf_manual">
+    <t t-call="web.basic_layout">
+      <div class="page">
+        <h2 style="text-align:center;"><t t-esc="report_name"/></h2>
+        <p style="text-align:center;">
+          <t t-esc="parameters['date_from']"/> →
+          <t t-esc="parameters['date_to']"/>
+        </p>
+        <table class="table table-sm table-bordered">
+          <thead>
+            <tr>
+              <th>Procedure Template</th>
+              <th>Started</th>
+              <th>Completed</th>
+              <th>Avg Finish (hrs)</th>
+              <th>SLA Passed (sum/hrs)</th>
+              <th>1st Longest Task</th>
+              <th>1st Time (hrs)</th>
+              <th>2nd Longest Task</th>
+              <th>2nd Time (hrs)</th>
+            </tr>
+          </thead>
+          <tbody>
+            <t t-foreach="data" t-as="item" t-key="item['template_id']">
+              <tr>
+                <td><t t-esc="item['template_name']"/></td>
+                <td><t t-esc="item['started_count']"/></td>
+                <td><t t-esc="item['completed_count']"/></td>
+                <td><t t-esc="item['avg_finish']"/></td>
+                <td><t t-esc="item['sla_passed']"/></td>
+                <td><t t-esc="item['longest_1_name']"/></td>
+                <td><t t-esc="item['longest_1_time']"/></td>
+                <td><t t-esc="item['longest_2_name']"/></td>
+                <td><t t-esc="item['longest_2_time']"/></td>
+              </tr>
+            </t>
+          </tbody>
+        </table>
+      </div>
+    </t>
+  </template>
+
+  <template id="workflow_ticket_performance_pdf_manual">
+    <t t-call="web.basic_layout">
+      <div class="page">
+        <h2 style="text-align:center;"><t t-esc="report_name"/></h2>
+        <p style="text-align:center;">
+          <t t-esc="parameters['date_from']"/> →
+          <t t-esc="parameters['date_to']"/>
+        </p>
+        <table class="table table-sm table-bordered">
+          <thead>
+            <tr>
+              <th>Ticket Template</th>
+              <th>Opened</th>
+              <th>Finished</th>
+              <th>Avg Finish (hrs)</th>
+              <th>SLA Passed (sum/hrs)</th>
+              <th>1st Longest Department</th>
+              <th>1st Time (hrs)</th>
+              <th>2nd Longest Department</th>
+              <th>2nd Time (hrs)</th>
+            </tr>
+          </thead>
+          <tbody>
+            <t t-foreach="data" t-as="item" t-key="item['template_id']">
+              <tr>
+                <td><t t-esc="item['template_name']"/></td>
+                <td><t t-esc="item['opened_count']"/></td>
+                <td><t t-esc="item['finished_count']"/></td>
+                <td><t t-esc="item['avg_finish']"/></td>
+                <td><t t-esc="item['sla_passed']"/></td>
+                <td><t t-esc="item['longest_1_name']"/></td>
+                <td><t t-esc="item['longest_1_time']"/></td>
+                <td><t t-esc="item['longest_2_name']"/></td>
+                <td><t t-esc="item['longest_2_time']"/></td>
+              </tr>
+            </t>
+          </tbody>
+        </table>
+      </div>
+    </t>
+  </template>
+
+  <template id="workflow_task_performance_pdf_manual">
+    <t t-call="web.basic_layout">
+      <div class="page">
+        <h2 style="text-align:center;"><t t-esc="report_name"/></h2>
+        <p style="text-align:center;">
+          <t t-esc="parameters['date_from']"/> →
+          <t t-esc="parameters['date_to']"/>
+        </p>
+        <table class="table table-sm table-bordered">
+          <thead>
+            <tr>
+              <th>Task Template</th>
+              <th>Started</th>
+              <th>Completed</th>
+              <th>Avg Finish (hrs)</th>
+              <th>SLA Passed (sum/hrs)</th>
+              <th>1st Longest Department</th>
+              <th>1st Time (hrs)</th>
+              <th>2nd Longest Department</th>
+              <th>2nd Time (hrs)</th>
+            </tr>
+          </thead>
+          <tbody>
+            <t t-foreach="data" t-as="item" t-key="item['task_template_id']">
+              <tr>
+                <td><t t-esc="item['task_template_name']"/></td>
+                <td><t t-esc="item['started_count']"/></td>
+                <td><t t-esc="item['completed_count']"/></td>
+                <td><t t-esc="item['avg_finish']"/></td>
+                <td><t t-esc="item['sla_passed']"/></td>
+                <td><t t-esc="item['longest_1_name']"/></td>
+                <td><t t-esc="item['longest_1_time']"/></td>
+                <td><t t-esc="item['longest_2_name']"/></td>
+                <td><t t-esc="item['longest_2_time']"/></td>
+              </tr>
+            </t>
+          </tbody>
+        </table>
+      </div>
+    </t>
+  </template>
+</odoo>

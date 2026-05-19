@@ -1,29 +1,23 @@
-{{--
-    Chatter component
-    Props:
-      $model   — the Eloquent model (Contact, etc.)
-      $messages — collection of ChatterMessage with user loaded
-      $commentUrl — route for posting comment
---}}
 <div class="bg-white border-t border-gray-200" x-data="{ tab: 'all' }">
 
     {{-- Chatter header --}}
     <div class="flex items-center gap-4 px-6 pt-4 pb-0 border-b border-gray-100">
-        <span class="text-sm font-semibold text-gray-700">Log & Chatter</span>
-        <div class="flex gap-1 ml-auto">
+        <span class="text-sm font-semibold text-gray-700">{{ $title }}</span>
+        <div class="flex gap-1 ms-auto">
             <button @click="tab = 'all'"
                     :class="tab === 'all' ? 'bg-purple-100 text-purple-700' : 'text-gray-500 hover:bg-gray-100'"
-                    class="px-2.5 py-1 rounded text-xs font-medium transition-colors">All</button>
+                    class="px-2.5 py-1 rounded text-xs font-medium transition-colors">{{ __('common.all') }}</button>
             <button @click="tab = 'comment'"
                     :class="tab === 'comment' ? 'bg-purple-100 text-purple-700' : 'text-gray-500 hover:bg-gray-100'"
-                    class="px-2.5 py-1 rounded text-xs font-medium transition-colors">Comments</button>
+                    class="px-2.5 py-1 rounded text-xs font-medium transition-colors">{{ __('common.comments') }}</button>
             <button @click="tab = 'log'"
                     :class="tab === 'log' ? 'bg-purple-100 text-purple-700' : 'text-gray-500 hover:bg-gray-100'"
-                    class="px-2.5 py-1 rounded text-xs font-medium transition-colors">Activity</button>
+                    class="px-2.5 py-1 rounded text-xs font-medium transition-colors">{{ __('common.activity_tab') }}</button>
         </div>
     </div>
 
     {{-- Add comment --}}
+    @if($canPostComment)
     <div class="px-6 py-4 border-b border-gray-100">
         <form action="{{ $commentUrl }}" method="POST">
             @csrf
@@ -32,19 +26,20 @@
                     {{ auth()->user()->initials }}
                 </div>
                 <div class="flex-1">
-                    <textarea name="body" rows="2" placeholder="Write a comment..."
+                    <textarea name="body" rows="2" placeholder="{{ __('common.write_comment') }}"
                               class="w-full text-sm border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500 resize-none transition-shadow"
                               required></textarea>
                     <div class="flex justify-end mt-1.5">
                         <button type="submit"
                                 class="px-3 py-1.5 bg-purple-600 text-white text-xs font-medium rounded-md hover:bg-purple-700 transition-colors">
-                            Send
+                            {{ __('common.send') }}
                         </button>
                     </div>
                 </div>
             </div>
         </form>
     </div>
+    @endif
 
     {{-- Messages --}}
     <div class="px-6 py-4 space-y-4 max-h-96 overflow-y-auto">
@@ -71,20 +66,33 @@
                 <div class="flex-1 min-w-0">
                     <div class="flex items-baseline gap-2 mb-0.5">
                         <span class="text-xs font-semibold text-gray-700">
-                            {{ $message->user ? $message->user->name : 'System' }}
+                            {{ $message->user ? $message->user->name : __('common.system_label') }}
                         </span>
                         <span class="text-xs text-gray-400">{{ $message->created_at->diffForHumans() }}</span>
                         @if($message->isComment())
-                            <span class="ml-auto text-xs px-1.5 py-0.5 bg-purple-50 text-purple-600 rounded font-medium">Comment</span>
+                            <span class="ms-auto text-xs px-1.5 py-0.5 bg-purple-50 text-purple-600 rounded font-medium">{{ __('common.comment_label') }}</span>
                         @elseif($message->isSystem())
-                            <span class="ml-auto text-xs px-1.5 py-0.5 bg-blue-50 text-blue-600 rounded font-medium">System</span>
+                            <span class="ms-auto text-xs px-1.5 py-0.5 bg-blue-50 text-blue-600 rounded font-medium">{{ __('common.system_label') }}</span>
                         @endif
                     </div>
-                    <p class="text-sm text-gray-600 whitespace-pre-line">{{ $message->body }}</p>
+                    @if(!empty($message->metadata['changes']))
+                        <ul class="space-y-0.5">
+                            @foreach($message->metadata['changes'] as $change)
+                            <li class="text-sm">
+                                <span class="text-gray-400">{{ $change['from'] }}</span>
+                                <span class="text-gray-300"> -&gt; </span>
+                                <span class="text-blue-600 font-medium">{{ $change['to'] }}</span>
+                                <span class="text-gray-400 text-xs">({{ $change['label'] }})</span>
+                            </li>
+                            @endforeach
+                        </ul>
+                    @else
+                        <p class="text-sm text-gray-600 whitespace-pre-line">{{ $message->body }}</p>
+                    @endif
                 </div>
             </div>
         @empty
-            <p class="text-sm text-gray-400 text-center py-4">No activity yet.</p>
+            <p class="text-sm text-gray-400 text-center py-4">{{ $emptyText }}</p>
         @endforelse
     </div>
 </div>

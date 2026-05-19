@@ -1,0 +1,41 @@
+<svg version="1.1" id="Layer_1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" x="0px" y="0px"
+	 viewBox="0 0 1000 1000" style="enable-background:new 0 0 1000 1000;" xml:space="preserve">
+<style type="text/css">
+	.st0{clip-path:url(#SVGID_1_);fill:url(#SVGID_2_);}
+	.st1{clip-path:url(#SVGID_3_);fill:url(#SVGID_4_);}
+</style>
+<g>
+	<g>
+		<defs>
+			<path id="SVGID_7_" d="M350.5,136.9c-25.1,10.3-48.8,23.2-71,38.2c-0.6,0.4-1.2,0.8-1.8,1.2l70.3,103l2.5,3.6v439.3
+				c-14.2-9.6-27.5-20.6-39.9-32.9c-19.4-19.4-35.4-41.1-47.8-64.7h50.6V499.9h-81.3c0-0.3,0-0.6,0-1H107.4v2.2
+				c0.4,163.4,100.7,303.4,243.1,362c38.8,16,80.8,26,124.8,28.7V108.2C431.3,110.9,389.4,120.9,350.5,136.9"/>
+		</defs>
+		<clipPath id="SVGID_1_">
+			<use xlink:href="#SVGID_7_"  style="overflow:visible;"/>
+		</clipPath>
+
+			<linearGradient id="SVGID_2_" gradientUnits="userSpaceOnUse" x1="818.7126" y1="975.5856" x2="822.1271" y2="975.5856" gradientTransform="matrix(-216.6527 0 0 216.6527 178266.5938 -210863.2656)">
+			<stop  offset="0" style="stop-color:#0976BC"/>
+			<stop  offset="1" style="stop-color:#282460"/>
+		</linearGradient>
+		<rect x="107.4" y="108.2" class="st0" width="367.9" height="783.6"/>
+	</g>
+	<g>
+		<defs>
+			<path id="SVGID_10_" d="M509.7,892.5c43.7-1.1,85.7-9.3,124.8-23.5c30.6-11.2,59.5-26,86-44c0.6-0.4,1.2-0.8,1.8-1.2l-70.3-103
+				l-17.4-25.5V268.3c19.8,11.5,38.2,25.7,54.9,42.3c50.3,50.3,78.2,117.2,78.4,188.3c0,0.4,0,0.7,0,1.1c0,0.4,0,0.7,0,1.1h124.8
+				v-2.2c-0.4-169.1-107.8-313.1-258.1-367.8c-39.1-14.3-81-22.5-124.8-23.5V892.5z"/>
+		</defs>
+		<clipPath id="SVGID_3_">
+			<use xlink:href="#SVGID_10_"  style="overflow:visible;"/>
+		</clipPath>
+
+			<linearGradient id="SVGID_4_" gradientUnits="userSpaceOnUse" x1="868.5022" y1="949.3244" x2="871.9167" y2="949.3244" gradientTransform="matrix(-106.0729 172.7084 172.7084 106.0729 -71037.9453 -250346.0938)">
+			<stop  offset="0" style="stop-color:#0976BC"/>
+			<stop  offset="1" style="stop-color:#282460"/>
+		</linearGradient>
+		<polygon class="st1" points="1242.6,322.5 787.7,1063.2 159.7,677.5 614.6,-63.2 		"/>
+	</g>
+</g>
+</svg>

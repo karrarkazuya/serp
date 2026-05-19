@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Components;
 
 use App\Http\Controllers\Controller;
+use App\Models\Workflow\WorkflowUser;
 use App\Services\Company\CompanyContextService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -27,34 +28,61 @@ class RelationLookupController extends Controller
             ->values()
             ->all();
 
-        $columns = ['id', $field];
         $colorField = $config['color'] ?? null;
-        if ($colorField) {
-            $columns[] = $colorField;
+        $valueColumn = $table . '.' . ($config['value_column'] ?? 'id');
+        $labelJoin = $config['label_join'] ?? null;
+
+        // Use Eloquent when a model is specified (allows scope application)
+        $modelClass = $config['model'] ?? null;
+        if ($modelClass) {
+            $query = $modelClass::query()->from($table);
+
+            if (!empty($config['visible_to_workflow_user'])) {
+                $wu = WorkflowUser::where('user_id', auth()->id())->where('active', true)->first();
+                if ($wu) {
+                    $query->visibleTo($wu);
+                } else {
+                    $query->whereRaw('1 = 0');
+                }
+            }
+        } else {
+            $query = DB::table($table);
         }
 
-        $query = DB::table($table)->select($columns);
+        if ($labelJoin && in_array($field, $labelJoin['fields'] ?? [], true)) {
+            $joinTable = $labelJoin['table'];
+            $query->join($joinTable, "{$table}.{$labelJoin['local']}", '=', "{$joinTable}.{$labelJoin['foreign']}")
+                ->selectRaw("{$valueColumn} as id, {$joinTable}.{$field} as label");
+            $searchColumn = "{$joinTable}.{$field}";
+        } else {
+            $query->selectRaw("{$valueColumn} as id, {$table}.{$field} as label");
+            $searchColumn = "{$table}.{$field}";
+        }
+
+        if ($colorField) {
+            $query->addSelect("{$table}.{$colorField}");
+        }
 
         if (!empty($exclude)) {
-            $query->whereNotIn('id', $exclude);
+            $query->whereNotIn($valueColumn, $exclude);
         }
 
         if ($search = $request->query('search')) {
-            $query->where($field, 'like', "%{$search}%");
+            $query->where($searchColumn, 'like', "%{$search}%");
         }
 
         if (Schema::hasColumn($table, 'company_id')) {
             $activeCompanyIds = $companyContext->getActiveCompanyIds();
             empty($activeCompanyIds)
                 ? $query->whereRaw('1 = 0')
-                : $query->whereIn('company_id', $activeCompanyIds);
+                : $query->whereIn("{$table}.company_id", $activeCompanyIds);
         }
 
-        $records = $query->orderBy($field)->paginate($perPage);
+        $records = $query->orderBy($searchColumn)->paginate($perPage);
 
         $records->getCollection()->transform(fn ($row) => [
             'id' => $row->id,
-            'label' => (string) $row->{$field},
+            'label' => (string) $row->label,
             'color' => $colorField ? ($row->{$colorField} ?? null) : null,
         ]);
 

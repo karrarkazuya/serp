@@ -1,0 +1,26 @@
+@extends('layouts.app')
+@section('title', 'Workflow Reports')
+
+@section('content')
+<div class="flex min-w-0 flex-col h-full bg-gray-50">
+    <div class="bg-white border-b border-gray-200 px-4 py-2 flex items-center gap-3 shrink-0">
+        <span class="text-xl font-semibold text-gray-700">Reports</span>
+    </div>
+
+    <div class="flex-1 overflow-y-auto p-4">
+        <div class="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
+            @foreach([
+                'activity' => 'Activity Report',
+                'procedure-performance' => 'Procedure Performance',
+                'ticket-performance' => 'Ticket Performance',
+                'task-performance' => 'Task Performance',
+            ] as $key => $label)
+            <a href="{{ route('workflow.reports.show', $key) }}" class="flex items-center justify-between px-5 py-3 border-b border-gray-100 last:border-b-0 hover:bg-purple-50/30">
+                <span class="text-sm font-medium text-gray-800">{{ $label }}</span>
+                <span class="text-xl text-gray-300">›</span>
+            </a>
+            @endforeach
+        </div>
+    </div>
+</div>
+@endsection

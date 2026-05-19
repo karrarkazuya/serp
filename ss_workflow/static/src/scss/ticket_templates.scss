@@ -1,0 +1,110 @@
+.o_kanban_view.ssw_ticket_template_kanban {
+    padding: 20px 8px 24px;
+    background: #f5fbf7;
+
+    .o_kanban_record {
+        width: calc(16.666% - 16px) !important;
+        flex: 0 0 calc(16.666% - 16px) !important;
+        min-width: 0;
+        margin: 0 8px 16px !important;
+        background: transparent;
+        border: 0;
+        box-shadow: none;
+        padding: 0;
+    }
+
+    .ssw_ticket_template_card {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        height: 100%;
+        padding: 16px 16px 14px;
+        border: 1px solid rgba(34, 197, 94, 0.2);
+        border-radius: 10px;
+        background: #fff;
+        box-shadow: 0 2px 8px rgba(15, 23, 42, 0.05);
+        transition: border-color 0.18s ease, box-shadow 0.18s ease, transform 0.18s ease;
+    }
+
+    .ssw_ticket_template_card:hover {
+        border-color: rgba(34, 197, 94, 0.4);
+        box-shadow: 0 6px 18px rgba(15, 23, 42, 0.09);
+        transform: translateY(-2px);
+    }
+
+    .ssw_ticket_template_title {
+        color: #0f172a;
+        font-size: 13.5px;
+        font-weight: 700;
+        line-height: 1.3;
+        display: -webkit-box;
+        -webkit-line-clamp: 2;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+    }
+
+    .ssw_ticket_template_description {
+        flex: 1 1 auto;
+        color: #475569;
+        font-size: 11.5px;
+        line-height: 1.45;
+        display: -webkit-box;
+        -webkit-line-clamp: 3;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+    }
+
+    .ssw_ticket_template_action {
+        align-self: flex-start;
+        margin-top: 6px;
+        padding: 6px 14px;
+        border-color: #16a34a;
+        background: #16a34a;
+        font-size: 12px;
+        font-weight: 600;
+        border-radius: 6px;
+    }
+
+    .ssw_ticket_template_action:hover,
+    .ssw_ticket_template_action:focus,
+    .ssw_ticket_template_action:active {
+        border-color: #15803d !important;
+        background: #15803d !important;
+        box-shadow: none !important;
+    }
+
+    @media (max-width: 1599.98px) {
+        .o_kanban_record {
+            width: calc(20% - 16px) !important;
+            flex-basis: calc(20% - 16px) !important;
+        }
+    }
+
+    @media (max-width: 1279.98px) {
+        .o_kanban_record {
+            width: calc(25% - 16px) !important;
+            flex-basis: calc(25% - 16px) !important;
+        }
+    }
+
+    @media (max-width: 991.98px) {
+        .o_kanban_record {
+            width: calc(33.333% - 16px) !important;
+            flex-basis: calc(33.333% - 16px) !important;
+        }
+    }
+
+    @media (max-width: 767.98px) {
+        .o_kanban_record {
+            width: calc(50% - 16px) !important;
+            flex-basis: calc(50% - 16px) !important;
+        }
+    }
+
+    @media (max-width: 479.98px) {
+        .o_kanban_record {
+            width: calc(100% - 16px) !important;
+            flex-basis: calc(100% - 16px) !important;
+        }
+    }
+}

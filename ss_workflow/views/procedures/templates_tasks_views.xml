@@ -1,0 +1,135 @@
+<odoo>
+  <data>
+    <!-- explicit list view definition -->
+    <record model="ir.ui.view" id="ssw_templates_tasks_list">
+      <field name="name">Tasks Templates</field>
+      <field name="model">ssw.proc.templates.tasks</field>
+      <field name="type">list</field>
+      <field name="arch" type="xml">
+            <list>
+                <field name="name"/>
+                <field name="default_department"/>
+                <field name="resolve_max_duration"/>
+            </list>
+      </field>
+    </record>
+
+    <!-- explicit list view definition -->
+    <record id="ssw_templates_tasks_form" model="ir.ui.view">
+        <field name="name">ssw.proc.templates.tasks.form</field>
+        <field name="model">ssw.proc.templates.tasks</field>
+        <field name="arch" type="xml">
+            <form string="Task template">
+                <sheet>
+                    <group>
+                        <field name="name"/>
+                        <field name="description"/>
+                        <field name="default_department"/>
+                        <field name="next_task_ids" invisible="ignore_state"/>
+                        <field name="default_group"/>
+                        <field name="task_sequance" invisible="not id"/>
+                        <field name="is_approve_only"/>
+                        <field name="resolve_max_duration"/>
+                        <field name="ignore_state"/>
+                        <field name="has_procedures"/>
+                        <field name="sub_procedures" invisible="not has_procedures"/>
+                        <field name="has_path_choice"/>
+                        <field name="path_choice_question" invisible="not has_path_choice"/>
+                        <field name="path_choices" invisible="not has_path_choice"/>
+
+                        <field name="enabled"/>
+
+                        <field name="inputs" string="Inputs" invisible="not id" domain="[('deleted', '=', False),('template_id', '=', id)]">
+                            
+                                <list>
+                                    <field name="name"/>
+                                    <field name="type"/>
+                                    <field name="is_required"/>
+                                    <field name="show_in_other_tasks"/>
+                                </list>
+                            
+                        </field>
+                    </group>
+                </sheet>
+
+                <chatter reload_on_post="True"/>
+            </form>
+        </field>
+    </record>
+
+    <record id="ssw_templates_tasks_no_procedure_form" model="ir.ui.view">
+        <field name="name">ssw.proc.templates.tasks.form</field>
+        <field name="model">ssw.proc.templates.tasks</field>
+        <field name="arch" type="xml">
+            <form string="Create tasks templates Form">
+                <sheet>
+                    <group>
+                        <field name="name"/>
+                        <field name="description"/>
+                        <field name="default_department"/>
+                        <field name="departments_can_create"/>
+                        <field name="default_group"/>
+                        <field name="contact_types_can_create"/>
+                        <field name="resolve_max_duration"/>
+                        <field name="has_procedures"/>
+                        <field name="sub_procedures" invisible="not has_procedures"/>
+
+                        <field name="is_contact_ticket_only"/>
+                        <field name="enabled"/>
+
+                        <field name="inputs" string="Inputs" invisible="not id" domain="[('deleted', '=', False),('template_id', '=', id)]">
+                            
+                                <list>
+                                    <field name="name"/>
+                                    <field name="type"/>
+                                    <field name="is_required"/>
+                                    <field name="show_in_other_tasks"/>
+                                </list>
+                            
+                        </field>
+                    </group>
+                </sheet>
+
+                <chatter reload_on_post="True"/>
+            </form>
+        </field>
+    </record>
+
+    <!-- Search View -->
+    <record id="view_ss_workflow_templates_search" model="ir.ui.view">
+        <field name="name">ssw.proc.templates.tasks.search</field>
+        <field name="model">ssw.proc.templates.tasks</field>
+        <field name="arch" type="xml">
+            <search string="Search Section">
+                <filter 
+                string="Active" 
+                name="not_deleted"
+                domain="[('deleted', '=', False)]"
+                />
+                <filter 
+                string="Deleted" 
+                name="deleted"
+                domain="[('deleted', '=', True)]"
+                />
+            </search>
+        </field>
+    </record>
+
+
+    <!-- actions opening views on models -->
+    <record model="ir.actions.act_window" id="ss_workflow.action_templates_tasks">
+        <field name="name">Tasks Templates</field>
+        <field name="res_model">ssw.proc.templates.tasks</field>
+        <field name="view_mode">list,form</field>
+        <field name="view_ids" eval="[
+            (5, 0, 0),
+            (0, 0, {'view_mode': 'list', 'view_id': ref('ss_workflow.ssw_templates_tasks_list')}),
+            (0, 0, {'view_mode': 'form', 'view_id': ref('ss_workflow.ssw_templates_tasks_no_procedure_form')})
+        ]"/>
+        <field name="search_view_id" ref="view_ss_workflow_templates_search"/>
+        <field name="domain">[('template_id', '=', False), ('deleted', '=', False)]</field>
+        <field name="context">{'search_default_not_deleted': 1, 'search_default_deleted': 0}</field>
+    </record>
+
+  </data>
+</odoo>

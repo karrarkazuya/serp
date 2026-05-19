@@ -1,5 +1,5 @@
 @extends('layouts.auth')
-@section('title', 'Sign In')
+@section('title', __('auth.sign_in'))
 
 @section('content')
 <div class="min-h-screen flex">
@@ -11,14 +11,14 @@
                 <span class="text-white font-bold text-3xl">S</span>
             </div>
             <h1 class="text-4xl font-bold text-white mb-3">S-ERP</h1>
-            <p class="text-white/70 text-lg">Business management made simple</p>
+            <p class="text-white/70 text-lg">{{ __('auth.business_tagline') }}</p>
 
-            <div class="mt-12 grid grid-cols-2 gap-4 text-left">
+            <div class="mt-12 grid grid-cols-2 gap-4 text-start">
                 @foreach([
-                    ['icon' => '👥', 'title' => 'Contacts', 'desc' => 'Manage your customers & partners'],
-                    ['icon' => '⚙️', 'title' => 'Settings', 'desc' => 'Control roles & permissions'],
-                    ['icon' => '📋', 'title' => 'Activity Log', 'desc' => 'Full audit trail on all records'],
-                    ['icon' => '🔒', 'title' => 'Security', 'desc' => 'Granular access control'],
+                    ['icon' => '👥', 'title' => __('auth.feature_contacts'),   'desc' => __('auth.feature_contacts_d')],
+                    ['icon' => '⚙️', 'title' => __('auth.feature_settings'),   'desc' => __('auth.feature_settings_d')],
+                    ['icon' => '📋', 'title' => __('auth.feature_log'),        'desc' => __('auth.feature_log_d')],
+                    ['icon' => '🔒', 'title' => __('auth.feature_security'),   'desc' => __('auth.feature_security_d')],
                 ] as $feature)
                 <div class="bg-white/10 rounded-xl p-4">
                     <div class="text-2xl mb-2">{{ $feature['icon'] }}</div>
@@ -42,15 +42,15 @@
                 <h1 class="text-2xl font-bold text-gray-800">S-ERP</h1>
             </div>
 
-            <h2 class="text-2xl font-bold text-gray-800 mb-1">Welcome back</h2>
-            <p class="text-gray-500 text-sm mb-8">Sign in to your account to continue</p>
+            <h2 class="text-2xl font-bold text-gray-800 mb-1">{{ __('auth.welcome_back') }}</h2>
+            <p class="text-gray-500 text-sm mb-8">{{ __('auth.sign_in_subtitle') }}</p>
 
             <form method="POST" action="{{ route('login.post') }}" class="space-y-5">
                 @csrf
 
                 {{-- Email --}}
                 <div>
-                    <label for="email" class="block text-sm font-medium text-gray-700 mb-1.5">Email address</label>
+                    <label for="email" class="block text-sm font-medium text-gray-700 mb-1.5">{{ __('auth.email_address') }}</label>
                     <input id="email" type="email" name="email" value="{{ old('email') }}" autocomplete="email" autofocus
                            class="w-full px-4 py-2.5 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-shadow
                                   {{ $errors->has('email') ? 'border-red-400 bg-red-50' : 'border-gray-300 bg-white' }}">
@@ -61,13 +61,13 @@
 
                 {{-- Password --}}
                 <div>
-                    <label for="password" class="block text-sm font-medium text-gray-700 mb-1.5">Password</label>
+                    <label for="password" class="block text-sm font-medium text-gray-700 mb-1.5">{{ __('auth.password') }}</label>
                     <div class="relative" x-data="{ show: false }">
                         <input id="password" :type="show ? 'text' : 'password'" name="password" autocomplete="current-password"
-                               class="w-full px-4 py-2.5 pr-10 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-shadow
+                               class="w-full px-4 py-2.5 pe-10 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-shadow
                                       {{ $errors->has('password') ? 'border-red-400 bg-red-50' : 'border-gray-300 bg-white' }}">
                         <button type="button" @click="show = !show"
-                                class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600">
+                                class="absolute end-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600">
                             <svg x-show="!show" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>
                             </svg>
@@ -82,21 +82,21 @@
                 </div>
 
                 {{-- Remember me --}}
-                <div class="flex items-center">
+                <div class="flex items-center gap-2">
                     <input id="remember" type="checkbox" name="remember"
                            class="w-4 h-4 text-purple-600 border-gray-300 rounded focus:ring-purple-500">
-                    <label for="remember" class="ml-2 text-sm text-gray-600">Remember me</label>
+                    <label for="remember" class="text-sm text-gray-600">{{ __('auth.remember_me') }}</label>
                 </div>
 
                 {{-- Submit --}}
                 <button type="submit"
                         class="w-full bg-[#714B67] hover:bg-[#5c3d55] text-white font-semibold py-2.5 px-4 rounded-lg text-sm transition-colors focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-2">
-                    Sign in
+                    {{ __('auth.sign_in') }}
                 </button>
             </form>
 
             <p class="mt-8 text-center text-xs text-gray-400">
-                S-ERP &copy; {{ date('Y') }} — Powered by Laravel
+                S-ERP &copy; {{ date('Y') }} — {{ __('auth.powered_by') }}
             </p>
         </div>
     </div>

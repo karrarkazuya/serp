@@ -1,0 +1,111 @@
+<odoo>
+    <data noupdate="0">
+        <record id="ss_workflow_tickets_rule" model="ir.rule">
+            <field name="name">Workflow Tickets for users</field>
+            <field name="model_id" ref="ss_workflow.model_ssw_tickets"/>
+            <field name="domain_force">
+            [
+                ('users_can_view', 'in', [user.partner_id.id]), ('state', '!=', 'draft'),('deleted', '=', False)
+            ]
+            </field>
+            <field name="groups" eval="[
+                (4, ref('ss_workflow.group_viewer'))
+                ]"/>
+        </record>
+        
+    </data>
+
+    <data noupdate="0">
+        <record id="ss_workflow_tasks_rule" model="ir.rule">
+            <field name="name">Workflow Tasks for users</field>
+            <field name="model_id" ref="ss_workflow.model_ssw_proc_tasks"/>
+            <field name="domain_force">[
+                ('users_can_view', 'in', [user.partner_id.id]), ('state', '!=', 'draft'), ('deleted', '=', False)
+            ]</field>
+            <field name="groups" eval="[
+                (4, ref('ss_workflow.group_viewer'))
+                ]"/>
+        </record>
+    </data>
+
+    <data noupdate="0">
+        <record id="ss_workflow_tasks_procedures_lines_rule" model="ir.rule">
+            <field name="name">Workflow tasks procedure lines for users</field>
+            <field name="model_id" ref="ss_workflow.model_ssw_task_procedure_line"/>
+            <field name="domain_force">[
+                ('task_id.users_can_view', 'in', [user.partner_id.id]), ('task_id.state', '!=', 'draft'), ('task_id.deleted', '=', False)
+            ]</field>
+            <field name="groups" eval="[
+                (4, ref('ss_workflow.group_viewer'))
+                ]"/>
+        </record>
+    </data>
+
+    <data noupdate="0">
+        <record id="ss_workflow_procedures_rule" model="ir.rule">
+            <field name="name">Workflow Procedures for users</field>
+            <field name="model_id" ref="ss_workflow.model_ssw_procedures"/>
+            <field name="domain_force">[
+                ('users_can_view', 'in', [user.partner_id.id]), ('deleted', '=', False)
+            ]</field>
+            <field name="groups" eval="[
+                (4, ref('ss_workflow.group_viewer'))
+                ]"/>
+        </record>
+    </data>
+
+    <data noupdate="0">
+        <record id="ss_workflow_tasks_input" model="ir.rule">
+            <field name="name">Workflow Tasks Inputs</field>
+            <field name="model_id" ref="ss_workflow.model_ssw_proc_tasks_inputs"/>
+            <field name="domain_force">['|',
+                ('task_id.users_can_view', 'in', [user.partner_id.id]),
+                ('show_in_other_tasks.users_can_view', 'in', [user.partner_id.id])
+            ]</field>
+            <field name="groups" eval="[
+                (4, ref('ss_workflow.group_viewer'))
+                ]"/>
+        </record>
+    </data>
+
+    <data noupdate="0">
+        <record id="ss_workflow_tasks_product_lines" model="ir.rule">
+            <field name="name">Workflow Tasks Product lines</field>
+            <field name="model_id" ref="ss_workflow.model_ssw_product_line"/>
+            <field name="domain_force">['|',
+                ('ssw_task_input_id.task_id.users_can_view', 'in', [user.partner_id.id]),
+                ('ssw_task_input_id.show_in_other_tasks.users_can_view', 'in', [user.partner_id.id])
+            ]</field>
+            <field name="groups" eval="[
+                (4, ref('ss_workflow.group_viewer'))
+                ]"/>
+        </record>
+    </data>
+
+    <data noupdate="0">
+        <record id="ss_workflow_tickets_input" model="ir.rule">
+            <field name="name">Workflow Tickets Inputs</field>
+            <field name="model_id" ref="ss_workflow.model_ssw_tickets_inputs"/>
+            <field name="domain_force">[
+                ('ticket_id.users_can_view', 'in', [user.partner_id.id])
+            ]</field>
+            <field name="groups" eval="[
+                (4, ref('ss_workflow.group_viewer'))
+                ]"/>
+        </record>
+    </data>
+
+    <data noupdate="0">
+        <record id="ss_workflow_tickets_durations" model="ir.rule">
+            <field name="name">Workflow Tickets Durations</field>
+            <field name="model_id" ref="ss_workflow.model_ssw_tickets_durations"/>
+            <field name="domain_force">[
+                ('ticket_id.users_can_view', 'in', [user.partner_id.id])
+            ]</field>
+            <field name="groups" eval="[
+                (4, ref('ss_workflow.group_viewer'))
+                ]"/>
+        </record>
+    </data>
+    
+</odoo>

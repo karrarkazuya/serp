@@ -8,6 +8,8 @@ use App\Models\Settings\Company;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Laravel\Sanctum\HasApiTokens;
@@ -59,6 +61,7 @@ class User extends Authenticatable
         'job_position',
         'phone',
         'avatar',
+        'language',
         'company_id',
         'created_by',
         'updated_by',
@@ -107,6 +110,25 @@ class User extends Authenticatable
     public function companies(): BelongsToMany
     {
         return $this->belongsToMany(Company::class, 'user_company');
+    }
+
+    public function workflowUser(): HasOne
+    {
+        return $this->hasOne(\App\Models\Workflow\WorkflowUser::class, 'user_id');
+    }
+
+    public function notifications(): HasMany
+    {
+        return $this->hasMany(Notification::class)->latest();
+    }
+
+    public function notify(string $title, string $body = '', string $url = ''): Notification
+    {
+        return $this->notifications()->create([
+            'title' => $title,
+            'body'  => $body ?: null,
+            'url'   => $url ?: null,
+        ]);
     }
 
     // -------------------------------------------------------------------------

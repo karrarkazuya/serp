@@ -6,27 +6,27 @@
     <div class="bg-white border-b border-gray-200 px-4 py-2 flex items-center gap-3 shrink-0">
         <div class="flex items-center gap-2 shrink-0">
             @if(auth()->user()->hasPermission('contacts.write'))
-            <a href="{{ route('contacts.tags.create') }}" class="px-3 py-1.5 bg-[#714B67] hover:bg-[#5c3d55] text-white text-sm font-medium rounded">New</a>
+            <a href="{{ route('contacts.tags.create') }}" class="px-3 py-1.5 bg-[#714B67] hover:bg-[#5c3d55] text-white text-sm font-medium rounded">{{ __('common.new') }}</a>
             @endif
             <div class="flex flex-col leading-tight">
-                <a href="{{ route('contacts.tags.index') }}" class="text-xs text-purple-600 hover:text-purple-700">Contact Tags</a>
+                <a href="{{ route('contacts.tags.index') }}" class="text-xs text-purple-600 hover:text-purple-700">{{ __('contacts.tags_title') }}</a>
                 <span class="text-sm font-semibold text-gray-800">{{ $tag->name }}</span>
             </div>
         </div>
 
-        <div class="ml-auto flex items-center gap-3 shrink-0">
+        <div class="ms-auto flex items-center gap-3 shrink-0">
             @if(auth()->user()->hasPermission('contacts.write'))
             <a href="{{ route('contacts.tags.edit', $tag) }}"
                class="px-3 py-1.5 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded hover:bg-gray-50">
-                Edit
+                {{ __('common.edit') }}
             </a>
             @endif
 
             @if(auth()->user()->hasPermission('contacts.unlink') && $tag->contacts_count === 0)
-            <form method="POST" action="{{ route('contacts.tags.delete', $tag) }}" onsubmit="return confirm('Delete this tag?')">
+            <form method="POST" action="{{ route('contacts.tags.delete', $tag) }}" onsubmit="return confirm('{{ __('common.confirm_delete') }}')">
                 @csrf
                 @method('DELETE')
-                <button class="px-3 py-1.5 text-sm text-red-700 border border-red-200 rounded hover:bg-red-50">Delete</button>
+                <button class="px-3 py-1.5 text-sm text-red-700 border border-red-200 rounded hover:bg-red-50">{{ __('common.delete') }}</button>
             </form>
             @endif
 
@@ -55,24 +55,24 @@
 
                 <div class="max-w-2xl">
                     <div class="flex items-center gap-4 py-2 border-b border-gray-100">
-                        <span class="w-32 shrink-0 text-sm text-gray-500">Color</span>
+                        <span class="w-32 shrink-0 text-sm text-gray-500">{{ __('contacts.tag_color') }}</span>
                         <span class="flex items-center gap-2 flex-1 text-sm text-gray-800">
                             <span class="w-5 h-5 rounded border border-gray-200" style="background-color: {{ $tag->color }}"></span>
                             {{ $tag->color }}
                         </span>
                     </div>
                     <div class="flex items-center gap-4 py-2 border-b border-gray-100">
-                        <span class="w-32 shrink-0 text-sm text-gray-500">Contacts</span>
+                        <span class="w-32 shrink-0 text-sm text-gray-500">{{ __('contacts.title') }}</span>
                         <span class="flex-1 text-sm text-gray-800">{{ $tag->contacts_count }}</span>
                     </div>
                 </div>
             </div>
 
             <div class="border-t border-gray-200 p-6">
-                <h2 class="text-sm font-semibold text-gray-600 mb-3">Tagged Contacts</h2>
+                <h2 class="text-sm font-semibold text-gray-600 mb-3">{{ __('contacts.tagged_contacts') }}</h2>
 
                 @if($contacts->isEmpty())
-                    <p class="text-sm text-gray-400 py-4 text-center">No contacts use this tag.</p>
+                    <p class="text-sm text-gray-400 py-4 text-center">{{ __('contacts.no_tag_contacts') }}</p>
                 @else
                     <div class="divide-y divide-gray-100">
                         @foreach($contacts as $contact)

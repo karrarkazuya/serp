@@ -1,0 +1,1417 @@
+# Translation of Odoo Server.
+# This file contains the translation of the following modules:
+#  * ss_workflow
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: Odoo Server 18.0\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-04-26 00:00+0000\n"
+"PO-Revision-Date: 2026-04-26 00:00+0000\n"
+"Last-Translator: \n"
+"Language-Team: \n"
+"Language: ar\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=6; plural=n==0 ? 0 : n==1 ? 1 : n==2 ? 2 : n%100>=3 && n%100<=10 ? 3 : n%100>=11 && n%100<=99 ? 4 : 5;\n"
+
+#. module: ss_workflow
+#: model:ir.ui.menu,name:ss_workflow.main_menu
+#: model_terms:ir.ui.view,arch_db:ss_workflow.res_config_settings_view_form_ticketing
+msgid "Workflow"
+msgstr "سير العمل"
+
+#. module: ss_workflow
+#: model:ir.ui.menu,name:ss_workflow.ssw_dashboard_menu_action_window
+#: model:ir.actions.act_window,name:ss_workflow.action_ssw_dashboard_window
+#: model:ir.actions.client,name:ss_workflow.ssw_data_dashboard_action
+#: model_terms:ir.ui.view,arch_db:ss_workflow.action_ssw_dashboard_view
+#: model_terms:ir.ui.view,arch_db:ss_workflow.dashboard
+msgid "Dashboard"
+msgstr "لوحة التحكم"
+
+#. module: ss_workflow
+#: model:ir.ui.menu,name:ss_workflow.ssw_menu_action_window
+#: model:ir.actions.act_window,name:ss_workflow.action_tickets_view
+#: model_terms:ir.ui.view,arch_db:ss_workflow.ssw_tickets_list
+#: model_terms:ir.ui.view,arch_db:ss_workflow.view_partner_form
+#: model_terms:ir.ui.view,arch_db:ss_workflow.view_user_form
+msgid "Tickets"
+msgstr "التذاكر"
+
+#. module: ss_workflow
+#: model:ir.ui.menu,name:ss_workflow.ssw_tasks_menu_action_window
+#: model:ir.actions.act_window,name:ss_workflow.action_tasks
+#: model:ir.actions.act_window,name:ss_workflow.action_tasks_read
+#: model_terms:ir.ui.view,arch_db:ss_workflow.ssw_tasks_list
+#: model_terms:ir.ui.view,arch_db:ss_workflow.ssw_tasks_read_list
+#: model:ir.model.fields,field_description:ss_workflow.field_ssw_proc_templates__tasks
+#: model:ir.model.fields,field_description:ss_workflow.field_ssw_proc_templates_tasks__inputs
+#: model:ir.model.fields,field_description:ss_workflow.field_ssw_procedures__tasks
+#: model:ir.model.fields,field_description:ss_workflow.field_ssw_procedures__tasks_read
+msgid "Tasks"
+msgstr "المهام"
+
+#. module: ss_workflow
+#: model:ir.ui.menu,name:ss_workflow.ssw_procedures_menu_action_window
+#: model:ir.actions.act_window,name:ss_workflow.action_procedures
+#: model_terms:ir.ui.view,arch_db:ss_workflow.ssw_procedures_list
+msgid "Procedures"
+msgstr "الإجراءات"
+
+#. module: ss_workflow
+#: model:ir.ui.menu,name:ss_workflow.ssw_menu_config_action_window
+#: model:ir.actions.act_window,name:ss_workflow.res_config_settings_action
+msgid "Configuration"
+msgstr "الإعدادات"
+
+#. module: ss_workflow
+#: model:ir.ui.menu,name:ss_workflow.ssw_settings_menu_action
+msgid "Settings"
+msgstr "الإعدادات"
+
+#. module: ss_workflow
+#: model:ir.ui.menu,name:ss_workflow.ssw_menu_users_action_window
+#: model:ir.actions.act_window,name:ss_workflow.action_users
+#: model_terms:ir.ui.view,arch_db:ss_workflow.ssw_users_list
+msgid "Users"
+msgstr "المستخدمون"
+
+#. module: ss_workflow
+#: model:ir.ui.menu,name:ss_workflow.ssw_menu_managers_action_window
+#: model:ir.actions.act_window,name:ss_workflow.action_managers
+#: model_terms:ir.ui.view,arch_db:ss_workflow.ssw_managers_list
+msgid "Managers"
+msgstr "المدراء"
+
+#. module: ss_workflow
+#: model_terms:ir.ui.view,arch_db:ss_workflow.ssw_managers_list
+#: model_terms:ir.ui.view,arch_db:ss_workflow.action_managers
+msgid "managers"
+msgstr "المدراء"
+
+#. module: ss_workflow
+#: model:ir.ui.menu,name:ss_workflow.ssw_menu_groups_action_window
+#: model:ir.actions.act_window,name:ss_workflow.action_groups
+#: model_terms:ir.ui.view,arch_db:ss_workflow.ssw_groups_list
+#: model_terms:ir.ui.view,arch_db:ss_workflow.ssw_departments_list
+msgid "Groups"
+msgstr "المجموعات"
+
+#. module: ss_workflow
+#: model:ir.ui.menu,name:ss_workflow.ssw_menu_templates_action_window
+#: model:ir.actions.act_window,name:ss_workflow.tickets_action_templates
+#: model_terms:ir.ui.view,arch_db:ss_workflow.ssw_tickets_templates_list
+#: model_terms:ir.ui.view,arch_db:ss_workflow.ssw_tickets_templates_inputs_list
+#: model_terms:ir.ui.view,arch_db:ss_workflow.ssw_tickets_templates_inputs_subs_list
+msgid "Tickets templates"
+msgstr "قوالب التذاكر"
+
+#. module: ss_workflow
+#: model:ir.ui.menu,name:ss_workflow.ssw_menu_templates_action_window
+msgid "Tickets Templates"
+msgstr "قوالب التذاكر"
+
+#. module: ss_workflow
+#: model:ir.ui.menu,name:ss_workflow.ssw_menu_procedures_templates_action_window
+#: model:ir.actions.act_window,name:ss_workflow.procedures_action_templates
+#: model_terms:ir.ui.view,arch_db:ss_workflow.ssw_templates_list
+#: model_terms:ir.ui.view,arch_db:ss_workflow.ssw_templates_tasks_list
+#: model_terms:ir.ui.view,arch_db:ss_workflow.ssw_templates_inputs_list
+#: model_terms:ir.ui.view,arch_db:ss_workflow.ssw_templates_inputs_subs_list
+msgid "tasks templates"
+msgstr "قوالب المهام"
+
+#. module: ss_workflow
+#: model:ir.ui.menu,name:ss_workflow.ssw_menu_procedures_templates_action_window
+msgid "Procedures Templates"
+msgstr "قوالب الإجراءات"
+
+#. module: ss_workflow
+#: model:ir.actions.act_window,name:ss_workflow.tickets_action_templates_create
+msgid "Tickets available"
+msgstr "التذاكر المتاحة"
+
+#. module: ss_workflow
+#: model:ir.actions.act_window,name:ss_workflow.action_tickets_view_inputs
+#: model_terms:ir.ui.view,arch_db:ss_workflow.ssw_tickets_inputs_list
+msgid "Tickets tickets"
+msgstr "مدخلات التذاكر"
+
+#. module: ss_workflow
+#: model:ir.actions.act_window,name:ss_workflow.procedures_action_templates_create
+msgid "Procedures available"
+msgstr "الإجراءات المتاحة"
+
+#. module: ss_workflow
+#: model:ir.actions.act_window,name:ss_workflow.action_tasks_inputs
+#: model_terms:ir.ui.view,arch_db:ss_workflow.ssw_tasks_inputs_list
+msgid "tasks tasks"
+msgstr "مدخلات المهام"
+
+#. module: ss_workflow
+#: model_terms:ir.ui.view,arch_db:ss_workflow.ssw_users_form
+msgid "Create users Form"
+msgstr "نموذج إنشاء المستخدمين"
+
+#. module: ss_workflow
+#: model_terms:ir.ui.view,arch_db:ss_workflow.ssw_groups_form
+#: model_terms:ir.ui.view,arch_db:ss_workflow.ssw_departments_form
+msgid "Create groups Form"
+msgstr "نموذج إنشاء المجموعات"
+
+#. module: ss_workflow
+#: model_terms:ir.ui.view,arch_db:ss_workflow.ssw_managers_form
+msgid "Create managers Form"
+msgstr "نموذج إنشاء المدراء"
+
+#. module: ss_workflow
+#: model_terms:ir.ui.view,arch_db:ss_workflow.ssw_tickets_templates_form
+#: model_terms:ir.ui.view,arch_db:ss_workflow.ssw_tickets_templates_inputs_form
+#: model_terms:ir.ui.view,arch_db:ss_workflow.ssw_tickets_templates_inputs_subs_form
+msgid "Create tickets templates Form"
+msgstr "نموذج إنشاء قوالب التذاكر"
+
+#. module: ss_workflow
+#: model_terms:ir.ui.view,arch_db:ss_workflow.ssw_tickets_inputs_form
+msgid "Create tickets inputs Form"
+msgstr "نموذج إنشاء مدخلات التذاكر"
+
+#. module: ss_workflow
+#: model_terms:ir.ui.view,arch_db:ss_workflow.ssw_templates_form
+msgid "Create templates Form"
+msgstr "نموذج إنشاء القوالب"
+
+#. module: ss_workflow
+#: model_terms:ir.ui.view,arch_db:ss_workflow.ssw_templates_tasks_form
+#: model_terms:ir.ui.view,arch_db:ss_workflow.ssw_templates_inputs_form
+#: model_terms:ir.ui.view,arch_db:ss_workflow.ssw_templates_inputs_subs_form
+msgid "Create tasks templates Form"
+msgstr "نموذج إنشاء قوالب المهام"
+
+#. module: ss_workflow
+#: model_terms:ir.ui.view,arch_db:ss_workflow.ssw_tasks_form
+msgid "Create tasks Form"
+msgstr "نموذج إنشاء المهام"
+
+#. module: ss_workflow
+#: model_terms:ir.ui.view,arch_db:ss_workflow.ssw_tasks_inputs_form
+msgid "Create tasks inputs Form"
+msgstr "نموذج إنشاء مدخلات المهام"
+
+#. module: ss_workflow
+#: model_terms:ir.ui.view,arch_db:ss_workflow.ssw_tickets_form
+msgid "Create tickets Form"
+msgstr "نموذج إنشاء التذاكر"
+
+#. module: ss_workflow
+#: model_terms:ir.ui.view,arch_db:ss_workflow.ssw_tickets_search
+#: model_terms:ir.ui.view,arch_db:ss_workflow.view_ssw_users_search
+#: model_terms:ir.ui.view,arch_db:ss_workflow.view_ssw_groups_search
+#: model_terms:ir.ui.view,arch_db:ss_workflow.view_ssw_templates_search
+#: model_terms:ir.ui.view,arch_db:ss_workflow.view_ssw_templates_inputs_search
+#: model_terms:ir.ui.view,arch_db:ss_workflow.view_ssw_templates_inputs_subs_search
+#: model_terms:ir.ui.view,arch_db:ss_workflow.view_ssw_tickets_inputs_search
+#: model_terms:ir.ui.view,arch_db:ss_workflow.view_ssw_tickets_templates_search
+#: model_terms:ir.ui.view,arch_db:ss_workflow.view_ssw_tickets_templates_inputs_search
+#: model_terms:ir.ui.view,arch_db:ss_workflow.view_ssw_tickets_templates_inputs_subs_search
+#: model_terms:ir.ui.view,arch_db:ss_workflow.view_ss_workflow_procedures_search
+#: model_terms:ir.ui.view,arch_db:ss_workflow.view_ss_workflow_tasks_search
+#: model_terms:ir.ui.view,arch_db:ss_workflow.view_ss_workflow_templates_search
+#: model_terms:ir.ui.view,arch_db:ss_workflow.view_ss_workflow_templates_inputs_search
+#: model_terms:ir.ui.view,arch_db:ss_workflow.view_ss_workflow_templates_tasks_search
+#: model_terms:ir.ui.view,arch_db:ss_workflow.view_ss_workflow_tasks_inputs_search
+msgid "Search Section"
+msgstr "قسم البحث"
+
+#. module: ss_workflow
+#: model_terms:ir.ui.view,arch_db:ss_workflow.view_ssw_users_search
+#: model_terms:ir.ui.view,arch_db:ss_workflow.view_ssw_groups_search
+#: model_terms:ir.ui.view,arch_db:ss_workflow.view_ssw_templates_search
+#: model_terms:ir.ui.view,arch_db:ss_workflow.view_ssw_templates_inputs_search
+#: model_terms:ir.ui.view,arch_db:ss_workflow.view_ssw_templates_inputs_subs_search
+#: model_terms:ir.ui.view,arch_db:ss_workflow.view_ssw_tickets_templates_search
+#: model_terms:ir.ui.view,arch_db:ss_workflow.view_ssw_tickets_templates_inputs_search
+#: model_terms:ir.ui.view,arch_db:ss_workflow.view_ssw_tickets_templates_inputs_subs_search
+#: model_terms:ir.ui.view,arch_db:ss_workflow.view_ss_workflow_templates_search
+#: model_terms:ir.ui.view,arch_db:ss_workflow.view_ss_workflow_templates_inputs_search
+#: model_terms:ir.ui.view,arch_db:ss_workflow.view_ss_workflow_templates_tasks_search
+msgid "Active"
+msgstr "نشط"
+
+#. module: ss_workflow
+#: model_terms:ir.ui.view,arch_db:ss_workflow.view_ssw_users_search
+#: model_terms:ir.ui.view,arch_db:ss_workflow.view_ssw_groups_search
+#: model_terms:ir.ui.view,arch_db:ss_workflow.view_ssw_templates_search
+#: model_terms:ir.ui.view,arch_db:ss_workflow.view_ssw_templates_inputs_search
+#: model_terms:ir.ui.view,arch_db:ss_workflow.view_ssw_templates_inputs_subs_search
+#: model_terms:ir.ui.view,arch_db:ss_workflow.view_ssw_tickets_inputs_search
+#: model_terms:ir.ui.view,arch_db:ss_workflow.view_ssw_tickets_templates_search
+#: model_terms:ir.ui.view,arch_db:ss_workflow.view_ssw_tickets_templates_inputs_search
+#: model_terms:ir.ui.view,arch_db:ss_workflow.view_ssw_tickets_templates_inputs_subs_search
+#: model_terms:ir.ui.view,arch_db:ss_workflow.view_ss_workflow_templates_search
+#: model_terms:ir.ui.view,arch_db:ss_workflow.view_ss_workflow_templates_inputs_search
+#: model_terms:ir.ui.view,arch_db:ss_workflow.view_ss_workflow_templates_tasks_search
+#: model_terms:ir.ui.view,arch_db:ss_workflow.view_ss_workflow_tasks_inputs_search
+msgid "Deleted"
+msgstr "محذوف"
+
+#. module: ss_workflow
+#: model_terms:ir.ui.view,arch_db:ss_workflow.ssw_tickets_search
+#: model_terms:ir.ui.view,arch_db:ss_workflow.view_ss_workflow_procedures_search
+#: model_terms:ir.ui.view,arch_db:ss_workflow.view_ss_workflow_tasks_search
+#: model:ir.model.fields.selection,name:ss_workflow.selection__ssw_tickets__state__pending
+#: model:ir.model.fields.selection,name:ss_workflow.selection__ssw_proc_tasks__state__pending
+#: model:ir.model.fields.selection,name:ss_workflow.selection__ssw_proc_tasks_read__state__pending
+msgid "Pending"
+msgstr "قيد الانتظار"
+
+#. module: ss_workflow
+#: model_terms:ir.ui.view,arch_db:ss_workflow.ssw_tickets_search
+#: model_terms:ir.ui.view,arch_db:ss_workflow.view_ss_workflow_procedures_search
+#: model_terms:ir.ui.view,arch_db:ss_workflow.view_ss_workflow_tasks_search
+msgid "Deadline Passed"
+msgstr "تم تجاوز الموعد النهائي"
+
+#. module: ss_workflow
+#: model_terms:ir.ui.view,arch_db:ss_workflow.view_tickets_templates_dashboard
+#: model_terms:ir.ui.view,arch_db:ss_workflow.view_templates_dashboard
+msgid "Start"
+msgstr "ابدأ"
+
+#. module: ss_workflow
+#: model_terms:ir.ui.view,arch_db:ss_workflow.ssw_tickets_form
+#: model_terms:ir.ui.view,arch_db:ss_workflow.ssw_tickets_inputs_form
+#: model_terms:ir.ui.view,arch_db:ss_workflow.view_ssw_tickets_kanban
+#: model_terms:ir.ui.view,arch_db:ss_workflow.ssw_tasks_read_form
+msgid "View"
+msgstr "عرض"
+
+#. module: ss_workflow
+#: model_terms:ir.ui.view,arch_db:ss_workflow.ssw_tickets_form
+#: model_terms:ir.ui.view,arch_db:ss_workflow.ssw_tasks_form
+msgid "Assign to me"
+msgstr "تعيين لي"
+
+#. module: ss_workflow
+#: model_terms:ir.ui.view,arch_db:ss_workflow.ssw_tickets_form
+#: model_terms:ir.ui.view,arch_db:ss_workflow.ssw_tasks_form
+msgid "Unassign"
+msgstr "إلغاء التعيين"
+
+#. module: ss_workflow
+#: model_terms:ir.ui.view,arch_db:ss_workflow.ssw_tickets_form
+#: model_terms:ir.ui.view,arch_db:ss_workflow.ssw_tasks_form
+msgid "Complete"
+msgstr "إكمال"
+
+#. module: ss_workflow
+#: model_terms:ir.ui.view,arch_db:ss_workflow.ssw_tasks_form
+msgid "Approve"
+msgstr "اعتماد"
+
+#. module: ss_workflow
+#: model_terms:ir.ui.view,arch_db:ss_workflow.ssw_tickets_form
+msgid "Close"
+msgstr "إغلاق"
+
+#. module: ss_workflow
+#: model_terms:ir.ui.view,arch_db:ss_workflow.ssw_tasks_form
+msgid "Return"
+msgstr "إرجاع"
+
+#. module: ss_workflow
+#: model_terms:ir.ui.view,arch_db:ss_workflow.ssw_tasks_form
+msgid "Return to..."
+msgstr "إرجاع إلى..."
+
+#. module: ss_workflow
+#: model_terms:ir.ui.view,arch_db:ss_workflow.ssw_tickets_form
+#: model_terms:ir.ui.view,arch_db:ss_workflow.ssw_tasks_form
+msgid "Open"
+msgstr "فتح"
+
+#. module: ss_workflow
+#: model_terms:ir.ui.view,arch_db:ss_workflow.ssw_tickets_form
+msgid "Share"
+msgstr "مشاركة"
+
+#. module: ss_workflow
+#: model_terms:ir.ui.view,arch_db:ss_workflow.ssw_tickets_form
+msgid "Sharing On"
+msgstr "المشاركة مفعلة"
+
+#. module: ss_workflow
+#: model_terms:ir.ui.view,arch_db:ss_workflow.view_ssw_proc_start_wizard_form
+#: model:ir.model.fields,field_description:ss_workflow.field_ssw_proc_start_wizard__title
+msgid "Start Procedure"
+msgstr "بدء إجراء"
+
+#. module: ss_workflow
+#: model_terms:ir.ui.view,arch_db:ss_workflow.view_ssw_proc_start_wizard_form
+msgid "Procedure title..."
+msgstr "عنوان الإجراء..."
+
+#. module: ss_workflow
+#: model_terms:ir.ui.view,arch_db:ss_workflow.view_ssw_proc_start_wizard_form
+msgid "Procedure description..."
+msgstr "وصف الإجراء..."
+
+#. module: ss_workflow
+#: model_terms:ir.ui.view,arch_db:ss_workflow.view_ssw_task_return_wizard_form
+#: model_terms:ir.ui.view,arch_db:ss_workflow.view_ssw_task_return_to_wizard_form
+msgid "Explain why this task is being returned..."
+msgstr "اشرح سبب إرجاع هذه المهمة..."
+
+#. module: ss_workflow
+#: model_terms:ir.ui.view,arch_db:ss_workflow.view_ssw_task_return_wizard_form
+#: model_terms:ir.ui.view,arch_db:ss_workflow.view_ssw_task_return_to_wizard_form
+msgid "Confirm Return"
+msgstr "تأكيد الإرجاع"
+
+#. module: ss_workflow
+#: model_terms:ir.ui.view,arch_db:ss_workflow.view_ssw_task_return_wizard_form
+#: model_terms:ir.ui.view,arch_db:ss_workflow.view_ssw_task_return_to_wizard_form
+#: model_terms:ir.ui.view,arch_db:ss_workflow.view_ssw_proc_start_wizard_form
+msgid "Cancel"
+msgstr "إلغاء"
+
+#. module: ss_workflow
+#: model_terms:ir.ui.view,arch_db:ss_workflow.view_ssw_task_return_wizard_form
+msgid "Return Task"
+msgstr "إرجاع المهمة"
+
+#. module: ss_workflow
+#: model_terms:ir.ui.view,arch_db:ss_workflow.view_ssw_task_return_to_wizard_form
+#: model:ir.model.fields,field_description:ss_workflow.field_ssw_proc_task_return_to_wizard__return_to_task_id
+msgid "Return to Task"
+msgstr "إرجاع إلى مهمة"
+
+#. module: ss_workflow
+#: model_terms:ir.ui.view,arch_db:ss_workflow.ssw_tickets_templates_inputs_form
+#: model_terms:ir.ui.view,arch_db:ss_workflow.ssw_templates_tasks_form
+#: model:ir.model.fields,field_description:ss_workflow.field_ssw_proc_templates_tasks__departments_can_view
+msgid "Departments can view"
+msgstr "الأقسام التي يمكنها العرض"
+
+#. module: ss_workflow
+#: model_terms:ir.ui.view,arch_db:ss_workflow.ssw_tickets_templates_inputs_form
+msgid "Departments can change"
+msgstr "الأقسام التي يمكنها التعديل"
+
+#. module: ss_workflow
+#: model_terms:ir.ui.view,arch_db:ss_workflow.ssw_templates_inputs_form
+#: model:ir.model.fields,field_description:ss_workflow.field_ssw_proc_templates_inputs__show_in_other_tasks
+#: model:ir.model.fields,field_description:ss_workflow.field_ssw_proc_tasks_inputs__show_in_other_tasks
+msgid "Show in other tasks"
+msgstr "إظهار في مهام أخرى"
+
+#. module: ss_workflow
+#: model_terms:ir.ui.view,arch_db:ss_workflow.ssw_tickets_form
+#: model_terms:ir.ui.view,arch_db:ss_workflow.ssw_tasks_form
+#: model_terms:ir.ui.view,arch_db:ss_workflow.ssw_procedures_form
+#: model:ir.model.fields,field_description:ss_workflow.field_ssw_tickets__inputs
+#: model:ir.model.fields,field_description:ss_workflow.field_ssw_tickets_templates__inputs
+#: model:ir.model.fields,field_description:ss_workflow.field_ssw_proc_tasks__inputs
+#: model:ir.model.fields,field_description:ss_workflow.field_ssw_proc_templates_tasks__inputs
+msgid "Inputs"
+msgstr "المدخلات"
+
+#. module: ss_workflow
+#: model_terms:ir.ui.view,arch_db:ss_workflow.ssw_tickets_form
+#: model_terms:ir.ui.view,arch_db:ss_workflow.ssw_tasks_form
+#: model_terms:ir.ui.view,arch_db:ss_workflow.ssw_procedures_form
+#: model_terms:ir.ui.view,arch_db:ss_workflow.ssw_tickets_form
+#: model_terms:ir.ui.view,arch_db:ss_workflow.ssw_tasks_form
+#: model_terms:ir.ui.view,arch_db:ss_workflow.ssw_procedures_form
+#: model:ir.model.fields,field_description:ss_workflow.field_ssw_tickets__users_can_view
+#: model:ir.model.fields,field_description:ss_workflow.field_ssw_procedures__users_can_view
+#: model:ir.model.fields,field_description:ss_workflow.field_ssw_proc_tasks__users_can_view
+msgid "Users can view"
+msgstr "المستخدمون الذين يمكنهم العرض"
+
+#. module: ss_workflow
+#: model_terms:ir.ui.view,arch_db:ss_workflow.ssw_tickets_form
+#: model_terms:ir.ui.view,arch_db:ss_workflow.ssw_tasks_form
+#: model_terms:ir.ui.view,arch_db:ss_workflow.ssw_procedures_form
+#: model:ir.model.fields,field_description:ss_workflow.field_ssw_tickets__users_can_view
+#: model:ir.model.fields,field_description:ss_workflow.field_ssw_procedures__users_can_view
+#: model:ir.model.fields,field_description:ss_workflow.field_ssw_proc_tasks__users_can_view
+msgid "Users can see"
+msgstr "المستخدمون الذين يمكنهم العرض"
+
+#. module: ss_workflow
+#: model_terms:ir.ui.view,arch_db:ss_workflow.ssw_tickets_form
+msgid "Ticket details"
+msgstr "تفاصيل التذكرة"
+
+#. module: ss_workflow
+#: model_terms:ir.ui.view,arch_db:ss_workflow.ssw_tickets_form
+#: model_terms:ir.ui.view,arch_db:ss_workflow.ssw_procedures_form
+msgid "Details"
+msgstr "التفاصيل"
+
+#. module: ss_workflow
+#: model_terms:ir.ui.view,arch_db:ss_workflow.ssw_tickets_form
+#: model:ir.model.fields,field_description:ss_workflow.field_ssw_tickets__share_message
+msgid "Message for customer"
+msgstr "رسالة للعميل"
+
+#. module: ss_workflow
+#: model_terms:ir.ui.view,arch_db:ss_workflow.ssw_tickets_form
+msgid "Enter a message the customer will see on the shared page..."
+msgstr "أدخل رسالة سيشاهدها العميل في الصفحة المشتركة..."
+
+#. module: ss_workflow
+#: model_terms:ir.ui.view,arch_db:ss_workflow.ssw_tickets_form
+#: model:ir.model.fields,field_description:ss_workflow.field_ssw_tickets__durations
+msgid "Durations"
+msgstr "المدد"
+
+#. module: ss_workflow
+#: model_terms:ir.ui.view,arch_db:ss_workflow.ssw_tickets_graph
+#: model_terms:ir.ui.view,arch_db:ss_workflow.ssw_tickets_pivot
+#: model_terms:ir.ui.view,arch_db:ss_workflow.ssw_procedures_graph
+#: model_terms:ir.ui.view,arch_db:ss_workflow.ssw_procedures_pivot
+#: model_terms:ir.ui.view,arch_db:ss_workflow.view_ss_workflow_tasks_graph
+#: model_terms:ir.ui.view,arch_db:ss_workflow.view_ss_workflow_tasks_pivot
+msgid "Sales Analysis"
+msgstr "تحليل البيانات"
+
+#. module: ss_workflow
+#: model_terms:ir.ui.view,arch_db:ss_workflow.ssw_procedures_form
+msgid "General"
+msgstr "عام"
+
+#. module: ss_workflow
+#: model_terms:ir.ui.view,arch_db:ss_workflow.ssw_procedures_form
+msgid "Timeline"
+msgstr "الجدول الزمني"
+
+#. module: ss_workflow
+#: model_terms:ir.ui.view,arch_db:ss_workflow.ssw_procedures_form
+#: model_terms:ir.ui.view,arch_db:ss_workflow.ssw_tasks_form
+#: model_terms:ir.ui.view,arch_db:ss_workflow.ssw_tickets_form
+#: model_terms:ir.ui.view,arch_db:ss_workflow.ticket_share_page
+#: model:ir.model.fields.selection,name:ss_workflow.selection__ssw_tickets__state__completed
+#: model:ir.model.fields.selection,name:ss_workflow.selection__ssw_procedures__state__completed
+#: model:ir.model.fields.selection,name:ss_workflow.selection__ssw_proc_tasks__state__completed
+#: model:ir.model.fields.selection,name:ss_workflow.selection__ssw_proc_tasks_read__state__completed
+msgid "Completed"
+msgstr "مكتمل"
+
+#. module: ss_workflow
+#: model_terms:ir.ui.view,arch_db:ss_workflow.ssw_procedures_form
+#: model_terms:ir.ui.view,arch_db:ss_workflow.ssw_tickets_form
+#: model_terms:ir.ui.view,arch_db:ss_workflow.ssw_tasks_form
+#: model_terms:ir.ui.view,arch_db:ss_workflow.ticket_share_page
+#: model:ir.model.fields.selection,name:ss_workflow.selection__ssw_tickets__state__closed
+msgid "Closed"
+msgstr "مغلق"
+
+#. module: ss_workflow
+#: model_terms:ir.ui.view,arch_db:ss_workflow.ssw_procedures_list
+#: model_terms:ir.ui.view,arch_db:ss_workflow.ssw_procedures_form
+#: model_terms:ir.ui.view,arch_db:ss_workflow.ssw_tasks_list
+msgid "SLA Passed (hrs)"
+msgstr "تجاوز SLA (ساعات)"
+
+#. module: ss_workflow
+#: model_terms:ir.ui.view,arch_db:ss_workflow.ssw_procedures_list
+#: model_terms:ir.ui.view,arch_db:ss_workflow.ssw_procedures_form
+#: model_terms:ir.ui.view,arch_db:ss_workflow.ssw_tasks_list
+msgid "Duration (hrs)"
+msgstr "المدة (ساعات)"
+
+#. module: ss_workflow
+#: model_terms:ir.ui.view,arch_db:ss_workflow.ssw_procedures_list
+#: model_terms:ir.ui.view,arch_db:ss_workflow.ssw_procedures_form
+#: model_terms:ir.ui.view,arch_db:ss_workflow.ssw_tasks_list
+msgid "SLA Limit (hrs)"
+msgstr "حد SLA (ساعات)"
+
+#. module: ss_workflow
+#: model_terms:ir.ui.view,arch_db:ss_workflow.ssw_procedures_form
+msgid "Resolve deadline has passed by"
+msgstr "تم تجاوز الموعد النهائي للمعالجة بمقدار"
+
+#. module: ss_workflow
+#: model_terms:ir.ui.view,arch_db:ss_workflow.ssw_procedures_form
+msgid "hours."
+msgstr "ساعة."
+
+#. module: ss_workflow
+#: model_terms:ir.ui.view,arch_db:ss_workflow.ssw_procedures_form
+#: model_terms:ir.ui.view,arch_db:ss_workflow.ssw_tasks_form
+#: model_terms:ir.ui.view,arch_db:ss_workflow.ssw_tickets_form
+#: model:ir.model.fields,field_description:ss_workflow.field_ssw_proc_tasks_read__task_id_num
+msgid "Task ID"
+msgstr "معرف المهمة"
+
+#. module: ss_workflow
+#: model_terms:ir.ui.view,arch_db:ss_workflow.ssw_procedures_form
+msgid "Procedure ID"
+msgstr "معرف الإجراء"
+
+#. module: ss_workflow
+#: model_terms:ir.ui.view,arch_db:ss_workflow.ssw_procedures_form
+msgid "Started at"
+msgstr "بدأ في"
+
+#. module: ss_workflow
+#: model_terms:ir.ui.view,arch_db:ss_workflow.ssw_tasks_form
+msgid "Task Informations"
+msgstr "معلومات المهام"
+
+#. module: ss_workflow
+#: model_terms:ir.ui.view,arch_db:ss_workflow.ssw_tasks_form
+msgid "Task Details"
+msgstr "تفاصيل المهمة"
+
+#. module: ss_workflow
+#: model_terms:ir.ui.view,arch_db:ss_workflow.ssw_tasks_form
+msgid "Procedure Title"
+msgstr "عنوان الإجراء"
+
+#. module: ss_workflow
+#: model_terms:ir.ui.view,arch_db:ss_workflow.ssw_tasks_form
+msgid "Returned with reason"
+msgstr "أُعيد مع السبب"
+
+#. module: ss_workflow
+#: model_terms:ir.ui.view,arch_db:ss_workflow.ssw_tasks_read_list
+msgid "Last change"
+msgstr "آخر تغيير"
+
+#. module: ss_workflow
+#: model_terms:ir.ui.view,arch_db:ss_workflow.res_config_settings_view_form_ticketing
+msgid "About"
+msgstr "حول"
+
+#. module: ss_workflow
+#: model_terms:ir.ui.view,arch_db:ss_workflow.res_config_settings_view_form_ticketing
+msgid "Version 0.2"
+msgstr "الإصدار 0.2"
+
+#. module: ss_workflow
+#: model_terms:ir.ui.view,arch_db:ss_workflow.res_config_settings_view_form_ticketing
+msgid "Spring Solution Workflow 2026"
+msgstr "سير عمل Spring Solution 2026"
+
+#. module: ss_workflow
+#: model_terms:ir.ui.view,arch_db:ss_workflow.dashboard
+msgid "Workflow Dashboard"
+msgstr "لوحة تحكم سير العمل"
+
+#. module: ss_workflow
+#: model_terms:ir.ui.view,arch_db:ss_workflow.dashboard
+msgid "Overview of pending tickets and tasks for your account"
+msgstr "نظرة عامة على التذاكر والمهام المعلقة لحسابك"
+
+#. module: ss_workflow
+#: model_terms:ir.ui.view,arch_db:ss_workflow.dashboard
+msgid "Tickets assigned"
+msgstr "التذاكر المعيّنة"
+
+#. module: ss_workflow
+#: model_terms:ir.ui.view,arch_db:ss_workflow.dashboard
+msgid "Tasks assigned"
+msgstr "المهام المعيّنة"
+
+#. module: ss_workflow
+#: model_terms:ir.ui.view,arch_db:ss_workflow.dashboard
+msgid "Submit Ticket"
+msgstr "إرسال تذكرة"
+
+#. module: ss_workflow
+#: model_terms:ir.ui.view,arch_db:ss_workflow.dashboard
+msgid "View all"
+msgstr "عرض الكل"
+
+#. module: ss_workflow
+#: model_terms:ir.ui.view,arch_db:ss_workflow.dashboard
+msgid "Pending Tickets"
+msgstr "التذاكر المعلقة"
+
+#. module: ss_workflow
+#: model_terms:ir.ui.view,arch_db:ss_workflow.dashboard
+#: model:ir.model.fields,field_description:ss_workflow.field_ssw_tickets_inputs__ticket_id
+#: model:ir.model.fields,field_description:ss_workflow.field_ssw_proc_templates_inputs__reference_model_name
+#: model:ir.model.fields.selection,name:ss_workflow.selection__ssw_tickets_templates_inputs__reference_model_name__res_partner
+msgid "Ticket"
+msgstr "تذكرة"
+
+#. module: ss_workflow
+#: model_terms:ir.ui.view,arch_db:ss_workflow.ssw_tickets_form
+msgid "Ticket ID"
+msgstr "معرف التذكرة"
+
+#. module: ss_workflow
+#: model_terms:ir.ui.view,arch_db:ss_workflow.dashboard
+#: model:ir.model.fields,field_description:ss_workflow.field_ssw_tickets__state
+#: model:ir.model.fields,field_description:ss_workflow.field_ssw_procedures__state
+#: model:ir.model.fields,field_description:ss_workflow.field_ssw_proc_tasks__state
+#: model:ir.model.fields,field_description:ss_workflow.field_ssw_proc_tasks_read__state
+msgid "Status"
+msgstr "الحالة"
+
+#. module: ss_workflow
+#: model_terms:ir.ui.view,arch_db:ss_workflow.dashboard
+msgid "Assigned"
+msgstr "مُعيّن"
+
+#. module: ss_workflow
+#: model_terms:ir.ui.view,arch_db:ss_workflow.dashboard
+msgid "Deadline"
+msgstr "الموعد النهائي"
+
+#. module: ss_workflow
+#: model_terms:ir.ui.view,arch_db:ss_workflow.dashboard
+msgid "No pending tickets right now."
+msgstr "لا توجد تذاكر معلقة حالياً."
+
+#. module: ss_workflow
+#: model_terms:ir.ui.view,arch_db:ss_workflow.dashboard
+msgid "Pending Tasks"
+msgstr "المهام المعلقة"
+
+#. module: ss_workflow
+#: model_terms:ir.ui.view,arch_db:ss_workflow.dashboard
+#: model_terms:ir.ui.view,arch_db:ss_workflow.ssw_tasks_form
+#: model:ir.model.fields,field_description:ss_workflow.field_ssw_proc_tasks__name
+#: model:ir.model.fields,field_description:ss_workflow.field_ssw_proc_tasks_read__task_id
+#: model:ir.model.fields,field_description:ss_workflow.field_ssw_proc_task_return_wizard__task_id
+#: model:ir.model.fields,field_description:ss_workflow.field_ssw_proc_task_return_to_wizard__task_id
+msgid "Task"
+msgstr "المهمة"
+
+#. module: ss_workflow
+#: model_terms:ir.ui.view,arch_db:ss_workflow.dashboard
+msgid "No pending tasks right now."
+msgstr "لا توجد مهام معلقة حالياً."
+
+#. module: ss_workflow
+#: model_terms:ir.ui.view,arch_db:ss_workflow.ticket_share_page
+msgid "Support"
+msgstr "الدعم"
+
+#. module: ss_workflow
+#: model_terms:ir.ui.view,arch_db:ss_workflow.ticket_share_page
+msgid "In Progress"
+msgstr "قيد التنفيذ"
+
+#. module: ss_workflow
+#: model_terms:ir.ui.view,arch_db:ss_workflow.ticket_share_page
+msgid "Message"
+msgstr "الرسالة"
+
+#. module: ss_workflow
+#: model_terms:ir.ui.view,arch_db:ss_workflow.ticket_share_page
+msgid "No message has been provided for this ticket."
+msgstr "لم يتم توفير أي رسالة لهذه التذكرة."
+
+#. module: ss_workflow
+#: model_terms:ir.ui.view,arch_db:ss_workflow.ticket_share_page
+msgid "Confidential — do not forward"
+msgstr "سري — يرجى عدم إعادة التوجيه"
+
+#. module: ss_workflow
+#: model:ir.model.fields,field_description:ss_workflow.field_ssw_users__name
+#: model:ir.model.fields,field_description:ss_workflow.field_ssw_groups__name
+#: model:ir.model.fields,field_description:ss_workflow.field_ssw_departments__name
+#: model:ir.model.fields,field_description:ss_workflow.field_ssw_tickets_templates__name
+#: model:ir.model.fields,field_description:ss_workflow.field_ssw_tickets_templates_inputs__name
+#: model:ir.model.fields,field_description:ss_workflow.field_ssw_tickets_templates_inputs_subs__name
+#: model:ir.model.fields,field_description:ss_workflow.field_ssw_tickets__name
+#: model:ir.model.fields,field_description:ss_workflow.field_ssw_tickets_inputs__name
+#: model:ir.model.fields,field_description:ss_workflow.field_ssw_tickets_inputs_subs__name
+#: model:ir.model.fields,field_description:ss_workflow.field_ssw_proc_templates__name
+#: model:ir.model.fields,field_description:ss_workflow.field_ssw_proc_templates_tasks__name
+#: model:ir.model.fields,field_description:ss_workflow.field_ssw_proc_templates_inputs__name
+#: model:ir.model.fields,field_description:ss_workflow.field_ssw_proc_templates_inputs_subs__name
+#: model:ir.model.fields,field_description:ss_workflow.field_ssw_procedures__name
+#: model:ir.model.fields,field_description:ss_workflow.field_ssw_proc_tasks__name
+#: model:ir.model.fields,field_description:ss_workflow.field_ssw_proc_tasks_inputs__name
+#: model:ir.model.fields,field_description:ss_workflow.field_ssw_proc_tasks_inputs_subs__name
+#: model:ir.model.fields,field_description:ss_workflow.field_ssw_proc_tasks_read__name
+#: model:ir.model.fields,field_description:ss_workflow.field_ssw_proc_start_wizard__title
+msgid "Title"
+msgstr "العنوان"
+
+#. module: ss_workflow
+#: model:ir.model.fields,field_description:ss_workflow.field_ssw_tickets_templates__description
+#: model:ir.model.fields,field_description:ss_workflow.field_ssw_tickets__description
+#: model:ir.model.fields,field_description:ss_workflow.field_ssw_proc_templates__description
+#: model:ir.model.fields,field_description:ss_workflow.field_ssw_proc_templates_tasks__description
+#: model:ir.model.fields,field_description:ss_workflow.field_ssw_procedures__description
+#: model:ir.model.fields,field_description:ss_workflow.field_ssw_proc_tasks__description
+#: model:ir.model.fields,field_description:ss_workflow.field_ssw_proc_tasks_read__description
+#: model:ir.model.fields,field_description:ss_workflow.field_ssw_proc_start_wizard__description
+msgid "Description"
+msgstr "الوصف"
+
+#. module: ss_workflow
+#: model:ir.model.fields,field_description:ss_workflow.field_ssw_users__user_id
+msgid "Linked User"
+msgstr "المستخدم المرتبط"
+
+#. module: ss_workflow
+#: model:ir.model.fields,field_description:ss_workflow.field_ssw_users__groups_can_see
+#: model:ir.model.fields,field_description:ss_workflow.field_ssw_tickets__users_can_view
+#: model:ir.model.fields,field_description:ss_workflow.field_ssw_procedures__users_can_view
+#: model:ir.model.fields,field_description:ss_workflow.field_ssw_proc_tasks__users_can_view
+msgid "Groups can see"
+msgstr "المجموعات التي يمكنها العرض"
+
+#. module: ss_workflow
+#: model:ir.model.fields,field_description:ss_workflow.field_ssw_users__departments_can_assign
+msgid "Departments Can Assign"
+msgstr "الأقسام التي يمكنها التعيين"
+
+#. module: ss_workflow
+#: model:ir.model.fields,field_description:ss_workflow.field_ssw_users__default_department
+msgid "Default Department"
+msgstr "القسم الافتراضي"
+
+#. module: ss_workflow
+#: model:ir.model.fields,field_description:ss_workflow.field_ssw_users__deleted
+#: model:ir.model.fields,field_description:ss_workflow.field_ssw_managers__deleted
+#: model:ir.model.fields,field_description:ss_workflow.field_ssw_groups__deleted
+#: model:ir.model.fields,field_description:ss_workflow.field_ssw_departments__deleted
+#: model:ir.model.fields,field_description:ss_workflow.field_ssw_tickets_templates__deleted
+#: model:ir.model.fields,field_description:ss_workflow.field_ssw_tickets_templates_inputs__deleted
+#: model:ir.model.fields,field_description:ss_workflow.field_ssw_tickets_templates_inputs_subs__deleted
+#: model:ir.model.fields,field_description:ss_workflow.field_ssw_tickets__deleted
+#: model:ir.model.fields,field_description:ss_workflow.field_ssw_tickets_inputs__deleted
+#: model:ir.model.fields,field_description:ss_workflow.field_ssw_tickets_inputs_subs__deleted
+#: model:ir.model.fields,field_description:ss_workflow.field_ssw_proc_templates__deleted
+#: model:ir.model.fields,field_description:ss_workflow.field_ssw_proc_templates_tasks__deleted
+#: model:ir.model.fields,field_description:ss_workflow.field_ssw_proc_templates_inputs__deleted
+#: model:ir.model.fields,field_description:ss_workflow.field_ssw_proc_templates_inputs_subs__deleted
+#: model:ir.model.fields,field_description:ss_workflow.field_ssw_procedures__deleted
+#: model:ir.model.fields,field_description:ss_workflow.field_ssw_proc_tasks__deleted
+#: model:ir.model.fields,field_description:ss_workflow.field_ssw_proc_tasks_inputs__deleted
+#: model:ir.model.fields,field_description:ss_workflow.field_ssw_proc_tasks_inputs_subs__deleted
+msgid "Is Deleted"
+msgstr "محذوف"
+
+#. module: ss_workflow
+#: model:ir.model.fields,field_description:ss_workflow.field_ssw_managers__user_id
+msgid "User"
+msgstr "المستخدم"
+
+#. module: ss_workflow
+#: model:ir.model.fields,field_description:ss_workflow.field_ssw_tickets_durations__department_id
+msgid "Department"
+msgstr "القسم"
+
+#. module: ss_workflow
+#: model:ir.model.fields,field_description:ss_workflow.field_ssw_managers__default_department
+msgid "Departments to manage"
+msgstr "الأقسام المراد إدارتها"
+
+#. module: ss_workflow
+#: model:ir.model.fields,field_description:ss_workflow.field_ssw_departments__department_id
+msgid "Department Id"
+msgstr "معرف القسم"
+
+#. module: ss_workflow
+#: model:ir.model.fields,field_description:ss_workflow.field_ssw_departments__company
+msgid "Company"
+msgstr "الشركة"
+
+#. module: ss_workflow
+#: model:ir.model.fields,field_description:ss_workflow.field_ssw_tickets_templates__default_group
+#: model:ir.model.fields,field_description:ss_workflow.field_ssw_proc_templates__default_group
+#: model:ir.model.fields,field_description:ss_workflow.field_ssw_proc_templates_tasks__default_group
+#: model:ir.model.fields,field_description:ss_workflow.field_ssw_proc_tasks__default_group
+msgid "Allowed group"
+msgstr "المجموعة المسموح لها"
+
+#. module: ss_workflow
+#: model:ir.model.fields,help:ss_workflow.field_ssw_proc_templates__default_group
+msgid "Only users of those groups can view"
+msgstr "يمكن فقط لمستخدمي تلك المجموعات العرض"
+
+#. module: ss_workflow
+#: model:ir.model.fields,help:ss_workflow.field_ssw_proc_templates_tasks__default_group
+#: model:ir.model.fields,help:ss_workflow.field_ssw_proc_tasks__default_group
+msgid "If set, only users of those groups can view"
+msgstr "إذا تم تعيينها، يمكن فقط لمستخدمي تلك المجموعات العرض"
+
+#. module: ss_workflow
+#: model:ir.model.fields,field_description:ss_workflow.field_ssw_tickets_templates__default_department
+#: model:ir.model.fields,field_description:ss_workflow.field_ssw_proc_templates_tasks__default_department
+msgid "Default department"
+msgstr "القسم الافتراضي"
+
+#. module: ss_workflow
+#: model:ir.model.fields,field_description:ss_workflow.field_ssw_tickets_templates__departments_can_create
+#: model:ir.model.fields,field_description:ss_workflow.field_ssw_proc_templates__departments_can_create
+msgid "Departments can create"
+msgstr "الأقسام التي يمكنها الإنشاء"
+
+#. module: ss_workflow
+#: model:ir.model.fields,field_description:ss_workflow.field_ssw_tickets_templates__contact_types_can_create
+msgid "Contact types can create"
+msgstr "أنواع جهات الاتصال التي يمكنها الإنشاء"
+
+#. module: ss_workflow
+#: model:ir.model.fields,field_description:ss_workflow.field_ssw_tickets_templates__resolve_max_duration
+#: model:ir.model.fields,field_description:ss_workflow.field_ssw_tickets__resolve_max_duration
+#: model:ir.model.fields,field_description:ss_workflow.field_ssw_proc_templates__resolve_max_duration
+#: model:ir.model.fields,field_description:ss_workflow.field_ssw_proc_templates_tasks__resolve_max_duration
+#: model:ir.model.fields,field_description:ss_workflow.field_ssw_procedures__resolve_max_duration
+#: model:ir.model.fields,field_description:ss_workflow.field_ssw_proc_tasks__resolve_max_duration
+msgid "SLA Duration hours"
+msgstr "مدة اتفاقية مستوى الخدمة بالساعات"
+
+#. module: ss_workflow
+#: model:ir.model.fields,field_description:ss_workflow.field_ssw_tickets_templates__visible_to_current_user
+#: model:ir.model.fields,field_description:ss_workflow.field_ssw_proc_templates__visible_to_current_user
+msgid "Is this template visible to current user"
+msgstr "هل هذا القالب ظاهر للمستخدم الحالي"
+
+#. module: ss_workflow
+#: model:ir.model.fields,field_description:ss_workflow.field_ssw_tickets_templates__is_contact_ticket_only
+#: model:ir.model.fields,field_description:ss_workflow.field_ssw_tickets__is_contact_ticket_only
+msgid "Is Contact Ticket Only"
+msgstr "خاصة بتذاكر جهات الاتصال فقط"
+
+#. module: ss_workflow
+#: model:ir.model.fields,field_description:ss_workflow.field_ssw_tickets_templates__enabled
+#: model:ir.model.fields,field_description:ss_workflow.field_ssw_proc_templates__enabled
+#: model:ir.model.fields,field_description:ss_workflow.field_ssw_proc_templates_tasks__enabled
+msgid "Is Enabled"
+msgstr "مفعل"
+
+#. module: ss_workflow
+#: model:ir.model.fields,field_description:ss_workflow.field_ssw_tickets_templates_inputs__template_id
+#: model:ir.model.fields,field_description:ss_workflow.field_ssw_proc_templates_tasks__template_id
+#: model:ir.model.fields,field_description:ss_workflow.field_ssw_proc_templates_inputs__template_id
+#: model:ir.model.fields,field_description:ss_workflow.field_ssw_proc_start_wizard__template_id
+msgid "Template"
+msgstr "القالب"
+
+#. module: ss_workflow
+#: model:ir.model.fields,field_description:ss_workflow.field_ssw_tickets_templates_inputs__type
+#: model:ir.model.fields,field_description:ss_workflow.field_ssw_tickets_inputs__type
+#: model:ir.model.fields,field_description:ss_workflow.field_ssw_proc_templates_inputs__type
+#: model:ir.model.fields,field_description:ss_workflow.field_ssw_proc_tasks_inputs__type
+msgid "Type"
+msgstr "النوع"
+
+#. module: ss_workflow
+#: model:ir.model.fields,field_description:ss_workflow.field_ssw_tickets_templates_inputs__reference_model_name
+#: model:ir.model.fields,field_description:ss_workflow.field_ssw_proc_templates_inputs__reference_model_name
+msgid "Reference Model Name"
+msgstr "اسم النموذج المرجعي"
+
+#. module: ss_workflow
+#: model:ir.model.fields,field_description:ss_workflow.field_ssw_tickets_templates_inputs__inputs_sub
+#: model:ir.model.fields,field_description:ss_workflow.field_ssw_proc_templates_inputs__inputs_sub
+msgid "Subs"
+msgstr "الخيارات الفرعية"
+
+#. module: ss_workflow
+#: model:ir.model.fields,field_description:ss_workflow.field_ssw_tickets_templates_inputs__departments_can_view
+#: model:ir.model.fields,field_description:ss_workflow.field_ssw_tickets_inputs__departments_can_view
+msgid "Allowed departments view"
+msgstr "الأقسام المسموح لها بالعرض"
+
+#. module: ss_workflow
+#: model:ir.model.fields,field_description:ss_workflow.field_ssw_tickets_templates_inputs__departments_can_change
+#: model:ir.model.fields,field_description:ss_workflow.field_ssw_tickets_inputs__departments_can_change
+msgid "Allowed departments change"
+msgstr "الأقسام المسموح لها بالتعديل"
+
+#. module: ss_workflow
+#: model:ir.model.fields,field_description:ss_workflow.field_ssw_tickets_templates_inputs_subs__input_id
+#: model:ir.model.fields,field_description:ss_workflow.field_ssw_proc_templates_inputs_subs__input_id
+msgid "Template Input"
+msgstr "مدخل القالب"
+
+#. module: ss_workflow
+#: model:ir.model.fields,field_description:ss_workflow.field_ssw_tickets__priority
+msgid "Priority"
+msgstr "الأولوية"
+
+#. module: ss_workflow
+#: model:ir.model.fields,field_description:ss_workflow.field_ssw_tickets__template_id
+msgid "Ticket Template"
+msgstr "قالب التذكرة"
+
+#. module: ss_workflow
+#: model:ir.model.fields,field_description:ss_workflow.field_ssw_tickets__created_by
+#: model:ir.model.fields,field_description:ss_workflow.field_ssw_procedures__created_by
+#: model:ir.model.fields,field_description:ss_workflow.field_ssw_proc_tasks__created_by
+msgid "Created by"
+msgstr "أنشأه"
+
+#. module: ss_workflow
+#: model:ir.model.fields,field_description:ss_workflow.field_ssw_tickets__assigned_to_user
+#: model:ir.model.fields,field_description:ss_workflow.field_ssw_procedures__assigned_to_user
+#: model:ir.model.fields,field_description:ss_workflow.field_ssw_proc_tasks__assigned_to_user
+#: model:ir.model.fields,field_description:ss_workflow.field_ssw_proc_tasks_read__assigned_to_user
+msgid "Assigned User"
+msgstr "المستخدم المعيّن"
+
+#. module: ss_workflow
+#: model:ir.model.fields,field_description:ss_workflow.field_ssw_tickets__assigned_to_dep
+#: model:ir.model.fields,field_description:ss_workflow.field_ssw_proc_tasks__assigned_to_dep
+#: model:ir.model.fields,field_description:ss_workflow.field_ssw_proc_tasks_read__assigned_to_dep
+msgid "Assigned Department"
+msgstr "القسم المعيّن"
+
+#. module: ss_workflow
+#: model:ir.model.fields,field_description:ss_workflow.field_ssw_tickets__durations
+msgid "Resolve Durations"
+msgstr "مدد المعالجة"
+
+#. module: ss_workflow
+#: model:ir.model.fields,field_description:ss_workflow.field_ssw_tickets__resolve_deadline
+#: model:ir.model.fields,field_description:ss_workflow.field_ssw_procedures__resolve_deadline
+#: model:ir.model.fields,field_description:ss_workflow.field_ssw_proc_tasks__resolve_deadline
+#: model:ir.model.fields,field_description:ss_workflow.field_ssw_proc_tasks_read__resolve_deadline
+msgid "Resolve deadline"
+msgstr "الموعد النهائي للمعالجة"
+
+#. module: ss_workflow
+#: model:ir.model.fields,field_description:ss_workflow.field_ssw_tickets__resolve_duration
+#: model:ir.model.fields,field_description:ss_workflow.field_ssw_procedures__resolve_duration
+#: model:ir.model.fields,field_description:ss_workflow.field_ssw_proc_tasks__resolve_duration
+#: model:ir.model.fields,field_description:ss_workflow.field_ssw_proc_tasks_read__resolve_duration
+#: model:ir.model.fields,field_description:ss_workflow.field_ssw_tickets_durations__duration
+msgid "Resolve duration"
+msgstr "مدة المعالجة"
+
+#. module: ss_workflow
+#: model:ir.model.fields,field_description:ss_workflow.field_ssw_tickets_durations__duration
+msgid "Resolve duration (hours)"
+msgstr "مدة المعالجة (بالساعات)"
+
+#. module: ss_workflow
+#: model:ir.model.fields,field_description:ss_workflow.field_ssw_tickets__resolve_deadline_passed
+#: model:ir.model.fields,field_description:ss_workflow.field_ssw_procedures__resolve_deadline_passed
+#: model:ir.model.fields,field_description:ss_workflow.field_ssw_proc_tasks__resolve_deadline_passed
+#: model:ir.model.fields,field_description:ss_workflow.field_ssw_proc_tasks_read__resolve_deadline_passed
+msgid "SLA Passed"
+msgstr "تجاوز اتفاقية مستوى الخدمة"
+
+#. module: ss_workflow
+#: model:ir.model.fields,help:ss_workflow.field_ssw_tickets__resolve_deadline_passed
+#: model:ir.model.fields,help:ss_workflow.field_ssw_procedures__resolve_deadline_passed
+#: model:ir.model.fields,help:ss_workflow.field_ssw_proc_tasks__resolve_deadline_passed
+#: model:ir.model.fields,help:ss_workflow.field_ssw_proc_tasks_read__resolve_deadline_passed
+msgid "How many hours it passed the SLA"
+msgstr "عدد الساعات التي تجاوزت اتفاقية مستوى الخدمة"
+
+#. module: ss_workflow
+#: model:ir.model.fields,field_description:ss_workflow.field_ssw_tickets__assigned_to_me
+msgid "Is assigned to me"
+msgstr "مُعيّنة لي"
+
+#. module: ss_workflow
+#: model:ir.model.fields,field_description:ss_workflow.field_ssw_tickets__optional_partner_id
+#: model:ir.model.fields,field_description:ss_workflow.field_ssw_procedures__optional_partner_id
+#: model:ir.model.fields,field_description:ss_workflow.field_ssw_proc_tasks__optional_partner_id
+msgid "Associated contact"
+msgstr "جهة الاتصال المرتبطة"
+
+#. module: ss_workflow
+#: model:ir.model.fields,field_description:ss_workflow.field_ssw_tickets__optional_user_id
+#: model:ir.model.fields,field_description:ss_workflow.field_ssw_procedures__optional_user_id
+#: model:ir.model.fields,field_description:ss_workflow.field_ssw_proc_tasks__optional_user_id
+msgid "Associated user"
+msgstr "المستخدم المرتبط"
+
+#. module: ss_workflow
+#: model:ir.model.fields,field_description:ss_workflow.field_ssw_tickets__optional_procedure_id
+#: model:ir.model.fields,field_description:ss_workflow.field_ssw_proc_tasks__optional_procedure_id
+msgid "Parent Procedure"
+msgstr "الإجراء الأب"
+
+#. module: ss_workflow
+#: model:ir.model.fields,field_description:ss_workflow.field_ssw_tickets__optional_ticket_id
+#: model:ir.model.fields,field_description:ss_workflow.field_ssw_proc_tasks__optional_ticket_id
+#: model:ir.model.fields,field_description:ss_workflow.field_ssw_procedures__optional_ticket_id
+msgid "Parent ticket"
+msgstr "التذكرة الأب"
+
+#. module: ss_workflow
+#: model:ir.model.fields,field_description:ss_workflow.field_ssw_tickets__optional_task_id
+#: model:ir.model.fields,field_description:ss_workflow.field_ssw_procedures__optional_task_id
+msgid "Parent task"
+msgstr "المهمة الأب"
+
+#. module: ss_workflow
+#: model:ir.model.fields,field_description:ss_workflow.field_ssw_tickets__ssw_ticket_count
+#: model:ir.model.fields,field_description:ss_workflow.field_ssw_procedures__ssw_ticket_count
+#: model:ir.model.fields,field_description:ss_workflow.field_ssw_proc_tasks__ssw_ticket_count
+#: model:ir.model.fields,field_description:ss_workflow.field_res_partner__ssw_ticket_count
+#: model:ir.model.fields,field_description:ss_workflow.field_res_users__ssw_ticket_count
+msgid "Tickets count"
+msgstr "عدد التذاكر"
+
+#. module: ss_workflow
+#: model:ir.model.fields,field_description:ss_workflow.field_ssw_tickets__share_enabled
+msgid "Sharing Enabled"
+msgstr "المشاركة مفعلة"
+
+#. module: ss_workflow
+#: model:ir.model.fields,field_description:ss_workflow.field_ssw_tickets__share_token
+msgid "Share Token"
+msgstr "رمز المشاركة"
+
+#. module: ss_workflow
+#: model:ir.model.fields,field_description:ss_workflow.field_ssw_tickets__share_message
+msgid "Share Message"
+msgstr "رسالة المشاركة"
+
+#. module: ss_workflow
+#: model:ir.model.fields,field_description:ss_workflow.field_ssw_tickets__share_url
+msgid "Share URL"
+msgstr "رابط المشاركة"
+
+#. module: ss_workflow
+#: model:ir.model.fields,field_description:ss_workflow.field_ssw_tickets_inputs__result_value
+#: model:ir.model.fields,field_description:ss_workflow.field_ssw_proc_tasks_inputs__result_value
+#: model_terms:ir.ui.view,arch_db:ss_workflow.ssw_tickets_inputs_form
+#: model_terms:ir.ui.view,arch_db:ss_workflow.ssw_tasks_inputs_form
+msgid "Value"
+msgstr "القيمة"
+
+#. module: ss_workflow
+#: model:ir.model.fields,field_description:ss_workflow.field_ssw_tickets_inputs__value_date
+#: model:ir.model.fields,field_description:ss_workflow.field_ssw_tickets_inputs__value_datetime
+#: model:ir.model.fields,field_description:ss_workflow.field_ssw_proc_tasks_inputs__value_date
+#: model:ir.model.fields,field_description:ss_workflow.field_ssw_proc_tasks_inputs__value_datetime
+msgid "Date"
+msgstr "التاريخ"
+
+#. module: ss_workflow
+#: model:ir.model.fields,field_description:ss_workflow.field_ssw_tickets_inputs__value_image
+#: model:ir.model.fields,field_description:ss_workflow.field_ssw_proc_tasks_inputs__value_image
+#: model:ir.model.fields.selection,name:ss_workflow.selection__ssw_tickets_templates_inputs__type__image
+#: model:ir.model.fields.selection,name:ss_workflow.selection__ssw_proc_templates_inputs__type__image
+msgid "Image"
+msgstr "صورة"
+
+#. module: ss_workflow
+#: model:ir.model.fields,field_description:ss_workflow.field_ssw_tickets_inputs__value_select
+#: model:ir.model.fields,field_description:ss_workflow.field_ssw_proc_tasks_inputs__value_select
+#: model:ir.model.fields.selection,name:ss_workflow.selection__ssw_tickets_templates_inputs__type__select
+#: model:ir.model.fields.selection,name:ss_workflow.selection__ssw_proc_templates_inputs__type__select
+msgid "Select"
+msgstr "اختيار"
+
+#. module: ss_workflow
+#: model:ir.model.fields,field_description:ss_workflow.field_ssw_tickets_inputs__reference_model_name
+#: model:ir.model.fields,field_description:ss_workflow.field_ssw_proc_tasks_inputs__reference_model_name
+msgid "Reference Model"
+msgstr "النموذج المرجعي"
+
+#. module: ss_workflow
+#: model:ir.model.fields,field_description:ss_workflow.field_ssw_tickets_inputs__value_model_id
+#: model:ir.model.fields,field_description:ss_workflow.field_ssw_proc_tasks_inputs__value_model_id
+msgid "Record"
+msgstr "السجل"
+
+#. module: ss_workflow
+#: model:ir.model.fields,field_description:ss_workflow.field_ssw_tickets_inputs_subs__input_id
+msgid "Ticket Input"
+msgstr "مدخل التذكرة"
+
+#. module: ss_workflow
+#: model:ir.model.fields,field_description:ss_workflow.field_ssw_proc_templates__creator_see_tasks
+msgid "Allow creator to access tasks"
+msgstr "السماح للمنشئ بالوصول إلى المهام"
+
+#. module: ss_workflow
+#: model:ir.model.fields,help:ss_workflow.field_ssw_proc_templates__creator_see_tasks
+msgid "When enabled the creator will be able to all tasks of the procedure"
+msgstr "عند التفعيل سيتمكن المنشئ من الوصول إلى جميع مهام الإجراء"
+
+#. module: ss_workflow
+#: model:ir.model.fields,field_description:ss_workflow.field_ssw_procedures__template_id
+msgid "Procedure Template"
+msgstr "قالب الإجراء"
+
+#. module: ss_workflow
+#: model:ir.model.fields,field_description:ss_workflow.field_ssw_procedures__optional_procedure_id
+msgid "Parent procedure"
+msgstr "الإجراء الأب"
+
+#. module: ss_workflow
+#: model:ir.model.fields,field_description:ss_workflow.field_ssw_procedures__ssw_procedure_count
+msgid "Procedures count"
+msgstr "عدد الإجراءات"
+
+#. module: ss_workflow
+#: model:ir.model.fields,field_description:ss_workflow.field_ssw_proc_templates_tasks__task_sequance
+#: model:ir.model.fields,field_description:ss_workflow.field_ssw_proc_tasks__task_sequance
+#: model:ir.model.fields,field_description:ss_workflow.field_ssw_proc_tasks_read__task_sequance
+msgid "Task Sequance"
+msgstr "تسلسل المهمة"
+
+#. module: ss_workflow
+#: model:ir.model.fields,field_description:ss_workflow.field_ssw_proc_tasks__procedure_id
+#: model:ir.model.fields,field_description:ss_workflow.field_ssw_proc_tasks_read__procedure_id
+#: model_terms:ir.ui.view,arch_db:ss_workflow.ssw_tasks_list
+msgid "Procedure"
+msgstr "الإجراء"
+
+#. module: ss_workflow
+#: model:ir.model.fields,field_description:ss_workflow.field_ssw_proc_tasks__task_id
+msgid "Task Template"
+msgstr "قالب المهمة"
+
+#. module: ss_workflow
+#: model:ir.model.fields,field_description:ss_workflow.field_ssw_proc_tasks__task_read_id
+msgid "Read"
+msgstr "قراءة"
+
+#. module: ss_workflow
+#: model:ir.actions.act_window,name:ss_workflow.procedures_action_templates
+msgid "Templates"
+msgstr "القوالب"
+
+#. module: ss_workflow
+#: model:ir.model.fields,field_description:ss_workflow.field_ssw_proc_tasks__unlock_datetime
+msgid "Unlock Date"
+msgstr "تاريخ الإتاحة"
+
+#. module: ss_workflow
+#: model:ir.model.fields,field_description:ss_workflow.field_ssw_proc_templates_tasks__is_approve_only
+#: model:ir.model.fields,field_description:ss_workflow.field_ssw_proc_tasks__is_approve_only
+msgid "Is Approve task Only"
+msgstr "مهمة للموافقة فقط"
+
+#. module: ss_workflow
+#: model:ir.model.fields,field_description:ss_workflow.field_ssw_proc_tasks__other_tasks_inputs
+msgid "Other tasks inputs"
+msgstr "مدخلات المهام الأخرى"
+
+#. module: ss_workflow
+#: model:ir.model.fields,field_description:ss_workflow.field_ssw_proc_tasks__return_reason
+#: model:ir.model.fields,field_description:ss_workflow.field_ssw_proc_task_return_wizard__reason
+#: model:ir.model.fields,field_description:ss_workflow.field_ssw_proc_task_return_to_wizard__reason
+msgid "Return Reason"
+msgstr "سبب الإرجاع"
+
+#. module: ss_workflow
+#: model:ir.model.fields,field_description:ss_workflow.field_ssw_proc_tasks_inputs__task_id
+msgid "task"
+msgstr "المهمة"
+
+#. module: ss_workflow
+#: model:ir.model.fields,field_description:ss_workflow.field_ssw_proc_tasks_inputs__input_template_id
+msgid "Input template id"
+msgstr "معرف قالب الإدخال"
+
+#. module: ss_workflow
+#: model:ir.model.fields,field_description:ss_workflow.field_ssw_proc_templates_inputs__is_required
+#: model:ir.model.fields,field_description:ss_workflow.field_ssw_proc_tasks_inputs__is_required
+msgid "Is Required"
+msgstr "مطلوب"
+
+#. module: ss_workflow
+#: model:ir.model.fields,field_description:ss_workflow.field_ssw_proc_templates_inputs__computed_template_id
+#: model:ir.model.fields,field_description:ss_workflow.field_ssw_proc_templates_inputs__computed_parent_template_id
+msgid "Computed Task id"
+msgstr "معرف المهمة المحتسب"
+
+#. module: ss_workflow
+#: model:ir.model.fields,field_description:ss_workflow.field_ssw_proc_tasks_inputs_subs__input_id
+msgid "task Input"
+msgstr "مدخل المهمة"
+
+#. module: ss_workflow
+#: model:ir.model.fields,field_description:ss_workflow.field_ssw_proc_tasks_read__can_see_task
+msgid "Can see task"
+msgstr "يمكنه رؤية المهمة"
+
+#. module: ss_workflow
+#: model:ir.model.fields,field_description:ss_workflow.field_ssw_proc_tasks_read__available_at
+msgid "Available at"
+msgstr "متاح في"
+
+#. module: ss_workflow
+#: model:ir.model.fields,help:ss_workflow.field_ssw_proc_tasks_read__resolve_duration
+msgid "How many hours it took to resolve"
+msgstr "عدد الساعات التي استغرقها الحل"
+
+#. module: ss_workflow
+#: model:ir.model.fields,field_description:ss_workflow.field_res_partner__ssw_task_count
+#: model:ir.model.fields,field_description:ss_workflow.field_res_users__ssw_task_count
+msgid "tasks count"
+msgstr "عدد الإجراءات"
+
+#. module: ss_workflow
+#: model:ir.model.fields,field_description:ss_workflow.field_res_partner__ssw_task_ids
+#: model:ir.model.fields,field_description:ss_workflow.field_res_users__ssw_task_ids
+msgid "tasks"
+msgstr "الإجراءات"
+
+#. module: ss_workflow
+#: model_terms:ir.ui.view,arch_db:ss_workflow.view_partner_form
+#: model_terms:ir.ui.view,arch_db:ss_workflow.view_user_form
+msgid "procedures"
+msgstr "الإجراءات"
+
+#. module: ss_workflow
+#: model:ir.model.fields.selection,name:ss_workflow.selection__ssw_tickets__state__draft
+#: model:ir.model.fields.selection,name:ss_workflow.selection__ssw_proc_tasks__state__draft
+#: model:ir.model.fields.selection,name:ss_workflow.selection__ssw_proc_tasks_read__state__draft
+#: model_terms:ir.ui.view,arch_db:ss_workflow.ticket_share_page
+msgid "Draft"
+msgstr "مسودة"
+
+#. module: ss_workflow
+#: model:ir.model.fields.selection,name:ss_workflow.selection__ssw_procedures__state__closed
+msgid "Canceled"
+msgstr "ملغى"
+
+#. module: ss_workflow
+#: model:ir.model.fields.selection,name:ss_workflow.selection__ssw_procedures__state__pending
+msgid "Ongoing"
+msgstr "جارٍ"
+
+#. module: ss_workflow
+#: model:ir.model.fields.selection,name:ss_workflow.selection__ssw_proc_tasks__state__rejected
+#: model:ir.model.fields.selection,name:ss_workflow.selection__ssw_proc_tasks_read__state__rejected
+msgid "Rejected"
+msgstr "مرفوض"
+
+#. module: ss_workflow
+#: model:ir.model.fields.selection,name:ss_workflow.selection__ssw_tickets_templates_inputs__type__char
+#: model:ir.model.fields.selection,name:ss_workflow.selection__ssw_proc_templates_inputs__type__char
+msgid "Char"
+msgstr "نص"
+
+#. module: ss_workflow
+#: model:ir.model.fields.selection,name:ss_workflow.selection__ssw_tickets_templates_inputs__type__int
+#: model:ir.model.fields.selection,name:ss_workflow.selection__ssw_proc_templates_inputs__type__int
+msgid "Integer"
+msgstr "عدد صحيح"
+
+#. module: ss_workflow
+#: model:ir.model.fields.selection,name:ss_workflow.selection__ssw_tickets_templates_inputs__type__datetime
+#: model:ir.model.fields.selection,name:ss_workflow.selection__ssw_proc_templates_inputs__type__datetime
+msgid "Datetime"
+msgstr "تاريخ ووقت"
+
+#. module: ss_workflow
+#: model:ir.model.fields.selection,name:ss_workflow.selection__ssw_tickets_templates_inputs__type__boolean
+#: model:ir.model.fields.selection,name:ss_workflow.selection__ssw_proc_templates_inputs__type__boolean
+msgid "Boolean"
+msgstr "منطقي"
+
+#. module: ss_workflow
+#: model:ir.model.fields.selection,name:ss_workflow.selection__ssw_tickets_templates_inputs__type__model
+#: model:ir.model.fields.selection,name:ss_workflow.selection__ssw_proc_templates_inputs__type__model
+msgid "Other"
+msgstr "أخرى"
+
+#. module: ss_workflow
+#: model:ir.model.fields.selection,name:ss_workflow.selection__ssw_tickets_templates_inputs__type__label
+#: model:ir.model.fields.selection,name:ss_workflow.selection__ssw_proc_templates_inputs__type__label
+msgid "Label"
+msgstr "تسمية"
+
+#. module: ss_workflow
+#: model:ir.model.fields.selection,name:ss_workflow.selection__ssw_tickets_templates_inputs__reference_model_name__res_partner
+#: model:ir.model.fields.selection,name:ss_workflow.selection__ssw_proc_templates_inputs__reference_model_name__res_partner
+msgid "Contact"
+msgstr "جهة اتصال"
+
+#. module: ss_workflow
+#: model:ir.model.fields.selection,name:ss_workflow.selection__ssw_tickets_templates_inputs__reference_model_name__hr_employee
+#: model:ir.model.fields.selection,name:ss_workflow.selection__ssw_proc_templates_inputs__reference_model_name__hr_employee
+msgid "Employee"
+msgstr "موظف"
+
+#. module: ss_workflow
+#: model:ir.model.fields.selection,name:ss_workflow.selection__ssw_tickets_templates_inputs__reference_model_name__jtfttha_agents
+#: model:ir.model.fields.selection,name:ss_workflow.selection__ssw_proc_templates_inputs__reference_model_name__jtfttha_agents
+msgid "FTTH agent"
+msgstr "وكيل FTTH"
+
+#. module: ss_workflow
+#: model:ir.model.fields.selection,name:ss_workflow.selection__ssw_tickets_templates_inputs__reference_model_name__jtfttha_infra_region
+#: model:ir.model.fields.selection,name:ss_workflow.selection__ssw_proc_templates_inputs__reference_model_name__jtfttha_infra_region
+msgid "FTTH region"
+msgstr "منطقة FTTH"
+
+#. module: ss_workflow
+#: model:ir.model.fields.selection,name:ss_workflow.selection__ssw_tickets_templates_inputs__reference_model_name__jtfttha_infra_project
+#: model:ir.model.fields.selection,name:ss_workflow.selection__ssw_proc_templates_inputs__reference_model_name__jtfttha_infra_project
+msgid "FTTH project"
+msgstr "مشروع FTTH"
+
+#. module: ss_workflow
+#: model:ir.model.fields.selection,name:ss_workflow.selection__ssw_tickets_templates_inputs__reference_model_name__jtfttha_infra_exchange
+#: model:ir.model.fields.selection,name:ss_workflow.selection__ssw_proc_templates_inputs__reference_model_name__jtfttha_infra_exchange
+msgid "FTTH exchange"
+msgstr "مقسم FTTH"
+
+#. module: ss_workflow
+#: model:ir.model.fields.selection,name:ss_workflow.selection__ssw_tickets_templates_inputs__reference_model_name__jtfttha_infra_ring
+#: model:ir.model.fields.selection,name:ss_workflow.selection__ssw_proc_templates_inputs__reference_model_name__jtfttha_infra_ring
+msgid "FTTH ring"
+msgstr "حلقة FTTH"
+
+#. module: ss_workflow
+#: model:ir.model.fields.selection,name:ss_workflow.selection__ssw_tickets_templates_inputs__reference_model_name__jtfttha_infra_fdt
+#: model:ir.model.fields.selection,name:ss_workflow.selection__ssw_proc_templates_inputs__reference_model_name__jtfttha_infra_fdt
+msgid "FTTH FDT"
+msgstr "FTTH FDT"
+
+#. module: ss_workflow
+#: model:ir.model.fields.selection,name:ss_workflow.selection__ssw_tickets_templates_inputs__reference_model_name__jtfttha_infra_olt
+#: model:ir.model.fields.selection,name:ss_workflow.selection__ssw_proc_templates_inputs__reference_model_name__jtfttha_infra_olt
+msgid "FTTH OLT"
+msgstr "FTTH OLT"
+
+#. module: ss_workflow
+#: model:ir.model.fields.selection,name:ss_workflow.selection__ssw_tickets_templates_inputs__reference_model_name__jtfttha_infra_port
+#: model:ir.model.fields.selection,name:ss_workflow.selection__ssw_proc_templates_inputs__reference_model_name__jtfttha_infra_port
+msgid "FTTH Port"
+msgstr "منفذ FTTH"
+
+#. module: ss_workflow
+#: model:ir.model.fields.selection,name:ss_workflow.selection__ssw_tickets_templates_inputs__reference_model_name__jtwirelessa_agents
+#: model:ir.model.fields.selection,name:ss_workflow.selection__ssw_proc_templates_inputs__reference_model_name__jtwirelessa_agents
+msgid "Wireless agent"
+msgstr "وكيل لاسلكي"
+
+#. module: ss_workflow
+#: model:ir.model.fields.selection,name:ss_workflow.selection__ssw_tickets_templates_inputs__reference_model_name__jtwirelessa_repeaters
+#: model:ir.model.fields.selection,name:ss_workflow.selection__ssw_proc_templates_inputs__reference_model_name__jtwirelessa_repeaters
+msgid "Wireless repeater/node"
+msgstr "مكرر/عقدة لاسلكية"
+
+#. module: ss_workflow
+#: model:ir.model.fields.selection,name:ss_workflow.selection__ssw_tickets_templates_inputs__reference_model_name__jtwirelessa_repeaters_vlans
+#: model:ir.model.fields.selection,name:ss_workflow.selection__ssw_proc_templates_inputs__reference_model_name__jtwirelessa_repeaters_vlans
+msgid "Wireless vlan"
+msgstr "VLAN لاسلكية"
+
+#. module: ss_workflow
+#: model:ir.model.fields.selection,name:ss_workflow.selection__ssw_tickets_templates_inputs__reference_model_name__jtwirelessa_repeaters_switches
+#: model:ir.model.fields.selection,name:ss_workflow.selection__ssw_proc_templates_inputs__reference_model_name__jtwirelessa_repeaters_switches
+msgid "Wireless switch"
+msgstr "مبدّل لاسلكي"
+
+#. module: ss_workflow
+#: model:ir.model.fields.selection,name:ss_workflow.selection__ssw_tickets_templates_inputs__reference_model_name__jtwirelessa_repeaters_ports
+#: model:ir.model.fields.selection,name:ss_workflow.selection__ssw_proc_templates_inputs__reference_model_name__jtwirelessa_repeaters_ports
+msgid "Wireless port"
+msgstr "منفذ لاسلكي"
+
+#. module: ss_workflow
+#: model:ir.model.fields.selection,name:ss_workflow.selection__ssw_tickets_templates_inputs__reference_model_name__ssd_document
+#: model:ir.model.fields.selection,name:ss_workflow.selection__ssw_proc_templates_inputs__reference_model_name__ssd_document
+msgid "Document"
+msgstr "مستند"

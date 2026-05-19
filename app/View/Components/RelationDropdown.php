@@ -66,6 +66,7 @@ class RelationDropdown extends Component
         public int $limit = 8,
         public bool $compact = false,
         public ?string $event = null,
+        ?string $lookupUrlOverride = null,
     ) {
         $config = config("relation_dropdowns.{$this->table}");
         $user = auth()->user();
@@ -93,39 +94,61 @@ class RelationDropdown extends Component
         $this->canCreate = $user->hasPermission($config['create_permission'] ?? $config['write']);
         $this->searchMoreUrl = !empty($config['route']) && Route::has($config['route']) ? route($config['route']) : null;
         $this->createUrl = !empty($config['create']) && Route::has($config['create']) ? route($config['create']) : null;
-        $this->lookupUrl = route('relation-dropdown.lookup', ['table' => $this->table]);
+        $this->lookupUrl = $lookupUrlOverride ?? route('relation-dropdown.lookup', ['table' => $this->table]);
         $this->colorField = $config['color'];
 
         if (!$this->canRead) {
             return;
         }
 
-        $columns = ['id', $this->field];
-        if ($this->colorField) {
-            $columns[] = $this->colorField;
-        }
-
         $this->selectedOptions = empty($this->selectedValues)
             ? []
-            : DB::table($this->table)
-            ->select($columns)
-            ->whereIn('id', $this->selectedValues)
+            : $this->selectedQuery($config)
+            ->whereIn($this->qualifiedValueColumn($config), $this->selectedValues)
             ->when(Schema::hasColumn($this->table, 'company_id'), function ($query) {
                 $activeCompanyIds = app(CompanyContextService::class)->getActiveCompanyIds();
 
                 empty($activeCompanyIds)
                     ? $query->whereRaw('1 = 0')
-                    : $query->whereIn('company_id', $activeCompanyIds);
+                    : $query->whereIn($this->table . '.company_id', $activeCompanyIds);
             })
-            ->orderBy($this->field)
+            ->orderBy('label')
             ->get()
             ->map(fn ($row) => [
                 'id' => $row->id,
-                'label' => (string) $row->{$this->field},
+                'label' => (string) $row->label,
                 'color' => $this->colorField ? ($row->{$this->colorField} ?? null) : null,
             ])
             ->values()
             ->all();
+    }
+
+    private function qualifiedValueColumn(array $config): string
+    {
+        return $this->table . '.' . ($config['value_column'] ?? 'id');
+    }
+
+    private function selectedQuery(array $config)
+    {
+        $valueColumn = $this->qualifiedValueColumn($config);
+        $labelJoin = $config['label_join'] ?? null;
+        $colorColumn = $this->colorField ? $this->table . '.' . $this->colorField : null;
+
+        $query = DB::table($this->table);
+
+        if ($labelJoin && in_array($this->field, $labelJoin['fields'] ?? [], true)) {
+            $joinTable = $labelJoin['table'];
+            $query->join($joinTable, "{$this->table}.{$labelJoin['local']}", '=', "{$joinTable}.{$labelJoin['foreign']}")
+                ->selectRaw("{$valueColumn} as id, {$joinTable}.{$this->field} as label");
+        } else {
+            $query->selectRaw("{$valueColumn} as id, {$this->table}.{$this->field} as label");
+        }
+
+        if ($colorColumn) {
+            $query->addSelect($colorColumn);
+        }
+
+        return $query;
     }
 
     public function render(): View|Closure|string

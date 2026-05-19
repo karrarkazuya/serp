@@ -1,0 +1,356 @@
+<!-- security/my_module_security.xml -->
+<odoo>
+
+    <!-- Security Groups -->
+    <record id="ss_workflow.group_manager" model="res.groups">
+        <field name="name">Manager</field>
+        <field name="category_id" ref="ss_workflow.security_groups_category"/>
+        <field name="implied_ids" eval="[(4, ref('base.group_user'))]"/>
+        <field name="comment">The user will be able to access all tickets functions.</field>
+    </record>
+
+    <!-- Manager Controls -->
+    <record id="model_manager_ssw_tickets_access" model="ir.model.access">
+        <field name="name">Tickets Access</field>
+        <field name="model_id" ref="model_ssw_tickets"/>
+        <field name="group_id" ref="ss_workflow.group_manager"/>
+        <field name="perm_read" eval="1"/>
+        <field name="perm_write" eval="1"/>
+        <field name="perm_create" eval="1"/>
+        <field name="perm_unlink" eval="1"/>
+    </record>
+
+    <record id="model_manager_ssw_tickets_inputs_access" model="ir.model.access">
+        <field name="name">Tickets Inputs Access</field>
+        <field name="model_id" ref="model_ssw_tickets_inputs"/>
+        <field name="group_id" ref="ss_workflow.group_manager"/>
+        <field name="perm_read" eval="1"/>
+        <field name="perm_write" eval="1"/>
+        <field name="perm_create" eval="1"/>
+        <field name="perm_unlink" eval="1"/>
+    </record>
+
+    <record id="model_manager_ssw_tickets_inputs_subs_access" model="ir.model.access">
+        <field name="name">Tickets Inputs Subs Access</field>
+        <field name="model_id" ref="model_ssw_tickets_inputs_subs"/>
+        <field name="group_id" ref="ss_workflow.group_manager"/>
+        <field name="perm_read" eval="1"/>
+        <field name="perm_write" eval="1"/>
+        <field name="perm_create" eval="1"/>
+        <field name="perm_unlink" eval="1"/>
+    </record>
+
+    <record id="model_manager_ssw_tickets_inputs_model_values_access" model="ir.model.access">
+        <field name="name">Tickets Inputs Model Values Access</field>
+        <field name="model_id" ref="model_ssw_tickets_inputs_model_values"/>
+        <field name="group_id" ref="ss_workflow.group_manager"/>
+        <field name="perm_read" eval="1"/>
+        <field name="perm_write" eval="1"/>
+        <field name="perm_create" eval="1"/>
+        <field name="perm_unlink" eval="1"/>
+    </record>
+
+    <record id="model_manager_ssw_product_line_access" model="ir.model.access">
+        <field name="name">Product Line Access</field>
+        <field name="model_id" ref="model_ssw_product_line"/>
+        <field name="group_id" ref="ss_workflow.group_manager"/>
+        <field name="perm_read" eval="1"/>
+        <field name="perm_write" eval="1"/>
+        <field name="perm_create" eval="1"/>
+        <field name="perm_unlink" eval="1"/>
+    </record>
+
+    <record id="model_manager_ssw_templates_access" model="ir.model.access">
+        <field name="name">Tickets Templates Access</field>
+        <field name="model_id" ref="model_ssw_tickets_templates"/>
+        <field name="group_id" ref="ss_workflow.group_manager"/>
+        <field name="perm_read" eval="1"/>
+        <field name="perm_write" eval="1"/>
+        <field name="perm_create" eval="1"/>
+        <field name="perm_unlink" eval="1"/>
+    </record>
+
+    <record id="model_manager_ssw_templates_inputs_access" model="ir.model.access">
+        <field name="name">Tickets Templates Inputs Access</field>
+        <field name="model_id" ref="model_ssw_tickets_templates_inputs"/>
+        <field name="group_id" ref="ss_workflow.group_manager"/>
+        <field name="perm_read" eval="1"/>
+        <field name="perm_write" eval="1"/>
+        <field name="perm_create" eval="1"/>
+        <field name="perm_unlink" eval="1"/>
+    </record>
+
+    <record id="model_manager_ssw_templates_inputs_subs_access" model="ir.model.access">
+        <field name="name">Tickets Templates Inputs Subs Access</field>
+        <field name="model_id" ref="model_ssw_tickets_templates_inputs_subs"/>
+        <field name="group_id" ref="ss_workflow.group_manager"/>
+        <field name="perm_read" eval="1"/>
+        <field name="perm_write" eval="1"/>
+        <field name="perm_create" eval="1"/>
+        <field name="perm_unlink" eval="1"/>
+    </record>
+
+    <record id="model_manager_ssw_users_access" model="ir.model.access">
+        <field name="name">Users Access</field>
+        <field name="model_id" ref="model_ssw_users"/>
+        <field name="group_id" ref="ss_workflow.group_manager"/>
+        <field name="perm_read" eval="1"/>
+        <field name="perm_write" eval="1"/>
+        <field name="perm_create" eval="1"/>
+        <field name="perm_unlink" eval="1"/>
+    </record>
+
+    <record id="model_manager_ssw_managers_access" model="ir.model.access">
+        <field name="name">Managers Access</field>
+        <field name="model_id" ref="model_ssw_managers"/>
+        <field name="group_id" ref="ss_workflow.group_manager"/>
+        <field name="perm_read" eval="1"/>
+        <field name="perm_write" eval="1"/>
+        <field name="perm_create" eval="1"/>
+        <field name="perm_unlink" eval="1"/>
+    </record>
+
+    <record id="model_manager_ssw_groups_access" model="ir.model.access">
+        <field name="name">Groups Access</field>
+        <field name="model_id" ref="model_ssw_groups"/>
+        <field name="group_id" ref="ss_workflow.group_manager"/>
+        <field name="perm_read" eval="1"/>
+        <field name="perm_write" eval="1"/>
+        <field name="perm_create" eval="1"/>
+        <field name="perm_unlink" eval="1"/>
+    </record>
+
+    <record id="model_manager_ssw_departments_access" model="ir.model.access">
+        <field name="name">Departments Access</field>
+        <field name="model_id" ref="model_ssw_departments"/>
+        <field name="group_id" ref="ss_workflow.group_manager"/>
+        <field name="perm_read" eval="1"/>
+        <field name="perm_write" eval="0"/>
+        <field name="perm_create" eval="0"/>
+        <field name="perm_unlink" eval="0"/>
+    </record>
+
+    <record id="model_manager_ssw_proc_access" model="ir.model.access">
+        <field name="name">Procedures Access</field>
+        <field name="model_id" ref="model_ssw_procedures"/>
+        <field name="group_id" ref="ss_workflow.group_manager"/>
+        <field name="perm_read" eval="1"/>
+        <field name="perm_write" eval="1"/>
+        <field name="perm_create" eval="1"/>
+        <field name="perm_unlink" eval="1"/>
+    </record>
+
+
+    <record id="model_manager_ssw_proc_tasks_access" model="ir.model.access">
+        <field name="name">Procedures tasks Access</field>
+        <field name="model_id" ref="model_ssw_proc_tasks"/>
+        <field name="group_id" ref="ss_workflow.group_manager"/>
+        <field name="perm_read" eval="1"/>
+        <field name="perm_write" eval="1"/>
+        <field name="perm_create" eval="1"/>
+        <field name="perm_unlink" eval="0"/>
+    </record>
+
+    <record id="model_manager_ssw_proc_tasks_inputs_access" model="ir.model.access">
+        <field name="name">Procedures tasks Inputs Access</field>
+        <field name="model_id" ref="model_ssw_proc_tasks_inputs"/>
+        <field name="group_id" ref="ss_workflow.group_manager"/>
+        <field name="perm_read" eval="1"/>
+        <field name="perm_write" eval="1"/>
+        <field name="perm_create" eval="1"/>
+        <field name="perm_unlink" eval="1"/>
+    </record>
+
+    <record id="model_manager_ssw_proc_tasks_inputs_subs_access" model="ir.model.access">
+        <field name="name">Procedures tasks Inputs Subs Access</field>
+        <field name="model_id" ref="model_ssw_proc_tasks_inputs_subs"/>
+        <field name="group_id" ref="ss_workflow.group_manager"/>
+        <field name="perm_read" eval="1"/>
+        <field name="perm_write" eval="1"/>
+        <field name="perm_create" eval="1"/>
+        <field name="perm_unlink" eval="1"/>
+    </record>
+
+    <record id="model_manager_ssw_proc_tasks_inputs_model_values_access" model="ir.model.access">
+        <field name="name">Procedures tasks Inputs Model Values Access</field>
+        <field name="model_id" ref="model_ssw_proc_tasks_inputs_model_values"/>
+        <field name="group_id" ref="ss_workflow.group_manager"/>
+        <field name="perm_read" eval="1"/>
+        <field name="perm_write" eval="1"/>
+        <field name="perm_create" eval="1"/>
+        <field name="perm_unlink" eval="1"/>
+    </record>
+
+
+
+    <record id="model_manager_ssw_proc_templates_access" model="ir.model.access">
+        <field name="name">Procedures Templates Access</field>
+        <field name="model_id" ref="model_ssw_proc_templates"/>
+        <field name="group_id" ref="ss_workflow.group_manager"/>
+        <field name="perm_read" eval="1"/>
+        <field name="perm_write" eval="1"/>
+        <field name="perm_create" eval="1"/>
+        <field name="perm_unlink" eval="1"/>
+    </record>
+
+    <record id="model_manager_ssw_proc_templates_tasks_access" model="ir.model.access">
+        <field name="name">Procedures Templates Tasks Access</field>
+        <field name="model_id" ref="model_ssw_proc_templates_tasks"/>
+        <field name="group_id" ref="ss_workflow.group_manager"/>
+        <field name="perm_read" eval="1"/>
+        <field name="perm_write" eval="1"/>
+        <field name="perm_create" eval="1"/>
+        <field name="perm_unlink" eval="1"/>
+    </record>
+
+    <record id="model_manager_ssw_proc_templates_tasks_paths_access" model="ir.model.access">
+        <field name="name">Procedures Templates Tasks Paths Access</field>
+        <field name="model_id" ref="model_ssw_proc_templates_taskpaths"/>
+        <field name="group_id" ref="ss_workflow.group_manager"/>
+        <field name="perm_read" eval="1"/>
+        <field name="perm_write" eval="1"/>
+        <field name="perm_create" eval="1"/>
+        <field name="perm_unlink" eval="1"/>
+    </record>
+
+    <record id="model_manager_ssw_proc_templates_inputs_access" model="ir.model.access">
+        <field name="name">Procedures Templates Inputs Access</field>
+        <field name="model_id" ref="model_ssw_proc_templates_inputs"/>
+        <field name="group_id" ref="ss_workflow.group_manager"/>
+        <field name="perm_read" eval="1"/>
+        <field name="perm_write" eval="1"/>
+        <field name="perm_create" eval="1"/>
+        <field name="perm_unlink" eval="1"/>
+    </record>
+
+    <record id="model_manager_ssw_proc_templates_inputs_subs_access" model="ir.model.access">
+        <field name="name">Procedures Templates Inputs Subs Access</field>
+        <field name="model_id" ref="model_ssw_proc_templates_inputs_subs"/>
+        <field name="group_id" ref="ss_workflow.group_manager"/>
+        <field name="perm_read" eval="1"/>
+        <field name="perm_write" eval="1"/>
+        <field name="perm_create" eval="1"/>
+        <field name="perm_unlink" eval="1"/>
+    </record>
+
+    <record id="model_manager_ssw_proc_tasks_read_access" model="ir.model.access">
+        <field name="name">Procedures Tasks Read Access</field>
+        <field name="model_id" ref="model_ssw_proc_tasks_read"/>
+        <field name="group_id" ref="ss_workflow.group_manager"/>
+        <field name="perm_read" eval="1"/>
+        <field name="perm_write" eval="0"/>
+        <field name="perm_create" eval="0"/>
+        <field name="perm_unlink" eval="0"/>
+    </record>
+
+    <record id="model_manager_ssw_tickets_durations_access" model="ir.model.access">
+        <field name="name">Tickets Durations</field>
+        <field name="model_id" ref="model_ssw_tickets_durations"/>
+        <field name="group_id" ref="ss_workflow.group_manager"/>
+        <field name="perm_read" eval="1"/>
+        <field name="perm_write" eval="0"/>
+        <field name="perm_create" eval="0"/>
+        <field name="perm_unlink" eval="0"/>
+    </record>
+
+    <record id="model_manager_ssw_tasks_durations_access" model="ir.model.access">
+        <field name="name">Tasks Durations</field>
+        <field name="model_id" ref="model_ssw_tasks_durations"/>
+        <field name="group_id" ref="ss_workflow.group_manager"/>
+        <field name="perm_read" eval="1"/>
+        <field name="perm_write" eval="0"/>
+        <field name="perm_create" eval="0"/>
+        <field name="perm_unlink" eval="0"/>
+    </record>
+
+    <record id="model_manager_ssw_proc_task_return_to_wizard_access" model="ir.model.access">
+        <field name="name">Task Return To Wizard Access</field>
+        <field name="model_id" ref="model_ssw_proc_task_return_to_wizard"/>
+        <field name="group_id" ref="ss_workflow.group_manager"/>
+        <field name="perm_read" eval="1"/>
+        <field name="perm_write" eval="1"/>
+        <field name="perm_create" eval="1"/>
+        <field name="perm_unlink" eval="1"/>
+    </record>
+
+    <record id="model_manager_ssw_proc_task_return_wizard_access" model="ir.model.access">
+        <field name="name">Task Return Wizard Access</field>
+        <field name="model_id" ref="model_ssw_proc_task_return_wizard"/>
+        <field name="group_id" ref="ss_workflow.group_manager"/>
+        <field name="perm_read" eval="1"/>
+        <field name="perm_write" eval="1"/>
+        <field name="perm_create" eval="1"/>
+        <field name="perm_unlink" eval="1"/>
+    </record>
+
+    <record id="model_manager_ssw_proc_start_wizard_access" model="ir.model.access">
+        <field name="name">Start Procedure Wizard Access</field>
+        <field name="model_id" ref="model_ssw_proc_start_wizard"/>
+        <field name="group_id" ref="ss_workflow.group_manager"/>
+        <field name="perm_read" eval="1"/>
+        <field name="perm_write" eval="1"/>
+        <field name="perm_create" eval="1"/>
+        <field name="perm_unlink" eval="1"/>
+    </record>
+
+    <record id="model_manager_ssw_proc_tasks_paths_access" model="ir.model.access">
+        <field name="name">Procedures Tasks Paths Access</field>
+        <field name="model_id" ref="model_ssw_proc_taskpaths"/>
+        <field name="group_id" ref="ss_workflow.group_manager"/>
+        <field name="perm_read" eval="1"/>
+        <field name="perm_write" eval="0"/>
+        <field name="perm_create" eval="0"/>
+        <field name="perm_unlink" eval="0"/>
+    </record>
+
+    <record id="model_manager_ssw_task_procedure_line_access" model="ir.model.access">
+        <field name="name">Tasks Procedures Lines</field>
+        <field name="model_id" ref="model_ssw_task_procedure_line"/>
+        <field name="group_id" ref="ss_workflow.group_manager"/>
+        <field name="perm_read" eval="1"/>
+        <field name="perm_write" eval="0"/>
+        <field name="perm_create" eval="0"/>
+        <field name="perm_unlink" eval="0"/>
+    </record>
+
+    <record id="model_manager_ss_report_workflow_activity_access" model="ir.model.access">
+        <field name="name">Workflow Activity Report Access</field>
+        <field name="model_id" ref="model_ss_report_workflow_activity"/>
+        <field name="group_id" ref="ss_workflow.group_manager"/>
+        <field name="perm_read" eval="1"/>
+        <field name="perm_write" eval="0"/>
+        <field name="perm_create" eval="0"/>
+        <field name="perm_unlink" eval="0"/>
+    </record>
+
+    <record id="model_manager_ss_report_workflow_procedure_performance_access" model="ir.model.access">
+        <field name="name">Workflow Procedure Performance Report Access</field>
+        <field name="model_id" ref="model_ss_report_workflow_procedure_performance"/>
+        <field name="group_id" ref="ss_workflow.group_manager"/>
+        <field name="perm_read" eval="1"/>
+        <field name="perm_write" eval="0"/>
+        <field name="perm_create" eval="0"/>
+        <field name="perm_unlink" eval="0"/>
+    </record>
+
+    <record id="model_manager_ss_report_workflow_ticket_performance_access" model="ir.model.access">
+        <field name="name">Workflow Ticket Performance Report Access</field>
+        <field name="model_id" ref="model_ss_report_workflow_ticket_performance"/>
+        <field name="group_id" ref="ss_workflow.group_manager"/>
+        <field name="perm_read" eval="1"/>
+        <field name="perm_write" eval="0"/>
+        <field name="perm_create" eval="0"/>
+        <field name="perm_unlink" eval="0"/>
+    </record>
+
+    <record id="model_manager_ss_report_workflow_task_performance_access" model="ir.model.access">
+        <field name="name">Workflow Task Performance Report Access</field>
+        <field name="model_id" ref="model_ss_report_workflow_task_performance"/>
+        <field name="group_id" ref="ss_workflow.group_manager"/>
+        <field name="perm_read" eval="1"/>
+        <field name="perm_write" eval="0"/>
+        <field name="perm_create" eval="0"/>
+        <field name="perm_unlink" eval="0"/>
+    </record>
+
+</odoo>

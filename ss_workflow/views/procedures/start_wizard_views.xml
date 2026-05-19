@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="view_ssw_proc_start_wizard_form" model="ir.ui.view">
+        <field name="name">ssw.proc.start.wizard.form</field>
+        <field name="model">ssw.proc.start.wizard</field>
+        <field name="arch" type="xml">
+            <form string="Start Procedure">
+                <group>
+                    <field name="template_id" invisible="1"/>
+                    <field name="title" placeholder="Procedure title..."/>
+                    <field name="description" placeholder="Procedure description..."/>
+                </group>
+                <footer>
+                    <button name="action_confirm" string="Start Procedure" type="object" class="btn-primary"/>
+                    <button string="Cancel" class="btn-secondary" special="cancel"/>
+                </footer>
+            </form>
+        </field>
+    </record>
+
+</odoo>

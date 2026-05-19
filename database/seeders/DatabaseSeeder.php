@@ -16,6 +16,7 @@ class DatabaseSeeder extends Seeder
             SettingSeeder::class,
             TagSeeder::class,
             ContactSeeder::class,
+            WorkflowSeeder::class,
         ]);
     }
 }

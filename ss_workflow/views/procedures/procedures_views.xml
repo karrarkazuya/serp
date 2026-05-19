@@ -1,0 +1,190 @@
+<odoo>
+  <data>
+    <!-- explicit list view definition -->
+    <record model="ir.ui.view" id="ssw_procedures_list">
+      <field name="name">Procedures</field>
+      <field name="model">ssw.procedures</field>
+      <field name="type">list</field>
+      <field name="arch" type="xml">
+        <list decoration-danger="resolve_deadline_passed > 0 and state not in ('completed', 'closed')"
+              decoration-success="state == 'completed'"
+              decoration-muted="state == 'closed'">
+          <field name="name"/>
+          <field name="state" widget="badge"
+                 decoration-success="state == 'completed'"
+                 decoration-danger="state == 'closed'"
+                 decoration-warning="state == 'pending'"
+                 decoration-info="state == 'pending'"/>
+          <field name="template_id"/>
+          <field name="created_by"/>
+          <field name="resolve_deadline"
+                 decoration-danger="resolve_deadline_passed > 0 and state not in ('completed', 'closed')"/>
+          <field name="resolve_deadline_passed" string="SLA Passed (hrs)" optional="hide"/>
+          <field name="resolve_duration" string="Duration (hrs)" optional="hide"/>
+          <field name="resolve_max_duration" string="SLA Limit (hrs)" optional="hide"/>
+          <field name="create_date" optional="hide"/>
+          <field name="id" string="Procedure ID" optional="hide"/>
+        </list>
+      </field>
+    </record>
+
+    <!-- form view -->
+    <record id="ssw_procedures_form" model="ir.ui.view">
+        <field name="name">ssw.procedures.form</field>
+        <field name="model">ssw.procedures</field>
+        <field name="arch" type="xml">
+            <form string="Procedure">
+
+                <header>
+                    <button name="complete_procedure" string="Complete" confirm="Confirm the force complete of this procedure?" invisible='not id or state != "pending"' type="object" default_focus="1" class="oe_highlight btn-success" data-hotkey="q" groups="ss_workflow.group_admin,ss_workflow.group_manager,ss_workflow.group_submanager"/>
+                    <field name="state" widget="statusbar" options="{'clickable': false}" statusbar_visible="pending,closed,completed"/>
+                </header>
+
+                <sheet>
+
+                    <xpath expr="//div[hasclass('ribbon')]" position="replace">
+                        <div class="ribbon ribbon-top-right">
+                            <span class="text-bg-success" invisible="state != 'completed'">Completed</span>
+                            <span class="text-bg-danger" invisible="state != 'closed'">Closed</span>
+                        </div>
+                    </xpath>
+
+                    <div name="button_box">
+                        <button class="oe_stat_button" type="object" icon="fa-ticket"
+                                name="action_get_tickets_record">
+                            <field string="Tickets" name="ssw_ticket_count" widget="statinfo"/>
+                        </button>
+                        <button class="oe_stat_button" type="object" icon="fa-sitemap"
+                                name="action_get_procedures_record">
+                            <field string="Procedures" name="ssw_procedure_count" widget="statinfo"/>
+                        </button>
+                    </div>
+
+                    <div class="alert alert-warning mb-0" role="alert"
+                         invisible="resolve_deadline_passed == 0 or state in ('completed', 'closed')">
+                        <i class="fa fa-exclamation-triangle"/> Resolve deadline has passed by
+                        <field name="resolve_deadline_passed" readonly="True" nolabel="True"/> hours.
+                    </div>
+
+                    <group>
+                        <group>
+                            <field name="id" invisible="not id" readonly="True"/>
+                            <field name="name"/>
+                            <field name="template_id" invisible="id" readonly="id"/>
+                            <field name="description"/>
+                            <field name="optional_partner_id" invisible="not optional_partner_id" readonly="True"/>
+                            <field name="optional_user_id" invisible="not optional_user_id" readonly="True"/>
+                        </group>
+                        <group invisible="not id">
+                            <field name="resolve_deadline" readonly="True"/>
+                            <field name="resolve_duration" readonly="True" string="Duration (hrs)"/>
+                            <field name="resolve_deadline_passed" readonly="True" string="SLA Passed (hrs)"/>
+                            <field name="resolve_max_duration" readonly="True" string="SLA Limit (hrs)"/>
+                        </group>
+                    </group>
+
+                    <notebook invisible="not id">
+                      <page name='ss_workflow.input_age' string="Tasks" autofocus="autofocus" sequence="0">
+                        <field name="tasks_read" widget="one2many" string="">
+                            <list decoration-danger="resolve_deadline_passed > 0 and state not in ('completed', 'draft', 'rejected', 'skipped')"
+                                  decoration-success="state == 'completed'"
+                                  decoration-muted="state in ('draft', 'rejected', 'skipped')">
+                                <field name="task_id_num"/>
+                                <field name="name"/>
+                                <field name="state" widget="badge"
+                                       decoration-success="state == 'completed'"
+                                       decoration-danger="state == 'rejected'"
+                                       decoration-warning="state == 'pending'"/>
+                                <field name="assigned_to_user"/>
+                                <field name="assigned_to_dep"/>
+                                <field name="resolve_duration" string="Duration (hrs)" invisible="state == 'draft'"/>
+                                <field name="resolve_deadline_passed" string="SLA Passed (hrs)" invisible="state == 'draft'"/>
+                                <field name="available_at" string="Started at" invisible="state == 'draft'"/>
+                            </list>
+                        </field>
+                      </page>
+                      <page name='ss_workflow.users_age' string="Users can see">
+                          <field name="users_can_view" readonly="True"/>
+                      </page>
+                      <page name='ss_workflow.procedure_details' string="Details">
+                          <group>
+                            <field name="id" string="Procedure ID"/>
+                            <field name="created_by" readonly="True"/>
+                            <field name="create_date" readonly="True"/>
+                            <field name="write_date" readonly="True"/>
+                            <field name="write_uid" readonly="True"/>
+                            <field name="optional_partner_id" invisible="not optional_partner_id" readonly="True"/>
+                            <field name="optional_user_id" invisible="not optional_user_id" readonly="True"/>
+                            <field name="optional_procedure_id" invisible="not optional_procedure_id" readonly="True"/>
+                            <field name="optional_ticket_id" invisible="not optional_ticket_id" readonly="True"/>
+                            <field name="optional_task_id" invisible="not optional_task_id" readonly="True"/>
+                          </group>
+                      </page>
+                    </notebook>
+                </sheet>
+
+                <chatter reload_on_post="True"/>
+            </form>
+        </field>
+    </record>
+
+    <record id="ssw_procedures_graph" model="ir.ui.view">
+        <field name="name">ssw.procedures.graph</field>
+        <field name="model">ssw.procedures</field>
+        <field name="arch" type="xml">
+            <graph string="Sales Analysis" type="bar">
+                <field name="create_date" type="row"/>
+                <field name="template_id" type="col"/>
+                <field name="resolve_deadline_passed" type="measure"/>
+            </graph>
+        </field>
+    </record>
+
+    <record id="ssw_procedures_pivot" model="ir.ui.view">
+        <field name="name">ssw.procedures.pivot</field>
+        <field name="model">ssw.procedures</field>
+        <field name="arch" type="xml">
+            <pivot string="Sales Analysis">
+                <field name="create_date" type="row"/>
+                <field name="template_id" type="col"/>
+                <field name="resolve_deadline_passed" type="measure"/>
+            </pivot>
+        </field>
+    </record>
+
+    <!-- Search View -->
+    <record id="view_ss_workflow_procedures_search" model="ir.ui.view">
+        <field name="name">ssw.procedures.search</field>
+        <field name="model">ssw.procedures</field>
+        <field name="arch" type="xml">
+            <search string="Search Section">
+                <field name="name"/>
+                <field name="template_id"/>
+                <filter 
+                string="Pending" 
+                name="pending"
+                domain="[('state', '=', 'pending')]"
+                />
+
+                <filter 
+                    string="Deadline Passed" 
+                    name="passed_deadline"
+                    domain="[('deleted', '=', False), ('state', '!=', 'completed'), ('resolve_deadline', '&lt;', context_today())]"
+                />
+
+            </search>
+        </field>
+    </record>
+
+
+    <!-- actions opening views on models -->
+    <record model="ir.actions.act_window" id="ss_workflow.action_procedures">
+        <field name="name">Procedures</field>
+        <field name="res_model">ssw.procedures</field>
+        <field name="view_mode">list,graph,pivot,form</field>
+        <field name="search_view_id" ref="view_ss_workflow_procedures_search"/>
+        <field name="context">{'search_default_pending': 1}</field>
+    </record>
+
+  </data>
+</odoo>

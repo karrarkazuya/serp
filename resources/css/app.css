@@ -27,6 +27,15 @@ body {
     background-color: #f5f5f5;
 }
 
+/* Arabic locale: switch to Cairo font */
+[dir="rtl"] body,
+[dir="rtl"] input,
+[dir="rtl"] textarea,
+[dir="rtl"] select,
+[dir="rtl"] button {
+    font-family: 'Cairo', ui-sans-serif, system-ui, sans-serif;
+}
+
 /* Scrollbar styling */
 ::-webkit-scrollbar {
     width: 6px;
@@ -50,15 +59,48 @@ body {
 
 /* Chatter */
 .chatter-message {
-    border-left: 3px solid #e5e7eb;
-    padding-left: 12px;
+    border-inline-start: 3px solid #e5e7eb;
+    padding-inline-start: 12px;
 }
 .chatter-message.comment {
-    border-left-color: #7c3aed;
+    border-inline-start-color: #7c3aed;
 }
 .chatter-message.system {
-    border-left-color: #6b7280;
+    border-inline-start-color: #6b7280;
 }
 .chatter-message.log {
-    border-left-color: #d1d5db;
+    border-inline-start-color: #d1d5db;
+}
+
+/* -------------------------------------------------------
+   RTL layout overrides
+   ------------------------------------------------------- */
+
+/* Navbar: flip flex direction so logo is end-side in RTL */
+[dir="rtl"] nav.erp-navbar {
+    flex-direction: row-reverse;
+}
+
+/* Dropdowns that anchor right-0 in LTR should flip in RTL */
+[dir="rtl"] .dropdown-end {
+    right: auto;
+    left: 0;
+}
+
+/* Flip margin-auto side for navbar right-aligned section */
+[dir="rtl"] .navbar-end {
+    margin-right: auto;
+    margin-left: 0;
+}
+
+/* Password eye button: flip absolute position */
+[dir="rtl"] .input-eye-btn {
+    right: auto;
+    left: 0.75rem;
+}
+
+/* Sidebar border */
+[dir="rtl"] .erp-sidebar {
+    border-right: none;
+    border-left: 1px solid #e5e7eb;
 }

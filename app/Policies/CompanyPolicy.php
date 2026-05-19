@@ -31,4 +31,9 @@ class CompanyPolicy
     {
         return $user->hasPermission('companies.unlink');
     }
+
+    public function comment(User $user, Company $company): bool
+    {
+        return $user->hasPermission('companies.write');
+    }
 }

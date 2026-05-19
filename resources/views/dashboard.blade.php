@@ -1,5 +1,5 @@
 @extends('layouts.app')
-@section('title', 'Apps')
+@section('title', __('dashboard.title'))
 
 @section('content')
 @php
@@ -11,6 +11,14 @@ $icons = [
         <circle cx="35.5" cy="27" r="5.5" fill="#5a2ca0"/>
         <path d="M24 43c1.5-7 6.1-10.5 11.5-10.5S45.5 36 47 43H24z" fill="#5a2ca0"/>
         <path d="M53 18v29l-6-4.2L41 47V18h12z" fill="#3131a2" opacity=".9"/>
+    </svg>',
+    'workflow' => '<svg viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg" class="w-14 h-14">
+        <rect x="10" y="10" width="20" height="14" rx="4" fill="#1f66d1"/>
+        <rect x="34" y="10" width="20" height="14" rx="4" fill="#13bfd7"/>
+        <rect x="22" y="40" width="20" height="14" rx="4" fill="#5a2ca0"/>
+        <line x1="20" y1="17" x2="34" y2="17" stroke="#94a3b8" stroke-width="2"/>
+        <line x1="32" y1="24" x2="32" y2="40" stroke="#94a3b8" stroke-width="2"/>
+        <line x1="44" y1="24" x2="32" y2="40" stroke="#94a3b8" stroke-width="2"/>
     </svg>',
     'settings' => '<svg viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg" class="w-14 h-14">
         <rect x="13" y="12" width="38" height="40" rx="7" fill="#f8fafc"/>
@@ -54,10 +62,10 @@ $icons = [
 
                 <div x-show="open"
                      x-transition
-                     class="absolute right-0 top-full mt-2 w-72 overflow-hidden rounded-lg border border-gray-200 bg-white shadow-xl"
+                     class="absolute end-0 top-full mt-2 w-72 overflow-hidden rounded-lg border border-gray-200 bg-white shadow-xl"
                      style="display:none">
                     <div class="border-b border-gray-100 px-4 py-3">
-                        <p class="text-xs font-semibold uppercase tracking-wide text-gray-500">Switch Company</p>
+                        <p class="text-xs font-semibold uppercase tracking-wide text-gray-500">{{ __('common.switch_company') }}</p>
                     </div>
                     <div class="max-h-64 overflow-y-auto py-1">
                         @foreach($allowedCompanies as $company)
@@ -80,8 +88,8 @@ $icons = [
                         <template x-for="id in selected" :key="id">
                             <input type="hidden" name="companies[]" :value="id">
                         </template>
-                        <button type="submit" class="rounded bg-[#714B67] px-3 py-1.5 text-xs font-semibold text-white hover:bg-[#5c3d55]">Apply</button>
-                        <button type="button" @click="open = false" class="rounded bg-gray-200 px-3 py-1.5 text-xs font-semibold text-gray-700 hover:bg-gray-300">Cancel</button>
+                        <button type="submit" class="rounded bg-[#714B67] px-3 py-1.5 text-xs font-semibold text-white hover:bg-[#5c3d55]">{{ __('common.apply') }}</button>
+                        <button type="button" @click="open = false" class="rounded bg-gray-200 px-3 py-1.5 text-xs font-semibold text-gray-700 hover:bg-gray-300">{{ __('common.cancel') }}</button>
                     </form>
                 </div>
             </div>
@@ -93,15 +101,28 @@ $icons = [
                 </button>
                 <div x-show="open"
                      x-transition
-                     class="absolute right-0 top-full mt-2 w-56 rounded-lg border border-gray-200 bg-white py-1 shadow-xl"
+                     class="absolute end-0 top-full mt-2 w-56 rounded-lg border border-gray-200 bg-white py-1 shadow-xl"
                      style="display:none">
                     <div class="border-b border-gray-100 px-4 py-2.5">
                         <p class="text-sm font-semibold text-gray-800">{{ auth()->user()->name }}</p>
                         <p class="truncate text-xs text-gray-500">{{ auth()->user()->email }}</p>
                     </div>
+                    <a href="{{ route('profile') }}"
+                       class="flex items-center gap-2 px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition-colors">
+                        <svg class="w-4 h-4 text-gray-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/>
+                        </svg>
+                        {{ __('nav.my_profile') }}
+                    </a>
+                    <div class="border-t border-gray-100"></div>
                     <form method="POST" action="{{ route('logout') }}">
                         @csrf
-                        <button type="submit" class="block w-full px-4 py-2.5 text-left text-sm text-red-600 hover:bg-red-50">Sign out</button>
+                        <button type="submit" class="flex w-full items-center gap-2 px-4 py-2.5 text-start text-sm text-red-600 hover:bg-red-50 transition-colors">
+                            <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/>
+                            </svg>
+                            {{ __('common.sign_out') }}
+                        </button>
                     </form>
                 </div>
             </div>
@@ -110,7 +131,7 @@ $icons = [
 
     <div class="relative z-0 mx-auto flex min-h-[calc(100vh-4rem)] max-w-5xl items-start justify-center px-6 pb-16 pt-6">
         @if($modules->isEmpty())
-            <div class="mt-28 text-center text-sm text-gray-400">No modules available. Contact your administrator.</div>
+            <div class="mt-28 text-center text-sm text-gray-400">{{ __('common.no_modules') }}</div>
         @else
             <div class="grid w-full max-w-3xl grid-cols-2 gap-x-12 gap-y-10 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6">
                 @foreach($modules as $module)

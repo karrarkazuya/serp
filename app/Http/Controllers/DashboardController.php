@@ -22,6 +22,15 @@ class DashboardController extends Controller
                 'icon'        => 'contacts',
             ],
             [
+                'key'         => 'workflow',
+                'label'       => 'Workflow',
+                'description' => 'Tickets, procedures & tasks',
+                'route'       => 'workflow.dashboard',
+                'permission'  => 'workflow.tickets.read',
+                'color'       => 'blue',
+                'icon'        => 'workflow',
+            ],
+            [
                 'key'         => 'settings',
                 'label'       => 'Settings',
                 'description' => 'Users, roles & configuration',

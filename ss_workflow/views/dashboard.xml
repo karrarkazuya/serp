@@ -1,0 +1,30 @@
+<odoo>
+    <!-- Define the form view -->
+    <record id="action_ssw_dashboard_view" model="ir.ui.view">
+        <field name="name">Dashboard</field>
+        <field name="model">ssw.dashboard</field>
+        <field name="arch" type="xml">
+            <form string="Dashboard">
+                <sheet>
+                    <templates>
+                        <iframe src="/ss_workflow/main_dashboard" width="100%" height="600px"></iframe>
+                    </templates>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <!-- Define the action -->
+    <record id="action_ssw_dashboard_window" model="ir.actions.act_window">
+        <field name="name">Dashboard</field>
+        <field name="res_model">ssw.dashboard</field>
+        <field name="view_mode">form</field>
+        <field name="view_id" ref="action_ssw_dashboard_view"></field>
+    </record>
+
+    <record id="ssw_data_dashboard_action" model="ir.actions.client">
+        <field name="name">Dashboard</field>
+        <field name="tag">ss_workflow_main_dashboard_tag</field>
+    </record>
+
+</odoo>

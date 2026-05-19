@@ -1,0 +1,26 @@
+<?php
+
+return [
+    'contacts'      => 'جهات الاتصال',
+    'configuration' => 'الإعدادات',
+    'settings'      => 'الإعدادات',
+    'my_profile'    => 'ملفي الشخصي',
+    'dashboard'     => 'لوحة التحكم',
+    'contact_tags'  => 'تصنيفات جهات الاتصال',
+    'tickets'       => 'التذاكر',
+    'tasks'         => 'المهام',
+    'procedures'    => 'الإجراءات',
+    'reports'       => 'التقارير',
+    'workflow'              => 'سير العمل',
+    'groups'               => 'المجموعات',
+    'departments'          => 'الأقسام',
+    'managers'             => 'المديرون',
+    'templates'            => 'القوالب',
+    'tickets_templates'    => 'قوالب التذاكر',
+    'procedures_templates' => 'قوالب الإجراءات',
+    'tasks_templates'      => 'قوالب المهام',
+    'activity_report'      => 'تقرير النشاط',
+    'procedure_performance'=> 'أداء الإجراءات',
+    'ticket_performance'   => 'أداء التذاكر',
+    'task_performance'     => 'أداء المهام',
+];

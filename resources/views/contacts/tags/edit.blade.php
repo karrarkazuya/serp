@@ -1,21 +1,21 @@
 @extends('layouts.app')
-@section('title', 'Edit - ' . $tag->name)
+@section('title', __('common.edit') . ' - ' . $tag->name)
 
 @section('content')
 <div class="flex flex-col h-full bg-gray-50">
     <div class="bg-white border-b border-gray-200 px-4 py-2 flex items-center gap-3 shrink-0">
         <div class="flex flex-col leading-tight">
-            <a href="{{ route('contacts.tags.index') }}" class="text-xs text-purple-600 hover:text-purple-700">Contact Tags</a>
+            <a href="{{ route('contacts.tags.index') }}" class="text-xs text-purple-600 hover:text-purple-700">{{ __('contacts.tags_title') }}</a>
             <div class="flex items-center gap-1">
                 <span class="text-sm font-semibold text-gray-800">{{ $tag->name }}</span>
                 <span class="text-xs text-gray-400">/</span>
-                <span class="text-sm text-gray-500">Edit</span>
+                <span class="text-sm text-gray-500">{{ __('common.edit') }}</span>
             </div>
         </div>
 
-        <div class="ml-auto flex items-center gap-2">
-            <a href="{{ route('contacts.tags.index') }}" class="px-3 py-1.5 text-sm text-gray-600 bg-white border border-gray-300 rounded hover:bg-gray-50">Discard</a>
-            <button form="tag-form" type="submit" class="px-4 py-1.5 text-sm font-medium text-white bg-[#714B67] hover:bg-[#5c3d55] rounded shadow-sm">Save</button>
+        <div class="ms-auto flex items-center gap-2">
+            <a href="{{ route('contacts.tags.index') }}" class="px-3 py-1.5 text-sm text-gray-600 bg-white border border-gray-300 rounded hover:bg-gray-50">{{ __('common.cancel') }}</a>
+            <button form="tag-form" type="submit" class="px-4 py-1.5 text-sm font-medium text-white bg-[#714B67] hover:bg-[#5c3d55] rounded shadow-sm">{{ __('common.save_short') }}</button>
         </div>
     </div>
 

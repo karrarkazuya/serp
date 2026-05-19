@@ -139,7 +139,7 @@ Route::middleware('auth:sanctum')->group(function () {
     |--------------------------------------------------------------------------
     */
     Route::prefix('chatter')->name('api.chatter.')->group(function () {
-        Route::get('/', [ChatterController::class, 'index'])->name('index');
-        Route::post('/', [ChatterController::class, 'store'])->name('store');
+        Route::get('/', [ChatterController::class, 'index'])->middleware('permission:contacts.read')->name('index');
+        Route::post('/', [ChatterController::class, 'store'])->middleware('permission:contacts.write')->name('store');
     });
 });

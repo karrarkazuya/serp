@@ -1,0 +1,73 @@
+<odoo>
+  <data>
+    <!-- explicit list view definition -->
+    <record model="ir.ui.view" id="ssw_users_list">
+      <field name="name">Users</field>
+      <field name="model">ssw.users</field>
+      <field name="type">list</field>
+      <field name="arch" type="xml">
+        <list>
+          <field name="name"/>
+          <field name="partner_id"/>
+          <field name="groups_can_see"/>
+          <field name="default_department"/>
+          <field name="departments_can_assign"/>
+        </list>
+      </field>
+    </record>
+
+    <!-- explicit list view definition -->
+    <record id="ssw_users_form" model="ir.ui.view">
+        <field name="name">ssw.users.form</field>
+        <field name="model">ssw.users</field>
+        <field name="arch" type="xml">
+            <form string="Create users Form">
+                <sheet>
+                    <group>
+                      <field name="name"/>
+                      <field name="user_id" required="True"/>
+                      <field name="partner_id" readonly="True"/>
+                      <field name="groups_can_see"/>
+                      <field name="default_department"/>
+                      <field name="departments_can_assign"/>
+                    </group>
+                </sheet>
+
+                <chatter reload_on_post="True"/>
+            </form>
+        </field>
+    </record>
+
+    <!-- Search View -->
+    <record id="view_ssw_users_search" model="ir.ui.view">
+        <field name="name">ssw.users.search</field>
+        <field name="model">ssw.users</field>
+        <field name="arch" type="xml">
+            <search string="Search Section">
+                <field name="name"/>
+                <filter 
+                string="Active" 
+                name="not_deleted"
+                domain="[('deleted', '=', False)]"
+                />
+                <filter 
+                string="Deleted" 
+                name="deleted"
+                domain="[('deleted', '=', True)]"
+                />
+            </search>
+        </field>
+    </record>
+
+
+    <!-- actions opening views on models -->
+    <record model="ir.actions.act_window" id="ss_workflow.action_users">
+        <field name="name">Users</field>
+        <field name="res_model">ssw.users</field>
+        <field name="view_mode">list,form</field>
+        <field name="search_view_id" ref="view_ssw_users_search"/>
+        <field name="context">{'search_default_not_deleted': 1, 'search_default_deleted': 0}</field>
+    </record>
+
+  </data>
+</odoo>

@@ -1,0 +1,168 @@
+<odoo>
+  <data>
+    <!-- Top menu item -->
+    <menuitem name="Workflow"
+        id="main_menu"
+        action="ss_workflow.ssw_data_dashboard_action"
+        sequence="0"
+        web_icon="ss_workflow,static/description/icon.png"
+        groups="ss_workflow.group_admin,ss_workflow.group_manager,ss_workflow.group_submanager,ss_workflow.group_viewer">
+
+
+      <menuitem name="Dashboard"
+            sequence="1"
+            id="ssw_dashboard_menu_action_window"
+            action="ss_workflow.ssw_data_dashboard_action"
+            groups="ss_workflow.group_admin,ss_workflow.group_manager,ss_workflow.group_submanager,ss_workflow.group_viewer"/>
+
+      <menuitem name="Tickets"
+            sequence="2"
+            id="ssw_menu_action_window"
+            action="ss_workflow.action_tickets_view"
+            groups="ss_workflow.group_admin,ss_workflow.group_manager,ss_workflow.group_submanager,ss_workflow.group_viewer"/>
+
+      <menuitem name="Tasks"
+            sequence="3"
+            id="ssw_tasks_menu_action_window"
+            action="ss_workflow.action_tasks"
+            groups="ss_workflow.group_admin,ss_workflow.group_manager,ss_workflow.group_submanager,ss_workflow.group_viewer"/>
+      
+      <menuitem name="Procedures"
+            sequence="4"
+            id="ssw_procedures_menu_action_window"
+            action="ss_workflow.action_procedures"
+            groups="ss_workflow.group_admin,ss_workflow.group_manager,ss_workflow.group_submanager,ss_workflow.group_viewer"/>
+
+      
+      <!--
+      <menuitem name="Tickets"
+        sequence="1"
+        id="ssw_task_menu_tickets_action_window"
+        groups="ss_workflow.group_admin,ss_workflow.group_manager,ss_workflow.group_submanager,ss_workflow.group_viewer">
+
+        <menuitem name="New Ticket"
+            sequence="1"
+            id="ssw_templates_create_menu_action_window"
+            action="ss_workflow.tickets_action_templates_create"
+            groups="ss_workflow.group_admin,ss_workflow.group_manager,ss_workflow.group_submanager,ss_workflow.group_viewer"/>
+      
+        <menuitem name="Tickets"
+            sequence="2"
+            id="ssw_menu_action_window"
+            action="ss_workflow.action_tickets_view"
+            groups="ss_workflow.group_admin,ss_workflow.group_manager,ss_workflow.group_submanager,ss_workflow.group_viewer"/>
+      </menuitem>
+
+      <menuitem name="Procedures"
+        sequence="1"
+        id="ssw_menu_procedures_action_window"
+        groups="ss_workflow.group_admin,ss_workflow.group_manager,ss_workflow.group_submanager,ss_workflow.group_viewer">
+
+        <menuitem name="Start Procedure"
+            sequence="1"
+            id="ssw_procedures_create_menu_action_window"
+            action="ss_workflow.procedures_action_templates_create"
+            groups="ss_workflow.group_admin,ss_workflow.group_manager,ss_workflow.group_submanager,ss_workflow.group_viewer"/>
+
+        <menuitem name="Procedures"
+            sequence="2"
+            id="ssw_procedures_menu_action_window"
+            action="ss_workflow.action_procedures"
+            groups="ss_workflow.group_admin,ss_workflow.group_manager,ss_workflow.group_submanager,ss_workflow.group_viewer"/>
+
+        <menuitem name="Tasks"
+              sequence="3"
+              id="ssw_tasks_menu_action_window"
+              action="ss_workflow.action_tasks"
+              groups="ss_workflow.group_admin,ss_workflow.group_manager,ss_workflow.group_submanager,ss_workflow.group_viewer"/>
+      
+      </menuitem>
+
+        -->
+
+
+
+      <menuitem name="Configuration"
+        sequence="5"
+        id="ssw_menu_config_action_window"
+        groups="ss_workflow.group_admin">
+
+        <menuitem name="Users"
+          sequence="1"
+          id="ssw_menu_users_action_window"
+          action="ss_workflow.action_users"
+          groups="ss_workflow.group_admin"/>
+
+
+        <menuitem name="Managers"
+          sequence="2"
+          id="ssw_menu_managers_action_window"
+          action="ss_workflow.action_managers"
+          groups="ss_workflow.group_admin"/>
+
+        <menuitem name="Tickets Templates"
+          sequence="3"
+          id="ssw_menu_templates_action_window"
+          action="ss_workflow.tickets_action_templates"
+          groups="ss_workflow.group_admin"/>
+
+        <menuitem name="Procedures Templates"
+          sequence="4"
+          id="ssw_menu_procedures_templates_action_window"
+          action="ss_workflow.procedures_action_templates"
+          groups="ss_workflow.group_admin"/>
+
+        <menuitem name="Tasks Templates"
+          sequence="5"
+          id="ssw_menu_tasks_templates_action_window"
+          action="ss_workflow.action_templates_tasks"
+          groups="ss_workflow.group_admin"/>
+
+        <menuitem name="Groups"
+          sequence="6"
+          id="ssw_menu_groups_action_window"
+          action="ss_workflow.action_groups"
+          groups="ss_workflow.group_admin"/>
+
+      </menuitem>
+
+      <menuitem name="Reports"
+        sequence="6"
+        id="ssw_menu_reports_action_window"
+        groups="ss_workflow.group_admin,ss_workflow.group_manager,ss_workflow.group_submanager">
+
+        <menuitem name="Activity Report"
+          sequence="1"
+          id="ssw_menu_activity_report"
+          action="ss_workflow.action_workflow_activity_report_client"
+          groups="ss_workflow.group_admin,ss_workflow.group_manager,ss_workflow.group_submanager"/>
+
+        <menuitem name="Procedure Performance"
+          sequence="2"
+          id="ssw_menu_procedure_performance_report"
+          action="ss_workflow.action_workflow_procedure_performance_report_client"
+          groups="ss_workflow.group_admin,ss_workflow.group_manager,ss_workflow.group_submanager"/>
+
+        <menuitem name="Ticket Performance"
+          sequence="3"
+          id="ssw_menu_ticket_performance_report"
+          action="ss_workflow.action_workflow_ticket_performance_report_client"
+          groups="ss_workflow.group_admin,ss_workflow.group_manager,ss_workflow.group_submanager"/>
+
+        <menuitem name="Task Performance"
+          sequence="4"
+          id="ssw_menu_task_performance_report"
+          action="ss_workflow.action_workflow_task_performance_report_client"
+          groups="ss_workflow.group_admin,ss_workflow.group_manager,ss_workflow.group_submanager"/>
+
+      </menuitem>
+
+      <menuitem id="ssw_settings_menu_action"
+         name="Settings"
+         action="ss_workflow.res_config_settings_action"
+         sequence="10"
+         groups="ss_workflow.group_admin,ss_workflow.group_manager"/>
+
+    </menuitem>
+  </data>
+</odoo>

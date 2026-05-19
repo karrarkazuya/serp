@@ -1,0 +1,90 @@
+<?php
+
+return [
+    // General
+    'title'           => 'الإعدادات',
+    'general'         => 'الإعدادات العامة',
+    'general_desc'    => 'تهيئة إعدادات التطبيق.',
+    'save_settings'   => 'حفظ الإعدادات',
+
+    // Sidebar
+    'general_settings'=> 'عام',
+    'companies'       => 'الشركات',
+    'users'           => 'المستخدمون',
+    'roles'           => 'الأدوار',
+    'permissions'     => 'الصلاحيات',
+
+    // Companies
+    'company_name'    => 'اسم الشركة',
+    'new_company'     => 'شركة جديدة',
+    'no_companies'    => 'لا توجد شركات.',
+    'tax_id'          => 'الرقم الضريبي',
+    'website'         => 'الموقع الإلكتروني',
+    'phone'           => 'الهاتف',
+    'street'          => 'الشارع',
+    'city'            => 'المدينة',
+    'state'           => 'المنطقة',
+    'zip'             => 'الرمز البريدي',
+    'country'         => 'الدولة',
+    'currency'        => 'العملة',
+    'logo'            => 'الشعار',
+    'general_info'    => 'المعلومات العامة',
+    'address'         => 'العنوان',
+    'company_created' => 'تم إنشاء الشركة.',
+    'company_updated' => 'تم تحديث الشركة.',
+    'company_archived'  => 'تم أرشفة الشركة.',
+    'company_unarchived'=> 'تم إلغاء أرشفة الشركة.',
+    'company_deleted'   => 'تم حذف الشركة.',
+    'assign_users'    => 'المستخدمون المخصصون',
+    'sync_users'      => 'حفظ المستخدمين',
+
+    // Users
+    'new_user'        => 'مستخدم جديد',
+    'no_users'        => 'لا يوجد مستخدمون.',
+    'job_position'    => 'المسمى الوظيفي',
+    'password'        => 'كلمة المرور',
+    'password_hint'   => 'اتركه فارغاً للإبقاء على كلمة المرور الحالية.',
+    'user_active'     => 'نشط',
+    'user_created'    => 'تم إنشاء المستخدم.',
+    'user_updated'    => 'تم تحديث المستخدم.',
+    'user_deleted'    => 'تم حذف المستخدم.',
+    'default_company' => 'الشركة الافتراضية',
+    'assigned_roles'  => 'الأدوار المخصصة',
+
+    // Roles
+    'new_role'        => 'دور جديد',
+    'no_roles'        => 'لا توجد أدوار.',
+    'role_name'       => 'اسم الدور',
+    'role_key'        => 'المفتاح',
+    'role_created'    => 'تم إنشاء الدور.',
+    'role_updated'    => 'تم تحديث الدور.',
+    'role_deleted'    => 'تم حذف الدور.',
+    'role_permissions'=> 'الصلاحيات',
+
+    // Permissions
+    'no_permissions'     => 'لا توجد صلاحيات.',
+    'permission_name'    => 'الصلاحية',
+    'permission_key'     => 'المفتاح',
+    'permission_module'  => 'الوحدة',
+    'permission_desc'    => 'الوصف',
+    'permissions_desc'   => 'جميع صلاحيات النظام، مجمعة حسب الوحدة. عيّنها عبر الأدوار.',
+
+    // Extra UI strings
+    'company_info'       => 'معلومات الشركة',
+    'contact_details'    => 'بيانات التواصل',
+    'contact_info'       => 'معلومات التواصل',
+    'internal_notes'     => 'ملاحظات داخلية',
+    'notes_placeholder'  => 'أضف ملاحظات داخلية...',
+    'no_address'         => 'لا يوجد عنوان.',
+    'no_users_assigned'  => 'لا يوجد مستخدمون مخصصون.',
+    'manage'             => 'إدارة',
+    'archived_notice'    => 'هذه الشركة مؤرشفة.',
+    'user_info'          => 'معلومات المستخدم',
+    'password_set_hint'  => 'قم بتعيين كلمة مرور آمنة لهذا المستخدم.',
+    'confirm_password'   => 'تأكيد كلمة المرور',
+    'role_details'       => 'تفاصيل الدور',
+    'select_all'         => 'تحديد الكل',
+    'clear_all'          => 'إلغاء التحديد',
+    'key_hint'           => 'أحرف صغيرة وأرقام وشرطة سفلية فقط.',
+    'no_roles_create'    => 'لا توجد أدوار متاحة.',
+];

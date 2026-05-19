@@ -6,34 +6,34 @@
     <div class="bg-white border-b border-gray-200 px-4 py-2 flex items-center gap-3 shrink-0">
         <div class="flex items-center gap-2 shrink-0">
             @can('create', \App\Models\Contacts\Contact::class)
-            <a href="{{ route('contacts.create') }}" class="px-3 py-1.5 bg-[#714B67] hover:bg-[#5c3d55] text-white text-sm font-medium rounded">New</a>
+            <a href="{{ route('contacts.create') }}" class="px-3 py-1.5 bg-[#714B67] hover:bg-[#5c3d55] text-white text-sm font-medium rounded">{{ __('common.new') }}</a>
             @endcan
             <div class="flex flex-col leading-tight">
-                <a href="{{ route('contacts.index') }}" class="text-xs text-purple-600 hover:text-purple-700">Contacts</a>
+                <a href="{{ route('contacts.index') }}" class="text-xs text-purple-600 hover:text-purple-700">{{ __('contacts.title') }}</a>
                 <span class="text-sm font-semibold text-gray-800">{{ $contact->name }}</span>
             </div>
         </div>
 
         <div class="ml-auto flex items-center gap-3 shrink-0">
             @can('update', $contact)
-            <a href="{{ route('contacts.edit', $contact) }}" class="px-3 py-1.5 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded hover:bg-gray-50">Edit</a>
+            <a href="{{ route('contacts.edit', $contact) }}" class="px-3 py-1.5 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded hover:bg-gray-50">{{ __('common.edit') }}</a>
             @if($contact->active)
             <form method="POST" action="{{ route('contacts.archive', $contact) }}">
                 @csrf @method('PATCH')
-                <button class="px-3 py-1.5 text-sm text-amber-700 border border-amber-200 rounded hover:bg-amber-50">Archive</button>
+                <button class="px-3 py-1.5 text-sm text-amber-700 border border-amber-200 rounded hover:bg-amber-50">{{ __('common.archive') }}</button>
             </form>
             @else
             <form method="POST" action="{{ route('contacts.unarchive', $contact) }}">
                 @csrf @method('PATCH')
-                <button class="px-3 py-1.5 text-sm text-green-700 border border-green-200 rounded hover:bg-green-50">Restore</button>
+                <button class="px-3 py-1.5 text-sm text-green-700 border border-green-200 rounded hover:bg-green-50">{{ __('common.unarchive') }}</button>
             </form>
             @endif
             @endcan
 
             @can('delete', $contact)
-            <form method="POST" action="{{ route('contacts.delete', $contact) }}" onsubmit="return confirm('Delete this contact?')">
+            <form method="POST" action="{{ route('contacts.delete', $contact) }}" onsubmit="return confirm('{{ __('common.confirm_delete') }}')">
                 @csrf @method('DELETE')
-                <button class="px-3 py-1.5 text-sm text-red-700 border border-red-200 rounded hover:bg-red-50">Delete</button>
+                <button class="px-3 py-1.5 text-sm text-red-700 border border-red-200 rounded hover:bg-red-50">{{ __('common.delete') }}</button>
             </form>
             @endcan
 
@@ -59,21 +59,21 @@
         <div class="bg-white mx-4 mt-4 rounded-xl border border-gray-200 shadow-sm">
             @if(!$contact->active)
             <div class="px-6 pt-4 pb-0">
-                <div class="text-sm text-amber-700 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2">This contact is archived.</div>
+                <div class="text-sm text-amber-700 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2">{{ __('contacts.contact_archived') }}</div>
             </div>
             @endif
 
             <div class="p-6">
-                <div class="text-sm text-gray-600 mb-3">{{ $contact->isCompany() ? 'Company' : 'Individual' }}</div>
+                <div class="text-sm text-gray-600 mb-3">{{ $contact->isCompany() ? __('contacts.company_type') : __('contacts.individual') }}</div>
                 <h1 class="text-3xl font-bold text-gray-900 mb-6">{{ $contact->name }}</h1>
 
                 <div class="flex gap-8">
                     <div class="flex-1">
                         @foreach([
-                            ['Job Position', $contact->job_position],
-                            ['Company', $contact->company?->name ?? $contact->company_name],
-                            ['Tax ID', $contact->tax_id],
-                            ['Parent Contact', $contact->parent?->name],
+                            [__('contacts.job_position'), $contact->job_position],
+                            [__('contacts.company'),      $contact->company?->name ?? $contact->company_name],
+                            [__('contacts.tax_id'),       $contact->tax_id],
+                            [__('contacts.parent'),       $contact->parent?->name],
                         ] as [$label, $value])
                         <div class="flex items-center gap-4 py-2 border-b border-gray-100">
                             <span class="w-32 shrink-0 text-sm text-gray-500">{{ $label }}</span>
@@ -82,7 +82,7 @@
                         @endforeach
 
                         <div class="flex items-start gap-4 py-2 border-b border-gray-100">
-                            <span class="w-32 shrink-0 text-sm text-gray-500 pt-0.5">Tags</span>
+                            <span class="w-32 shrink-0 text-sm text-gray-500 pt-0.5">{{ __('contacts.tags') }}</span>
                             <div class="flex flex-wrap gap-1.5 flex-1">
                                 @forelse($contact->tags as $tag)
                                     <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium text-white" style="background-color: {{ $tag->color }}">{{ $tag->name }}</span>
@@ -95,15 +95,15 @@
 
                     <div class="flex-1">
                         @foreach([
-                            ['Phone', $contact->phone],
-                            ['Mobile', $contact->mobile],
-                            ['Email', $contact->email],
-                            ['Website', $contact->website],
-                            ['Street', $contact->street],
-                            ['City', $contact->city],
-                            ['State', $contact->state],
-                            ['ZIP', $contact->zip],
-                            ['Country', $contact->country],
+                            [__('contacts.phone'),   $contact->phone],
+                            [__('contacts.mobile'),  $contact->mobile],
+                            [__('contacts.email'),   $contact->email],
+                            [__('contacts.website'), $contact->website],
+                            [__('contacts.street'),  $contact->street],
+                            [__('contacts.city'),    $contact->city],
+                            [__('contacts.state'),   $contact->state],
+                            [__('contacts.zip'),     $contact->zip],
+                            [__('contacts.country'), $contact->country],
                         ] as [$label, $value])
                         <div class="flex items-center gap-4 py-2 border-b border-gray-100">
                             <span class="w-24 shrink-0 text-sm text-gray-500">{{ $label }}</span>
@@ -130,13 +130,13 @@
                             @click="page = 'related'"
                             class="px-4 py-2 text-sm font-semibold border border-b-0 rounded-t bg-white"
                             :class="page === 'related' ? 'text-gray-900 border-gray-300 -mb-px pb-[9px]' : 'text-[#714B67] border-transparent hover:text-[#5c3d55]'">
-                        Related Contacts
+                        {{ __('contacts.related_contacts') }}
                     </button>
                     <button type="button"
                             @click="page = 'notes'"
                             class="px-4 py-2 text-sm font-semibold border border-b-0 rounded-t bg-white"
                             :class="page === 'notes' ? 'text-gray-900 border-gray-300 -mb-px pb-[9px]' : 'text-[#714B67] border-transparent hover:text-[#5c3d55]'">
-                        Internal Notes
+                        {{ __('contacts.notes') }}
                     </button>
                 </div>
 
@@ -152,7 +152,7 @@
                                 <span class="text-xs text-gray-400">{{ $child->email }}</span>
                             </a>
                         @empty
-                            <div class="min-h-32 flex items-center justify-center text-sm text-gray-400">No related contacts.</div>
+                            <div class="min-h-32 flex items-center justify-center text-sm text-gray-400">{{ __('contacts.no_contacts') }}</div>
                         @endforelse
                     </div>
 
@@ -160,63 +160,25 @@
                         @if($contact->notes)
                             <p class="text-sm text-gray-700 whitespace-pre-line">{{ $contact->notes }}</p>
                         @else
-                            <div class="min-h-32 flex items-center justify-center text-sm text-gray-400">No internal notes.</div>
+                            <div class="min-h-32 flex items-center justify-center text-sm text-gray-400">{{ __('contacts.no_notes') }}</div>
                         @endif
                     </div>
                 </div>
             </div>
         </div>
 
-        <div class="bg-white mx-4 mt-4 mb-4 rounded-xl border border-gray-200 shadow-sm">
-            @can('comment', $contact)
-            <div class="px-6 py-3 border-b border-gray-100">
-                <button type="button" @click="compose = !compose" class="px-3 py-1.5 text-sm font-medium rounded bg-[#714B67] text-white hover:bg-[#5c3d55]">Send message</button>
-                <div x-show="compose" x-transition style="display:none" class="mt-3">
-                    <form method="POST" action="{{ route('contacts.comment', $contact) }}" class="space-y-2">
-                        @csrf
-                        <textarea name="body" rows="3" placeholder="Write a message..." class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-purple-400 resize-none bg-white"></textarea>
-                        <button type="submit" class="px-4 py-1.5 text-sm font-medium text-white bg-[#714B67] hover:bg-[#5c3d55] rounded">Send</button>
-                    </form>
-                </div>
-            </div>
-            @endcan
-
-            <div class="px-6 py-2">
-                @forelse($messages as $message)
-                <div class="flex gap-3 my-4">
-                    <div class="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold shrink-0 mt-0.5 {{ $message->message_type === 'comment' ? 'bg-purple-100 text-purple-700' : 'bg-gray-700 text-white' }}">
-                        {{ $message->user?->initials ?? '?' }}
-                    </div>
-                    <div class="flex-1 min-w-0">
-                        <div class="flex items-baseline gap-2 mb-1">
-                            <span class="text-sm font-semibold text-gray-800">{{ $message->user?->name ?? 'System' }}</span>
-                            <span class="text-xs text-gray-400">{{ $message->created_at->format('M j, g:i A') }}</span>
-                        </div>
-                        @if(!empty($message->metadata['changes']))
-                            <ul class="space-y-0.5">
-                                @foreach($message->metadata['changes'] as $change)
-                                <li class="text-sm">
-                                    <span class="text-gray-400">{{ $change['from'] }}</span>
-                                    <span class="text-gray-300"> -&gt; </span>
-                                    <span class="text-blue-600 font-medium">{{ $change['to'] }}</span>
-                                    <span class="text-gray-400 text-xs">({{ $change['label'] }})</span>
-                                </li>
-                                @endforeach
-                            </ul>
-                        @else
-                            <p class="text-sm text-gray-700 whitespace-pre-line">{{ $message->body }}</p>
-                        @endif
-                    </div>
-                </div>
-                @empty
-                    <p class="text-sm text-gray-400 py-8 text-center">No messages yet.</p>
-                @endforelse
-            </div>
+        <div class="bg-white mx-4 mt-4 mb-4 rounded-xl border border-gray-200 shadow-sm overflow-hidden">
+            <x-chatter
+                :model="$contact"
+                :messages="$messages"
+                :comment-url="route('contacts.comment', $contact)"
+                :can-comment="auth()->user()->can('comment', $contact)"
+            />
         </div>
 
         <div class="px-4 pb-4 text-xs text-gray-400 flex gap-6">
-            <span>Created {{ $contact->created_at->format('M d, Y') }}{{ $contact->creator ? ' by ' . $contact->creator->name : '' }}</span>
-            <span>Updated {{ $contact->updated_at->diffForHumans() }}{{ $contact->updater ? ' by ' . $contact->updater->name : '' }}</span>
+            <span>{{ __('common.created_at') }}: {{ $contact->created_at->format('M d, Y') }}{{ $contact->creator ? ' · ' . $contact->creator->name : '' }}</span>
+            <span>{{ __('common.updated_at') }}: {{ $contact->updated_at->diffForHumans() }}{{ $contact->updater ? ' · ' . $contact->updater->name : '' }}</span>
         </div>
     </div>
 </div>

@@ -8,12 +8,151 @@
         <span class="text-white font-bold text-lg tracking-wide">S-ERP</span>
     </a>
 
+    @if(request()->routeIs('workflow.*'))
+    <div class="flex min-w-0 flex-1 items-center h-full">
+        <a href="{{ route('workflow.dashboard') }}"
+           class="flex items-center h-full px-3 sm:px-4 text-white/85 hover:text-white hover:bg-[#5c3d55] transition-colors text-sm font-semibold shrink-0
+                  {{ request()->routeIs('workflow.dashboard') ? 'bg-[#5c3d55]' : '' }}">
+            {{ __('nav.dashboard') }}
+        </a>
+        <a href="{{ route('workflow.tickets.index') }}"
+           class="flex items-center h-full px-3 sm:px-4 text-white/85 hover:text-white hover:bg-[#5c3d55] transition-colors text-sm font-semibold shrink-0
+                  {{ request()->routeIs('workflow.tickets.*') ? 'bg-[#5c3d55]' : '' }}">
+            {{ __('nav.tickets') }}
+        </a>
+        <a href="{{ route('workflow.procedures.index') }}"
+           class="flex items-center h-full px-3 sm:px-4 text-white/85 hover:text-white hover:bg-[#5c3d55] transition-colors text-sm font-semibold shrink-0
+                  {{ request()->routeIs('workflow.procedures.*') ? 'bg-[#5c3d55]' : '' }}">
+            {{ __('nav.procedures') }}
+        </a>
+
+        <div x-data="{ open: false }" class="relative h-full shrink-0" @click.outside="open = false">
+            <button type="button"
+                    @click="open = !open"
+                    class="hidden sm:flex items-center h-full px-4 text-white/85 hover:text-white hover:bg-[#5c3d55] transition-colors text-sm font-semibold
+                           {{ request()->routeIs('workflow.config.*') ? 'bg-[#5c3d55]' : '' }}">
+                {{ __('nav.configuration') }}
+                <svg class="ms-1 w-3.5 h-3.5 transition-transform" :class="open ? 'rotate-180' : ''" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
+                </svg>
+            </button>
+
+            <div x-show="open"
+                 x-transition:enter="transition ease-out duration-100"
+                 x-transition:enter-start="opacity-0 scale-95"
+                 x-transition:enter-end="opacity-100 scale-100"
+                 x-transition:leave="transition ease-in duration-75"
+                 x-transition:leave-start="opacity-100 scale-100"
+                 x-transition:leave-end="opacity-0 scale-95"
+                 class="absolute start-0 top-full w-56 bg-white rounded-b-lg shadow-xl border border-gray-200 z-50 py-1"
+                 style="display:none">
+                <div class="px-3 py-1.5 text-[10px] font-semibold text-gray-400 uppercase">{{ __('nav.configuration') }}</div>
+                @can('viewAny', \App\Models\Workflow\Group::class)
+                <a href="{{ route('workflow.config.groups.index') }}"
+                   class="block px-4 py-2.5 text-sm text-gray-800 hover:bg-gray-100 {{ request()->routeIs('workflow.config.groups.*') ? 'bg-gray-100 font-semibold' : '' }}">
+                    {{ __('nav.groups') }}
+                </a>
+                @endcan
+                @can('viewAny', \App\Models\Workflow\Department::class)
+                <a href="{{ route('workflow.config.departments.index') }}"
+                   class="block px-4 py-2.5 text-sm text-gray-800 hover:bg-gray-100 {{ request()->routeIs('workflow.config.departments.*') ? 'bg-gray-100 font-semibold' : '' }}">
+                    {{ __('nav.departments') }}
+                </a>
+                @endcan
+                @can('viewAny', \App\Models\Workflow\WorkflowUser::class)
+                <a href="{{ route('workflow.config.users.index') }}"
+                   class="block px-4 py-2.5 text-sm text-gray-800 hover:bg-gray-100 {{ request()->routeIs('workflow.config.users.*') ? 'bg-gray-100 font-semibold' : '' }}">
+                    {{ __('settings.users') }}
+                </a>
+                @endcan
+                @if(auth()->user()->hasPermission('workflow.config.read'))
+                <a href="{{ route('workflow.config.managers.index') }}"
+                   class="block px-4 py-2.5 text-sm text-gray-800 hover:bg-gray-100 {{ request()->routeIs('workflow.config.managers.*') ? 'bg-gray-100 font-semibold' : '' }}">
+                    {{ __('nav.managers') }}
+                </a>
+                @endif
+                <div class="border-t border-gray-100 my-1"></div>
+                <div class="px-3 py-1.5 text-[10px] font-semibold text-gray-400 uppercase">{{ __('nav.templates') }}</div>
+                @can('viewAny', \App\Models\Workflow\TicketTemplate::class)
+                <a href="{{ route('workflow.config.ticket-templates.index') }}"
+                   class="block px-4 py-2.5 text-sm text-gray-800 hover:bg-gray-100 {{ request()->routeIs('workflow.config.ticket-templates.*') ? 'bg-gray-100 font-semibold' : '' }}">
+                    {{ __('nav.tickets_templates') }}
+                </a>
+                @endcan
+                @can('viewAny', \App\Models\Workflow\ProcedureTemplate::class)
+                <a href="{{ route('workflow.config.procedure-templates.index') }}"
+                   class="block px-4 py-2.5 text-sm text-gray-800 hover:bg-gray-100 {{ request()->routeIs('workflow.config.procedure-templates.*') ? 'bg-gray-100 font-semibold' : '' }}">
+                    {{ __('nav.procedures_templates') }}
+                </a>
+                @endcan
+            </div>
+        </div>
+
+        <div x-data="{ open: false }" class="relative h-full shrink-0" @click.outside="open = false">
+            <button type="button"
+                    @click="open = !open"
+                    class="hidden sm:flex items-center h-full px-4 text-white/85 hover:text-white hover:bg-[#5c3d55] transition-colors text-sm font-semibold
+                           {{ request()->routeIs('workflow.reports.*') ? 'bg-[#5c3d55]' : '' }}">
+                {{ __('nav.reports') }}
+                <svg class="ms-1 w-3.5 h-3.5 transition-transform" :class="open ? 'rotate-180' : ''" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
+                </svg>
+            </button>
+
+            <div x-show="open"
+                 x-transition:enter="transition ease-out duration-100"
+                 x-transition:enter-start="opacity-0 scale-95"
+                 x-transition:enter-end="opacity-100 scale-100"
+                 x-transition:leave="transition ease-in duration-75"
+                 x-transition:leave-start="opacity-100 scale-100"
+                 x-transition:leave-end="opacity-0 scale-95"
+                 class="absolute start-0 top-full w-64 bg-white rounded-b-lg shadow-xl border border-gray-200 z-50 py-1"
+                 style="display:none">
+                <a href="{{ route('workflow.reports.show', 'activity') }}"
+                   class="block px-4 py-2.5 text-sm text-gray-800 hover:bg-gray-100 {{ request()->route('report') === 'activity' ? 'bg-gray-100 font-semibold' : '' }}">
+                    {{ __('nav.activity_report') }}
+                </a>
+                <a href="{{ route('workflow.reports.show', 'procedure-performance') }}"
+                   class="block px-4 py-2.5 text-sm text-gray-800 hover:bg-gray-100 {{ request()->route('report') === 'procedure-performance' ? 'bg-gray-100 font-semibold' : '' }}">
+                    {{ __('nav.procedure_performance') }}
+                </a>
+                <a href="{{ route('workflow.reports.show', 'ticket-performance') }}"
+                   class="block px-4 py-2.5 text-sm text-gray-800 hover:bg-gray-100 {{ request()->route('report') === 'ticket-performance' ? 'bg-gray-100 font-semibold' : '' }}">
+                    {{ __('nav.ticket_performance') }}
+                </a>
+                <a href="{{ route('workflow.reports.show', 'task-performance') }}"
+                   class="block px-4 py-2.5 text-sm text-gray-800 hover:bg-gray-100 {{ request()->route('report') === 'task-performance' ? 'bg-gray-100 font-semibold' : '' }}">
+                    {{ __('nav.task_performance') }}
+                </a>
+            </div>
+        </div>
+
+        @if(auth()->user()->hasPermission('workflow.config.read'))
+        <a href="{{ route('workflow.settings.index') }}"
+           class="hidden sm:flex items-center h-full px-3 sm:px-4 text-white/85 hover:text-white hover:bg-[#5c3d55] transition-colors text-sm font-semibold shrink-0
+                  {{ request()->routeIs('workflow.settings.*') ? 'bg-[#5c3d55]' : '' }}">
+            {{ __('settings.title') }}
+        </a>
+        @endif
+    </div>
+    @endif
+
+    @if(request()->routeIs('chat.*'))
+    <div class="flex min-w-0 flex-1 items-center h-full">
+        <a href="{{ route('chat.index') }}"
+           class="flex items-center h-full px-4 text-white/85 hover:text-white hover:bg-[#5c3d55] transition-colors text-sm font-semibold shrink-0
+                  {{ request()->routeIs('chat.*') ? 'bg-[#5c3d55]' : '' }}">
+            Chat
+        </a>
+    </div>
+    @endif
+
     @if(request()->routeIs('contacts.*'))
     <div class="flex min-w-0 flex-1 items-center h-full">
         <a href="{{ route('contacts.index') }}"
            class="flex items-center h-full px-3 sm:px-4 text-white/85 hover:text-white hover:bg-[#5c3d55] transition-colors text-sm font-semibold shrink-0
                   {{ request()->routeIs('contacts.index', 'contacts.show', 'contacts.create', 'contacts.edit') ? 'bg-[#5c3d55]' : '' }}">
-            Contacts
+            {{ __('nav.contacts') }}
         </a>
 
         <div x-data="{ open: false }" class="relative h-full shrink-0" @click.outside="open = false">
@@ -21,7 +160,7 @@
                     @click="open = !open"
                     class="hidden sm:flex items-center h-full px-4 text-white/85 hover:text-white hover:bg-[#5c3d55] transition-colors text-sm font-semibold
                            {{ request()->routeIs('contacts.tags.*') ? 'bg-[#5c3d55]' : '' }}">
-                Configuration
+                {{ __('nav.configuration') }}
             </button>
             <button type="button"
                     @click="open = !open"
@@ -43,11 +182,11 @@
                  x-transition:leave="transition ease-in duration-75"
                  x-transition:leave-start="opacity-100 scale-100"
                  x-transition:leave-end="opacity-0 scale-95"
-                 class="absolute left-0 top-full w-56 max-w-[calc(100vw-1rem)] bg-white rounded-b-lg shadow-xl border border-gray-200 z-50 py-1"
+                 class="absolute start-0 top-full w-56 max-w-[calc(100vw-1rem)] bg-white rounded-b-lg shadow-xl border border-gray-200 z-50 py-1"
                  style="display:none">
                 <a href="{{ route('contacts.tags.index') }}"
                    class="block px-4 py-2.5 text-sm text-gray-800 hover:bg-gray-100 {{ request()->routeIs('contacts.tags.*') ? 'bg-gray-100 font-semibold' : '' }}">
-                    Contact Tags
+                    {{ __('nav.contact_tags') }}
                 </a>
             </div>
         </div>
@@ -55,7 +194,7 @@
     @endif
 
     {{-- Right side --}}
-    <div class="ml-auto flex shrink-0 items-center h-full pr-1 sm:pr-2 gap-1">
+    <div class="ms-auto flex shrink-0 items-center h-full pe-1 sm:pe-2 gap-1">
 
         {{-- ===== Company Switcher ===== --}}
         @if(isset($allowedCompanies) && $allowedCompanies->isNotEmpty())
@@ -97,12 +236,12 @@
                  x-transition:leave="transition ease-in duration-75"
                  x-transition:leave-start="opacity-100 scale-100"
                  x-transition:leave-end="opacity-0 scale-95"
-                 class="absolute right-0 top-full mt-0.5 w-[min(16rem,calc(100vw-1rem))] bg-white rounded-xl shadow-2xl border border-gray-100 z-50 overflow-hidden"
+                 class="absolute end-0 top-full mt-0.5 w-[min(16rem,calc(100vw-1rem))] bg-white rounded-xl shadow-2xl border border-gray-100 z-50 overflow-hidden"
                  style="display: none;">
 
                 <div class="px-4 py-3 border-b border-gray-100 bg-gray-50">
-                    <p class="text-xs font-semibold text-gray-500 uppercase tracking-wider">Switch Company</p>
-                    <p class="text-xs text-gray-400 mt-0.5">Select one or more companies</p>
+                    <p class="text-xs font-semibold text-gray-500 uppercase tracking-wider">{{ __('common.switch_company') }}</p>
+                    <p class="text-xs text-gray-400 mt-0.5">{{ __('common.select_companies') }}</p>
                 </div>
 
                 <div class="py-1 max-h-60 overflow-y-auto">
@@ -147,17 +286,156 @@
                         </template>
                         <button type="submit"
                                 class="w-full px-3 py-1.5 bg-purple-600 hover:bg-purple-700 text-white text-xs font-semibold rounded-lg transition-colors">
-                            Apply
+                            {{ __('common.apply') }}
                         </button>
                     </form>
                     <button @click="open = false"
                             class="px-3 py-1.5 text-xs text-gray-600 hover:bg-gray-100 rounded-lg transition-colors">
-                        Cancel
+                        {{ __('common.cancel') }}
                     </button>
                 </div>
             </div>
         </div>
         @endif
+
+        {{-- ===== Chat icon ===== --}}
+        <a href="{{ route('chat.index') }}"
+           class="relative flex items-center justify-center h-full px-2 sm:px-3 transition-colors
+                  {{ request()->routeIs('chat.*') ? 'bg-[#5c3d55] text-white' : 'text-white/80 hover:text-white hover:bg-[#5c3d55]' }}"
+           title="Chat">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                      d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"/>
+            </svg>
+        </a>
+
+        {{-- ===== Notification Bell ===== --}}
+        <div x-data="{
+                open: false,
+                count: 0,
+                notifications: [],
+                initialized: false,
+                async fetchCount() {
+                    try {
+                        const r = await fetch('{{ route('notifications.count') }}');
+                        const d = await r.json();
+                        if (this.initialized && d.count > this.count) {
+                            this.ping();
+                        }
+                        this.count = d.count;
+                        this.initialized = true;
+                    } catch (e) {}
+                },
+                async openDropdown() {
+                    this.open = !this.open;
+                    if (this.open) {
+                        try {
+                            const r = await fetch('{{ route('notifications.recent') }}');
+                            const d = await r.json();
+                            this.notifications = d.notifications;
+                        } catch (e) {}
+                    }
+                },
+                async markAllSeen() {
+                    try {
+                        await fetch('{{ route('notifications.seen-all') }}', {
+                            method: 'POST',
+                            headers: { 'X-CSRF-TOKEN': document.querySelector('meta[name=csrf-token]').content }
+                        });
+                        this.count = 0;
+                        this.notifications = this.notifications.map(n => ({ ...n, seen_at: new Date().toISOString() }));
+                    } catch (e) {}
+                },
+                async markSeen(n) {
+                    if (n.seen_at) {
+                        if (n.url) window.location.href = n.url;
+                        return;
+                    }
+                    try {
+                        await fetch('/notifications/' + n.id + '/seen', {
+                            method: 'POST',
+                            headers: { 'X-CSRF-TOKEN': document.querySelector('meta[name=csrf-token]').content }
+                        });
+                        n.seen_at = new Date().toISOString();
+                        this.count = Math.max(0, this.count - 1);
+                    } catch (e) {}
+                    if (n.url) window.location.href = n.url;
+                },
+                ping() {
+                    try {
+                        const ctx = new (window.AudioContext || window.webkitAudioContext)();
+                        const o = ctx.createOscillator();
+                        const g = ctx.createGain();
+                        o.connect(g);
+                        g.connect(ctx.destination);
+                        o.frequency.value = 880;
+                        g.gain.setValueAtTime(0.3, ctx.currentTime);
+                        g.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.4);
+                        o.start(ctx.currentTime);
+                        o.stop(ctx.currentTime + 0.4);
+                    } catch (e) {}
+                },
+                init() {
+                    this.fetchCount();
+                    setInterval(() => this.fetchCount(), 30000);
+                }
+             }"
+             class="relative h-full flex items-center"
+             @click.outside="open = false">
+
+            <button @click="openDropdown()"
+                    class="relative flex items-center justify-center h-full px-2 sm:px-3 text-white/80 hover:text-white hover:bg-[#5c3d55] transition-colors">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                          d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.003 6.003 0 00-5-5.917V5a1 1 0 10-2 0v.083A6.003 6.003 0 006 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/>
+                </svg>
+                <span x-show="count > 0"
+                      x-text="count > 99 ? '99+' : count"
+                      class="absolute top-2 right-1 min-w-[16px] h-4 bg-red-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center px-0.5 leading-none"
+                      style="display:none">
+                </span>
+            </button>
+
+            <div x-show="open"
+                 x-transition:enter="transition ease-out duration-100"
+                 x-transition:enter-start="opacity-0 scale-95"
+                 x-transition:enter-end="opacity-100 scale-100"
+                 x-transition:leave="transition ease-in duration-75"
+                 x-transition:leave-start="opacity-100 scale-100"
+                 x-transition:leave-end="opacity-0 scale-95"
+                 class="absolute end-0 top-full mt-0.5 w-[min(22rem,calc(100vw-1rem))] bg-white rounded-xl shadow-2xl border border-gray-100 z-50 overflow-hidden"
+                 style="display: none;">
+
+                <div class="flex items-center justify-between px-4 py-3 border-b border-gray-100 bg-gray-50">
+                    <p class="text-xs font-semibold text-gray-500 uppercase tracking-wider">Notifications</p>
+                    <button @click="markAllSeen()" x-show="count > 0"
+                            class="text-xs text-purple-600 hover:text-purple-700 font-medium"
+                            style="display:none">
+                        Mark all read
+                    </button>
+                </div>
+
+                <div class="max-h-80 overflow-y-auto divide-y divide-gray-50">
+                    <template x-if="notifications.length === 0">
+                        <p class="px-4 py-8 text-sm text-gray-400 text-center">No notifications</p>
+                    </template>
+                    <template x-for="n in notifications" :key="n.id">
+                        <div @click="markSeen(n)"
+                             class="flex items-start gap-3 px-4 py-3 transition-colors"
+                             :class="n.url ? 'cursor-pointer hover:bg-gray-50' : 'hover:bg-gray-50'"
+                             :style="!n.seen_at ? 'background-color: #faf5ff;' : ''">
+                            <div class="w-2 h-2 mt-1.5 rounded-full shrink-0 transition-colors"
+                                 :class="!n.seen_at ? 'bg-purple-500' : 'bg-transparent'"></div>
+                            <div class="flex-1 min-w-0">
+                                <p class="text-sm font-medium text-gray-800" x-text="n.title"></p>
+                                <p x-show="n.body" class="text-xs text-gray-500 mt-0.5 line-clamp-2" x-text="n.body"></p>
+                                <p class="text-[10px] text-gray-400 mt-1" x-text="n.created_at"></p>
+                            </div>
+                        </div>
+                    </template>
+                </div>
+            </div>
+        </div>
 
         {{-- ===== User menu ===== --}}
         <div x-data="{ open: false }" class="relative h-full flex items-center" @click.outside="open = false">
@@ -179,13 +457,23 @@
                  x-transition:leave="transition ease-in duration-75"
                  x-transition:leave-start="opacity-100 scale-100"
                  x-transition:leave-end="opacity-0 scale-95"
-                 class="absolute right-0 top-full mt-0.5 w-[min(13rem,calc(100vw-1rem))] bg-white rounded-lg shadow-xl border border-gray-100 z-50 py-1"
+                 class="absolute end-0 top-full mt-0.5 w-[min(13rem,calc(100vw-1rem))] bg-white rounded-lg shadow-xl border border-gray-100 z-50 py-1"
                  style="display: none;">
 
                 <div class="px-4 py-2.5 border-b border-gray-100">
                     <p class="text-sm font-semibold text-gray-800">{{ auth()->user()->name }}</p>
                     <p class="text-xs text-gray-500 truncate">{{ auth()->user()->email }}</p>
                 </div>
+
+                <a href="{{ route('profile') }}"
+                   class="flex items-center gap-2 px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition-colors {{ request()->routeIs('profile') ? 'bg-gray-50 font-semibold' : '' }}">
+                    <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/>
+                    </svg>
+                    {{ __('nav.my_profile') }}
+                </a>
+
+                <div class="border-t border-gray-100"></div>
 
                 <form method="POST" action="{{ route('logout') }}">
                     @csrf
@@ -194,7 +482,7 @@
                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/>
                         </svg>
-                        Sign out
+                        {{ __('common.sign_out') }}
                     </button>
                 </form>
             </div>

@@ -5,16 +5,15 @@
 @section('content')
 <div class="flex flex-col h-full overflow-hidden">
 
-    {{-- Header --}}
     <div class="bg-white border-b border-gray-200 px-6 py-3">
         <div class="flex items-center gap-3 flex-wrap">
             @include('components.breadcrumb', ['items' => [
-                ['label' => 'Settings', 'url' => route('settings.index')],
-                ['label' => 'Companies', 'url' => route('settings.companies.index')],
+                ['label' => __('settings.title'), 'url' => route('settings.index')],
+                ['label' => __('settings.companies'), 'url' => route('settings.companies.index')],
                 ['label' => $company->name],
             ]])
 
-            <div class="ml-auto flex items-center gap-2">
+            <div class="ms-auto flex items-center gap-2">
 
                 @can('update', $company)
                 <a href="{{ route('settings.companies.edit', $company) }}"
@@ -22,7 +21,7 @@
                     <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
                     </svg>
-                    Edit
+                    {{ __('common.edit') }}
                 </a>
                 @endcan
 
@@ -32,7 +31,7 @@
                     @csrf @method('PATCH')
                     <button type="submit"
                             class="flex items-center gap-1.5 px-3 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-amber-50 hover:border-amber-300 hover:text-amber-700 transition-colors">
-                        Archive
+                        {{ __('common.archive') }}
                     </button>
                 </form>
                 @else
@@ -40,7 +39,7 @@
                     @csrf @method('PATCH')
                     <button type="submit"
                             class="flex items-center gap-1.5 px-3 py-2 text-sm font-medium text-green-700 bg-white border border-green-300 rounded-md hover:bg-green-50 transition-colors">
-                        Restore
+                        {{ __('common.unarchive') }}
                     </button>
                 </form>
                 @endif
@@ -48,11 +47,11 @@
 
                 @can('delete', $company)
                 <form method="POST" action="{{ route('settings.companies.delete', $company) }}"
-                      onsubmit="return confirm('Delete {{ $company->name }}? This cannot be undone.')">
+                      onsubmit="return confirm('{{ __('common.confirm_delete') }}')">
                     @csrf @method('DELETE')
                     <button type="submit"
                             class="flex items-center gap-1.5 px-3 py-2 text-sm font-medium text-red-600 bg-white border border-red-200 rounded-md hover:bg-red-50 transition-colors">
-                        Delete
+                        {{ __('common.delete') }}
                     </button>
                 </form>
                 @endcan
@@ -64,18 +63,15 @@
             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
             </svg>
-            This company is archived.
+            {{ __('settings.archived_notice') }}
         </div>
         @endif
     </div>
 
-    {{-- Body --}}
     <div class="flex flex-1 overflow-hidden">
 
-        {{-- Main area --}}
         <div class="flex-1 overflow-y-auto p-6">
 
-            {{-- Company header --}}
             <div class="flex items-start gap-5 mb-6">
                 <div class="w-16 h-16 rounded-xl bg-purple-100 flex items-center justify-center text-xl font-bold text-purple-700 shrink-0">
                     {{ strtoupper(substr($company->name, 0, 2)) }}
@@ -95,12 +91,10 @@
                 </div>
             </div>
 
-            {{-- Info cards --}}
             <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
 
-                {{-- Contact details --}}
                 <div class="bg-gray-50 rounded-xl p-5">
-                    <h3 class="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3">Contact Information</h3>
+                    <h3 class="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3">{{ __('settings.contact_info') }}</h3>
                     <dl class="space-y-2.5">
                         @if($company->email)
                         <div class="flex items-center gap-3">
@@ -139,15 +133,14 @@
                             <svg class="w-4 h-4 text-gray-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z"/>
                             </svg>
-                            <span class="text-sm text-gray-700">VAT: {{ $company->tax_id }}</span>
+                            <span class="text-sm text-gray-700">{{ __('settings.tax_id') }}: {{ $company->tax_id }}</span>
                         </div>
                         @endif
                     </dl>
                 </div>
 
-                {{-- Address --}}
                 <div class="bg-gray-50 rounded-xl p-5">
-                    <h3 class="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3">Address</h3>
+                    <h3 class="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3">{{ __('settings.address') }}</h3>
                     @if($company->street || $company->city || $company->country)
                     <address class="not-italic text-sm text-gray-700 space-y-1">
                         @if($company->street)<div>{{ $company->street }}</div>@endif
@@ -157,17 +150,16 @@
                         @if($company->country)<div>{{ $company->country }}</div>@endif
                     </address>
                     @else
-                    <p class="text-sm text-gray-400">No address provided.</p>
+                    <p class="text-sm text-gray-400">{{ __('settings.no_address') }}</p>
                     @endif
                 </div>
 
-                {{-- Assigned users --}}
                 <div class="bg-gray-50 rounded-xl p-5">
                     <div class="flex items-center justify-between mb-3">
-                        <h3 class="text-xs font-semibold text-gray-400 uppercase tracking-wider">Assigned Users</h3>
+                        <h3 class="text-xs font-semibold text-gray-400 uppercase tracking-wider">{{ __('settings.assign_users') }}</h3>
                         @can('update', $company)
                         <a href="{{ route('settings.companies.edit', $company) }}"
-                           class="text-xs text-purple-600 hover:text-purple-700">Manage</a>
+                           class="text-xs text-purple-600 hover:text-purple-700">{{ __('settings.manage') }}</a>
                         @endcan
                     </div>
                     @forelse($company->users as $user)
@@ -183,33 +175,31 @@
                         </div>
                     </div>
                     @empty
-                    <p class="text-sm text-gray-400">No users assigned.</p>
+                    <p class="text-sm text-gray-400">{{ __('settings.no_users_assigned') }}</p>
                     @endforelse
                 </div>
 
-                {{-- Notes --}}
                 @if($company->notes)
                 <div class="bg-gray-50 rounded-xl p-5">
-                    <h3 class="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3">Notes</h3>
+                    <h3 class="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3">{{ __('common.notes') }}</h3>
                     <p class="text-sm text-gray-700 whitespace-pre-line">{{ $company->notes }}</p>
                 </div>
                 @endif
             </div>
 
-            {{-- Meta --}}
             <div class="mt-6 pt-4 border-t border-gray-100 text-xs text-gray-400 flex gap-6">
-                <span>Created {{ $company->created_at->format('M d, Y') }}{{ $company->creator ? ' by ' . $company->creator->name : '' }}</span>
-                <span>Last updated {{ $company->updated_at->diffForHumans() }}</span>
+                <span>{{ __('common.created_at') }}: {{ $company->created_at->format('M d, Y') }}{{ $company->creator ? ' · ' . $company->creator->name : '' }}</span>
+                <span>{{ __('common.last_updated') }}: {{ $company->updated_at->diffForHumans() }}</span>
             </div>
         </div>
 
-        {{-- Chatter sidebar --}}
-        <div class="w-80 border-l border-gray-200 flex flex-col overflow-hidden shrink-0">
-            @include('components.chatter', [
-                'model'      => $company,
-                'messages'   => $messages,
-                'commentUrl' => route('settings.companies.show', $company),
-            ])
+        <div class="w-80 border-s border-gray-200 flex flex-col overflow-hidden shrink-0">
+            <x-chatter
+                :model="$company"
+                :messages="$messages"
+                :comment-url="route('settings.companies.comment', $company)"
+                :can-comment="auth()->user()->can('comment', $company)"
+            />
         </div>
     </div>
 </div>

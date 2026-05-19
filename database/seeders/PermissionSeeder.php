@@ -37,6 +37,23 @@ class PermissionSeeder extends Seeder
             // Settings
             ['name' => 'Read Settings',   'key' => 'settings.read',   'module' => 'settings',  'description' => 'View application settings.'],
             ['name' => 'Edit Settings',   'key' => 'settings.write',  'module' => 'settings',  'description' => 'Modify application settings.'],
+
+            // Workflow — Tickets
+            ['name' => 'Read Tickets',           'key' => 'workflow.tickets.read',    'module' => 'workflow', 'description' => 'View tickets assigned or visible to the user.'],
+            ['name' => 'Create Tickets',         'key' => 'workflow.tickets.create',  'module' => 'workflow', 'description' => 'Create new tickets from templates.'],
+            ['name' => 'Edit Tickets',           'key' => 'workflow.tickets.write',   'module' => 'workflow', 'description' => 'Update ticket state, assignment, and inputs.'],
+            ['name' => 'Delete Tickets',         'key' => 'workflow.tickets.unlink',  'module' => 'workflow', 'description' => 'Delete ticket records.'],
+
+            // Workflow — Procedures
+            ['name' => 'Read Procedures',        'key' => 'workflow.procedures.read',   'module' => 'workflow', 'description' => 'View procedures and their tasks.'],
+            ['name' => 'Create Procedures',      'key' => 'workflow.procedures.create', 'module' => 'workflow', 'description' => 'Start procedures from templates.'],
+            ['name' => 'Edit Procedures',        'key' => 'workflow.procedures.write',  'module' => 'workflow', 'description' => 'Complete, close, and manage procedure tasks.'],
+            ['name' => 'Delete Procedures',      'key' => 'workflow.procedures.unlink', 'module' => 'workflow', 'description' => 'Delete procedure records.'],
+
+            // Workflow — Configuration (admin-level)
+            ['name' => 'Read Workflow Config',   'key' => 'workflow.config.read',   'module' => 'workflow', 'description' => 'View workflow configuration (groups, departments, templates).'],
+            ['name' => 'Edit Workflow Config',   'key' => 'workflow.config.write',  'module' => 'workflow', 'description' => 'Create and edit workflow configuration.'],
+            ['name' => 'Delete Workflow Config', 'key' => 'workflow.config.unlink', 'module' => 'workflow', 'description' => 'Delete workflow configuration records.'],
         ];
 
         foreach ($permissions as $perm) {

@@ -276,7 +276,7 @@
                             {{ $group['label'] }}
                         </button>
                     @empty
-                        <div class="px-2 py-1.5 text-sm text-gray-400">No groups</div>
+                        <div class="px-2 py-1.5 text-sm text-gray-400">{{ __('common.no_groups') }}</div>
                     @endforelse
                 </div>
 
@@ -375,10 +375,10 @@
 
                         <template x-if="requiresValue && !isRelation && currentField?.type === 'boolean'">
                             <select x-model="draft.value"
-                                    @change="draft.display = draft.value === '1' ? 'Yes' : 'No'"
+                                    @change="draft.display = draft.value === '1' ? '{{ __('common.yes') }}' : '{{ __('common.no') }}'"
                                     class="w-full border-0 border-b border-gray-300 bg-white px-2 py-2 text-sm focus:border-[#714B67] focus:ring-0">
-                                <option value="1">Yes</option>
-                                <option value="0">No</option>
+                                <option value="1">{{ __('common.yes') }}</option>
+                                <option value="0">{{ __('common.no') }}</option>
                             </select>
                         </template>
 

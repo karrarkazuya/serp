@@ -1,0 +1,26 @@
+<?php
+
+return [
+    'contacts'      => 'Contacts',
+    'configuration' => 'Configuration',
+    'settings'      => 'Settings',
+    'my_profile'    => 'My Profile',
+    'dashboard'     => 'Dashboard',
+    'contact_tags'  => 'Contact Tags',
+    'tickets'       => 'Tickets',
+    'tasks'         => 'Tasks',
+    'procedures'    => 'Procedures',
+    'reports'       => 'Reports',
+    'workflow'              => 'Workflow',
+    'groups'               => 'Groups',
+    'departments'          => 'Departments',
+    'managers'             => 'Managers',
+    'templates'            => 'Templates',
+    'tickets_templates'    => 'Tickets Templates',
+    'procedures_templates' => 'Procedures Templates',
+    'tasks_templates'      => 'Tasks Templates',
+    'activity_report'      => 'Activity Report',
+    'procedure_performance'=> 'Procedure Performance',
+    'ticket_performance'   => 'Ticket Performance',
+    'task_performance'     => 'Task Performance',
+];

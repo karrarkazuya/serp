@@ -1,0 +1,614 @@
+<odoo>
+    <data>
+
+        <template id="dashboard" name="Dashboard">
+            <html lang="en">
+                <head>
+                    <meta charset="utf-8"/>
+                    <meta name="viewport" content="width=device-width, initial-scale=1"/>
+                    <title>Workflow Dashboard</title>
+                    <style>
+                        * { box-sizing: border-box; }
+
+                        body {
+                            margin: 0;
+                            font-family: "Segoe UI", system-ui, Arial, sans-serif;
+                            background: #f1f5f9;
+                            color: #1e293b;
+                        }
+
+                        .dsb {
+                            max-width: 1440px;
+                            margin: 0 auto;
+                            padding: 24px;
+                        }
+
+                        /* ── Hero ── */
+                        .hero {
+                            position: relative;
+                            overflow: hidden;
+                            padding: 32px 36px;
+                            border-radius: 20px;
+                            background: linear-gradient(135deg, <t t-esc="company.theme_start_gradient_color"/> 0%, <t t-esc="company.theme_end_gradient_color"/> 100%);
+                            color: #fff;
+                            margin-bottom: 20px;
+                            box-shadow: 0 16px 40px rgba(15, 23, 42, 0.22);
+                        }
+
+                        .hero::before {
+                            content: "";
+                            position: absolute;
+                            inset: 0;
+                            background: radial-gradient(ellipse at 80% 50%, rgba(99, 102, 241, 0.28) 0%, transparent 55%);
+                            pointer-events: none;
+                        }
+
+                        .hero-inner {
+                            position: relative;
+                            display: flex;
+                            align-items: center;
+                            justify-content: space-between;
+                            gap: 24px;
+                            flex-wrap: wrap;
+                        }
+
+                        .hero-title {
+                            margin: 0 0 6px;
+                            font-size: 26px;
+                            font-weight: 800;
+                            letter-spacing: -0.02em;
+                            line-height: 1.15;
+                        }
+
+                        .hero-sub {
+                            margin: 0;
+                            font-size: 13.5px;
+                            color: rgba(255, 255, 255, 0.68);
+                        }
+
+                        .hero-right {
+                            display: flex;
+                            align-items: center;
+                            gap: 12px;
+                            flex-wrap: wrap;
+                        }
+
+                        .stat-card {
+                            background: rgba(255, 255, 255, 0.11);
+                            border: 1px solid rgba(255, 255, 255, 0.16);
+                            border-radius: 14px;
+                            padding: 14px 22px;
+                            min-width: 120px;
+                            text-align: center;
+                        }
+
+                        .stat-num {
+                            display: block;
+                            font-size: 32px;
+                            font-weight: 800;
+                            line-height: 1;
+                            margin-bottom: 5px;
+                        }
+
+                        .stat-label {
+                            font-size: 10.5px;
+                            font-weight: 600;
+                            letter-spacing: 0.05em;
+                            color: rgba(255, 255, 255, 0.65);
+                            text-transform: uppercase;
+                        }
+
+                        .hero-actions {
+                            display: flex;
+                            flex-direction: column;
+                            gap: 8px;
+                        }
+
+                        .action-btn {
+                            display: inline-flex;
+                            align-items: center;
+                            justify-content: center;
+                            padding: 10px 20px;
+                            border-radius: 10px;
+                            font-size: 13px;
+                            font-weight: 700;
+                            text-decoration: none;
+                            white-space: nowrap;
+                            transition: opacity 0.15s, transform 0.15s;
+                        }
+
+                        .action-btn:hover { opacity: 0.88; transform: translateY(-1px); }
+
+                        .action-btn-primary {
+                            background: #fff;
+                            color: #1e40af;
+                        }
+
+                        .action-btn-secondary {
+                            background: rgba(255, 255, 255, 0.13);
+                            border: 1px solid rgba(255, 255, 255, 0.2);
+                            color: #fff;
+                        }
+
+                        /* ── Panels ── */
+                        .panel-grid {
+                            display: grid;
+                            grid-template-columns: 1fr 1fr;
+                            gap: 18px;
+                        }
+
+                        .panel {
+                            background: #fff;
+                            border-radius: 16px;
+                            border: 1px solid #e2e8f0;
+                            box-shadow: 0 2px 12px rgba(15, 23, 42, 0.05);
+                            overflow: hidden;
+                        }
+
+                        .panel-head {
+                            display: flex;
+                            align-items: center;
+                            justify-content: space-between;
+                            gap: 12px;
+                            padding: 18px 22px 14px;
+                            border-bottom: 1px solid #f1f5f9;
+                        }
+
+                        .panel-title-row {
+                            display: flex;
+                            align-items: center;
+                            gap: 10px;
+                        }
+
+                        .panel-icon {
+                            width: 34px;
+                            height: 34px;
+                            border-radius: 9px;
+                            display: flex;
+                            align-items: center;
+                            justify-content: center;
+                            flex-shrink: 0;
+                        }
+
+                        .panel-icon-blue { background: #dbeafe; color: #1d4ed8; }
+                        .panel-icon-purple { background: #ede9fe; color: #7c3aed; }
+
+                        .panel-head h2 {
+                            margin: 0;
+                            font-size: 15px;
+                            font-weight: 700;
+                            color: #0f172a;
+                        }
+
+                        .panel-link {
+                            font-size: 12px;
+                            font-weight: 600;
+                            text-decoration: none;
+                            white-space: nowrap;
+                            padding: 5px 12px;
+                            border-radius: 7px;
+                            transition: opacity 0.15s;
+                        }
+
+                        .panel-link:hover { opacity: 0.8; }
+                        .panel-link-blue { color: #2563eb; background: #eff6ff; }
+                        .panel-link-purple { color: #7c3aed; background: #f5f3ff; }
+
+                        /* ── Table ── */
+                        table { width: 100%; border-collapse: collapse; }
+
+                        thead tr { background: #f8fafc; }
+
+                        th {
+                            padding: 9px 18px;
+                            text-align: left;
+                            font-size: 10.5px;
+                            font-weight: 700;
+                            color: #94a3b8;
+                            text-transform: uppercase;
+                            letter-spacing: 0.07em;
+                            border-bottom: 1px solid #e2e8f0;
+                        }
+
+                        tbody tr {
+                            border-bottom: 1px solid #f1f5f9;
+                            transition: background 0.12s;
+                        }
+
+                        tbody tr:last-child { border-bottom: 0; }
+                        tbody tr:hover { background: #f8fafc; }
+
+                        td {
+                            padding: 12px 18px;
+                            font-size: 13px;
+                            vertical-align: middle;
+                        }
+
+                        .record-link {
+                            color: #1e293b;
+                            text-decoration: none;
+                            font-weight: 600;
+                            line-height: 1.35;
+                        }
+
+                        .record-link:hover { color: #2563eb; }
+
+                        .record-meta {
+                            display: block;
+                            margin-top: 3px;
+                            font-size: 11px;
+                            color: #94a3b8;
+                        }
+
+                        .td-user { color: #475569; }
+                        .td-dept { display: block; margin-top: 2px; font-size: 11px; color: #94a3b8; }
+                        .td-deadline { color: #475569; white-space: nowrap; }
+
+                        /* ── Pills ── */
+                        .pill {
+                            display: inline-flex;
+                            align-items: center;
+                            padding: 3px 9px;
+                            border-radius: 999px;
+                            font-size: 11px;
+                            font-weight: 700;
+                            letter-spacing: 0.01em;
+                        }
+
+                        .state-pending   { background: #dbeafe; color: #1d4ed8; }
+                        .state-completed { background: #dcfce7; color: #15803d; }
+                        .state-closed,
+                        .state-rejected  { background: #fee2e2; color: #b91c1c; }
+                        .state-draft     { background: #f1f5f9; color: #64748b; }
+
+                        /* ── Empty ── */
+                        .empty-state {
+                            padding: 44px 24px;
+                            text-align: center;
+                        }
+
+                        .empty-icon {
+                            display: inline-flex;
+                            align-items: center;
+                            justify-content: center;
+                            width: 44px;
+                            height: 44px;
+                            border-radius: 12px;
+                            background: #f1f5f9;
+                            color: #cbd5e1;
+                            margin-bottom: 10px;
+                        }
+
+                        .empty-text { margin: 0; font-size: 13px; color: #94a3b8; }
+
+                        /* ── Responsive ── */
+                        @media (max-width: 900px) {
+                            .panel-grid { grid-template-columns: 1fr; }
+                            .hero-inner { flex-direction: column; align-items: flex-start; }
+                            .hero-actions { flex-direction: row; }
+                        }
+
+                        @media (max-width: 600px) {
+                            .dsb { padding: 12px; }
+                            .hero { padding: 22px 18px; border-radius: 14px; }
+                            .hero-title { font-size: 20px; }
+                            .stat-card { min-width: 100px; padding: 10px 14px; }
+                            .stat-num { font-size: 26px; }
+                            th, td { padding: 10px 12px; }
+                        }
+                    </style>
+                </head>
+                <body>
+                    <div class="dsb">
+
+                        <section class="hero">
+                            <div class="hero-inner">
+                                <div>
+                                    <h1 class="hero-title">Workflow Dashboard</h1>
+                                    <p class="hero-sub">Overview of pending tickets and tasks for your account</p>
+                                </div>
+                                <div class="hero-right">
+                                    <div class="stat-card">
+                                        <span class="stat-num"><t t-out="ticket_mine_count"/></span>
+                                        <span class="stat-label">Tickets assigned</span>
+                                    </div>
+                                    <div class="stat-card">
+                                        <span class="stat-num"><t t-out="task_mine_count"/></span>
+                                        <span class="stat-label">Tasks assigned</span>
+                                    </div>
+                                    <div class="hero-actions">
+                                        <a class="action-btn action-btn-primary" t-att-href="ticket_submit_url" target="_top">Submit Ticket</a>
+                                        <a class="action-btn action-btn-secondary" t-att-href="procedure_start_url" target="_top">Start Procedure</a>
+                                    </div>
+                                </div>
+                            </div>
+                        </section>
+
+                        <div class="panel-grid">
+
+                            <article class="panel">
+                                <div class="panel-head">
+                                    <div class="panel-title-row">
+                                        <span class="panel-icon panel-icon-blue">
+                                            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
+                                        </span>
+                                        <h2>Pending Tickets</h2>
+                                    </div>
+                                    <a class="panel-link panel-link-blue" t-att-href="tickets_url" target="_top">View all</a>
+                                </div>
+
+                                <table t-if="tickets">
+                                    <thead>
+                                        <tr>
+                                            <th>Ticket</th>
+                                            <th>Status</th>
+                                            <th>Assigned</th>
+                                            <th>Deadline</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr t-foreach="tickets" t-as="ticket" t-key="ticket['id']">
+                                            <td>
+                                                <a class="record-link" t-att-href="ticket['url']" target="_top"><t t-out="ticket['name']"/></a>
+                                                <span class="record-meta">#<t t-out="ticket['id']"/> · <t t-out="ticket['meta']"/></span>
+                                            </td>
+                                            <td>
+                                                <span class="pill" t-att-class="'pill state-' + ticket['state_key']"><t t-out="ticket['state_label']"/></span>
+                                            </td>
+                                            <td>
+                                                <span class="td-user"><t t-out="ticket['assigned_user']"/></span>
+                                                <span class="td-dept"><t t-out="ticket['assigned_department']"/></span>
+                                            </td>
+                                            <td class="td-deadline"><t t-out="ticket['deadline']"/></td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+
+                                <div t-else="" class="empty-state">
+                                    <div class="empty-icon">
+                                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+                                    </div>
+                                    <p class="empty-text">No pending tickets right now.</p>
+                                </div>
+                            </article>
+
+                            <article class="panel">
+                                <div class="panel-head">
+                                    <div class="panel-title-row">
+                                        <span class="panel-icon panel-icon-purple">
+                                            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+                                        </span>
+                                        <h2>Pending Tasks</h2>
+                                    </div>
+                                    <a class="panel-link panel-link-purple" t-att-href="tasks_url" target="_top">View all</a>
+                                </div>
+
+                                <table t-if="tasks">
+                                    <thead>
+                                        <tr>
+                                            <th>Task</th>
+                                            <th>Status</th>
+                                            <th>Assigned</th>
+                                            <th>Deadline</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr t-foreach="tasks" t-as="task" t-key="task['id']">
+                                            <td>
+                                                <a class="record-link" t-att-href="task['url']" target="_top"><t t-out="task['name']"/></a>
+                                                <span class="record-meta">#<t t-out="task['id']"/> · <t t-out="task['meta']"/></span>
+                                            </td>
+                                            <td>
+                                                <span class="pill" t-att-class="'pill state-' + task['state_key']"><t t-out="task['state_label']"/></span>
+                                            </td>
+                                            <td>
+                                                <span class="td-user"><t t-out="task['assigned_user']"/></span>
+                                                <span class="td-dept"><t t-out="task['assigned_department']"/></span>
+                                            </td>
+                                            <td class="td-deadline"><t t-out="task['deadline']"/></td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+
+                                <div t-else="" class="empty-state">
+                                    <div class="empty-icon">
+                                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+                                    </div>
+                                    <p class="empty-text">No pending tasks right now.</p>
+                                </div>
+                            </article>
+
+                        </div>
+                    </div>
+                </body>
+            </html>
+        </template>
+
+
+        <template id="ticket_share_page" name="Ticket Share Page">
+            <html lang="en">
+                <head>
+                    <meta charset="utf-8"/>
+                    <meta name="viewport" content="width=device-width, initial-scale=1"/>
+                    <title t-out="ticket.name"/>
+                    <style>
+                        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+                        body {
+                            min-height: 100vh;
+                            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 55%, #0f3460 100%);
+                            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;
+                            display: flex;
+                            flex-direction: column;
+                            align-items: center;
+                            justify-content: center;
+                            padding: 48px 20px;
+                        }
+
+                        .wrapper {
+                            width: 100%;
+                            max-width: 560px;
+                        }
+
+                        .brand {
+                            text-align: center;
+                            margin-bottom: 24px;
+                            color: rgba(255,255,255,0.4);
+                            font-size: 11px;
+                            font-weight: 600;
+                            letter-spacing: 3px;
+                            text-transform: uppercase;
+                        }
+
+                        .card {
+                            background: #fff;
+                            border-radius: 20px;
+                            overflow: hidden;
+                            box-shadow: 0 32px 80px rgba(0,0,0,0.5);
+                        }
+
+                        /* ── Banner ── */
+                        .banner {
+                            padding: 32px 28px 28px;
+                            display: flex;
+                            align-items: flex-start;
+                            justify-content: space-between;
+                            gap: 12px;
+                        }
+                        .banner-completed { background: linear-gradient(135deg, #0a8f52, #12b863); }
+                        .banner-pending   { background: linear-gradient(135deg, #c0550a, #e8750f); }
+                        .banner-closed    { background: linear-gradient(135deg, #3a3f47, #545b64); }
+                        .banner-draft     { background: linear-gradient(135deg, #0868b8, #1a8fd1); }
+
+                        .banner h1 {
+                            font-size: 19px;
+                            font-weight: 700;
+                            color: #fff;
+                            line-height: 1.35;
+                        }
+
+                        .pill {
+                            flex-shrink: 0;
+                            background: rgba(255,255,255,0.2);
+                            color: #fff;
+                            border: 1px solid rgba(255,255,255,0.35);
+                            border-radius: 999px;
+                            padding: 3px 13px;
+                            font-size: 11px;
+                            font-weight: 700;
+                            letter-spacing: 0.8px;
+                            text-transform: uppercase;
+                            margin-top: 4px;
+                        }
+
+                        /* ── Meta row ── */
+                        .meta {
+                            display: flex;
+                            gap: 20px;
+                            padding: 13px 28px;
+                            background: #f7f8f9;
+                            border-bottom: 1px solid #eceef1;
+                            font-size: 12px;
+                            color: #888;
+                            flex-wrap: wrap;
+                        }
+                        .meta-item {
+                            display: flex;
+                            align-items: center;
+                            gap: 5px;
+                        }
+
+                        /* ── Message ── */
+                        .message-section {
+                            padding: 28px 28px 32px;
+                        }
+                        .message-label {
+                            font-size: 10px;
+                            font-weight: 700;
+                            letter-spacing: 2px;
+                            text-transform: uppercase;
+                            color: #bbb;
+                            margin-bottom: 14px;
+                        }
+                        .message-body {
+                            font-size: 15px;
+                            line-height: 1.75;
+                            color: #2d3035;
+                            white-space: pre-wrap;
+                        }
+                        .no-message {
+                            font-size: 14px;
+                            color: #bbb;
+                            font-style: italic;
+                        }
+
+                        /* ── Footer ── */
+                        .card-foot {
+                            padding: 13px 28px;
+                            background: #f7f8f9;
+                            border-top: 1px solid #eceef1;
+                            font-size: 11px;
+                            color: #bbb;
+                            display: flex;
+                            justify-content: space-between;
+                        }
+                    </style>
+                </head>
+                <body>
+                    <div class="wrapper">
+
+                        <div class="brand" t-if="company_name" t-out="company_name + ' · Support'"/>
+                        <div class="brand" t-else="">Support</div>
+
+                        <div class="card">
+
+                            <!-- Banner (t-if/elif avoids t-att-class merging issues) -->
+                            <div t-if="ticket.state == 'completed'" class="banner banner-completed">
+                                <h1 t-out="ticket.name"/>
+                                <span class="pill">Completed</span>
+                            </div>
+                            <div t-elif="ticket.state == 'pending'" class="banner banner-pending">
+                                <h1 t-out="ticket.name"/>
+                                <span class="pill">In Progress</span>
+                            </div>
+                            <div t-elif="ticket.state == 'closed'" class="banner banner-closed">
+                                <h1 t-out="ticket.name"/>
+                                <span class="pill">Closed</span>
+                            </div>
+                            <div t-else="" class="banner banner-draft">
+                                <h1 t-out="ticket.name"/>
+                                <span class="pill">Draft</span>
+                            </div>
+
+                            <!-- Meta -->
+                            <div class="meta">
+                                <span class="meta-item">
+                                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+                                    <t t-out="ticket.create_date.strftime('%b %d, %Y') if ticket.create_date else ''"/>
+                                </span>
+                                <span class="meta-item">
+                                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                                    Ticket #<t t-out="ticket.id"/>
+                                </span>
+                            </div>
+
+                            <!-- Message -->
+                            <div class="message-section">
+                                <div class="message-label">Message</div>
+                                <div t-if="ticket.share_message" class="message-body" t-out="ticket.share_message"/>
+                                <div t-else="" class="no-message">No message has been provided for this ticket.</div>
+                            </div>
+
+                            <div class="card-foot">
+                                <span t-out="company_name"/>
+                                <span>Confidential — do not forward</span>
+                            </div>
+
+                        </div>
+                    </div>
+                </body>
+            </html>
+        </template>
+
+    </data>
+</odoo>

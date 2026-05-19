@@ -1,0 +1,75 @@
+<odoo>
+  <data>
+    <!-- explicit list view definition -->
+    <record model="ir.ui.view" id="ssw_tickets_templates_list">
+      <field name="name">Tickets templates</field>
+      <field name="model">ssw.tickets.templates</field>
+      <field name="type">list</field>
+      <field name="arch" type="xml">
+          <list>
+            <field name="name"/>
+            <field name="default_group"/>
+            <field name="default_department"/>
+            <field name="resolve_max_duration"/>
+          </list>
+      </field>
+    </record>
+
+    <!-- explicit list view definition -->
+    <record id="ssw_tickets_templates_form" model="ir.ui.view">
+        <field name="name">ssw.tickets.templates.form</field>
+        <field name="model">ssw.tickets.templates</field>
+        <field name="arch" type="xml">
+            <form string="Create tickets templates Form">
+                <sheet>
+                    <group>
+                        <field name="name"/>
+                        <field name="description"/>
+                        <field name="default_group"/>
+                        <field name="default_department"/>
+                        <field name="departments_can_create"/>
+                        <field name="contact_types_can_create"/>
+                        <field name="is_contact_ticket_only"/>
+                        <field name="resolve_max_duration"/>
+                        <field name="enabled"/>
+                        <field name="inputs" string="Inputs" invisible="not id" domain="[('deleted', '=', False),('template_id', '=', id)]" />
+                    </group>
+                </sheet>
+
+                <chatter reload_on_post="True"/>
+            </form>
+        </field>
+    </record>
+
+    <!-- Search View -->
+    <record id="view_ssw_templates_search" model="ir.ui.view">
+        <field name="name">ssw.tickets.templates.search</field>
+        <field name="model">ssw.tickets.templates</field>
+        <field name="arch" type="xml">
+            <search string="Search Section">
+                <filter 
+                string="Active" 
+                name="not_deleted"
+                domain="[('deleted', '=', False)]"
+                />
+                <filter 
+                string="Deleted" 
+                name="deleted"
+                domain="[('deleted', '=', True)]"
+                />
+            </search>
+        </field>
+    </record>
+
+
+    <!-- actions opening views on models -->
+    <record model="ir.actions.act_window" id="ss_workflow.tickets_action_templates">
+        <field name="name">Tickets templates</field>
+        <field name="res_model">ssw.tickets.templates</field>
+        <field name="view_mode">list,form</field>
+        <field name="search_view_id" ref="view_ssw_templates_search"/>
+        <field name="context">{'search_default_not_deleted': 1, 'search_default_deleted': 0}</field>
+    </record>
+
+  </data>
+</odoo>

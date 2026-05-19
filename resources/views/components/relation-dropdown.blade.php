@@ -154,7 +154,7 @@
 
     <div class="flex-1 min-w-0">
         @if(!$canRead)
-            <div class="text-sm text-gray-400 py-1">No access</div>
+            <div class="text-sm text-gray-400 py-1">{{ __('common.no_access') }}</div>
         @else
             <template x-if="multiple">
                 <div>
@@ -295,9 +295,9 @@
                                     <th class="w-12 px-6 py-3 text-left">
                                         <span class="block w-4 h-4 rounded border border-gray-300"></span>
                                     </th>
-                                    <th class="px-3 py-3 text-left text-sm font-semibold text-gray-800">Name</th>
+                                    <th class="px-3 py-3 text-start text-sm font-semibold text-gray-800">{{ __('common.name') }}</th>
                                     @if($colorField)
-                                    <th class="px-6 py-3 text-right text-sm font-semibold text-gray-800">Color</th>
+                                    <th class="px-6 py-3 text-end text-sm font-semibold text-gray-800">{{ __('contacts.tag_color') }}</th>
                                     @endif
                                 </tr>
                             </thead>
