@@ -40,9 +40,7 @@ class GroupController extends Controller
         $this->authorize('view', $group);
 
         $group->load('workflowUsers.user');
-        $messages = $group->chatterMessages()->with('user')->latest()->get();
-
-        return view('workflow.configuration.groups.show', compact('group', 'messages'));
+        return view('workflow.configuration.groups.show', compact('group'));
     }
 
     public function store(StoreGroupRequest $request)

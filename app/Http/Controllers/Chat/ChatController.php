@@ -27,13 +27,15 @@ class ChatController extends Controller
 
     public function index()
     {
-        $room = ChatRoom::where('active', true)->where('type', 'channel')->orderBy('created_at')->first();
-        if ($room) {
-            return redirect()->route('chat.show', $room);
-        }
-
         [$channels, $dms, $unreadCounts, $users] = $this->sidebarData();
-        return view('chat.show', ['channels' => $channels, 'dms' => $dms, 'unreadCounts' => $unreadCounts, 'users' => $users, 'room' => null, 'grouped' => []]);
+        return view('chat.show', [
+            'channels'     => $channels,
+            'dms'          => $dms,
+            'unreadCounts' => $unreadCounts,
+            'users'        => $users,
+            'room'         => null,
+            'grouped'      => [],
+        ]);
     }
 
     public function show(ChatRoom $room)
@@ -46,12 +48,11 @@ class ChatController extends Controller
         $messages = $room->messages()->with(['user', 'files'])->orderBy('created_at')->get();
         $grouped  = $this->groupMessages($messages);
 
-        // Mark DM / group as read when opened
-        if (!$room->isChannel()) {
-            $room->members()->updateExistingPivot($auth->id, ['last_read_at' => now()]);
-            $unreadCounts[$room->id] = 0;
-            $room->load('members');
-        }
+        // Mark as read for all room types
+        $room->members()->updateExistingPivot($auth->id, ['last_read_at' => now()]);
+        $unreadCounts[$room->id] = 0;
+
+        $room->load('members');
 
         return view('chat.show', compact('room', 'channels', 'dms', 'grouped', 'unreadCounts', 'users'));
     }
@@ -92,13 +93,11 @@ class ChatController extends Controller
             ]);
         }
 
-        // Notify other members for DM / group rooms
-        if (!$room->isChannel()) {
-            $preview = Str::limit($body ?: '📎 Sent a file', 80);
-            $url     = route('chat.show', $room);
-            foreach ($room->members()->where('user_id', '!=', $auth->id)->get() as $member) {
-                $member->notify($auth->name, $preview, $url);
-            }
+        // Notify all other members
+        $preview = Str::limit($body ?: '📎 Sent a file', 80);
+        $url     = route('chat.show', $room);
+        foreach ($room->members()->where('user_id', '!=', $auth->id)->get() as $member) {
+            $member->notify($auth->name, $preview, $url);
         }
 
         return redirect()->route('chat.show', $room)->with('scrollToBottom', true);
@@ -107,22 +106,37 @@ class ChatController extends Controller
     public function createRoom(Request $request)
     {
         $request->validate([
-            'name'        => 'required|string|max:100',
-            'description' => 'nullable|string|max:255',
+            'name'         => 'required|string|max:100',
+            'description'  => 'nullable|string|max:255',
+            'member_ids'   => 'nullable|array',
+            'member_ids.*' => 'exists:users,id',
         ]);
 
-        $room = ChatRoom::create([
-            'name'               => $request->name,
-            'description'        => $request->description,
-            'created_by_user_id' => Auth::id(),
-            'type'               => 'channel',
-        ]);
+        $memberIds = collect($request->input('member_ids', []))
+            ->filter()
+            ->map(fn ($id) => (int) $id)
+            ->push(Auth::id())
+            ->unique()
+            ->values()
+            ->all();
+
+        $room = DB::transaction(function () use ($request, $memberIds) {
+            $room = ChatRoom::create([
+                'name'               => $request->name,
+                'description'        => $request->description,
+                'created_by_user_id' => Auth::id(),
+                'type'               => 'channel',
+            ]);
+            $room->members()->attach($memberIds);
+            return $room;
+        });
 
         return redirect()->route('chat.show', $room);
     }
 
     public function openDirect(User $user)
     {
+        abort_unless($user->active, 404);
         $auth = Auth::user();
 
         // Find existing 1-on-1 DM between exactly these two users
@@ -146,6 +160,42 @@ class ChatController extends Controller
         return redirect()->route('chat.show', $room);
     }
 
+    public function addMember(Request $request, ChatRoom $room)
+    {
+        abort_unless($room->isChannel(), 403);
+        $this->authorize('view', $room);
+
+        $request->validate(['user_id' => 'required|exists:users,id']);
+        $user = User::findOrFail($request->user_id);
+        abort_unless($user->active, 422, 'User is not active.');
+
+        if (!$room->members()->where('user_id', $user->id)->exists()) {
+            $room->members()->attach($user->id);
+        }
+
+        return redirect()->route('chat.show', $room);
+    }
+
+    public function removeMember(ChatRoom $room, User $user)
+    {
+        abort_unless($room->isChannel(), 403);
+
+        $auth      = Auth::user();
+        $isSelf    = $auth->id === $user->id;
+        $isCreator = $auth->id === $room->created_by_user_id;
+
+        abort_unless($isSelf || $isCreator, 403);
+        abort_unless($room->members()->where('user_id', $auth->id)->exists(), 403);
+
+        $room->members()->detach($user->id);
+
+        if ($isSelf) {
+            return redirect()->route('chat.index')->with('success', "You left #{$room->name}.");
+        }
+
+        return redirect()->route('chat.show', $room);
+    }
+
     public function file(ChatRoom $room, ChatMessageFile $file)
     {
         $this->authorize('view', $room);
@@ -160,7 +210,8 @@ class ChatController extends Controller
 
         $channels = ChatRoom::where('active', true)
             ->where('type', 'channel')
-            ->with('lastMessage.user')
+            ->whereHas('members', fn ($q) => $q->where('user_id', $auth->id))
+            ->with(['lastMessage.user', 'members'])
             ->orderBy('name')
             ->get();
 
@@ -170,9 +221,11 @@ class ChatController extends Controller
             ->with(['members', 'lastMessage.user'])
             ->get();
 
-        $unreadCounts = $dms->mapWithKeys(fn ($r) => [$r->id => $r->unreadCountFor($auth)])->toArray();
+        $unreadCounts = $channels->merge($dms)
+            ->mapWithKeys(fn ($r) => [$r->id => $r->unreadCountFor($auth)])
+            ->toArray();
 
-        $users = User::where('id', '!=', 0)->orderBy('name')->get();
+        $users = User::where('active', true)->orderBy('name')->get();
 
         return [$channels, $dms, $unreadCounts, $users];
     }

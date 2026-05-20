@@ -26,7 +26,7 @@
 
                 @can('delete', $user)
                 <form method="POST" action="{{ route('settings.users.delete', $user) }}"
-                      onsubmit="return confirm('{{ __('common.confirm_delete') }}')">
+                      @submit.prevent="$dispatch('confirm-delete', { message: '{{ __('common.confirm_delete') }}', form: $el })">
                     @csrf @method('DELETE')
                     <button type="submit"
                             class="flex items-center gap-1.5 px-3 py-2 text-sm font-medium text-red-600 bg-white border border-red-200 rounded-md hover:bg-red-50 transition-colors">
@@ -39,11 +39,11 @@
     </div>
 
     <div class="flex-1 overflow-y-auto p-6">
-        <div class="max-w-3xl mx-auto space-y-6">
+        <div class="space-y-6">
 
             {{-- User header --}}
             <div class="bg-white rounded-xl border border-gray-200 p-6 flex items-center gap-5">
-                <div class="w-16 h-16 rounded-full bg-purple-100 flex items-center justify-center text-xl font-bold text-purple-700 shrink-0">
+                <div class="w-16 h-16 rounded-full bg-[#714B67]/10 flex items-center justify-center text-xl font-bold text-[#714B67] shrink-0">
                     {{ $user->initials }}
                 </div>
                 <div class="flex-1 min-w-0">
@@ -79,10 +79,10 @@
                 @else
                     <div class="flex flex-wrap gap-2">
                         @foreach($user->roles as $role)
-                            <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-purple-50 text-purple-700 border border-purple-100">
+                            <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-[#714B67]/10 text-[#714B67] border border-[#714B67]/10">
                                 {{ $role->name }}
                                 @if($role->description)
-                                    <span class="ms-1.5 text-xs text-purple-400">— {{ $role->description }}</span>
+                                    <span class="ms-1.5 text-xs text-[#714B67]/60">— {{ $role->description }}</span>
                                 @endif
                             </span>
                         @endforeach

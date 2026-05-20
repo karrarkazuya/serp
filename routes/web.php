@@ -71,6 +71,8 @@ Route::middleware('auth')->group(function () {
         Route::get('/{room}', [ChatController::class, 'show'])->name('show');
         Route::post('/{room}/messages', [ChatController::class, 'store'])->name('store');
         Route::get('/{room}/files/{file}', [ChatController::class, 'file'])->name('file');
+        Route::post('/{room}/members', [ChatController::class, 'addMember'])->name('members.add');
+        Route::delete('/{room}/members/{user}', [ChatController::class, 'removeMember'])->name('members.remove');
     });
 
     // Profile

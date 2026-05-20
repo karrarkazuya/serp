@@ -34,7 +34,7 @@
         <div class="flex items-center gap-2">
             <input type="hidden" name="active" value="0">
             <input type="checkbox" id="active" name="active" value="1"
-                   {{ old('active', $user?->active ? '1' : '0') === '1' ? 'checked' : '' }}
+                   {{ old('active', $user?->active ? '1' : '0') == '1' ? 'checked' : '' }}
                    class="w-4 h-4 text-purple-600 border-gray-300 rounded focus:ring-purple-500">
             <label for="active" class="text-sm text-gray-700">{{ __('settings.user_active') }}</label>
         </div>

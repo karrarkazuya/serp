@@ -41,9 +41,8 @@
 
         <div class="bg-white mx-4 mt-4 mb-4 rounded-xl border border-gray-200 shadow-sm overflow-hidden">
             <x-chatter
-                :model="$group"
-                :messages="$messages"
-                :comment-url="route('workflow.config.groups.comment', $group)"
+                model-type="App\Models\Workflow\Group"
+                :model-id="$group->id"
                 :can-comment="auth()->user()->can('comment', $group)"
             />
         </div>

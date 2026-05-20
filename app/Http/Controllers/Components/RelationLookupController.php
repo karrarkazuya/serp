@@ -19,7 +19,14 @@ class RelationLookupController extends Controller
 
         $field = $request->query('field', 'name');
         abort_unless(in_array($field, $config['fields'] ?? [], true), 404);
-        abort_unless($request->user()?->hasPermission($config['read']), 403);
+
+        $open = $config['open'] ?? false;
+        if (!$open) {
+            abort_unless($request->user()?->hasPermission($config['read']), 403);
+        }
+
+        // Allow config to map the logical key to a different real DB table
+        $table = $config['table'] ?? $table;
 
         $perPage = max(1, min((int) $request->integer('per_page', 8), 50));
         $exclude = collect((array) $request->query('exclude', []))
@@ -61,6 +68,10 @@ class RelationLookupController extends Controller
 
         if ($colorField) {
             $query->addSelect("{$table}.{$colorField}");
+        }
+
+        if (!empty($config['active_only']) && Schema::hasColumn($table, 'active')) {
+            $query->where("{$table}.active", true);
         }
 
         if (!empty($exclude)) {

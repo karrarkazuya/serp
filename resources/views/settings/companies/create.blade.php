@@ -26,7 +26,7 @@
 
     <div class="flex-1 overflow-y-auto p-6">
         <form id="company-form" method="POST" action="{{ route('settings.companies.store') }}"
-              class="max-w-3xl mx-auto space-y-5">
+              class="space-y-5">
             @csrf
             @include('settings.companies._form', ['company' => null])
         </form>

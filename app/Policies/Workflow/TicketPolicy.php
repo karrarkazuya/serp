@@ -37,7 +37,7 @@ class TicketPolicy
         if (!$user->hasPermission('workflow.tickets.write')) return false;
 
         if ($ticket->procedure_id) {
-            if ($ticket->procedure->state !== 'pending') return false;
+            if (($ticket->procedure?->state ?? 'closed') !== 'pending') return false;
             if ($this->nextTicketIsActive($ticket)) return false;
         }
 
@@ -54,7 +54,7 @@ class TicketPolicy
     {
         if ($ticket->state !== 'pending') return false;
 
-        if ($ticket->procedure_id && $ticket->procedure->state !== 'pending') {
+        if ($ticket->procedure_id && ($ticket->procedure?->state ?? 'closed') !== 'pending') {
             return Response::deny('This procedure is no longer active.');
         }
 
@@ -77,7 +77,7 @@ class TicketPolicy
         if (!$user->hasPermission('workflow.tickets.write')) return false;
 
         if ($ticket->procedure_id) {
-            if ($ticket->procedure->state !== 'pending') {
+            if (($ticket->procedure?->state ?? 'closed') !== 'pending') {
                 return Response::deny('This procedure is no longer active — comments are locked.');
             }
             if ($this->nextTicketIsActive($ticket)) {

@@ -90,9 +90,8 @@
 
         <div class="bg-white mx-4 mt-4 mb-4 rounded-xl border border-gray-200 shadow-sm overflow-hidden">
             <x-chatter
-                :model="$ticketTemplate"
-                :messages="$messages"
-                :comment-url="route('workflow.config.ticket-templates.comment', $ticketTemplate)"
+                model-type="App\Models\Workflow\TicketTemplate"
+                :model-id="$ticketTemplate->id"
                 :can-comment="auth()->user()->can('comment', $ticketTemplate)"
             />
         </div>

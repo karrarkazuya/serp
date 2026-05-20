@@ -28,9 +28,7 @@ class ManagerController extends Controller
         $this->authorize('view', $manager);
 
         $manager->load(['workflowUser.user', 'workflowUser.defaultDepartment', 'departments']);
-        $messages = $manager->chatterMessages()->with('user')->latest()->get();
-
-        return view('workflow.configuration.managers.show', compact('manager', 'messages'));
+        return view('workflow.configuration.managers.show', compact('manager'));
     }
 
     public function addComment(Request $request, Manager $manager)

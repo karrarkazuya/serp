@@ -41,6 +41,7 @@ class TicketService
             'name'               => $ticket->name,
             'description'        => 'Ticket #' . $ticket->id,
             'created_by_user_id' => auth()->user()?->id,
+            'type'               => 'ticket',
         ]);
         $ticket->update(['chat_room_id' => $room->id]);
 

@@ -48,9 +48,8 @@
 
         <div class="bg-white mx-4 mt-4 mb-4 rounded-xl border border-gray-200 shadow-sm overflow-hidden">
             <x-chatter
-                :model="$department"
-                :messages="$messages"
-                :comment-url="route('workflow.config.departments.comment', $department)"
+                model-type="App\Models\Workflow\Department"
+                :model-id="$department->id"
                 :can-comment="auth()->user()->can('comment', $department)"
             />
         </div>

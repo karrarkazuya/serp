@@ -36,9 +36,7 @@ class ProcedureTemplateController extends Controller
     {
         $this->authorize('view', $procedureTemplate);
         $procedureTemplate->load(['defaultGroup', 'departments', 'steps.inputs.options', 'steps.nextSteps', 'steps.defaultDepartment']);
-        $messages = $procedureTemplate->chatterMessages()->with('user')->latest()->get();
-
-        return view('workflow.configuration.procedure-templates.show', compact('procedureTemplate', 'messages'));
+        return view('workflow.configuration.procedure-templates.show', compact('procedureTemplate'));
     }
 
     public function create()
@@ -132,6 +130,9 @@ class ProcedureTemplateController extends Controller
             abort_if($validCount !== count($nextStepIds), 422);
         }
 
+        // Prevent direct self-reference in sub-procedures (would cause infinite recursion on instantiation)
+        abort_if(in_array($procedureTemplate->id, $subProcedureIds, true), 422, 'A template cannot reference itself as a sub-procedure.');
+
         DB::transaction(function () use ($procedureTemplate, $data, $nextStepIds, $subProcedureIds) {
             $step = $procedureTemplate->steps()->create($data);
             $step->nextSteps()->sync($nextStepIds);
@@ -201,6 +202,9 @@ class ProcedureTemplateController extends Controller
             $validCount = $procedureTemplate->steps()->where('id', '!=', $step->id)->whereIn('id', $nextStepIds)->count();
             abort_if($validCount !== count($nextStepIds), 422);
         }
+
+        // Prevent direct self-reference in sub-procedures
+        abort_if(in_array($procedureTemplate->id, $subProcedureIds, true), 422, 'A template cannot reference itself as a sub-procedure.');
 
         DB::transaction(function () use ($step, $data, $nextStepIds, $subProcedureIds, $pathChoiceNames, $inputsData) {
             $step->update($data);

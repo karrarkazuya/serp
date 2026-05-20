@@ -17,21 +17,15 @@
 @endphp
 <div class="flex flex-col h-full">
 
-    <div class="bg-white border-b border-gray-200 px-6 py-3 flex items-center gap-3 flex-wrap">
-        @include('components.breadcrumb', ['items' => [
-            ['label' => __('settings.title'), 'url' => route('settings.index')],
-            ['label' => __('settings.companies')],
-        ]])
-
+    <div class="bg-white border-b border-gray-200 px-4 py-2 flex items-center gap-3 flex-wrap shrink-0">
         @can('create', \App\Models\Settings\Company::class)
         <a href="{{ route('settings.companies.create') }}"
-           class="ms-auto flex items-center gap-1.5 px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white text-sm font-medium rounded-md transition-colors shadow-sm">
-            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
-            </svg>
+           class="px-4 py-2 bg-[#714B67] hover:bg-[#5c3d55] text-white text-sm font-semibold rounded shadow-sm shrink-0 transition-colors">
             {{ __('settings.new_company') }}
         </a>
         @endcan
+
+        <span class="text-lg font-semibold text-gray-700">{{ __('settings.companies') }}</span>
 
         <x-search
             :model="\App\Models\Settings\Company::class"
@@ -39,6 +33,28 @@
             :quick-filters="$companyQuickFilters"
             :group-by="$companyGroups"
         />
+
+        <div class="ms-auto flex items-center gap-3 text-sm text-gray-500 shrink-0">
+            @if($companies->total() > 0)
+                <span class="text-sm font-semibold text-gray-600 whitespace-nowrap">
+                    {{ $companies->firstItem() }}-{{ $companies->lastItem() }} / {{ $companies->total() }}
+                </span>
+            @else
+                <span class="text-sm font-semibold text-gray-400">0</span>
+            @endif
+            <div class="flex items-center gap-1">
+                @if($companies->onFirstPage())
+                    <span class="w-8 h-8 inline-flex items-center justify-center rounded bg-gray-100 text-gray-300">‹</span>
+                @else
+                    <a href="{{ $companies->previousPageUrl() }}" class="w-8 h-8 inline-flex items-center justify-center rounded bg-gray-100 text-gray-600 hover:text-gray-900">‹</a>
+                @endif
+                @if($companies->hasMorePages())
+                    <a href="{{ $companies->nextPageUrl() }}" class="w-8 h-8 inline-flex items-center justify-center rounded bg-gray-100 text-gray-600 hover:text-gray-900">›</a>
+                @else
+                    <span class="w-8 h-8 inline-flex items-center justify-center rounded bg-gray-100 text-gray-300">›</span>
+                @endif
+            </div>
+        </div>
     </div>
 
     <x-list :paginator="$companies" :empty-text="__('settings.no_companies')">
@@ -53,15 +69,15 @@
         </x-slot:columns>
 
         @foreach($companies as $company)
-        <tr class="hover:bg-purple-50/30 transition-colors cursor-pointer" onclick="window.location='{{ route('settings.companies.show', $company) }}'">
+        <tr class="hover:bg-[#714B67]/5 transition-colors cursor-pointer" onclick="window.location='{{ route('settings.companies.show', $company) }}'">
             <td class="px-6 py-3">
                 <div class="flex items-center gap-3">
-                    <div class="w-8 h-8 rounded-lg bg-purple-100 flex items-center justify-center text-xs font-bold text-purple-700 shrink-0">
+                    <div class="w-8 h-8 rounded-lg bg-[#714B67]/10 flex items-center justify-center text-xs font-bold text-[#714B67] shrink-0">
                         {{ strtoupper(substr($company->name, 0, 2)) }}
                     </div>
                     <div>
                         <a href="{{ route('settings.companies.show', $company) }}"
-                           class="text-sm font-medium text-gray-900 hover:text-purple-600 transition-colors" onclick="event.stopPropagation()">
+                           class="text-sm font-medium text-gray-900 hover:text-[#714B67] transition-colors" onclick="event.stopPropagation()">
                             {{ $company->name }}
                         </a>
                         @if($company->tax_id)
@@ -92,18 +108,18 @@
             <td class="px-4 py-3 text-end" onclick="event.stopPropagation()">
                 <div class="flex items-center justify-end gap-2">
                     <a href="{{ route('settings.companies.show', $company) }}"
-                       class="text-xs text-gray-500 hover:text-purple-600 transition-colors px-2 py-1 rounded hover:bg-purple-50">
+                       class="text-xs text-gray-500 hover:text-[#714B67] transition-colors px-2 py-1 rounded hover:bg-[#714B67]/5">
                         {{ __('common.view') }}
                     </a>
                     @can('update', $company)
                     <a href="{{ route('settings.companies.edit', $company) }}"
-                       class="text-xs text-gray-500 hover:text-purple-600 transition-colors px-2 py-1 rounded hover:bg-purple-50">
+                       class="text-xs text-gray-500 hover:text-[#714B67] transition-colors px-2 py-1 rounded hover:bg-[#714B67]/5">
                         {{ __('common.edit') }}
                     </a>
                     @endcan
                     @can('delete', $company)
                     <form method="POST" action="{{ route('settings.companies.delete', $company) }}"
-                          onsubmit="return confirm('{{ __('common.confirm_delete') }}')">
+                          @submit.prevent="$dispatch('confirm-delete', { message: '{{ __('common.confirm_delete') }}', form: $el })">
                         @csrf @method('DELETE')
                         <button type="submit" class="text-xs text-red-500 hover:text-red-700 transition-colors px-2 py-1 rounded hover:bg-red-50">
                             {{ __('common.delete') }}

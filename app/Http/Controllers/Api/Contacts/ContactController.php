@@ -17,7 +17,12 @@ class ContactController extends Controller
 
     public function read(Request $request): JsonResponse
     {
+        $allowedIds = $request->user()->getAllowedCompanyIds();
         $query = Contact::query();
+
+        if (!empty($allowedIds)) {
+            $query->forCompanies($allowedIds);
+        }
 
         if ($search = $request->get('search')) {
             $query->search($search);
@@ -40,6 +45,7 @@ class ContactController extends Controller
 
     public function show(Contact $contact): JsonResponse
     {
+        $this->abortIfOutOfScope($contact, request()->user());
         return response()->json($contact->load(['creator', 'updater']));
     }
 
@@ -55,6 +61,7 @@ class ContactController extends Controller
 
     public function write(UpdateContactRequest $request, Contact $contact): JsonResponse
     {
+        $this->abortIfOutOfScope($contact, $request->user());
         $contact = DB::transaction(fn () => $this->contactService->update($contact, $request->validated()));
 
         return response()->json([
@@ -65,6 +72,7 @@ class ContactController extends Controller
 
     public function unlink(Request $request, Contact $contact): JsonResponse
     {
+        $this->abortIfOutOfScope($contact, $request->user());
         DB::transaction(fn () => $this->contactService->delete($contact));
 
         return response()->json(['message' => 'Contact deleted.']);
@@ -72,13 +80,23 @@ class ContactController extends Controller
 
     public function archive(Contact $contact): JsonResponse
     {
+        $this->abortIfOutOfScope($contact, request()->user());
         $contact = DB::transaction(fn () => $this->contactService->archive($contact));
         return response()->json(['message' => 'Contact archived.', 'data' => $contact]);
     }
 
     public function chatter(Contact $contact): JsonResponse
     {
+        $this->abortIfOutOfScope($contact, request()->user());
         $messages = $contact->chatterMessages()->with('user')->get();
         return response()->json($messages);
+    }
+
+    private function abortIfOutOfScope(Contact $contact, \App\Models\User $user): void
+    {
+        $allowedIds = $user->getAllowedCompanyIds();
+        if (!empty($allowedIds) && !in_array($contact->company_id, $allowedIds, true)) {
+            abort(403);
+        }
     }
 }

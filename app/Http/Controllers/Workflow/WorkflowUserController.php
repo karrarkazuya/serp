@@ -41,14 +41,12 @@ class WorkflowUserController extends Controller
         if ($wu) {
             $wu->load(['defaultDepartment', 'groups', 'assignableDepartments', 'manager']);
         }
-        $messages = $wu ? $wu->chatterMessages()->with('user')->latest()->get() : collect();
-
-        return view('workflow.configuration.users.show', compact('user', 'wu', 'messages'));
+        return view('workflow.configuration.users.show', compact('user', 'wu'));
     }
 
     public function edit(User $user)
     {
-        $this->authorize('viewAny', WorkflowUser::class);
+        $this->authorize('create', WorkflowUser::class);
 
         $wu = $this->configService->ensureWorkflowUser($user);
         $wu->load(['groups', 'assignableDepartments']);

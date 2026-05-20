@@ -69,16 +69,18 @@ class ProcedureController extends Controller
             'procedureTemplate',
             'createdByUser',
             'optionalTicket',
+            'creator',
+            'updater',
             'sharedLink',
             'tickets' => fn ($q) => $q->orderBy('task_sequence'),
+            'tickets.assignedDepartment',
+            'tickets.assignedUser',
             'tickets.inputs.templateInput',
             'tickets.pathChoices',
             'tickets.nextTickets',
             'tickets.sharedLink',
         ]);
-        $messages = $procedure->chatterMessages()->with('user')->latest()->get();
-
-        return view('workflow.procedures.show', compact('procedure', 'messages'));
+        return view('workflow.procedures.show', compact('procedure'));
     }
 
     public function create(Request $request)
@@ -88,6 +90,7 @@ class ProcedureController extends Controller
         $wu = WorkflowUser::where('user_id', auth()->id())->where('active', true)->first();
         $templates = ProcedureTemplate::where('enabled', true)->where('active', true)
             ->when($wu, fn ($q) => $q->visibleTo($wu))
+            ->with('steps')
             ->orderBy('name')->get();
         $departments = Department::where('active', true)->orderBy('name')->get();
         $selectedTemplate = $request->query('template_id')
@@ -100,7 +103,17 @@ class ProcedureController extends Controller
     public function store(StoreProcedureRequest $request)
     {
         $data = $request->validated();
-        $template = ProcedureTemplate::findOrFail($data['procedure_template_id']);
+
+        $template = ProcedureTemplate::where('id', $data['procedure_template_id'])
+            ->where('enabled', true)
+            ->where('active', true)
+            ->firstOrFail();
+
+        $wu = WorkflowUser::where('user_id', auth()->id())->where('active', true)->first();
+        if ($wu && !ProcedureTemplate::where('id', $template->id)->visibleTo($wu)->exists()) {
+            abort(403, 'You do not have access to this template.');
+        }
+
         unset($data['procedure_template_id']);
 
         $procedure = DB::transaction(fn () => $this->procedureService->create($data, $template));

@@ -19,7 +19,7 @@
     </div>
 
     <div class="flex-1 overflow-y-auto p-6">
-        <form id="user-form" method="POST" action="{{ route('settings.users.store') }}" class="max-w-2xl mx-auto space-y-6">
+        <form id="user-form" method="POST" action="{{ route('settings.users.store') }}" class="space-y-6">
             @csrf
             @include('settings.users._form', ['user' => null, 'roles' => $roles])
         </form>

@@ -73,9 +73,8 @@
         @if($wu)
         <div class="bg-white mx-4 mt-4 mb-4 rounded-xl border border-gray-200 shadow-sm overflow-hidden">
             <x-chatter
-                :model="$wu"
-                :messages="$messages"
-                :comment-url="route('workflow.config.users.comment', $user)"
+                model-type="App\Models\Workflow\WorkflowUser"
+                :model-id="$wu->id"
                 :can-comment="auth()->user()->can('create', \App\Models\Workflow\WorkflowUser::class)"
             />
         </div>

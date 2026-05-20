@@ -27,7 +27,7 @@
 
     <div class="flex-1 overflow-y-auto p-6">
         <form id="company-form" method="POST" action="{{ route('settings.companies.update', $company) }}"
-              class="max-w-3xl mx-auto space-y-5">
+              class="space-y-5">
             @csrf @method('PUT')
             @include('settings.companies._form', ['company' => $company])
         </form>

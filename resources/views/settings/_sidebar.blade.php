@@ -1,6 +1,6 @@
 @section('sidebar')
-<div class="px-3 py-1">
-    <p class="text-xs font-semibold text-gray-400 uppercase tracking-wider px-3 py-2">{{ __('settings.title') }}</p>
+<div class="px-3 py-3">
+    <p class="text-[10px] font-bold text-gray-400 uppercase tracking-widest px-3 pb-2">{{ __('settings.title') }}</p>
     @php
         $items = collect([
             ['route' => 'settings.index', 'pattern' => 'settings.index', 'permission' => 'settings.read', 'label' => __('settings.general_settings'), 'icon' => 'M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z M15 12a3 3 0 11-6 0 3 3 0 016 0z'],
@@ -11,15 +11,21 @@
         ])->filter(fn ($item) => auth()->user()->hasPermission($item['permission']));
     @endphp
 
-    @foreach($items as $item)
-    <a href="{{ route($item['route']) }}"
-       class="flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm transition-colors
-              {{ request()->routeIs($item['pattern']) ? 'bg-purple-50 text-purple-700 font-medium' : 'text-gray-600 hover:bg-gray-100' }}">
-        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="{{ $item['icon'] }}"/>
-        </svg>
-        {{ $item['label'] }}
-    </a>
-    @endforeach
+    <nav class="space-y-0.5">
+        @foreach($items as $item)
+        @php $active = request()->routeIs($item['pattern']); @endphp
+        <a href="{{ route($item['route']) }}"
+           class="flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm transition-all duration-150
+                  {{ $active
+                      ? 'bg-[#714B67]/10 text-[#714B67] font-semibold'
+                      : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900' }}">
+            <svg class="w-4 h-4 shrink-0 {{ $active ? 'text-[#714B67]' : 'text-gray-400' }}"
+                 fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="{{ $item['icon'] }}"/>
+            </svg>
+            {{ $item['label'] }}
+        </a>
+        @endforeach
+    </nav>
 </div>
 @endsection

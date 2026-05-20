@@ -2,7 +2,27 @@
 @section('title', $ticket->name)
 
 @section('content')
-<div class="flex flex-col h-full bg-gray-50">
+<style>
+@keyframes fadeSlideIn {
+    from { opacity: 0; transform: translateY(6px); }
+    to   { opacity: 1; transform: none; }
+}
+.ticket-card { animation: fadeSlideIn 0.3s ease both; }
+</style>
+<div class="flex flex-col h-full bg-gray-50"
+     x-data="{
+         dirty: false,
+         showSaveConfirm: false,
+         async saveAndComplete() {
+             const form = document.getElementById('ticket-fields-form');
+             if (form) {
+                 await fetch(form.action, { method: 'POST', body: new FormData(form) });
+             }
+             this.$refs.completeForm.submit();
+             this.showSaveConfirm = false;
+         }
+     }"
+     @fields-changed.window="dirty = true">
 
     {{-- Top bar --}}
     <div class="bg-white border-b border-gray-200 px-5 py-2 flex items-center gap-3 shrink-0">
@@ -26,8 +46,10 @@
             @can('update', $ticket)
             @if($ticket->state === 'pending')
             @php $pathRequired = $ticket->has_path_choice && $ticket->path_choice_required && !$ticket->path_chosen_id; @endphp
-            <form method="POST" action="{{ route('workflow.tickets.resolve', $ticket) }}">@csrf @method('PATCH')
-                <button class="px-3 py-1.5 text-sm font-medium rounded border
+            <form x-ref="completeForm" method="POST" action="{{ route('workflow.tickets.resolve', $ticket) }}">@csrf @method('PATCH')
+                <button type="button"
+                        @if(!$pathRequired) @click="dirty ? showSaveConfirm = true : $refs.completeForm.submit()" @endif
+                        class="px-3 py-1.5 text-sm font-medium rounded border
                                {{ $pathRequired ? 'text-gray-400 border-gray-200 cursor-not-allowed' : 'text-green-700 border-green-300 hover:bg-green-50' }}"
                         @if($pathRequired) title="Select a path before completing" @endif>
                     Mark Completed
@@ -142,9 +164,8 @@
                 $ticketInputDefs = $ticket->procedureStep?->inputs ?? $ticket->template?->inputs;
                 $defaultTab = ($ticketInputDefs && $ticketInputDefs->isNotEmpty()) ? 'fields' : 'activity';
             @endphp
-            <div class="relative flex-1 min-w-0 bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden"
+            <div class="ticket-card relative flex-1 min-w-0 bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden"
                  x-data="{ tab: @js($defaultTab) }">
-                <x-state-ribbon :state="$ticket->state" />
 
                 {{-- Header --}}
                 <div class="px-7 pt-6 pb-5 border-b border-gray-100">
@@ -307,25 +328,37 @@
                         </span>
                         @endcan
 
-                        {{-- Priority chip --}}
+                        {{-- Priority stars --}}
                         @can('update', $ticket)
-                        @php $priorityColors = ['1'=>'bg-gray-50 border-gray-200 text-gray-500','2'=>'bg-amber-50 border-amber-200 text-amber-700','3'=>'bg-red-50 border-red-200 text-red-700']; @endphp
-                        <form method="POST" action="{{ route('workflow.tickets.save-field', $ticket) }}">
-                            @csrf @method('PATCH')
-                            <input type="hidden" name="field" value="priority">
-                            <div class="relative">
-                                <select name="value" onchange="this.form.submit()"
-                                        class="appearance-none text-xs pl-3 pr-7 py-1.5 rounded-full border cursor-pointer focus:outline-none transition-colors
-                                               {{ $priorityColors[$ticket->priority] ?? 'bg-gray-50 border-gray-200 text-gray-500' }}">
-                                    @foreach(['1'=>'Normal','2'=>'Medium','3'=>'High'] as $v=>$l)
-                                    <option value="{{ $v }}" {{ $ticket->priority==$v ? 'selected' : '' }}>{{ $l }}</option>
-                                    @endforeach
-                                </select>
-                                <svg class="pointer-events-none absolute right-2 top-1/2 -translate-y-1/2 w-2.5 h-2.5 text-current opacity-60" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M19 9l-7 7-7-7"/></svg>
-                            </div>
-                        </form>
+                        <div x-data="{ hover: 0, cur: {{ (int)$ticket->priority }} }" class="flex items-center gap-0.5">
+                            <form id="pf-{{ $ticket->id }}" method="POST" action="{{ route('workflow.tickets.save-field', $ticket) }}" style="display:none">
+                                @csrf @method('PATCH')
+                                <input type="hidden" name="field" value="priority">
+                                <input type="hidden" name="value" id="pv-{{ $ticket->id }}" value="{{ $ticket->priority }}">
+                            </form>
+                            @foreach([1, 2, 3] as $star)
+                            <button type="button"
+                                    @mouseover="hover={{ $star }}"
+                                    @mouseleave="hover=0"
+                                    @click="cur={{ $star }}; document.getElementById('pv-{{ $ticket->id }}').value={{ $star }}; document.getElementById('pf-{{ $ticket->id }}').submit()"
+                                    class="p-0.5 transition-transform hover:scale-125"
+                                    title="{{ ['', 'Normal', 'Medium', 'High'][$star] }}">
+                                <svg class="w-4 h-4 transition-colors"
+                                     :class="(hover > 0 ? hover >= {{ $star }} : cur >= {{ $star }}) ? 'text-amber-400' : 'text-gray-200'"
+                                     fill="currentColor" viewBox="0 0 24 24">
+                                    <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
+                                </svg>
+                            </button>
+                            @endforeach
+                        </div>
                         @else
-                        <span class="text-xs px-3 py-1.5 rounded-full bg-gray-50 border border-gray-200 text-gray-500">{{ $ticket->priorityLabel() }}</span>
+                        <div class="flex items-center gap-0.5">
+                            @foreach([1, 2, 3] as $star)
+                            <svg class="w-4 h-4 {{ $ticket->priority >= $star ? 'text-amber-400' : 'text-gray-200' }}" fill="currentColor" viewBox="0 0 24 24">
+                                <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
+                            </svg>
+                            @endforeach
+                        </div>
                         @endcan
 
                         {{-- Deadline chip (read-only) --}}
@@ -478,7 +511,8 @@
                 @if($ticketInputDefs && $ticketInputDefs->isNotEmpty())
                 <div x-show="tab==='fields'" style="display:none">
                     @can('update', $ticket)
-                    <form method="POST" action="{{ route('workflow.tickets.save-inputs', $ticket) }}">
+                    <form id="ticket-fields-form" method="POST" action="{{ route('workflow.tickets.save-inputs', $ticket) }}"
+                          @change="$dispatch('fields-changed')" @input="$dispatch('fields-changed')">
                         @csrf @method('PATCH')
                         <table class="w-full">
                             <thead>
@@ -669,9 +703,8 @@
                 {{-- Activity tab --}}
                 <div x-show="tab==='activity'" style="display:none">
                     <x-chatter
-                        :model="$ticket"
-                        :messages="$messages"
-                        :comment-url="route('workflow.tickets.comment', $ticket)"
+                        model-type="App\Models\Workflow\Ticket"
+                        :model-id="$ticket->id"
                         :can-comment="\Illuminate\Support\Facades\Auth::user()->can('comment', $ticket)"
                     />
                 </div>
@@ -802,6 +835,39 @@
             </div>
             {{-- END RIGHT --}}
 
+        </div>
+    </div>
+</div>
+
+{{-- Unsaved fields confirm modal --}}
+<div x-show="showSaveConfirm" x-transition style="display:none"
+     class="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-50"
+     @click.self="showSaveConfirm = false">
+    <div class="bg-white rounded-xl shadow-2xl border border-gray-100 w-96 mx-4 p-6">
+        <div class="flex items-start gap-3 mb-5">
+            <div class="w-9 h-9 rounded-full bg-amber-100 flex items-center justify-center shrink-0">
+                <svg class="w-5 h-5 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
+                </svg>
+            </div>
+            <div>
+                <h3 class="text-sm font-semibold text-gray-900">Unsaved field changes</h3>
+                <p class="text-sm text-gray-500 mt-0.5 leading-relaxed">You have unsaved changes in the Fields tab. What would you like to do?</p>
+            </div>
+        </div>
+        <div class="flex flex-col gap-2">
+            <button type="button" @click="saveAndComplete()"
+                    class="w-full px-4 py-2 text-sm font-medium text-white bg-[#714B67] hover:bg-[#5c3d55] rounded-lg transition-colors">
+                Save fields &amp; complete
+            </button>
+            <button type="button" @click="$refs.completeForm.submit(); showSaveConfirm = false"
+                    class="w-full px-4 py-2 text-sm text-gray-600 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors">
+                Complete without saving
+            </button>
+            <button type="button" @click="showSaveConfirm = false"
+                    class="w-full px-4 py-2 text-sm text-gray-400 hover:text-gray-600 transition-colors">
+                Cancel
+            </button>
         </div>
     </div>
 </div>

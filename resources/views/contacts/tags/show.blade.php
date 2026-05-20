@@ -23,7 +23,7 @@
             @endif
 
             @if(auth()->user()->hasPermission('contacts.unlink') && $tag->contacts_count === 0)
-            <form method="POST" action="{{ route('contacts.tags.delete', $tag) }}" onsubmit="return confirm('{{ __('common.confirm_delete') }}')">
+            <form method="POST" action="{{ route('contacts.tags.delete', $tag) }}" @submit.prevent="$dispatch('confirm-delete', { message: '{{ __('common.confirm_delete') }}', form: $el })">
                 @csrf
                 @method('DELETE')
                 <button class="px-3 py-1.5 text-sm text-red-700 border border-red-200 rounded hover:bg-red-50">{{ __('common.delete') }}</button>

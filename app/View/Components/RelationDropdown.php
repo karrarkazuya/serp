@@ -25,6 +25,8 @@ class RelationDropdown extends Component
     /** @var array<int, int|string> */
     public array $exceptValues = [];
 
+    public string $actualTable;
+
     public bool $canRead = false;
 
     public bool $canWrite = false;
@@ -71,6 +73,7 @@ class RelationDropdown extends Component
         $config = config("relation_dropdowns.{$this->table}");
         $user = auth()->user();
 
+        $this->actualTable = $config['table'] ?? $this->table;
         $this->componentId = 'rel_' . md5($this->table . '_' . $this->name . '_' . uniqid('', true));
         $this->multiple = $this->multiple ?? in_array($this->relation, ['many2many', 'one2many'], true);
         $this->inputName = $this->multiple && !str_ends_with($this->name, '[]') ? "{$this->name}[]" : $this->name;
@@ -89,9 +92,12 @@ class RelationDropdown extends Component
             return;
         }
 
-        $this->canRead = $user->hasPermission($config['read']);
-        $this->canWrite = $user->hasPermission($config['write']);
-        $this->canCreate = $user->hasPermission($config['create_permission'] ?? $config['write']);
+        $this->actualTable = $config['table'] ?? $this->table;
+        $open = $config['open'] ?? false;
+
+        $this->canRead   = $open || $user->hasPermission($config['read']);
+        $this->canWrite  = $open || $user->hasPermission($config['write']);
+        $this->canCreate = $open || $user->hasPermission($config['create_permission'] ?? $config['write']);
         $this->searchMoreUrl = !empty($config['route']) && Route::has($config['route']) ? route($config['route']) : null;
         $this->createUrl = !empty($config['create']) && Route::has($config['create']) ? route($config['create']) : null;
         $this->lookupUrl = $lookupUrlOverride ?? route('relation-dropdown.lookup', ['table' => $this->table]);
@@ -125,23 +131,23 @@ class RelationDropdown extends Component
 
     private function qualifiedValueColumn(array $config): string
     {
-        return $this->table . '.' . ($config['value_column'] ?? 'id');
+        return $this->actualTable . '.' . ($config['value_column'] ?? 'id');
     }
 
     private function selectedQuery(array $config)
     {
         $valueColumn = $this->qualifiedValueColumn($config);
-        $labelJoin = $config['label_join'] ?? null;
-        $colorColumn = $this->colorField ? $this->table . '.' . $this->colorField : null;
+        $labelJoin   = $config['label_join'] ?? null;
+        $colorColumn = $this->colorField ? $this->actualTable . '.' . $this->colorField : null;
 
-        $query = DB::table($this->table);
+        $query = DB::table($this->actualTable);
 
         if ($labelJoin && in_array($this->field, $labelJoin['fields'] ?? [], true)) {
             $joinTable = $labelJoin['table'];
-            $query->join($joinTable, "{$this->table}.{$labelJoin['local']}", '=', "{$joinTable}.{$labelJoin['foreign']}")
+            $query->join($joinTable, "{$this->actualTable}.{$labelJoin['local']}", '=', "{$joinTable}.{$labelJoin['foreign']}")
                 ->selectRaw("{$valueColumn} as id, {$joinTable}.{$this->field} as label");
         } else {
-            $query->selectRaw("{$valueColumn} as id, {$this->table}.{$this->field} as label");
+            $query->selectRaw("{$valueColumn} as id, {$this->actualTable}.{$this->field} as label");
         }
 
         if ($colorColumn) {

@@ -102,7 +102,6 @@ class TicketController extends Controller
             ->reverse()->values();
         $chatGrouped  = $this->groupChatMessages($chatMessages);
 
-        $messages    = $ticket->chatterMessages()->with('user')->latest()->get();
         $departments = Department::where('active', true)->orderBy('name')->get();
 
         // Build ordered chain of previous tickets for the "Return to" selector
@@ -124,7 +123,7 @@ class TicketController extends Controller
         }
 
         return view('workflow.tickets.show', compact(
-            'ticket', 'messages', 'chatGrouped', 'departments', 'previousChain'
+            'ticket', 'chatGrouped', 'departments', 'previousChain'
         ));
     }
 
@@ -146,7 +145,17 @@ class TicketController extends Controller
     public function store(StoreTicketRequest $request)
     {
         $data = $request->validated();
-        $template = TicketTemplate::findOrFail($data['ticket_template_id']);
+
+        $template = TicketTemplate::where('id', $data['ticket_template_id'])
+            ->where('enabled', true)
+            ->where('active', true)
+            ->firstOrFail();
+
+        $wu = WorkflowUser::where('user_id', auth()->id())->where('active', true)->first();
+        if ($wu && !TicketTemplate::where('id', $template->id)->visibleTo($wu)->exists()) {
+            abort(403, 'You do not have access to this template.');
+        }
+
         unset($data['ticket_template_id']);
 
         $ticket = DB::transaction(fn () => $this->ticketService->create($data, $template));
@@ -464,6 +473,11 @@ class TicketController extends Controller
     {
         $templateInput = WorkflowTemplateInput::find($input['template_input_id']);
         if (!$templateInput) return;
+
+        // Reject inputs that don't belong to this ticket's own template
+        if ($templateInput->owner_type !== 'ticket_template' || $templateInput->owner_id !== $ticket->template_id) {
+            return;
+        }
 
         $type = $templateInput->type;
         $raw  = $input['value'] ?? null;

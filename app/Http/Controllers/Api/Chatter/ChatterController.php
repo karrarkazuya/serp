@@ -4,6 +4,8 @@ namespace App\Http\Controllers\Api\Chatter;
 
 use App\Http\Controllers\Controller;
 use App\Models\Chatter\ChatterMessage;
+use App\Models\Workflow\Ticket;
+use App\Models\Workflow\Procedure;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
@@ -52,6 +54,8 @@ class ChatterController extends Controller
         abort_unless(array_key_exists($modelType, self::ALLOWED_TYPES), 403);
         abort_unless($request->user()->hasPermission(self::ALLOWED_TYPES[$modelType]), 403);
 
+        $this->authorizeRecordAccess($modelType, (int) $request->model_id, 'view');
+
         $messages = ChatterMessage::where('model_type', $modelType)
             ->where('model_id', $request->model_id)
             ->with('user')
@@ -74,6 +78,8 @@ class ChatterController extends Controller
         abort_unless(array_key_exists($modelType, self::WRITE_PERMISSION), 403);
         abort_unless($request->user()->hasPermission(self::WRITE_PERMISSION[$modelType]), 403);
 
+        $this->authorizeRecordAccess($modelType, (int) $request->model_id, 'comment');
+
         $message = ChatterMessage::create([
             'model_type'   => $modelType,
             'model_id'     => $request->model_id,
@@ -83,5 +89,23 @@ class ChatterController extends Controller
         ]);
 
         return response()->json(['message' => 'Message added.', 'data' => $message->load('user')], 201);
+    }
+
+    /**
+     * For record types that enforce viewer-level access (tickets, procedures),
+     * verify the authenticated user can actually see/act on that specific record.
+     * Other types (contacts, companies, users, config) are permission-only.
+     */
+    private function authorizeRecordAccess(string $modelType, int $modelId, string $ability): void
+    {
+        $record = match ($modelType) {
+            'App\Models\Workflow\Ticket'    => Ticket::findOrFail($modelId),
+            'App\Models\Workflow\Procedure' => Procedure::findOrFail($modelId),
+            default                         => null,
+        };
+
+        if ($record !== null) {
+            $this->authorize($ability, $record);
+        }
     }
 }

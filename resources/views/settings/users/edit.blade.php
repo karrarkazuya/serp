@@ -19,7 +19,7 @@
     </div>
 
     <div class="flex-1 overflow-y-auto p-6">
-        <form id="user-form" method="POST" action="{{ route('settings.users.update', $user) }}" class="max-w-2xl mx-auto space-y-6">
+        <form id="user-form" method="POST" action="{{ route('settings.users.update', $user) }}" class="space-y-6">
             @csrf @method('PUT')
             @include('settings.users._form', ['user' => $user, 'roles' => $roles])
         </form>

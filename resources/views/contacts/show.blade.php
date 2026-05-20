@@ -31,7 +31,7 @@
             @endcan
 
             @can('delete', $contact)
-            <form method="POST" action="{{ route('contacts.delete', $contact) }}" onsubmit="return confirm('{{ __('common.confirm_delete') }}')">
+            <form method="POST" action="{{ route('contacts.delete', $contact) }}" @submit.prevent="$dispatch('confirm-delete', { message: '{{ __('common.confirm_delete') }}', form: $el })">
                 @csrf @method('DELETE')
                 <button class="px-3 py-1.5 text-sm text-red-700 border border-red-200 rounded hover:bg-red-50">{{ __('common.delete') }}</button>
             </form>
@@ -169,9 +169,8 @@
 
         <div class="bg-white mx-4 mt-4 mb-4 rounded-xl border border-gray-200 shadow-sm overflow-hidden">
             <x-chatter
-                :model="$contact"
-                :messages="$messages"
-                :comment-url="route('contacts.comment', $contact)"
+                model-type="App\Models\Contacts\Contact"
+                :model-id="$contact->id"
                 :can-comment="auth()->user()->can('comment', $contact)"
             />
         </div>

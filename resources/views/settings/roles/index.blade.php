@@ -14,21 +14,15 @@
     ];
 @endphp
 <div class="flex flex-col h-full">
-    <div class="bg-white border-b border-gray-200 px-6 py-3 flex items-center gap-3 flex-wrap">
-        @include('components.breadcrumb', ['items' => [
-            ['label' => __('settings.title'), 'url' => route('settings.index')],
-            ['label' => __('settings.roles')],
-        ]])
-
+    <div class="bg-white border-b border-gray-200 px-4 py-2 flex items-center gap-3 flex-wrap shrink-0">
         @can('create', \App\Models\Security\Role::class)
         <a href="{{ route('settings.roles.create') }}"
-           class="ms-auto flex items-center gap-1.5 px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white text-sm font-medium rounded-md transition-colors shadow-sm">
-            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
-            </svg>
+           class="px-4 py-2 bg-[#714B67] hover:bg-[#5c3d55] text-white text-sm font-semibold rounded shadow-sm shrink-0 transition-colors">
             {{ __('settings.new_role') }}
         </a>
         @endcan
+
+        <span class="text-lg font-semibold text-gray-700">{{ __('settings.roles') }}</span>
 
         <x-search
             :model="\App\Models\Security\Role::class"
@@ -36,6 +30,28 @@
             :quick-filters="$roleQuickFilters"
             :group-by="$roleGroups"
         />
+
+        <div class="ms-auto flex items-center gap-3 text-sm text-gray-500 shrink-0">
+            @if($roles->total() > 0)
+                <span class="text-sm font-semibold text-gray-600 whitespace-nowrap">
+                    {{ $roles->firstItem() }}-{{ $roles->lastItem() }} / {{ $roles->total() }}
+                </span>
+            @else
+                <span class="text-sm font-semibold text-gray-400">0</span>
+            @endif
+            <div class="flex items-center gap-1">
+                @if($roles->onFirstPage())
+                    <span class="w-8 h-8 inline-flex items-center justify-center rounded bg-gray-100 text-gray-300">‹</span>
+                @else
+                    <a href="{{ $roles->previousPageUrl() }}" class="w-8 h-8 inline-flex items-center justify-center rounded bg-gray-100 text-gray-600 hover:text-gray-900">‹</a>
+                @endif
+                @if($roles->hasMorePages())
+                    <a href="{{ $roles->nextPageUrl() }}" class="w-8 h-8 inline-flex items-center justify-center rounded bg-gray-100 text-gray-600 hover:text-gray-900">›</a>
+                @else
+                    <span class="w-8 h-8 inline-flex items-center justify-center rounded bg-gray-100 text-gray-300">›</span>
+                @endif
+            </div>
+        </div>
     </div>
 
     <x-list :paginator="$roles" :empty-text="__('settings.no_roles')">
@@ -49,7 +65,7 @@
         </x-slot:columns>
 
         @foreach($roles as $role)
-        <tr class="hover:bg-purple-50/30 transition-colors cursor-pointer" onclick="window.location='{{ route('settings.roles.edit', $role) }}'">
+        <tr class="hover:bg-[#714B67]/5 transition-colors cursor-pointer" onclick="window.location='{{ route('settings.roles.edit', $role) }}'">
             <td class="px-6 py-3">
                 <div class="text-sm font-medium text-gray-900">{{ $role->name }}</div>
                 @if($role->description)<div class="text-xs text-gray-500">{{ $role->description }}</div>@endif
@@ -70,12 +86,12 @@
                 <div class="flex items-center justify-end gap-2">
                     @can('update', $role)
                     <a href="{{ route('settings.roles.edit', $role) }}"
-                       class="text-xs text-gray-500 hover:text-purple-600 transition-colors px-2 py-1 rounded hover:bg-purple-50">{{ __('common.edit') }}</a>
+                       class="text-xs text-gray-500 hover:text-[#714B67] transition-colors px-2 py-1 rounded hover:bg-[#714B67]/5">{{ __('common.edit') }}</a>
                     @endcan
                     @can('delete', $role)
                     @if($role->key !== 'admin')
                     <form method="POST" action="{{ route('settings.roles.delete', $role) }}"
-                          onsubmit="return confirm('{{ __('common.confirm_delete') }}')">
+                          @submit.prevent="$dispatch('confirm-delete', { message: '{{ __('common.confirm_delete') }}', form: $el })">
                         @csrf @method('DELETE')
                         <button type="submit" class="text-xs text-red-500 hover:text-red-700 transition-colors px-2 py-1 rounded hover:bg-red-50">{{ __('common.delete') }}</button>
                     </form>

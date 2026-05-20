@@ -118,9 +118,8 @@
             {{-- Bottom: chatter full width --}}
             <div class="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
                 <x-chatter
-                    :model="$procedureTemplate"
-                    :messages="$messages"
-                    :comment-url="route('workflow.config.procedure-templates.comment', $procedureTemplate)"
+                    model-type="App\Models\Workflow\ProcedureTemplate"
+                    :model-id="$procedureTemplate->id"
                     :can-comment="auth()->user()->can('comment', $procedureTemplate)"
                 />
             </div>

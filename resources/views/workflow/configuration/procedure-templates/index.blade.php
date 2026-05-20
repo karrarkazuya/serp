@@ -40,7 +40,7 @@
                 <a href="{{ route('workflow.config.procedure-templates.edit', $tpl) }}" class="text-xs text-purple-600 hover:text-purple-700 mr-3">Edit</a>
                 @endcan
                 @can('delete', $tpl)
-                <form method="POST" action="{{ route('workflow.config.procedure-templates.delete', $tpl) }}" class="inline" onsubmit="return confirm('Delete?')">
+                <form method="POST" action="{{ route('workflow.config.procedure-templates.delete', $tpl) }}" class="inline" @submit.prevent="$dispatch('confirm-delete', { message: 'Are you sure you want to delete this?', form: $el })">
                     @csrf @method('DELETE')
                     <button class="text-xs text-red-600 hover:text-red-700">Delete</button>
                 </form>

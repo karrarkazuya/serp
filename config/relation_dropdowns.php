@@ -41,6 +41,21 @@ return [
         'fields' => ['name', 'email'],
     ],
 
+    // Open to any authenticated user — used by the chat group member picker.
+    // 'table' maps the logical key to the real DB table so the lookup URL stays simple.
+    'chat_users' => [
+        'table'  => 'users',
+        'open'   => true,        // skip permission check — auth middleware is sufficient
+        'read'   => null,
+        'write'  => null,
+        'create_permission' => null,
+        'route'  => null,
+        'create' => null,
+        'color'  => null,
+        'fields' => ['name'],
+        'active_only' => true,   // filter inactive users out of results
+    ],
+
     'workflow_groups' => [
         'read' => 'workflow.config.read',
         'write' => 'workflow.config.write',

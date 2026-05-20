@@ -50,6 +50,7 @@ return [
     'send'            => 'Send',
     'comment_label'   => 'Comment',
     'system_label'    => 'System',
+    'no_activity'     => 'No activity yet.',
     'yes'             => 'Yes',
     'no'              => 'No',
     'no_groups'       => 'No groups',

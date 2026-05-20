@@ -85,7 +85,7 @@
             <td class="px-3 py-2 text-gray-600">{{ $tag->contacts_count }}</td>
             <td class="px-3 py-2 text-end">
                 @if(auth()->user()->hasPermission('contacts.unlink') && $tag->contacts_count === 0)
-                <form method="POST" action="{{ route('contacts.tags.delete', $tag) }}" onsubmit="event.stopPropagation(); return confirm('{{ __('common.confirm_delete') }}')" onclick="event.stopPropagation()" class="inline">
+                <form method="POST" action="{{ route('contacts.tags.delete', $tag) }}" @submit.prevent.stop="$dispatch('confirm-delete', { message: '{{ __('common.confirm_delete') }}', form: $el })" @click.stop class="inline">
                     @csrf
                     @method('DELETE')
                     <button class="text-xs text-red-600 hover:text-red-700">{{ __('common.delete') }}</button>

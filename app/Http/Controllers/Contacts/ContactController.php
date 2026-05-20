@@ -59,7 +59,6 @@ class ContactController extends Controller
         $this->authorize('view', $contact);
 
         $contact->load(['company', 'tags', 'children.tags', 'parent', 'creator', 'updater']);
-        $messages = $contact->chatterMessages()->with('user')->latest()->get();
 
         $activeCompanyIds = $this->companyContext->getActiveCompanyIds();
         $allIds = Contact::active()
@@ -74,7 +73,7 @@ class ContactController extends Controller
         $recordTotal = $allIds->count();
 
         return view('contacts.show', compact(
-            'contact', 'messages', 'prevId', 'nextId', 'recordPosition', 'recordTotal'
+            'contact', 'prevId', 'nextId', 'recordPosition', 'recordTotal'
         ));
     }
 

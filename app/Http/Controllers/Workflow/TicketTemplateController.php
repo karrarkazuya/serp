@@ -34,9 +34,7 @@ class TicketTemplateController extends Controller
     {
         $this->authorize('view', $ticketTemplate);
         $ticketTemplate->load(['defaultGroup', 'defaultDepartment', 'departments', 'inputs.options']);
-        $messages = $ticketTemplate->chatterMessages()->with('user')->latest()->get();
-
-        return view('workflow.configuration.ticket-templates.show', compact('ticketTemplate', 'messages'));
+        return view('workflow.configuration.ticket-templates.show', compact('ticketTemplate'));
     }
 
     public function create()

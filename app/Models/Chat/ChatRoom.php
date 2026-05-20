@@ -36,13 +36,14 @@ class ChatRoom extends Model
             ->withTimestamps();
     }
 
-    public function isDirect(): bool { return $this->type === 'direct'; }
-    public function isGroup(): bool  { return $this->type === 'group'; }
+    public function isDirect(): bool  { return $this->type === 'direct'; }
+    public function isGroup(): bool   { return $this->type === 'group'; }
     public function isChannel(): bool { return $this->type === 'channel'; }
+    public function isTicket(): bool  { return $this->type === 'ticket'; }
 
     public function displayName(User $forUser): string
     {
-        if ($this->isChannel()) return $this->name;
+        if ($this->isChannel() || $this->isTicket()) return $this->name;
         $others = $this->members->filter(fn ($u) => $u->id !== $forUser->id);
         if ($others->isEmpty()) return $this->name ?: 'Note to self';
         return $others->pluck('name')->join(', ');

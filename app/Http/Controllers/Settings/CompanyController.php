@@ -44,9 +44,7 @@ class CompanyController extends Controller
         $this->authorize('view', $company);
 
         $company->load(['creator', 'updater', 'users']);
-        $messages = $company->chatterMessages()->with('user')->get();
-
-        return view('settings.companies.show', compact('company', 'messages'));
+        return view('settings.companies.show', compact('company'));
     }
 
     public function create()
