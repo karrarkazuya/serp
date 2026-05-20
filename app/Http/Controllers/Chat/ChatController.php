@@ -6,9 +6,12 @@ use App\Http\Controllers\Controller;
 use App\Models\Chat\ChatMessage;
 use App\Models\Chat\ChatMessageFile;
 use App\Models\Chat\ChatRoom;
+use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
 
 class ChatController extends Controller
 {
@@ -24,28 +27,39 @@ class ChatController extends Controller
 
     public function index()
     {
-        $room = ChatRoom::where('active', true)->orderBy('created_at')->first();
+        $room = ChatRoom::where('active', true)->where('type', 'channel')->orderBy('created_at')->first();
         if ($room) {
             return redirect()->route('chat.show', $room);
         }
-        $rooms = collect();
-        return view('chat.show', ['rooms' => $rooms, 'room' => null, 'grouped' => []]);
+
+        [$channels, $dms, $unreadCounts, $users] = $this->sidebarData();
+        return view('chat.show', ['channels' => $channels, 'dms' => $dms, 'unreadCounts' => $unreadCounts, 'users' => $users, 'room' => null, 'grouped' => []]);
     }
 
     public function show(ChatRoom $room)
     {
-        abort_unless($room->active, 404);
+        $this->authorize('view', $room);
+        $auth = Auth::user();
 
-        $rooms   = ChatRoom::where('active', true)->with('lastMessage.user')->orderBy('name')->get();
+        [$channels, $dms, $unreadCounts, $users] = $this->sidebarData();
+
         $messages = $room->messages()->with(['user', 'files'])->orderBy('created_at')->get();
-        $grouped = $this->groupMessages($messages);
+        $grouped  = $this->groupMessages($messages);
 
-        return view('chat.show', compact('room', 'rooms', 'grouped'));
+        // Mark DM / group as read when opened
+        if (!$room->isChannel()) {
+            $room->members()->updateExistingPivot($auth->id, ['last_read_at' => now()]);
+            $unreadCounts[$room->id] = 0;
+            $room->load('members');
+        }
+
+        return view('chat.show', compact('room', 'channels', 'dms', 'grouped', 'unreadCounts', 'users'));
     }
 
     public function store(Request $request, ChatRoom $room)
     {
-        abort_unless($room->active, 404);
+        $this->authorize('post', $room);
+        $auth = Auth::user();
 
         $request->validate([
             'body'    => 'nullable|string|max:5000',
@@ -59,7 +73,7 @@ class ChatController extends Controller
 
         $message = ChatMessage::create([
             'room_id' => $room->id,
-            'user_id' => Auth::id(),
+            'user_id' => $auth->id,
             'body'    => $body ?: null,
         ]);
 
@@ -67,9 +81,7 @@ class ChatController extends Controller
             if (!$file || !in_array($file->getMimeType(), self::ALLOWED_MIMES)) {
                 continue;
             }
-
             $path = $file->store("chat/{$room->id}", 'local');
-
             ChatMessageFile::create([
                 'message_id'    => $message->id,
                 'disk'          => 'local',
@@ -78,6 +90,15 @@ class ChatController extends Controller
                 'mime_type'     => $file->getMimeType(),
                 'size'          => $file->getSize(),
             ]);
+        }
+
+        // Notify other members for DM / group rooms
+        if (!$room->isChannel()) {
+            $preview = Str::limit($body ?: '📎 Sent a file', 80);
+            $url     = route('chat.show', $room);
+            foreach ($room->members()->where('user_id', '!=', $auth->id)->get() as $member) {
+                $member->notify($auth->name, $preview, $url);
+            }
         }
 
         return redirect()->route('chat.show', $room)->with('scrollToBottom', true);
@@ -94,28 +115,77 @@ class ChatController extends Controller
             'name'               => $request->name,
             'description'        => $request->description,
             'created_by_user_id' => Auth::id(),
+            'type'               => 'channel',
         ]);
+
+        return redirect()->route('chat.show', $room);
+    }
+
+    public function openDirect(User $user)
+    {
+        $auth = Auth::user();
+
+        // Find existing 1-on-1 DM between exactly these two users
+        $room = ChatRoom::where('type', 'direct')
+            ->whereHas('members', fn ($q) => $q->where('user_id', $auth->id))
+            ->whereHas('members', fn ($q) => $q->where('user_id', $user->id))
+            ->first();
+
+        if (!$room) {
+            $room = DB::transaction(function () use ($auth, $user) {
+                $r = ChatRoom::create([
+                    'name'               => '',
+                    'type'               => 'direct',
+                    'created_by_user_id' => $auth->id,
+                ]);
+                $r->members()->attach([$auth->id, $user->id]);
+                return $r;
+            });
+        }
 
         return redirect()->route('chat.show', $room);
     }
 
     public function file(ChatRoom $room, ChatMessageFile $file)
     {
+        $this->authorize('view', $room);
         abort_unless($file->message->room_id === $room->id, 403);
-        abort_unless($room->active, 404);
 
         return Storage::disk($file->disk)->download($file->path, $file->original_name);
     }
 
+    private function sidebarData(): array
+    {
+        $auth = Auth::user();
+
+        $channels = ChatRoom::where('active', true)
+            ->where('type', 'channel')
+            ->with('lastMessage.user')
+            ->orderBy('name')
+            ->get();
+
+        $dms = ChatRoom::where('active', true)
+            ->whereIn('type', ['direct', 'group'])
+            ->whereHas('members', fn ($q) => $q->where('user_id', $auth->id))
+            ->with(['members', 'lastMessage.user'])
+            ->get();
+
+        $unreadCounts = $dms->mapWithKeys(fn ($r) => [$r->id => $r->unreadCountFor($auth)])->toArray();
+
+        $users = User::where('id', '!=', 0)->orderBy('name')->get();
+
+        return [$channels, $dms, $unreadCounts, $users];
+    }
+
     private function groupMessages($messages): array
     {
-        $grouped     = [];
-        $prevUserId  = null;
-        $prevDate    = null;
+        $grouped    = [];
+        $prevUserId = null;
+        $prevDate   = null;
 
         foreach ($messages as $msg) {
-            $date      = $msg->created_at->format('Y-m-d');
-            $showDate  = $date !== $prevDate;
+            $date       = $msg->created_at->format('Y-m-d');
+            $showDate   = $date !== $prevDate;
             $showHeader = $msg->user_id !== $prevUserId || $showDate;
 
             $grouped[] = [

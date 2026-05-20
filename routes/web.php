@@ -67,6 +67,7 @@ Route::middleware('auth')->group(function () {
     Route::prefix('chat')->name('chat.')->group(function () {
         Route::get('/', [ChatController::class, 'index'])->name('index');
         Route::post('/rooms', [ChatController::class, 'createRoom'])->name('rooms.create');
+        Route::post('/direct/{user}', [ChatController::class, 'openDirect'])->name('direct');
         Route::get('/{room}', [ChatController::class, 'show'])->name('show');
         Route::post('/{room}/messages', [ChatController::class, 'store'])->name('store');
         Route::get('/{room}/files/{file}', [ChatController::class, 'file'])->name('file');

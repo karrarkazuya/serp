@@ -2,6 +2,7 @@
 
 namespace App\Providers;
 
+use App\Models\Chat\ChatRoom;
 use App\Models\Contacts\Contact;
 use App\Models\Security\Permission;
 use App\Models\Security\Role;
@@ -19,6 +20,7 @@ use App\Models\Workflow\Manager;
 use App\Models\Workflow\WorkflowSharedLink;
 use App\Models\Workflow\WorkflowUser;
 use App\Observers\AuditableObserver;
+use App\Policies\Chat\ChatRoomPolicy;
 use App\Policies\CompanyPolicy;
 use App\Policies\ContactPolicy;
 use App\Policies\PermissionPolicy;
@@ -62,6 +64,7 @@ class AppServiceProvider extends ServiceProvider
     {
         Blade::component('list', \App\View\Components\TableList::class);
 
+        Gate::policy(ChatRoom::class, ChatRoomPolicy::class);
         Gate::policy(Contact::class, ContactPolicy::class);
         Gate::policy(User::class, UserPolicy::class);
         Gate::policy(Role::class, RolePolicy::class);
