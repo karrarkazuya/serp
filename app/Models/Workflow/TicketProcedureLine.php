@@ -11,7 +11,7 @@ class TicketProcedureLine extends Model
     protected $table = 'workflow_ticket_procedure_lines';
 
     protected $fillable = [
-        'uuid', 'ticket_id', 'procedure_template_id', 'name', 'state',
+        'uuid', 'ticket_id', 'procedure_template_id', 'procedure_id', 'name', 'state',
         'active', 'created_by', 'updated_by',
     ];
 
@@ -25,6 +25,11 @@ class TicketProcedureLine extends Model
     public function procedureTemplate(): BelongsTo
     {
         return $this->belongsTo(ProcedureTemplate::class, 'procedure_template_id');
+    }
+
+    public function procedure(): BelongsTo
+    {
+        return $this->belongsTo(Procedure::class, 'procedure_id');
     }
 
     public function creator(): BelongsTo

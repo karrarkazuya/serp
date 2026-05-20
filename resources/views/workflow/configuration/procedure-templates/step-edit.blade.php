@@ -2,6 +2,12 @@
 @section('title', 'Edit Step — ' . $step->name)
 
 @php
+    $existingNextStepRecords = $step->nextSteps->map(fn($s) => [
+        'id'    => $s->id,
+        'label' => $s->task_sequence . '. ' . $s->name,
+        'color' => null,
+    ])->values()->toArray();
+    $pathChoiceNamesInitial = old('path_choice_names', $step->pathChoices->pluck('name', 'target_step_id')->toArray());
     $existingInputs = old('inputs', $step->inputs->map(fn($inp) => [
         'id'          => $inp->id,
         'name'        => $inp->name,
@@ -108,47 +114,101 @@
                         </label>
                     </div>
 
-                    <div class="flex items-center gap-4 py-2 border-b border-gray-100">
-                        <label class="w-36 shrink-0 text-sm text-gray-500">Has sub-procedures</label>
-                        <label class="flex items-center gap-2 text-sm text-gray-800 cursor-pointer">
-                            <input type="checkbox" name="has_procedures" value="1" {{ old('has_procedures', $step->has_procedures) ? 'checked' : '' }} class="rounded border-gray-300 text-purple-600">
-                            <span>Enabled</span>
-                        </label>
-                    </div>
-
-                    <div class="flex items-center gap-4 py-2 border-b border-gray-100" x-data="{ on: {{ old('has_path_choice', $step->has_path_choice) ? 'true' : 'false' }} }">
-                        <label class="w-36 shrink-0 text-sm text-gray-500">Path choice</label>
-                        <div class="flex-1 flex flex-col gap-2">
+                    <div class="flex items-start gap-4 py-3 border-b border-gray-100"
+                         x-data="{ on: {{ old('has_procedures', $step->has_procedures) ? 'true' : 'false' }} }">
+                        <label class="w-36 shrink-0 text-sm text-gray-500 pt-2">Has sub-procedures</label>
+                        <div class="flex-1 flex flex-col gap-2 py-1">
                             <label class="flex items-center gap-2 text-sm text-gray-800 cursor-pointer">
-                                <input type="checkbox" name="has_path_choice" value="1" x-model="on" class="rounded border-gray-300 text-purple-600">
-                                <span>Agent picks next step manually</span>
+                                <input type="checkbox" name="has_procedures" value="1" x-model="on" class="rounded border-gray-300 text-purple-600">
+                                <span>Enabled</span>
                             </label>
-                            <div x-show="on" style="display:none">
-                                <input type="text" name="path_choice_question"
-                                       value="{{ old('path_choice_question', $step->path_choice_question) }}"
-                                       placeholder="Question shown to agent, e.g. Which team should handle this?"
-                                       class="w-full text-sm border border-gray-200 rounded-lg px-3 py-1.5 focus:outline-none focus:ring-1 focus:ring-purple-400">
+                            <div x-show="on" x-transition style="display:none" class="flex flex-col gap-3">
+                                <label class="flex items-center gap-2 text-sm text-gray-600 cursor-pointer">
+                                    <input type="checkbox" name="procedures_required" value="1"
+                                           {{ old('procedures_required', $step->procedures_required) ? 'checked' : '' }}
+                                           class="rounded border-gray-300 text-purple-600">
+                                    <span>Required — all sub-procedures must be completed before this ticket can be completed</span>
+                                </label>
+                                <x-relation-dropdown
+                                    table="workflow_procedure_templates"
+                                    field="name"
+                                    name="sub_procedure_ids"
+                                    label="Sub-procedures"
+                                    :selected="old('sub_procedure_ids', $step->subProcedures->pluck('id')->toArray())"
+                                    relation="many2many"
+                                    :exclude="[$procedureTemplate->id]"
+                                    :compact="true"
+                                />
                             </div>
                         </div>
                     </div>
 
-                    {{-- Next steps --}}
-                    @if($siblings->isNotEmpty())
-                    <div class="flex items-start gap-4 py-3 border-b border-gray-100">
-                        <label class="w-36 shrink-0 text-sm text-gray-500 pt-0.5">Next Steps</label>
-                        <div class="flex-1 flex flex-col gap-2">
-                            @foreach($siblings as $sibling)
-                            <label class="flex items-center gap-2 text-sm text-gray-800 cursor-pointer">
-                                <input type="checkbox" name="next_step_ids[]" value="{{ $sibling->id }}"
-                                       {{ $step->nextSteps->contains($sibling->id) ? 'checked' : '' }}
-                                       class="rounded border-gray-300 text-purple-600">
-                                <span class="text-gray-400 mr-0.5">{{ $sibling->task_sequence }}.</span>
-                                {{ $sibling->name }}
-                            </label>
-                            @endforeach
+                    {{-- Path choice + Next Steps (shared Alpine scope) --}}
+                    <div x-data="{
+                            pathOn: {{ old('has_path_choice', $step->has_path_choice) ? 'true' : 'false' }},
+                            selectedNextStepRecords: {{ Js::from($existingNextStepRecords) }},
+                            pathChoiceNames: {{ Js::from($pathChoiceNamesInitial) }},
+                         }"
+                         @step-next-steps-changed.window="selectedNextStepRecords = $event.detail.records">
+
+                        {{-- Path choice row --}}
+                        <div class="flex items-start gap-4 py-3 border-b border-gray-100">
+                            <label class="w-36 shrink-0 text-sm text-gray-500 pt-2">Path choice</label>
+                            <div class="flex-1 flex flex-col gap-2 py-1">
+                                <label class="flex items-center gap-2 text-sm text-gray-800 cursor-pointer">
+                                    <input type="checkbox" name="has_path_choice" value="1" x-model="pathOn" class="rounded border-gray-300 text-purple-600">
+                                    <span>Agent picks next step manually</span>
+                                </label>
+                                <div x-show="pathOn" x-transition style="display:none" class="flex flex-col gap-2">
+                                    <input type="text" name="path_choice_question"
+                                           value="{{ old('path_choice_question', $step->path_choice_question) }}"
+                                           placeholder="Question shown to agent, e.g. Which team should handle this?"
+                                           class="w-full text-sm border border-gray-200 rounded-lg px-3 py-1.5 focus:outline-none focus:ring-1 focus:ring-purple-400">
+                                    <label class="flex items-center gap-2 text-sm text-gray-600 cursor-pointer">
+                                        <input type="checkbox" name="path_choice_required" value="1"
+                                               {{ old('path_choice_required', $step->path_choice_required) ? 'checked' : '' }}
+                                               class="rounded border-gray-300 text-purple-600">
+                                        <span>Required — agent must choose before completing the ticket</span>
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+
+                        {{-- Next Steps row --}}
+                        <div class="flex items-start gap-4 py-3 border-b border-gray-100">
+                            <label class="w-36 shrink-0 text-sm text-gray-500 pt-0.5">Next Steps</label>
+                            <div class="flex-1 flex flex-col gap-2">
+                                <x-relation-dropdown
+                                    table="workflow_procedure_steps"
+                                    field="name"
+                                    name="next_step_ids"
+                                    label="Next Steps"
+                                    :selected="old('next_step_ids', $step->nextSteps->pluck('id')->toArray())"
+                                    relation="many2many"
+                                    :exclude="[$step->id]"
+                                    :lookup-url-override="route('workflow.config.procedure-templates.steps.lookup', $procedureTemplate)"
+                                    event="step-next-steps-changed"
+                                    :compact="true"
+                                />
+
+                                {{-- Path choice labels — shown per selected next step when path choice is on --}}
+                                <div x-show="pathOn && selectedNextStepRecords.length > 0" style="display:none" class="mt-1 flex flex-col gap-1.5">
+                                    <p class="text-xs text-gray-500 font-medium">Path option labels</p>
+                                    <template x-for="step in selectedNextStepRecords" :key="step.id">
+                                        <div class="flex items-center gap-2">
+                                            <span class="text-sm text-gray-700 flex-1 min-w-0 truncate" x-text="step.label"></span>
+                                            <input type="text"
+                                                   :name="`path_choice_names[${step.id}]`"
+                                                   :value="pathChoiceNames[step.id] ?? ''"
+                                                   @input="pathChoiceNames[step.id] = $event.target.value"
+                                                   placeholder="Option label…"
+                                                   class="text-sm border border-gray-200 rounded-lg px-2.5 py-1 w-40 focus:outline-none focus:ring-1 focus:ring-purple-400">
+                                        </div>
+                                    </template>
+                                </div>
+                            </div>
                         </div>
                     </div>
-                    @endif
 
                     {{-- Tabs: Form Fields / Description --}}
                     <div class="mt-6 border-t border-gray-200"

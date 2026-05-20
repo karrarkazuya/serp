@@ -13,7 +13,8 @@ use Illuminate\Support\Facades\DB;
 class TicketService
 {
     public function __construct(
-        private readonly ChatterService $chatterService
+        private readonly ChatterService $chatterService,
+        private readonly ProcedureService $procedureService,
     ) {}
 
     public function create(array $data, TicketTemplate $template): Ticket
@@ -121,6 +122,11 @@ class TicketService
 
     public function resolve(Ticket $ticket): Ticket
     {
+        if ($ticket->procedure_id) {
+            $this->procedureService->completeTicket($ticket);
+            return $ticket->fresh();
+        }
+
         $duration = (int) round(now()->diffInHours($ticket->created_at, true));
         $passed   = max(0, $duration - ($ticket->resolve_max_duration ?? 0));
 
@@ -143,8 +149,13 @@ class TicketService
         return $ticket;
     }
 
-    public function close(Ticket $ticket): Ticket
+    public function close(Ticket $ticket, ?string $reason = null, ?int $returnToTicketId = null): Ticket
     {
+        if ($ticket->procedure_id) {
+            $this->procedureService->rejectTicket($ticket, $reason, $returnToTicketId);
+            return $ticket->fresh();
+        }
+
         $ticket->update(['state' => 'closed']);
         $this->chatterService->log($ticket, 'Ticket closed.', 'system');
 

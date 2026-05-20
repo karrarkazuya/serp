@@ -26,6 +26,7 @@
             {{ __('nav.procedures') }}
         </a>
 
+        @if(auth()->user()->isAdmin())
         <div x-data="{ open: false }" class="relative h-full shrink-0" @click.outside="open = false">
             <button type="button"
                     @click="open = !open"
@@ -126,6 +127,7 @@
                 </a>
             </div>
         </div>
+        @endif
 
         @if(auth()->user()->hasPermission('workflow.config.read'))
         <a href="{{ route('workflow.settings.index') }}"

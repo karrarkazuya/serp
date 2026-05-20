@@ -110,4 +110,14 @@ return [
         'model' => \App\Models\Workflow\ProcedureTemplate::class,
         'visible_to_workflow_user' => true,
     ],
+
+    'workflow_procedure_steps' => [
+        'read' => 'workflow.config.read',
+        'write' => 'workflow.config.write',
+        'create_permission' => 'workflow.config.write',
+        'route' => null,
+        'create' => null,
+        'color' => null,
+        'fields' => ['name'],
+    ],
 ];

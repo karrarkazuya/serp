@@ -44,20 +44,55 @@ class ProcedureService
     public function completeTicket(Ticket $ticket): void
     {
         DB::transaction(function () use ($ticket) {
-            $ticket->update(['state' => 'completed']);
+            $duration = (int) round(now()->diffInHours($ticket->created_at, true));
+            $passed   = max(0, $duration - ($ticket->resolve_max_duration ?? 0));
+
+            $ticket->update([
+                'state'                   => 'completed',
+                'resolve_duration'        => $duration,
+                'resolve_deadline_passed' => $passed,
+            ]);
+            $this->chatterService->log($ticket, 'Ticket marked as completed.', 'system');
             $this->chatterService->log($ticket->procedure, "Ticket '{$ticket->name}' completed.", 'system');
 
-            $this->unlockNextTickets($ticket);
-            $this->checkProcedureCompletion($ticket->procedure);
+            if ($ticket->ignore_state) return;
+
+            $procedure  = $ticket->procedure;
+            $hasNext    = $ticket->nextTickets()->exists();
+            $hasPending = $procedure->tickets()->where('id', '!=', $ticket->id)->where('state', 'pending')->where('ignore_state', false)->exists();
+
+            if (!$hasNext && !$hasPending) {
+                $this->finishProcedureAsCompleted($procedure);
+            } else {
+                $this->unlockNextTickets($ticket);
+            }
         });
     }
 
-    public function rejectTicket(Ticket $ticket): void
+    public function rejectTicket(Ticket $ticket, ?string $reason = null, ?int $returnToTicketId = null): void
     {
-        DB::transaction(function () use ($ticket) {
+        DB::transaction(function () use ($ticket, $reason, $returnToTicketId) {
             $ticket->update(['state' => 'rejected']);
+            $this->chatterService->log($ticket, 'Ticket rejected.', 'system');
             $this->chatterService->log($ticket->procedure, "Ticket '{$ticket->name}' rejected.", 'system');
-            $this->checkProcedureCompletion($ticket->procedure);
+
+            if ($ticket->ignore_state) return;
+
+            if ($ticket->previous_ticket_id) {
+                $targetId = $returnToTicketId ?? $ticket->previous_ticket_id;
+                $this->rejectChainToTarget($ticket, $targetId, $reason);
+            } else {
+                $hasPending = $ticket->procedure->tickets()
+                    ->where('id', '!=', $ticket->id)
+                    ->where('state', 'pending')
+                    ->where('ignore_state', false)
+                    ->exists();
+
+                if (!$hasPending) {
+                    $ticket->procedure->tickets()->where('state', 'draft')->update(['state' => 'skipped']);
+                    $this->finishProcedureAsCancelled($ticket->procedure);
+                }
+            }
         });
     }
 
@@ -67,8 +102,16 @@ class ProcedureService
             $ticket->update(['state' => 'skipped']);
             $this->chatterService->log($ticket->procedure, "Ticket '{$ticket->name}' skipped.", 'system');
 
-            $this->unlockNextTickets($ticket);
-            $this->checkProcedureCompletion($ticket->procedure);
+            if ($ticket->ignore_state) return;
+
+            $hasNext    = $ticket->nextTickets()->exists();
+            $hasPending = $ticket->procedure->tickets()->where('id', '!=', $ticket->id)->where('state', 'pending')->where('ignore_state', false)->exists();
+
+            if (!$hasNext && !$hasPending) {
+                $this->checkProcedureCompletion($ticket->procedure);
+            } else {
+                $this->unlockNextTickets($ticket);
+            }
         });
     }
 
@@ -77,15 +120,19 @@ class ProcedureService
         DB::transaction(function () use ($ticket, $path) {
             $ticket->update(['path_chosen_id' => $path->id]);
 
+            // Skip all unchosen path targets so they are excluded from the next-unlock step.
+            // The chosen target stays in draft and is unlocked when this ticket is completed.
             foreach ($ticket->pathChoices as $p) {
+                if ($p->id === $path->id) continue;
                 $target = $p->targetTicket;
-                if (!$target) continue;
-
-                if ($p->id === $path->id) {
-                    $this->unlockSingleTicket($target);
-                } else {
+                if ($target && !in_array($target->state, ['skipped', 'completed', 'rejected'])) {
                     $target->update(['state' => 'skipped']);
                 }
+            }
+
+            $this->chatterService->log($ticket, "Path selected: {$path->name}.", 'system');
+            if ($ticket->procedure) {
+                $this->chatterService->log($ticket->procedure, "Path '{$path->name}' selected for ticket '{$ticket->name}'.", 'system');
             }
         });
     }
@@ -132,7 +179,6 @@ class ProcedureService
 
     private function instantiateTickets(Procedure $procedure, ProcedureTemplate $template): void
     {
-        $actorId = auth()->user()?->id;
         $steps = $template->steps()->with(['inputs.options', 'nextSteps', 'pathChoices', 'subProcedures'])->get();
 
         // Map step_id → Ticket
@@ -147,8 +193,10 @@ class ProcedureService
                 'task_sequence'             => $step->task_sequence,
                 'assigned_to_department_id' => $step->default_department_id,
                 'has_procedures'            => $step->has_procedures,
+                'procedures_required'       => $step->procedures_required,
                 'has_path_choice'           => $step->has_path_choice,
                 'path_choice_question'      => $step->path_choice_question,
+                'path_choice_required'      => $step->path_choice_required,
                 'ignore_state'              => $step->ignore_state,
                 'is_approve_only'           => $step->is_approve_only,
                 'resolve_max_duration'      => $step->resolve_max_duration,
@@ -207,6 +255,18 @@ class ProcedureService
 
     private function unlockNextTickets(Ticket $ticket): void
     {
+        // If a path was chosen, only unlock the chosen target; all others were already skipped.
+        if ($ticket->has_path_choice && $ticket->path_chosen_id) {
+            $chosenTargetId = $ticket->pathChoices()->find($ticket->path_chosen_id)?->target_ticket_id;
+            foreach ($ticket->nextTickets as $next) {
+                if ($next->id === $chosenTargetId) {
+                    $this->unlockSingleTicket($next);
+                }
+                // unchosen next tickets stay skipped — not re-unlocked
+            }
+            return;
+        }
+
         foreach ($ticket->nextTickets as $next) {
             $this->unlockSingleTicket($next);
         }
@@ -220,10 +280,90 @@ class ProcedureService
 
         $prevDone = !$prev || in_array($prev->state, ['completed', 'skipped']);
 
-        if ($prevDone && $ticket->state === 'draft') {
+        // Unlock draft tickets on first activation, and rejected/skipped tickets when re-activated
+        if ($prevDone && in_array($ticket->state, ['draft', 'rejected', 'skipped'])) {
             $ticket->update(['state' => 'pending']);
             $this->seedTicketViewers($ticket);
             $this->notifyTicketDepartment($ticket);
+        }
+    }
+
+    private function rejectChainToTarget(Ticket $startTicket, int $targetId, ?string $reason): void
+    {
+        $cursor = $startTicket;
+        $seen   = [$cursor->id => true];
+        $iterations = 0;
+
+        // Walk backwards from startTicket, rejecting each intermediate ticket,
+        // until cursor's previous is the target (or we've gone far enough).
+        while ($cursor->previous_ticket_id && $cursor->previous_ticket_id !== $targetId && $iterations < 100) {
+            $iterations++;
+            $prev = Ticket::find($cursor->previous_ticket_id);
+            if (!$prev || isset($seen[$prev->id])) break; // cycle guard
+            $seen[$prev->id] = true;
+
+            // Reject siblings of cursor that are still active
+            foreach ($prev->nextTickets as $sibling) {
+                if ($sibling->id !== $cursor->id && !in_array($sibling->state, ['rejected', 'skipped'])) {
+                    $sibling->update(['state' => 'rejected']);
+                }
+            }
+
+            $prev->update(['state' => 'rejected']);
+            $cursor = $prev;
+        }
+
+        $target = Ticket::find($targetId);
+        if (!$target) return;
+
+        // Reject any remaining active next tickets of the target (cursor's siblings)
+        foreach ($target->nextTickets as $nt) {
+            if ($nt->id !== $cursor->id && !in_array($nt->state, ['rejected', 'skipped'])) {
+                $nt->update(['state' => 'rejected']);
+            }
+        }
+
+        $targetData = ['state' => 'pending'];
+        if ($reason) {
+            $targetData['return_reason'] = $reason;
+        }
+        $target->update($targetData);
+
+        $isChain = $startTicket->previous_ticket_id !== $targetId;
+        $msg = "Ticket '{$startTicket->name}' rejected"
+            . ($isChain ? ' (chain return)' : '')
+            . " — '{$target->name}' reactivated."
+            . ($reason ? " Reason: {$reason}" : '');
+
+        $this->chatterService->log($startTicket->procedure, $msg, 'system');
+    }
+
+    private function finishProcedureAsCompleted(Procedure $procedure): void
+    {
+        $duration = (int) round(now()->diffInHours($procedure->created_at, true));
+        $passed   = max(0, $duration - ($procedure->resolve_max_duration ?? 0));
+        $procedure->update([
+            'state'                   => 'completed',
+            'resolve_duration'        => $duration,
+            'resolve_deadline_passed' => $passed,
+        ]);
+        $this->chatterService->log($procedure, 'Procedure completed.', 'system');
+
+        if ($procedure->created_by_user_id && $procedure->created_by_user_id !== auth()->user()?->id) {
+            $creator = User::find($procedure->created_by_user_id);
+            $creator?->notify('Procedure completed: ' . $procedure->name, '', route('workflow.procedures.show', $procedure));
+        }
+    }
+
+    private function finishProcedureAsCancelled(Procedure $procedure): void
+    {
+        $duration = (int) round(now()->diffInHours($procedure->created_at, true));
+        $procedure->update(['state' => 'closed', 'resolve_duration' => $duration]);
+        $this->chatterService->log($procedure, 'No active tickets remaining — procedure cancelled.', 'system');
+
+        if ($procedure->created_by_user_id && $procedure->created_by_user_id !== auth()->user()?->id) {
+            $creator = User::find($procedure->created_by_user_id);
+            $creator?->notify('Procedure cancelled: ' . $procedure->name, '', route('workflow.procedures.show', $procedure));
         }
     }
 
@@ -274,7 +414,8 @@ class ProcedureService
     private function checkProcedureCompletion(Procedure $procedure): void
     {
         $procedure->refresh();
-        $tickets  = $procedure->tickets;
+        // ignore_state tickets are excluded — they never block or drive procedure completion
+        $tickets  = $procedure->tickets->where('ignore_state', false);
         $terminal = ['completed', 'rejected', 'skipped'];
         $allDone  = $tickets->every(fn (Ticket $t) => in_array($t->state, $terminal));
 

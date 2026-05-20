@@ -127,7 +127,9 @@ class Procedure extends Model
             $sub->selectRaw('1')
                 ->from('workflow_procedure_viewers')
                 ->whereColumn('procedure_id', 'workflow_procedures.id')
-                ->where('user_id', $user->id);
+                ->where('user_id', $user->id)
+                ->whereExists(fn ($wu) => $wu->selectRaw('1')->from('workflow_users')
+                    ->where('user_id', $user->id)->where('active', true));
         });
     }
 

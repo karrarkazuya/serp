@@ -55,7 +55,8 @@
     </div>
 
     <div class="flex-1 overflow-y-auto">
-        <div class="bg-white mx-4 mt-4 rounded-xl border border-gray-200 shadow-sm">
+        <div class="relative bg-white mx-4 mt-4 rounded-xl border border-gray-200 shadow-sm overflow-hidden">
+            <x-state-ribbon :state="$procedure->state" />
             @if(!$procedure->active)
             <div class="px-6 pt-4 pb-0">
                 <div class="text-sm text-amber-700 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2">This procedure is archived.</div>
@@ -96,6 +97,15 @@
 
                 <div class="flex gap-8">
                     <div class="flex-1">
+                        @if($procedure->optionalTicket)
+                        <div class="flex items-center gap-4 py-2 border-b border-gray-100">
+                            <span class="w-32 shrink-0 text-sm text-gray-500">Parent Ticket</span>
+                            <a href="{{ route('workflow.tickets.show', $procedure->optionalTicket) }}"
+                               class="flex-1 text-sm text-purple-600 hover:text-purple-800 hover:underline truncate">
+                                {{ $procedure->optionalTicket->name }}
+                            </a>
+                        </div>
+                        @endif
                         @foreach([
                             ['Template',   $procedure->procedureTemplate?->name],
                             ['Created By', $procedure->createdByUser?->name],

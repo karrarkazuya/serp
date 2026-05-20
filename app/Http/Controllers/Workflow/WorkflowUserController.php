@@ -62,12 +62,13 @@ class WorkflowUserController extends Controller
 
         $data = $request->validate([
             'default_department_id' => 'required|exists:workflow_departments,id',
-            'active'                => 'boolean',
             'groups'                => 'nullable|array',
             'groups.*'              => 'exists:workflow_groups,id',
             'departments'           => 'nullable|array',
             'departments.*'         => 'exists:workflow_departments,id',
         ]);
+
+        $data['active'] = $request->boolean('active');
 
         $groupIds = $data['groups'] ?? [];
         $deptIds  = $data['departments'] ?? [];

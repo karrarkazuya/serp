@@ -68,6 +68,7 @@ class ProcedureController extends Controller
         $procedure->load([
             'procedureTemplate',
             'createdByUser',
+            'optionalTicket',
             'sharedLink',
             'tickets' => fn ($q) => $q->orderBy('task_sequence'),
             'tickets.inputs.templateInput',

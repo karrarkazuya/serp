@@ -12,10 +12,12 @@ use App\Models\Workflow\Department;
 use App\Models\Workflow\Ticket;
 use App\Models\Workflow\TicketTemplate;
 use App\Models\Workflow\WorkflowTemplateInput;
+use App\Models\Workflow\TicketProcedureLine;
 use App\Models\Workflow\WorkflowUser;
 use App\Helpers\SearchFilters;
 use App\Helpers\SortsTable;
 use App\Services\Company\CompanyContextService;
+use App\Services\Workflow\ProcedureService;
 use App\Services\Workflow\TicketService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -24,6 +26,7 @@ class TicketController extends Controller
 {
     public function __construct(
         private readonly TicketService $ticketService,
+        private readonly ProcedureService $procedureService,
         private readonly CompanyContextService $companyContext,
     ) {}
 
@@ -72,6 +75,7 @@ class TicketController extends Controller
             'template.inputs.options',
             'procedureStep.inputs.options',
             'procedure',
+            'procedureLines.procedure',
             'inputs.templateInput',
             'assignedDepartment',
             'assignedUser',
@@ -101,8 +105,26 @@ class TicketController extends Controller
         $messages    = $ticket->chatterMessages()->with('user')->latest()->get();
         $departments = Department::where('active', true)->orderBy('name')->get();
 
+        // Build ordered chain of previous tickets for the "Return to" selector
+        $previousChain = collect();
+        if ($ticket->procedure_id && $ticket->previous_ticket_id) {
+            $seen = [];
+            $cursor = $ticket->previousTicket;
+            $iterations = 0;
+            while ($cursor && $iterations < 100) {
+                $iterations++;
+                if (isset($seen[$cursor->id])) {
+                    $previousChain = collect(); // cycle — discard chain
+                    break;
+                }
+                $seen[$cursor->id] = true;
+                $previousChain->push($cursor);
+                $cursor = $cursor->previous_ticket_id ? $cursor->previousTicket : null;
+            }
+        }
+
         return view('workflow.tickets.show', compact(
-            'ticket', 'messages', 'chatGrouped', 'departments'
+            'ticket', 'messages', 'chatGrouped', 'departments', 'previousChain'
         ));
     }
 
@@ -274,19 +296,58 @@ class TicketController extends Controller
         $this->authorize('act', $ticket);
         $activeCompanyIds = $this->companyContext->getActiveCompanyIds();
         abort_unless(is_null($ticket->company_id) || in_array($ticket->company_id, $activeCompanyIds), 403);
+
+        if ($ticket->has_path_choice && $ticket->path_choice_required && !$ticket->path_chosen_id) {
+            return back()->with('error', 'You must select a path before completing this ticket.');
+        }
+
+        if ($ticket->has_procedures && $ticket->procedures_required && !$ticket->hasAllProcedureLinesCompleted()) {
+            return back()->with('error', 'All sub-procedures must be completed before this ticket can be completed.');
+        }
+
         DB::transaction(fn () => $this->ticketService->resolve($ticket));
 
         return back()->with('success', 'Ticket resolved.');
     }
 
-    public function close(Ticket $ticket)
+    public function close(Request $request, Ticket $ticket)
     {
         $this->authorize('act', $ticket);
         $activeCompanyIds = $this->companyContext->getActiveCompanyIds();
         abort_unless(is_null($ticket->company_id) || in_array($ticket->company_id, $activeCompanyIds), 403);
-        DB::transaction(fn () => $this->ticketService->close($ticket));
 
-        return back()->with('success', 'Ticket closed.');
+        $reason = null;
+        $returnToTicketId = null;
+
+        if ($ticket->procedure_id && $ticket->previous_ticket_id) {
+            $request->validate(['return_reason' => 'required|string|max:1000']);
+            $reason = $request->input('return_reason');
+
+            if ($request->filled('return_to_ticket_id')) {
+                $returnToTicketId = (int) $request->input('return_to_ticket_id');
+
+                // Validate target is actually a predecessor (cycle-safe walk)
+                $seen = [];
+                $cursor = $ticket->previousTicket;
+                $found = false;
+                $iterations = 0;
+                while ($cursor && $iterations < 100) {
+                    $iterations++;
+                    if (isset($seen[$cursor->id])) break;
+                    $seen[$cursor->id] = true;
+                    if ($cursor->id === $returnToTicketId) { $found = true; break; }
+                    $cursor = $cursor->previous_ticket_id ? $cursor->previousTicket : null;
+                }
+
+                if (!$found) {
+                    return back()->withErrors(['return_to_ticket_id' => 'Invalid return target.']);
+                }
+            }
+        }
+
+        DB::transaction(fn () => $this->ticketService->close($ticket, $reason, $returnToTicketId));
+
+        return back()->with('success', 'Ticket returned.');
     }
 
     public function reopen(Ticket $ticket)
@@ -368,6 +429,35 @@ class TicketController extends Controller
         DB::transaction(fn () => $ticket->logComment($request->body));
 
         return back()->with('success', 'Comment added.');
+    }
+
+    public function startSubProcedure(Request $request, Ticket $ticket, TicketProcedureLine $line)
+    {
+        $this->authorize('act', $ticket);
+        $activeCompanyIds = $this->companyContext->getActiveCompanyIds();
+        abort_unless(is_null($ticket->company_id) || in_array($ticket->company_id, $activeCompanyIds), 403);
+        abort_unless($line->ticket_id === $ticket->id, 403);
+
+        // Allow start only when there is no procedure yet, or the existing one was cancelled
+        $existing = $line->procedure;
+        abort_if($existing && $existing->state !== 'closed', 422, 'Sub-procedure is already running or completed.');
+
+        $template = \App\Models\Workflow\ProcedureTemplate::findOrFail($line->procedure_template_id);
+
+        $procedure = DB::transaction(function () use ($ticket, $line, $template) {
+            $procedure = $this->procedureService->create([
+                'name'                 => $line->name,
+                'optional_ticket_id'   => $ticket->id,
+                'optional_procedure_id' => $ticket->procedure_id,
+            ], $template);
+
+            $line->update(['procedure_id' => $procedure->id]);
+
+            return $procedure;
+        });
+
+        return redirect()->route('workflow.procedures.show', $procedure)
+            ->with('success', 'Sub-procedure started.');
     }
 
     private function saveInput(Ticket $ticket, array $input): void

@@ -87,7 +87,8 @@
         @else
             <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
                 @foreach($procedures as $procedure)
-                <a href="{{ route('workflow.procedures.show', $procedure) }}" class="group bg-white rounded-xl border border-gray-200 shadow-sm hover:shadow-md transition-all overflow-hidden">
+                <a href="{{ route('workflow.procedures.show', $procedure) }}" class="relative group bg-white rounded-xl border border-gray-200 shadow-sm hover:shadow-md transition-all overflow-hidden">
+                    <x-state-ribbon :state="$procedure->state" />
                     <div class="p-3">
                         <div class="flex items-center gap-2 mb-1">
                             <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium {{ $procedure->stateColor() }}">{{ $procedure->stateLabel() }}</span>

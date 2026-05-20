@@ -11,7 +11,13 @@
             <a href="{{ route('workflow.tickets.create') }}" class="px-3 py-1.5 bg-[#714B67] hover:bg-[#5c3d55] text-white text-sm font-medium rounded">New</a>
             @endcan
             <div>
-                <a href="{{ route('workflow.tickets.index') }}" class="text-xs text-purple-600 hover:text-purple-700 block">Tickets</a>
+                <div class="flex items-center gap-1 text-xs text-purple-600">
+                    <a href="{{ route('workflow.tickets.index') }}" class="hover:text-purple-700">Tickets</a>
+                    @if($ticket->procedure)
+                    <span class="text-gray-300">/</span>
+                    <a href="{{ route('workflow.procedures.show', $ticket->procedure) }}" class="hover:text-purple-700 truncate max-w-36">{{ $ticket->procedure->name }}</a>
+                    @endif
+                </div>
                 <span class="text-sm font-semibold text-gray-800 leading-tight block truncate max-w-xs">{{ $ticket->name }}</span>
             </div>
         </div>
@@ -19,12 +25,50 @@
         <div class="ml-auto flex items-center gap-2 shrink-0">
             @can('update', $ticket)
             @if($ticket->state === 'pending')
+            @php $pathRequired = $ticket->has_path_choice && $ticket->path_choice_required && !$ticket->path_chosen_id; @endphp
             <form method="POST" action="{{ route('workflow.tickets.resolve', $ticket) }}">@csrf @method('PATCH')
-                <button class="px-3 py-1.5 text-sm font-medium text-green-700 border border-green-300 rounded hover:bg-green-50">Mark Completed</button>
+                <button class="px-3 py-1.5 text-sm font-medium rounded border
+                               {{ $pathRequired ? 'text-gray-400 border-gray-200 cursor-not-allowed' : 'text-green-700 border-green-300 hover:bg-green-50' }}"
+                        @if($pathRequired) title="Select a path before completing" @endif>
+                    Mark Completed
+                </button>
             </form>
+            @if($ticket->procedure_id && $ticket->previous_ticket_id)
+            <div x-data="{ open: false }" class="relative" @click.outside="open=false">
+                <button @click="open=!open" class="px-3 py-1.5 text-sm text-red-700 border border-red-300 rounded hover:bg-red-50">Return</button>
+                <div x-show="open" x-transition style="display:none"
+                     class="absolute right-0 top-full mt-1.5 w-80 bg-white rounded-xl shadow-xl border border-gray-200 z-30 p-4">
+                    <form method="POST" action="{{ route('workflow.tickets.close', $ticket) }}">
+                        @csrf @method('PATCH')
+                        @if($previousChain->count() > 1)
+                        <div class="mb-3">
+                            <label class="text-xs font-semibold text-gray-600 block mb-1">Return to <span class="text-red-500">*</span></label>
+                            <select name="return_to_ticket_id"
+                                    class="w-full text-sm border border-gray-200 rounded-lg px-3 py-1.5 focus:outline-none focus:ring-2 focus:ring-red-300">
+                                @foreach($previousChain as $prev)
+                                <option value="{{ $prev->id }}">{{ $prev->name }}</option>
+                                @endforeach
+                            </select>
+                        </div>
+                        @endif
+                        <div class="mb-0">
+                            <label class="text-xs font-semibold text-gray-600 block mb-1">Reason <span class="text-red-500">*</span></label>
+                            <textarea name="return_reason" required rows="3"
+                                      class="w-full text-sm border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-red-300 resize-none"
+                                      placeholder="Explain why this ticket is being returned..."></textarea>
+                        </div>
+                        <button type="submit"
+                                class="mt-2 w-full px-3 py-1.5 text-sm font-medium text-white bg-red-600 hover:bg-red-700 rounded-lg">
+                            Confirm Return
+                        </button>
+                    </form>
+                </div>
+            </div>
+            @else
             <form method="POST" action="{{ route('workflow.tickets.close', $ticket) }}">@csrf @method('PATCH')
                 <button class="px-3 py-1.5 text-sm text-gray-600 border border-gray-300 rounded hover:bg-gray-50">Close</button>
             </form>
+            @endif
             @elseif(in_array($ticket->state, ['completed', 'closed']))
             <form method="POST" action="{{ route('workflow.tickets.reopen', $ticket) }}">@csrf @method('PATCH')
                 <button class="px-3 py-1.5 text-sm text-blue-700 border border-blue-200 rounded hover:bg-blue-50">Reopen</button>
@@ -87,6 +131,9 @@
         @if(session('success'))
         <div class="mb-4 text-sm text-green-700 bg-green-50 border border-green-200 rounded-lg px-4 py-2">{{ session('success') }}</div>
         @endif
+        @if(session('error'))
+        <div class="mb-4 text-sm text-red-700 bg-red-50 border border-red-200 rounded-lg px-4 py-2">{{ session('error') }}</div>
+        @endif
 
         <div class="flex gap-5 items-start">
 
@@ -95,8 +142,9 @@
                 $ticketInputDefs = $ticket->procedureStep?->inputs ?? $ticket->template?->inputs;
                 $defaultTab = ($ticketInputDefs && $ticketInputDefs->isNotEmpty()) ? 'fields' : 'activity';
             @endphp
-            <div class="flex-1 min-w-0 bg-white rounded-xl border border-gray-200 shadow-sm"
+            <div class="relative flex-1 min-w-0 bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden"
                  x-data="{ tab: @js($defaultTab) }">
+                <x-state-ribbon :state="$ticket->state" />
 
                 {{-- Header --}}
                 <div class="px-7 pt-6 pb-5 border-b border-gray-100">
@@ -290,6 +338,114 @@
                     </div>
                 </div>
 
+                {{-- Path choice panel --}}
+                @if($ticket->has_path_choice && $ticket->procedure_id)
+                @php $pathChoices = $ticket->pathChoices; @endphp
+                <div class="px-7 py-4 border-b border-gray-100 bg-amber-50">
+                    <div class="flex items-start gap-3">
+                        <svg class="w-4 h-4 text-amber-500 shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                        <div class="flex-1 min-w-0">
+                            <p class="text-sm font-semibold text-amber-800 mb-1">
+                                {{ $ticket->path_choice_question ?: 'Select a path to continue' }}
+                                @if($ticket->path_choice_required)<span class="text-red-500 ml-0.5">*</span>@endif
+                            </p>
+                            @if($ticket->path_chosen_id)
+                            @php $chosen = $pathChoices->firstWhere('id', $ticket->path_chosen_id); @endphp
+                            <div class="flex items-center gap-2">
+                                <span class="inline-flex items-center gap-1.5 text-xs font-medium px-3 py-1 rounded-full bg-green-100 text-green-800 border border-green-200">
+                                    <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/></svg>
+                                    {{ $chosen?->name ?? 'Path selected' }}
+                                </span>
+                                @can('act', $ticket)
+                                @if($ticket->state === 'pending')
+                                <span class="text-xs text-amber-600">(you can still change your selection below)</span>
+                                @endif
+                                @endcan
+                            </div>
+                            @endif
+                            @can('act', $ticket)
+                            @if($ticket->state === 'pending')
+                            <div class="flex flex-wrap gap-2 mt-2">
+                                @foreach($pathChoices as $choice)
+                                <form method="POST" action="{{ route('workflow.procedures.tickets.path', [$ticket->procedure, $ticket]) }}">
+                                    @csrf
+                                    <input type="hidden" name="path_id" value="{{ $choice->id }}">
+                                    <button type="submit"
+                                            class="px-3 py-1.5 text-xs font-medium rounded-lg border transition-colors
+                                                   {{ $ticket->path_chosen_id === $choice->id
+                                                       ? 'bg-[#714B67] text-white border-[#714B67]'
+                                                       : 'bg-white text-gray-700 border-gray-300 hover:border-[#714B67] hover:text-[#714B67]' }}">
+                                        {{ $choice->name }}
+                                    </button>
+                                </form>
+                                @endforeach
+                            </div>
+                            @endif
+                            @endcan
+                        </div>
+                    </div>
+                </div>
+                @endif
+
+                {{-- Sub-procedures panel --}}
+                @if($ticket->has_procedures && $ticket->procedureLines->isNotEmpty())
+                <div class="px-7 py-4 border-b border-gray-100">
+                    <div class="flex items-center gap-2 mb-3">
+                        <svg class="w-4 h-4 text-gray-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg>
+                        <span class="text-xs font-semibold text-gray-500 uppercase tracking-wide">
+                            Sub-procedures
+                            @if($ticket->procedures_required)<span class="text-red-400 ml-0.5">*</span>@endif
+                        </span>
+                    </div>
+                    <div class="flex flex-col gap-2">
+                        @foreach($ticket->procedureLines as $line)
+                        @php
+                            $proc       = $line->procedure;
+                            $canStart   = !$proc || $proc->state === 'closed';
+                            $stateColor = match($proc?->state) {
+                                'completed' => 'bg-green-100 text-green-700',
+                                'closed'    => 'bg-red-100 text-red-600',
+                                'pending'   => 'bg-blue-100 text-blue-700',
+                                default     => 'bg-gray-100 text-gray-500',
+                            };
+                            $stateLabel = match($proc?->state) {
+                                'completed' => 'Completed',
+                                'closed'    => 'Cancelled',
+                                'pending'   => 'In Progress',
+                                default     => null,
+                            };
+                        @endphp
+                        <div class="flex items-center gap-3 rounded-lg border border-gray-100 bg-gray-50 px-3 py-2">
+                            <div class="flex-1 min-w-0">
+                                <span class="text-sm font-medium text-gray-800">{{ $line->name }}</span>
+                            </div>
+                            @if($proc && $stateLabel)
+                            <a href="{{ route('workflow.procedures.show', $proc) }}"
+                               class="shrink-0 inline-flex items-center gap-1.5 text-xs font-medium px-2.5 py-1 rounded-full {{ $stateColor }} hover:opacity-80 transition-opacity">
+                                {{ $stateLabel }}
+                                <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/></svg>
+                            </a>
+                            @endif
+                            @can('act', $ticket)
+                            @if($canStart && $ticket->state === 'pending')
+                            <form method="POST" action="{{ route('workflow.tickets.sub-procedures.start', [$ticket, $line]) }}">
+                                @csrf
+                                <button type="submit"
+                                        class="shrink-0 px-2.5 py-1 text-xs font-medium text-[#714B67] border border-[#714B67] rounded-lg hover:bg-[#714B67] hover:text-white transition-colors">
+                                    {{ $proc?->state === 'closed' ? 'Restart' : 'Start' }}
+                                </button>
+                            </form>
+                            @endif
+                            @endcan
+                        </div>
+                        @endforeach
+                    </div>
+                    @if($ticket->procedures_required && !$ticket->hasAllProcedureLinesCompleted())
+                    <p class="mt-2 text-xs text-red-500">All sub-procedures must be completed before this ticket can be completed.</p>
+                    @endif
+                </div>
+                @endif
+
                 {{-- Tab bar --}}
                 <div class="flex border-b border-gray-100 px-7">
                     @if($ticketInputDefs && $ticketInputDefs->isNotEmpty())
@@ -394,6 +550,12 @@
                 {{-- Details tab --}}
                 <div x-show="tab==='details'" style="display:none" class="px-7 py-6">
                     <dl class="grid grid-cols-2 gap-x-8 gap-y-5">
+                        @if($ticket->return_reason)
+                        <div class="col-span-2">
+                            <dt class="text-xs font-semibold text-red-500 uppercase tracking-wide mb-1">Return Reason</dt>
+                            <dd class="text-sm text-red-800 bg-red-50 border border-red-200 rounded-lg px-3 py-2 leading-relaxed">{{ $ticket->return_reason }}</dd>
+                        </div>
+                        @endif
                         <div>
                             <dt class="text-xs text-gray-400 mb-0.5">Template</dt>
                             <dd class="text-sm font-medium text-gray-800">{{ $ticket->template?->name ?? '—' }}</dd>

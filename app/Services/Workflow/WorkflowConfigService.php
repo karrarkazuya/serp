@@ -4,7 +4,6 @@ namespace App\Services\Workflow;
 
 use App\Models\Workflow\Department;
 use App\Models\Workflow\Group;
-use App\Models\Workflow\Manager;
 use App\Models\Workflow\ProcedureTemplate;
 use App\Models\Workflow\TicketTemplate;
 use App\Models\Workflow\WorkflowTemplateInput;
@@ -58,9 +57,41 @@ class WorkflowConfigService
     // Workflow Users
     public function updateWorkflowUser(WorkflowUser $wu, array $data, array $groupIds, array $deptIds): WorkflowUser
     {
+        $changes = [];
+
+        // Scalar field diffs
+        if (array_key_exists('active', $data) && (bool) $data['active'] !== (bool) $wu->active) {
+            $changes[] = 'Active: ' . ($wu->active ? 'Yes' : 'No') . ' → ' . ($data['active'] ? 'Yes' : 'No');
+        }
+
+        if (array_key_exists('default_department_id', $data) && $data['default_department_id'] != $wu->default_department_id) {
+            $oldDept = $wu->defaultDepartment?->name ?? '—';
+            $newDept = Department::find($data['default_department_id'])?->name ?? '—';
+            $changes[] = "Default Dept.: {$oldDept} → {$newDept}";
+        }
+
+        // Groups diff — compare sorted name strings directly
+        $oldGroupNames = $wu->groups()->orderBy('name')->pluck('name')->join(', ') ?: '—';
+        $newGroupNames = Group::whereIn('id', $groupIds)->orderBy('name')->pluck('name')->join(', ') ?: '—';
+        if ($oldGroupNames !== $newGroupNames) {
+            $changes[] = "Groups: {$oldGroupNames} → {$newGroupNames}";
+        }
+
+        // Assignable departments diff — compare sorted name strings directly
+        $oldDeptNames = $wu->assignableDepartments()->orderBy('name')->pluck('name')->join(', ') ?: '—';
+        $newDeptNames = Department::whereIn('id', $deptIds)->orderBy('name')->pluck('name')->join(', ') ?: '—';
+        if ($oldDeptNames !== $newDeptNames) {
+            $changes[] = "Assignable Depts.: {$oldDeptNames} → {$newDeptNames}";
+        }
+
         $wu->update($data);
         $wu->groups()->sync($groupIds);
         $wu->assignableDepartments()->sync($deptIds);
+
+        foreach ($changes as $change) {
+            $this->chatterService->log($wu, $change, 'system');
+        }
+
         return $wu->fresh();
     }
 
@@ -98,7 +129,7 @@ class WorkflowConfigService
         $this->syncInputs($step->id, 'procedure_step', $step->inputs(), $inputsData);
     }
 
-    private function syncInputs(int $ownerId, string $ownerType, $query, array $inputsData): void
+    private function syncInputs(int $ownerId, string $ownerType, \Illuminate\Database\Eloquent\Relations\HasMany $query, array $inputsData): void
     {
         $submittedIds = [];
 

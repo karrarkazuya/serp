@@ -11,6 +11,7 @@ use App\Models\Workflow\Group;
 use App\Models\Workflow\ProcedureStep;
 use App\Models\Workflow\ProcedureTemplate;
 use App\Services\Workflow\WorkflowConfigService;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
@@ -110,19 +111,25 @@ class ProcedureTemplateController extends Controller
             'resolve_max_duration'  => 'nullable|integer|min:1',
             'is_approve_only'       => 'boolean',
             'has_procedures'        => 'boolean',
+            'procedures_required'   => 'boolean',
             'ignore_state'          => 'boolean',
             'has_path_choice'       => 'boolean',
             'path_choice_question'  => 'nullable|string|max:500',
+            'path_choice_required'  => 'boolean',
             'enabled'               => 'boolean',
             'next_step_ids'         => 'nullable|array',
             'next_step_ids.*'       => 'exists:workflow_procedure_steps,id',
+            'sub_procedure_ids'     => 'nullable|array',
+            'sub_procedure_ids.*'   => 'exists:workflow_procedure_templates,id',
         ]);
-        $nextStepIds = $data['next_step_ids'] ?? [];
-        unset($data['next_step_ids']);
+        $nextStepIds      = $data['next_step_ids'] ?? [];
+        $subProcedureIds  = $data['sub_procedure_ids'] ?? [];
+        unset($data['next_step_ids'], $data['sub_procedure_ids']);
 
-        DB::transaction(function () use ($procedureTemplate, $data, $nextStepIds) {
+        DB::transaction(function () use ($procedureTemplate, $data, $nextStepIds, $subProcedureIds) {
             $step = $procedureTemplate->steps()->create($data);
             $step->nextSteps()->sync($nextStepIds);
+            $step->subProcedures()->sync($subProcedureIds);
         });
 
         return redirect()->route('workflow.config.procedure-templates.edit', $procedureTemplate)
@@ -133,12 +140,15 @@ class ProcedureTemplateController extends Controller
     {
         $this->authorize('update', $procedureTemplate);
         abort_if($step->procedure_template_id !== $procedureTemplate->id, 404);
-        $step->load(['inputs.options', 'nextSteps', 'defaultDepartment']);
-        $departments = Department::where('active', true)->orderBy('name')->get();
-        $siblings = $procedureTemplate->steps()->where('id', '!=', $step->id)->orderBy('task_sequence')->get();
+        $step->load(['inputs.options', 'nextSteps', 'defaultDepartment', 'pathChoices', 'subProcedures']);
+        $departments          = Department::where('active', true)->orderBy('name')->get();
+        $siblings             = $procedureTemplate->steps()->where('id', '!=', $step->id)->orderBy('task_sequence')->get();
+        $availableSubProcs    = \App\Models\Workflow\ProcedureTemplate::where('enabled', true)
+            ->where('id', '!=', $procedureTemplate->id) // prevent self-reference
+            ->orderBy('name')->get();
 
         return view('workflow.configuration.procedure-templates.step-edit',
-            compact('procedureTemplate', 'step', 'departments', 'siblings'));
+            compact('procedureTemplate', 'step', 'departments', 'siblings', 'availableSubProcs'));
     }
 
     public function updateStep(Request $request, ProcedureTemplate $procedureTemplate, ProcedureStep $step)
@@ -152,29 +162,51 @@ class ProcedureTemplateController extends Controller
             'task_sequence'         => 'required|integer|min:1',
             'default_department_id' => 'nullable|exists:workflow_departments,id',
             'resolve_max_duration'  => 'nullable|integer|min:1',
-            'is_approve_only'       => 'boolean',
-            'has_procedures'        => 'boolean',
-            'ignore_state'          => 'boolean',
-            'has_path_choice'       => 'boolean',
-            'path_choice_question'  => 'nullable|string|max:500',
-            'enabled'               => 'boolean',
-            'next_step_ids'         => 'nullable|array',
-            'next_step_ids.*'       => 'exists:workflow_procedure_steps,id',
-            'inputs'                => 'nullable|array',
-            'inputs.*.id'           => 'nullable|integer',
-            'inputs.*.name'         => 'required_with:inputs.*|string|max:255',
-            'inputs.*.type'         => 'required_with:inputs.*|string|in:char,int,date,datetime,boolean,select,label',
-            'inputs.*.is_required'  => 'nullable|boolean',
-            'inputs.*.sort_order'   => 'nullable|integer',
-            'inputs.*.options'      => 'nullable|string',
+            'is_approve_only'          => 'boolean',
+            'has_procedures'           => 'boolean',
+            'procedures_required'      => 'boolean',
+            'ignore_state'             => 'boolean',
+            'has_path_choice'          => 'boolean',
+            'path_choice_question'     => 'nullable|string|max:500',
+            'path_choice_required'     => 'boolean',
+            'enabled'                  => 'boolean',
+            'next_step_ids'            => 'nullable|array',
+            'next_step_ids.*'          => 'exists:workflow_procedure_steps,id',
+            'sub_procedure_ids'        => 'nullable|array',
+            'sub_procedure_ids.*'      => 'exists:workflow_procedure_templates,id',
+            'path_choice_names'        => 'nullable|array',
+            'path_choice_names.*'      => 'nullable|string|max:255',
+            'inputs'                   => 'nullable|array',
+            'inputs.*.id'              => 'nullable|integer',
+            'inputs.*.name'            => 'required_with:inputs.*|string|max:255',
+            'inputs.*.type'            => 'required_with:inputs.*|string|in:char,int,date,datetime,boolean,select,label',
+            'inputs.*.is_required'     => 'nullable|boolean',
+            'inputs.*.sort_order'      => 'nullable|integer',
+            'inputs.*.options'         => 'nullable|string',
         ]);
-        $nextStepIds = $data['next_step_ids'] ?? [];
-        $inputsData  = $data['inputs'] ?? [];
-        unset($data['next_step_ids'], $data['inputs']);
+        $nextStepIds      = $data['next_step_ids'] ?? [];
+        $subProcedureIds  = $data['sub_procedure_ids'] ?? [];
+        $pathChoiceNames  = $data['path_choice_names'] ?? [];
+        $inputsData       = $data['inputs'] ?? [];
+        unset($data['next_step_ids'], $data['sub_procedure_ids'], $data['path_choice_names'], $data['inputs']);
 
-        DB::transaction(function () use ($step, $data, $nextStepIds, $inputsData) {
+        DB::transaction(function () use ($step, $data, $nextStepIds, $subProcedureIds, $pathChoiceNames, $inputsData) {
             $step->update($data);
             $step->nextSteps()->sync($nextStepIds);
+            $step->subProcedures()->sync($subProcedureIds);
+
+            // Rebuild path choice records from the submitted names (only for checked next steps)
+            $step->pathChoices()->delete();
+            if ($step->has_path_choice) {
+                foreach ($nextStepIds as $targetId) {
+                    $name = trim($pathChoiceNames[$targetId] ?? '');
+                    $step->pathChoices()->create([
+                        'target_step_id' => $targetId,
+                        'name'           => $name ?: null,
+                    ]);
+                }
+            }
+
             $this->configService->syncProcedureStepInputs($step, $inputsData);
         });
 
@@ -196,6 +228,32 @@ class ProcedureTemplateController extends Controller
 
         return redirect()->route('workflow.config.procedure-templates.edit', $procedureTemplate)
             ->with('success', 'Step deleted.');
+    }
+
+    public function stepsLookup(Request $request, ProcedureTemplate $procedureTemplate): JsonResponse
+    {
+        $this->authorize('update', $procedureTemplate);
+
+        $perPage = max(1, min((int) $request->integer('per_page', 8), 50));
+        $search  = (string) $request->query('search', '');
+        $exclude = collect((array) $request->query('exclude', []))
+            ->filter(fn ($v) => $v !== null && $v !== '')
+            ->map(fn ($v) => is_numeric($v) ? (int) $v : $v)
+            ->all();
+
+        $steps = $procedureTemplate->steps()
+            ->when(!empty($exclude), fn ($q) => $q->whereNotIn('id', $exclude))
+            ->when($search, fn ($q) => $q->where('name', 'like', "%{$search}%"))
+            ->orderBy('task_sequence')
+            ->paginate($perPage);
+
+        $steps->getCollection()->transform(fn ($step) => [
+            'id'    => $step->id,
+            'label' => $step->task_sequence . '. ' . $step->name,
+            'color' => null,
+        ]);
+
+        return response()->json($steps);
     }
 
     public function addComment(Request $request, ProcedureTemplate $procedureTemplate)

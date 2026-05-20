@@ -144,6 +144,7 @@ Route::middleware('auth')->group(function () {
             Route::get('/{ticket}/chat/files/{file}', [TicketController::class, 'chatFile'])->middleware('permission:workflow.tickets.read')->name('chat.file');
             Route::delete('/{ticket}/viewers/{user}', [TicketController::class, 'removeViewer'])->middleware('permission:workflow.tickets.write')->name('remove-viewer');
             Route::get('/{ticket}/viewers/lookup', [TicketController::class, 'viewersLookup'])->middleware('permission:workflow.tickets.read')->name('viewers-lookup');
+            Route::post('/{ticket}/sub-procedures/{line}/start', [TicketController::class, 'startSubProcedure'])->middleware('permission:workflow.tickets.write')->name('sub-procedures.start');
         });
 
         // Sharing
@@ -246,6 +247,7 @@ Route::middleware('auth')->group(function () {
                 Route::get('/{procedureTemplate}/steps/{step}/edit', [ProcedureTemplateController::class, 'editStep'])->middleware('permission:workflow.config.write')->name('steps.edit');
                 Route::put('/{procedureTemplate}/steps/{step}', [ProcedureTemplateController::class, 'updateStep'])->middleware('permission:workflow.config.write')->name('steps.update');
                 Route::delete('/{procedureTemplate}/steps/{step}', [ProcedureTemplateController::class, 'destroyStep'])->middleware('permission:workflow.config.unlink')->name('steps.destroy');
+                Route::get('/{procedureTemplate}/steps/lookup', [ProcedureTemplateController::class, 'stepsLookup'])->middleware('permission:workflow.config.read')->name('steps.lookup');
             });
 
         });

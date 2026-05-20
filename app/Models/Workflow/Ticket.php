@@ -55,8 +55,8 @@ class Ticket extends Model
     protected $fillable = [
         'uuid', 'template_id', 'procedure_id', 'procedure_step_id',
         'company_id', 'name', 'description', 'state', 'priority',
-        'task_sequence', 'is_approve_only', 'has_path_choice', 'path_choice_question',
-        'has_procedures', 'ignore_state', 'return_reason',
+        'task_sequence', 'is_approve_only', 'has_path_choice', 'path_choice_question', 'path_choice_required',
+        'has_procedures', 'procedures_required', 'ignore_state', 'return_reason',
         'assigned_to_department_id', 'assigned_to_user_id', 'created_by_user_id',
         'previous_ticket_id', 'path_chosen_id',
         'resolve_max_duration', 'resolve_deadline', 'resolve_duration', 'resolve_deadline_passed',
@@ -67,7 +67,10 @@ class Ticket extends Model
 
     protected $casts = [
         'is_approve_only'   => 'boolean',
-        'has_path_choice'   => 'boolean',
+        'has_path_choice'        => 'boolean',
+        'path_choice_required'   => 'boolean',
+        'has_procedures'         => 'boolean',
+        'procedures_required'    => 'boolean',
         'has_procedures'    => 'boolean',
         'ignore_state'      => 'boolean',
         'finished_creation' => 'boolean',
@@ -200,7 +203,9 @@ class Ticket extends Model
                 ->from('workflow_allowed_users')
                 ->whereColumn('record_id', 'workflow_tickets.id')
                 ->where('record_type', 'ticket')
-                ->where('user_id', $user->id);
+                ->where('user_id', $user->id)
+                ->whereExists(fn ($wu) => $wu->selectRaw('1')->from('workflow_users')
+                    ->where('user_id', $user->id)->where('active', true));
         });
     }
 
@@ -270,9 +275,14 @@ class Ticket extends Model
 
     public function hasAllProcedureLinesCompleted(): bool
     {
-        if (!$this->has_procedures) {
-            return true;
-        }
-        return !$this->procedureLines()->where('state', '!=', 'completed')->exists();
+        if (!$this->has_procedures) return true;
+
+        // A line blocks completion if: never started, or its procedure is not completed
+        return !$this->procedureLines()
+            ->where(fn ($q) => $q
+                ->whereNull('procedure_id')
+                ->orWhereHas('procedure', fn ($p) => $p->where('state', '!=', 'completed'))
+            )
+            ->exists();
     }
 }

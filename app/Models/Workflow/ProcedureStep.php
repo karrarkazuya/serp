@@ -16,7 +16,8 @@ class ProcedureStep extends Model
     protected $fillable = [
         'uuid', 'procedure_template_id', 'name', 'description', 'task_sequence',
         'default_department_id', 'resolve_max_duration', 'is_approve_only', 'has_procedures',
-        'ignore_state', 'has_path_choice', 'path_choice_question',
+        'ignore_state', 'has_path_choice', 'path_choice_question', 'path_choice_required',
+        'has_procedures', 'procedures_required',
         'flowchart_x', 'flowchart_y', 'flowchart_position_saved',
         'enabled', 'active', 'created_by', 'updated_by',
     ];
@@ -26,6 +27,9 @@ class ProcedureStep extends Model
         'has_procedures'           => 'boolean',
         'ignore_state'             => 'boolean',
         'has_path_choice'          => 'boolean',
+        'path_choice_required'     => 'boolean',
+        'has_procedures'           => 'boolean',
+        'procedures_required'      => 'boolean',
         'flowchart_position_saved' => 'boolean',
         'enabled'                  => 'boolean',
         'active'                   => 'boolean',
