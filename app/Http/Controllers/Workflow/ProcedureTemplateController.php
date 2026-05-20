@@ -152,11 +152,10 @@ class ProcedureTemplateController extends Controller
     {
         $this->authorize('update', $procedureTemplate);
         $procedureTemplate->load(['departments', 'steps.nextSteps', 'steps.defaultDepartment', 'steps.inputs']);
-        $groups      = Group::where('active', true)->orderBy('name')->get();
-        $departments = Department::where('active', true)->orderBy('name')->get();
+        $groups       = Group::where('active', true)->orderBy('name')->get();
         $flowchartUrl = route('workflow.config.procedure-templates.flowchart', $procedureTemplate);
 
-        return view('workflow.configuration.procedure-templates.edit', compact('procedureTemplate', 'groups', 'departments', 'flowchartUrl'));
+        return view('workflow.configuration.procedure-templates.edit', compact('procedureTemplate', 'groups', 'flowchartUrl'));
     }
 
     public function write(Request $request, ProcedureTemplate $procedureTemplate)

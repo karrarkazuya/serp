@@ -300,18 +300,16 @@
     </div>
 
     {{-- ── Add Step Modal ── --}}
-    <div x-show="showAddStep" style="display:none"
-         class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm"
+    <template x-if="showAddStep">
+    <div class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm"
          @click.self="showAddStep = false">
 
-        <div class="relative bg-white rounded-2xl shadow-2xl w-full max-w-xl max-h-[90vh] flex flex-col"
-             @click.stop>
+        <div class="relative bg-white rounded-2xl shadow-2xl w-full max-w-xl max-h-[90vh] flex flex-col">
 
-            {{-- Modal header --}}
+            {{-- Header --}}
             <div class="px-6 py-4 border-b border-gray-100 flex items-center justify-between shrink-0">
                 <h3 class="text-base font-semibold text-gray-800">Add Step</h3>
-                <button type="button" @click="showAddStep = false"
-                        class="text-gray-400 hover:text-gray-600 transition-colors">
+                <button type="button" @click="showAddStep = false" class="text-gray-400 hover:text-gray-600 transition-colors">
                     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
                 </button>
             </div>
@@ -328,86 +326,67 @@
                   method="POST"
                   action="{{ $storeStepUrl }}"
                   @submit.prevent="submitAddStep()"
-                  class="overflow-y-auto flex-1 p-6 space-y-4">
+                  class="overflow-y-auto flex-1 px-6 divide-y divide-gray-100"
+                  x-init="$nextTick(() => $el.querySelector('[name=name]')?.focus())">
                 @csrf
 
-                <div>
-                    <label class="block text-xs font-medium text-gray-500 mb-1.5">Name <span class="text-red-400">*</span></label>
+                {{-- Name --}}
+                <div class="flex items-center gap-4 py-3">
+                    <label class="w-36 shrink-0 text-sm text-gray-500">Name <span class="text-red-400">*</span></label>
                     <input type="text" name="name" required placeholder="e.g. Review & Approve"
-                           class="w-full text-sm border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-purple-400 focus:border-transparent">
+                           class="flex-1 text-sm border-0 focus:outline-none focus:ring-0 bg-transparent text-gray-800 placeholder-gray-300">
                 </div>
 
-                <div>
-                    <label class="block text-xs font-medium text-gray-500 mb-1.5">Department</label>
-                    <select name="default_department_id"
-                            class="w-full text-sm border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-purple-400 focus:border-transparent bg-white">
-                        <option value="">— None —</option>
-                        @foreach($departments as $dept)
-                        <option value="{{ $dept->id }}">{{ $dept->name }}</option>
-                        @endforeach
-                    </select>
+                {{-- Description --}}
+                <div class="flex items-start gap-4 py-3">
+                    <label class="w-36 shrink-0 text-sm text-gray-500 pt-1">Description</label>
+                    <textarea name="description" rows="2" placeholder="Optional notes…"
+                              class="flex-1 text-sm border-0 focus:outline-none focus:ring-0 bg-transparent text-gray-800 placeholder-gray-300 resize-none"></textarea>
                 </div>
 
-                <div class="grid grid-cols-2 gap-3">
-                    <div>
-                        <label class="block text-xs font-medium text-gray-500 mb-1.5">SLA (hours)</label>
-                        <input type="number" name="resolve_max_duration" min="1" placeholder="—"
-                               class="w-full text-sm border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-purple-400 focus:border-transparent">
+                {{-- Department --}}
+                <x-relation-dropdown
+                    table="workflow_departments"
+                    field="name"
+                    name="default_department_id"
+                    label="Department"
+                    relation="many2one"
+                />
+
+                {{-- SLA --}}
+                <div class="flex items-center gap-4 py-3">
+                    <label class="w-36 shrink-0 text-sm text-gray-500">Max Resolution Time</label>
+                    <div class="flex items-center gap-2">
+                        <input type="number" name="resolve_max_duration" value="24" min="1"
+                               class="w-20 text-sm text-gray-800 bg-transparent border-0 focus:outline-none focus:ring-0 px-0 py-0.5">
+                        <span class="text-xs text-gray-400">hours</span>
                     </div>
-                    <div class="flex items-end pb-2">
-                        <label class="flex items-center gap-2 text-sm text-gray-700 cursor-pointer">
-                            <input type="checkbox" name="enabled" value="1" checked
-                                   class="rounded border-gray-300 text-purple-600 focus:ring-purple-400">
+                </div>
+
+                {{-- Next Steps --}}
+                <x-relation-dropdown
+                    table="workflow_procedure_steps"
+                    field="name"
+                    name="next_step_ids"
+                    label="Next Steps"
+                    relation="many2many"
+                    :lookup-url-override="route('workflow.config.procedure-templates.steps.lookup', $procedureTemplate)"
+                />
+
+                {{-- Options --}}
+                <div class="py-3">
+                    <p class="text-xs font-medium text-gray-400 uppercase tracking-wide mb-2.5">Options</p>
+                    <div class="flex flex-wrap gap-x-5 gap-y-2.5">
+                        <label class="flex items-center gap-1.5 text-sm text-gray-700 cursor-pointer">
+                            <input type="checkbox" name="enabled" value="1" checked class="rounded border-gray-300 text-purple-600 focus:ring-purple-400">
                             Enabled
                         </label>
                     </div>
                 </div>
 
-                <div>
-                    <label class="block text-xs font-medium text-gray-500 mb-1.5">Description</label>
-                    <textarea name="description" rows="2" placeholder="Optional notes..."
-                              class="w-full text-sm border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-purple-400 focus:border-transparent resize-none"></textarea>
-                </div>
-
-                <div>
-                    <p class="text-xs font-medium text-gray-500 mb-2">Options</p>
-                    <div class="flex flex-wrap gap-x-5 gap-y-2">
-                        <label class="flex items-center gap-1.5 text-sm text-gray-700 cursor-pointer">
-                            <input type="checkbox" name="is_approve_only" value="1" class="rounded border-gray-300 text-purple-600 focus:ring-purple-400">
-                            Approve only
-                        </label>
-                        <label class="flex items-center gap-1.5 text-sm text-gray-700 cursor-pointer">
-                            <input type="checkbox" name="ignore_state" value="1" class="rounded border-gray-300 text-purple-600 focus:ring-purple-400">
-                            Ignore state
-                        </label>
-                        <label class="flex items-center gap-1.5 text-sm text-gray-700 cursor-pointer">
-                            <input type="checkbox" name="has_path_choice" value="1" class="rounded border-gray-300 text-purple-600 focus:ring-purple-400">
-                            Path choice
-                        </label>
-                        <label class="flex items-center gap-1.5 text-sm text-gray-700 cursor-pointer">
-                            <input type="checkbox" name="has_procedures" value="1" class="rounded border-gray-300 text-purple-600 focus:ring-purple-400">
-                            Sub-procedures
-                        </label>
-                    </div>
-                </div>
-
-                @if($sortedSteps->isNotEmpty())
-                <div>
-                    <p class="text-xs font-medium text-gray-500 mb-2">Next Steps</p>
-                    <div class="bg-gray-50 rounded-lg p-3 flex flex-col gap-1.5 max-h-36 overflow-y-auto">
-                        @foreach($sortedSteps as $otherStep)
-                        <label class="flex items-center gap-2 text-sm text-gray-700 cursor-pointer">
-                            <input type="checkbox" name="next_step_ids[]" value="{{ $otherStep->id }}"
-                                   class="rounded border-gray-300 text-purple-600 focus:ring-purple-400">
-                            {{ $otherStep->name }}
-                        </label>
-                        @endforeach
-                    </div>
-                </div>
-                @endif
             </form>
 
-            {{-- Modal footer --}}
+            {{-- Footer --}}
             <div class="px-6 py-4 border-t border-gray-100 flex items-center justify-between shrink-0">
                 <p class="text-xs text-gray-400">Form fields, path labels & sub-procedures: edit step after saving.</p>
                 <div class="flex items-center gap-2">
@@ -425,6 +404,7 @@
 
         </div>
     </div>
+    </template>
 
 </div>
 
@@ -490,14 +470,6 @@ function editTemplatePage() {
         openAddStep() {
             this.stepErrors = [];
             this.showAddStep = true;
-            this.$nextTick(() => {
-                const form = this.$refs.addStepForm;
-                if (!form) return;
-                form.querySelectorAll('input[type="text"], input[type="number"], textarea').forEach(el => { el.value = ''; });
-                form.querySelectorAll('input[type="checkbox"]').forEach(el => { el.checked = el.name === 'enabled'; });
-                form.querySelectorAll('select').forEach(el => { el.selectedIndex = 0; });
-                form.querySelector('[name="name"]')?.focus();
-            });
         },
 
         async submitAddStep() {

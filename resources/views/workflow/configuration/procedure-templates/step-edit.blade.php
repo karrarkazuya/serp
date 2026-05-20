@@ -42,7 +42,7 @@
     <div class="flex-1 overflow-y-auto">
         <div class="bg-white mx-4 my-4 rounded-xl border border-gray-200 shadow-sm">
             <form id="step-form" method="POST"
-                  action="{{ route('workflow.config.procedure-templates.steps.update', [$procedureTemplate, $step]) }}">
+                  action="{{ route('workflow.config.procedure-templates.steps.update', [$procedureTemplate, $step]) . (request()->boolean('frame') ? '?frame=1' : '') }}">
                 @csrf @method('PUT')
 
                 @if($errors->any())

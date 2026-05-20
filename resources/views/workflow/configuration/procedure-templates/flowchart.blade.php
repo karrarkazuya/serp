@@ -166,9 +166,8 @@
 
     @can('update', $procedureTemplate)
     <div class="layout-tools">
-        <button id="saveLayout" type="button" disabled>Save</button>
         <button id="resetLayout" type="button">Reset</button>
-        <span id="layoutStatus">Saved</span>
+        <span id="layoutStatus"></span>
     </div>
     @endcan
 </div>
@@ -204,7 +203,6 @@
     const world              = document.getElementById('world');
     const svg                = document.getElementById('edges');
     const pct                = document.getElementById('pct');
-    const saveLayoutBtn      = document.getElementById('saveLayout');
     const resetLayoutBtn     = document.getElementById('resetLayout');
     const layoutStatus       = document.getElementById('layoutStatus');
 
@@ -381,10 +379,7 @@
         pct.textContent = `${Math.round(scale * 100)}%`;
     }
     function markDirty() {
-        if (layoutDirty) return;
         layoutDirty = true;
-        if (saveLayoutBtn) { saveLayoutBtn.disabled = false; }
-        if (layoutStatus)  { layoutStatus.textContent = 'Unsaved'; }
     }
     function updateWorldBounds() {
         if (!nodes.length) return;
@@ -415,7 +410,9 @@
     function endNodeDrag() {
         if (!nodeDragging) return false;
         nodeDragging.el.classList.remove('dragging-node');
-        nodeDragging = null; stage.classList.remove('dragging'); return true;
+        nodeDragging = null; stage.classList.remove('dragging');
+        if (layoutDirty) saveLayout();
+        return true;
     }
 
     async function post(url, body) {
@@ -431,12 +428,16 @@
     }
 
     async function saveLayout() {
-        if (!layoutDirty || !saveLayoutBtn) return;
-        saveLayoutBtn.disabled = true; if (layoutStatus) layoutStatus.textContent = 'Saving…';
+        if (!layoutDirty) return;
+        layoutDirty = false;
+        if (layoutStatus) layoutStatus.textContent = 'Saving…';
         try {
             await post(SAVE_URL, { positions: nodes.map(n => ({ id: n.id, x: n.x, y: n.y })) });
-            layoutDirty = false; if (layoutStatus) layoutStatus.textContent = 'Saved';
-        } catch { saveLayoutBtn.disabled = false; if (layoutStatus) layoutStatus.textContent = 'Failed'; }
+            if (layoutStatus) layoutStatus.textContent = 'Saved';
+        } catch {
+            layoutDirty = true;
+            if (layoutStatus) layoutStatus.textContent = 'Save failed';
+        }
     }
 
     async function resetLayout() {
@@ -462,7 +463,6 @@
     document.getElementById('fit').addEventListener('click', fitView);
     document.getElementById('zoomIn').addEventListener('click',  () => zoomAt(stage.clientWidth/2, stage.clientHeight/2, 1.2));
     document.getElementById('zoomOut').addEventListener('click', () => zoomAt(stage.clientWidth/2, stage.clientHeight/2, 1/1.2));
-    if (saveLayoutBtn)  saveLayoutBtn.addEventListener('click',  saveLayout);
     if (resetLayoutBtn) resetLayoutBtn.addEventListener('click', resetLayout);
 
     stage.addEventListener('mousedown', e => { dragging = true; lastX = e.clientX; lastY = e.clientY; stage.classList.add('dragging'); });
