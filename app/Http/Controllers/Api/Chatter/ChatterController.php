@@ -9,6 +9,38 @@ use Illuminate\Http\Request;
 
 class ChatterController extends Controller
 {
+    /**
+     * Maps allowed model_type values to the permission required to read/write them.
+     * Any model_type not in this list is rejected with 403.
+     */
+    private const ALLOWED_TYPES = [
+        'App\Models\Contacts\Contact'              => 'contacts.read',
+        'App\Models\Settings\Company'              => 'companies.read',
+        'App\Models\User'                          => 'users.read',
+        'App\Models\Workflow\Ticket'               => 'workflow.tickets.read',
+        'App\Models\Workflow\Procedure'            => 'workflow.procedures.read',
+        'App\Models\Workflow\TicketTemplate'       => 'workflow.config.read',
+        'App\Models\Workflow\ProcedureTemplate'    => 'workflow.config.read',
+        'App\Models\Workflow\Group'                => 'workflow.config.read',
+        'App\Models\Workflow\Department'           => 'workflow.config.read',
+        'App\Models\Workflow\Manager'              => 'workflow.config.read',
+        'App\Models\Workflow\WorkflowUser'         => 'workflow.config.read',
+    ];
+
+    private const WRITE_PERMISSION = [
+        'App\Models\Contacts\Contact'              => 'contacts.write',
+        'App\Models\Settings\Company'              => 'companies.write',
+        'App\Models\User'                          => 'users.write',
+        'App\Models\Workflow\Ticket'               => 'workflow.tickets.write',
+        'App\Models\Workflow\Procedure'            => 'workflow.procedures.write',
+        'App\Models\Workflow\TicketTemplate'       => 'workflow.config.write',
+        'App\Models\Workflow\ProcedureTemplate'    => 'workflow.config.write',
+        'App\Models\Workflow\Group'                => 'workflow.config.write',
+        'App\Models\Workflow\Department'           => 'workflow.config.write',
+        'App\Models\Workflow\Manager'              => 'workflow.config.write',
+        'App\Models\Workflow\WorkflowUser'         => 'workflow.config.write',
+    ];
+
     public function index(Request $request): JsonResponse
     {
         $request->validate([
@@ -16,7 +48,11 @@ class ChatterController extends Controller
             'model_id'   => 'required|integer',
         ]);
 
-        $messages = ChatterMessage::where('model_type', $request->model_type)
+        $modelType = $request->model_type;
+        abort_unless(array_key_exists($modelType, self::ALLOWED_TYPES), 403);
+        abort_unless($request->user()->hasPermission(self::ALLOWED_TYPES[$modelType]), 403);
+
+        $messages = ChatterMessage::where('model_type', $modelType)
             ->where('model_id', $request->model_id)
             ->with('user')
             ->orderBy('created_at', 'desc')
@@ -34,8 +70,12 @@ class ChatterController extends Controller
             'message_type' => 'in:log,comment,system',
         ]);
 
+        $modelType = $request->model_type;
+        abort_unless(array_key_exists($modelType, self::WRITE_PERMISSION), 403);
+        abort_unless($request->user()->hasPermission(self::WRITE_PERMISSION[$modelType]), 403);
+
         $message = ChatterMessage::create([
-            'model_type'   => $request->model_type,
+            'model_type'   => $modelType,
             'model_id'     => $request->model_id,
             'user_id'      => auth()->id(),
             'message_type' => $request->get('message_type', 'comment'),

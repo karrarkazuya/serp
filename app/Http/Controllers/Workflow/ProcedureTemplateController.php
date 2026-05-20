@@ -126,6 +126,12 @@ class ProcedureTemplateController extends Controller
         $subProcedureIds  = $data['sub_procedure_ids'] ?? [];
         unset($data['next_step_ids'], $data['sub_procedure_ids']);
 
+        // Ensure all next steps belong to this template
+        if (!empty($nextStepIds)) {
+            $validCount = $procedureTemplate->steps()->whereIn('id', $nextStepIds)->count();
+            abort_if($validCount !== count($nextStepIds), 422);
+        }
+
         DB::transaction(function () use ($procedureTemplate, $data, $nextStepIds, $subProcedureIds) {
             $step = $procedureTemplate->steps()->create($data);
             $step->nextSteps()->sync($nextStepIds);
@@ -189,6 +195,12 @@ class ProcedureTemplateController extends Controller
         $pathChoiceNames  = $data['path_choice_names'] ?? [];
         $inputsData       = $data['inputs'] ?? [];
         unset($data['next_step_ids'], $data['sub_procedure_ids'], $data['path_choice_names'], $data['inputs']);
+
+        // Ensure all next steps belong to this template (exclude current step from valid pool)
+        if (!empty($nextStepIds)) {
+            $validCount = $procedureTemplate->steps()->where('id', '!=', $step->id)->whereIn('id', $nextStepIds)->count();
+            abort_if($validCount !== count($nextStepIds), 422);
+        }
 
         DB::transaction(function () use ($step, $data, $nextStepIds, $subProcedureIds, $pathChoiceNames, $inputsData) {
             $step->update($data);
