@@ -137,7 +137,7 @@ class WorkflowConfigService
             if (empty($row['name']) || ($row['type'] ?? '') === '') continue;
 
             $type    = in_array($row['type'], WorkflowTemplateInput::TYPES) ? $row['type'] : 'char';
-            $options = $type === 'select'
+            $options = in_array($type, ['select', 'multiselect'])
                 ? array_values(array_filter(array_map('trim', preg_split('/\r?\n/', $row['options'] ?? ''))))
                 : [];
 

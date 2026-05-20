@@ -99,6 +99,21 @@
                             @elseif($input->type === 'int')
                             <input type="number" name="inputs[{{ $i }}][value]" value="{{ $existing?->value_int }}"
                                    class="flex-1 text-sm text-gray-800 border border-gray-200 rounded px-2 py-1 focus:outline-none focus:ring-1 focus:ring-purple-400" placeholder="—">
+                            @elseif($input->type === 'float')
+                            <input type="number" step="any" name="inputs[{{ $i }}][value]" value="{{ $existing?->value_float }}"
+                                   class="flex-1 text-sm text-gray-800 border border-gray-200 rounded px-2 py-1 focus:outline-none focus:ring-1 focus:ring-purple-400" placeholder="—">
+                            @elseif($input->type === 'textarea')
+                            <textarea name="inputs[{{ $i }}][value]" rows="3"
+                                      class="flex-1 text-sm text-gray-800 border border-gray-200 rounded px-2 py-1 focus:outline-none focus:ring-1 focus:ring-purple-400 resize-y"
+                                      placeholder="—">{{ $existing?->value_text }}</textarea>
+                            @elseif($input->type === 'multiselect')
+                            <span class="flex-1 text-sm text-gray-400 italic">
+                                {{ $existing?->getResultValue() ?: '—' }} <span class="text-xs">(edit on ticket page)</span>
+                            </span>
+                            @elseif($input->type === 'file')
+                            <span class="flex-1 text-sm text-gray-400 italic">
+                                {{ $existing?->value_file_name ?: '—' }} <span class="text-xs">(upload on ticket page)</span>
+                            </span>
                             @elseif($input->type === 'label')
                             <span class="flex-1 text-sm text-gray-400 italic">Label only — no value</span>
                             @else

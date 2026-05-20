@@ -7,6 +7,7 @@ use App\Models\Settings\Company;
 use App\Models\User;
 use App\Models\Chat\ChatRoom;
 use App\Traits\HasChatter;
+use App\Models\Workflow\WorkflowTemplateInput;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -260,17 +261,33 @@ class Ticket extends Model
 
     public function hasRequiredInputsFilled(): bool
     {
-        return !$this->inputs()
+        $ownerId   = $this->procedure_step_id ?? $this->template_id;
+        $ownerType = $this->procedure_step_id ? 'procedure_step' : 'ticket_template';
+
+        if (!$ownerId) return true;
+
+        $requiredIds = WorkflowTemplateInput::where('owner_type', $ownerType)
+            ->where('owner_id', $ownerId)
             ->where('is_required', true)
-            ->whereNull('value_char')
-            ->whereNull('value_int')
-            ->whereNull('value_date')
-            ->whereNull('value_datetime')
-            ->where('value_boolean', false)
-            ->whereNull('value_select_id')
-            ->where('type', '!=', 'boolean')
             ->where('type', '!=', 'label')
-            ->exists();
+            ->pluck('id');
+
+        if ($requiredIds->isEmpty()) return true;
+
+        $filled = $this->inputs()
+            ->whereIn('template_input_id', $requiredIds)
+            ->with('selectedOptions')
+            ->get()
+            ->keyBy('template_input_id');
+
+        foreach ($requiredIds as $tid) {
+            $record = $filled->get($tid);
+            if (!$record || !$record->isFilled()) {
+                return false;
+            }
+        }
+
+        return true;
     }
 
     public function hasAllProcedureLinesCompleted(): bool

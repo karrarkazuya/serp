@@ -11,7 +11,7 @@ class WorkflowTemplateInput extends Model
 {
     protected $table = 'workflow_template_inputs';
 
-    public const TYPES = ['char', 'int', 'date', 'datetime', 'boolean', 'select', 'label'];
+    public const TYPES = ['char', 'int', 'float', 'date', 'datetime', 'boolean', 'select', 'multiselect', 'textarea', 'file', 'label'];
 
     protected $fillable = [
         'uuid', 'owner_id', 'owner_type', 'name', 'type', 'is_required', 'sort_order',

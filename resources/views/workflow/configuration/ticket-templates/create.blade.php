@@ -119,10 +119,14 @@
                                                             class="w-full text-sm border border-gray-200 rounded px-2 py-1.5 focus:outline-none focus:ring-1 focus:ring-purple-400">
                                                         <option value="char">Text</option>
                                                         <option value="int">Number</option>
+                                                        <option value="float">Decimal</option>
                                                         <option value="date">Date</option>
                                                         <option value="datetime">Date &amp; Time</option>
                                                         <option value="boolean">Yes/No</option>
                                                         <option value="select">Select</option>
+                                                        <option value="multiselect">Multi-Select</option>
+                                                        <option value="textarea">Long Text</option>
+                                                        <option value="file">File Upload</option>
                                                         <option value="label">Label</option>
                                                     </select>
                                                 </td>
@@ -134,12 +138,12 @@
                                                            class="rounded border-gray-300 text-purple-600 mt-2">
                                                 </td>
                                                 <td class="py-2 pr-3">
-                                                    <template x-if="inp.type === 'select'">
+                                                    <template x-if="inp.type === 'select' || inp.type === 'multiselect'">
                                                         <textarea :name="`inputs[${i}][options]`" x-model="inp.options"
                                                                   rows="3" placeholder="One option per line"
                                                                   class="w-full text-sm border border-gray-200 rounded px-2 py-1.5 focus:outline-none focus:ring-1 focus:ring-purple-400 resize-y"></textarea>
                                                     </template>
-                                                    <template x-if="inp.type !== 'select'">
+                                                    <template x-if="inp.type !== 'select' && inp.type !== 'multiselect'">
                                                         <span class="text-gray-300 text-xs">—</span>
                                                     </template>
                                                 </td>

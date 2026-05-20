@@ -130,6 +130,8 @@ Route::middleware('auth')->group(function () {
             Route::get('/', [TicketController::class, 'read'])->middleware('permission:workflow.tickets.read')->name('index');
             Route::get('/create', [TicketController::class, 'create'])->middleware('permission:workflow.tickets.create')->name('create');
             Route::post('/', [TicketController::class, 'store'])->middleware('permission:workflow.tickets.create')->name('store');
+            Route::get('/{ticket}/inputs/{recordInput}/file', [TicketController::class, 'downloadInputFile'])->middleware('permission:workflow.tickets.read')->name('input-file');
+            Route::delete('/{ticket}/inputs/{recordInput}/file', [TicketController::class, 'deleteInputFile'])->middleware('permission:workflow.tickets.write')->name('input-file.delete');
             Route::get('/{ticket}', [TicketController::class, 'show'])->middleware('permission:workflow.tickets.read')->name('show');
             Route::get('/{ticket}/edit', [TicketController::class, 'edit'])->middleware('permission:workflow.tickets.write')->name('edit');
             Route::put('/{ticket}', [TicketController::class, 'write'])->middleware('permission:workflow.tickets.write')->name('update');

@@ -512,6 +512,7 @@
                 <div x-show="tab==='fields'" style="display:none">
                     @can('update', $ticket)
                     <form id="ticket-fields-form" method="POST" action="{{ route('workflow.tickets.save-inputs', $ticket) }}"
+                          enctype="multipart/form-data"
                           @change="$dispatch('fields-changed')" @input="$dispatch('fields-changed')">
                         @csrf @method('PATCH')
                         <table class="w-full">
@@ -552,6 +553,95 @@
                                         @elseif($templateInput->type === 'int')
                                         <input type="number" name="inputs[{{ $templateInput->id }}]" value="{{ $inp?->value_int }}"
                                                class="text-sm border border-gray-200 rounded-lg px-2.5 py-1.5 focus:outline-none focus:ring-1 focus:ring-[#714B67] w-32" placeholder="—">
+                                        @elseif($templateInput->type === 'float')
+                                        <input type="number" step="any" name="inputs[{{ $templateInput->id }}]" value="{{ $inp?->value_float }}"
+                                               class="text-sm border border-gray-200 rounded-lg px-2.5 py-1.5 focus:outline-none focus:ring-1 focus:ring-[#714B67] w-36" placeholder="—">
+                                        @elseif($templateInput->type === 'textarea')
+                                        <textarea name="inputs[{{ $templateInput->id }}]" rows="3"
+                                                  class="text-sm border border-gray-200 rounded-lg px-2.5 py-1.5 focus:outline-none focus:ring-1 focus:ring-[#714B67] w-full resize-y"
+                                                  placeholder="—">{{ $inp?->value_text }}</textarea>
+                                        @elseif($templateInput->type === 'multiselect')
+                                        <div class="flex flex-wrap gap-x-4 gap-y-1.5">
+                                            @foreach($templateInput->options as $opt)
+                                            <label class="flex items-center gap-1.5 text-sm text-gray-700 cursor-pointer">
+                                                <input type="checkbox"
+                                                       name="inputs[{{ $templateInput->id }}][]"
+                                                       value="{{ $opt->id }}"
+                                                       {{ $inp && $inp->selectedOptions->contains('id', $opt->id) ? 'checked' : '' }}
+                                                       class="rounded border-gray-300 text-[#714B67] focus:ring-[#714B67]">
+                                                {{ $opt->name }}
+                                            </label>
+                                            @endforeach
+                                        </div>
+                                        @elseif($templateInput->type === 'file')
+                                        @php $isImage = str_starts_with($inp?->value_file_mime ?? '', 'image/'); @endphp
+                                        <div class="flex flex-col gap-1.5">
+                                            @if($inp?->value_file_path)
+                                                @if($isImage)
+                                                <div class="flex items-start gap-3">
+                                                    <button type="button"
+                                                            @click="$dispatch('lightbox-open', { url: '{{ route('workflow.tickets.input-file', [$ticket, $inp]) }}', name: @js($inp->value_file_name) })"
+                                                            class="shrink-0 rounded-lg overflow-hidden border border-gray-200 hover:border-[#714B67]/50 transition-colors focus:outline-none focus:ring-2 focus:ring-[#714B67]/30">
+                                                        <img src="{{ route('workflow.tickets.input-file', [$ticket, $inp]) }}"
+                                                             alt="{{ $inp->value_file_name }}"
+                                                             class="w-24 h-24 object-cover block">
+                                                    </button>
+                                                    <div class="flex flex-col gap-1.5 min-w-0">
+                                                        <span class="text-xs text-gray-500 truncate">{{ $inp->value_file_name }}</span>
+                                                        <div class="flex flex-wrap gap-2">
+                                                            <label class="px-2.5 py-1 text-xs font-medium text-[#714B67] border border-[#714B67]/40 rounded-lg hover:bg-[#714B67]/5 cursor-pointer transition-colors">
+                                                                Replace
+                                                                <input type="file" name="inputs[{{ $templateInput->id }}]" class="sr-only"
+                                                                       accept=".jpg,.jpeg,.png,.gif,.webp,.pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt,.csv,.odt,.ods">
+                                                            </label>
+                                                            <button type="button"
+                                                                    @click="if (!confirm('Remove this file?')) return;
+                                                                            fetch('{{ route('workflow.tickets.input-file.delete', [$ticket, $inp]) }}', {
+                                                                                method: 'POST',
+                                                                                headers: { 'X-CSRF-TOKEN': '{{ csrf_token() }}', 'Content-Type': 'application/x-www-form-urlencoded' },
+                                                                                body: '_method=DELETE'
+                                                                            }).then(r => { if (r.ok) window.location.reload() })"
+                                                                    class="px-2.5 py-1 text-xs font-medium text-red-600 border border-red-200 rounded-lg hover:bg-red-50 transition-colors">
+                                                                Delete
+                                                            </button>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                @else
+                                                <div class="flex flex-col gap-1.5">
+                                                    <a href="{{ route('workflow.tickets.input-file', [$ticket, $inp]) }}"
+                                                       target="_blank"
+                                                       class="inline-flex items-center gap-1.5 text-xs text-purple-600 hover:underline truncate max-w-xs">
+                                                        <svg class="w-3.5 h-3.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"/></svg>
+                                                        {{ $inp->value_file_name }}
+                                                    </a>
+                                                    <div class="flex flex-wrap gap-2">
+                                                        <label class="px-2.5 py-1 text-xs font-medium text-[#714B67] border border-[#714B67]/40 rounded-lg hover:bg-[#714B67]/5 cursor-pointer transition-colors">
+                                                            Replace
+                                                            <input type="file" name="inputs[{{ $templateInput->id }}]" class="sr-only"
+                                                                   accept=".jpg,.jpeg,.png,.gif,.webp,.pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt,.csv,.odt,.ods">
+                                                        </label>
+                                                        <button type="button"
+                                                                @click="if (!confirm('Remove this file?')) return;
+                                                                        fetch('{{ route('workflow.tickets.input-file.delete', [$ticket, $inp]) }}', {
+                                                                            method: 'POST',
+                                                                            headers: { 'X-CSRF-TOKEN': '{{ csrf_token() }}', 'Content-Type': 'application/x-www-form-urlencoded' },
+                                                                            body: '_method=DELETE'
+                                                                        }).then(() => window.location.reload())"
+                                                                class="px-2.5 py-1 text-xs font-medium text-red-600 border border-red-200 rounded-lg hover:bg-red-50 transition-colors">
+                                                            Delete
+                                                        </button>
+                                                    </div>
+                                                </div>
+                                                @endif
+                                            @else
+                                            <input type="file"
+                                                   name="inputs[{{ $templateInput->id }}]"
+                                                   accept=".jpg,.jpeg,.png,.gif,.webp,.pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt,.csv,.odt,.ods"
+                                                   class="text-sm text-gray-600 file:mr-3 file:py-1 file:px-3 file:rounded file:border-0 file:text-xs file:font-medium file:bg-purple-50 file:text-purple-700 hover:file:bg-purple-100">
+                                            <span class="text-xs text-gray-400">PDF, Word, Excel, PowerPoint, images, text — max 10 MB</span>
+                                            @endif
+                                        </div>
                                         @else
                                         <input type="text" name="inputs[{{ $templateInput->id }}]" value="{{ $inp?->value_char }}"
                                                class="text-sm border border-gray-200 rounded-lg px-2.5 py-1.5 focus:outline-none focus:ring-1 focus:ring-[#714B67] min-w-48" placeholder="—">
@@ -572,7 +662,27 @@
                             @php $inp = $ticket->inputs->firstWhere('template_input_id', $templateInput->id); @endphp
                             <tr>
                                 <td class="px-7 py-3 text-sm text-gray-500 w-52">{{ $templateInput->name }}</td>
-                                <td class="px-4 py-3 text-sm text-gray-800 font-medium">{{ $inp?->getResultValue() ?: '—' }}</td>
+                                <td class="px-4 py-3 text-sm text-gray-800 font-medium">
+                                    @if($templateInput->type === 'file' && $inp?->value_file_path)
+                                        @php $roIsImage = str_starts_with($inp->value_file_mime ?? '', 'image/'); @endphp
+                                        @if($roIsImage)
+                                        <button type="button"
+                                                @click="$dispatch('lightbox-open', { url: '{{ route('workflow.tickets.input-file', [$ticket, $inp]) }}', name: @js($inp->value_file_name) })"
+                                                class="block rounded-lg overflow-hidden border border-gray-200 hover:border-[#714B67]/50 transition-colors focus:outline-none focus:ring-2 focus:ring-[#714B67]/30">
+                                            <img src="{{ route('workflow.tickets.input-file', [$ticket, $inp]) }}"
+                                                 alt="{{ $inp->value_file_name }}"
+                                                 class="w-24 h-24 object-cover block">
+                                        </button>
+                                        @else
+                                        <a href="{{ route('workflow.tickets.input-file', [$ticket, $inp]) }}"
+                                           class="text-purple-600 hover:underline" target="_blank">{{ $inp->value_file_name }}</a>
+                                        @endif
+                                    @elseif($templateInput->type === 'textarea' && $inp?->value_text)
+                                        <span class="whitespace-pre-wrap">{{ $inp->value_text }}</span>
+                                    @else
+                                        {{ $inp?->getResultValue() ?: '—' }}
+                                    @endif
+                                </td>
                             </tr>
                             @endforeach
                         </tbody>
@@ -878,4 +988,31 @@
         if (chat) chat.scrollTop = chat.scrollHeight;
     });
 </script>
+
+{{-- Image lightbox --}}
+<div x-data="{ open: false, url: '', name: '' }"
+     @lightbox-open.window="open = true; url = $event.detail.url; name = $event.detail.name"
+     x-show="open"
+     x-transition.opacity
+     style="display:none"
+     class="fixed inset-0 bg-black/85 backdrop-blur-sm flex items-center justify-center z-50 p-6"
+     @click.self="open = false"
+     @keydown.escape.window="open = false">
+    <div class="flex flex-col items-center gap-3 max-w-5xl max-h-full w-full">
+        <div class="flex items-center justify-between w-full">
+            <span class="text-white/80 text-sm truncate max-w-sm" x-text="name"></span>
+            <div class="flex items-center gap-2 shrink-0">
+                <a :href="url" :download="name"
+                   class="px-3 py-1.5 text-xs font-medium text-white border border-white/30 rounded-lg hover:bg-white/10 transition-colors">
+                    Download
+                </a>
+                <button @click="open = false"
+                        class="w-8 h-8 flex items-center justify-center text-white/70 hover:text-white hover:bg-white/10 rounded-lg transition-colors">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                </button>
+            </div>
+        </div>
+        <img :src="url" :alt="name" class="max-w-full max-h-[80vh] object-contain rounded-xl shadow-2xl">
+    </div>
+</div>
 @endsection

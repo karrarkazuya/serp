@@ -6,9 +6,11 @@ use App\Models\Chat\ChatRoom;
 use App\Models\User;
 use App\Models\Workflow\Ticket;
 use App\Models\Workflow\TicketTemplate;
+use App\Models\Workflow\WorkflowTemplateInput;
 use App\Models\Workflow\WorkflowUser;
 use App\Services\Chatter\ChatterService;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Storage;
 
 class TicketService
 {
@@ -204,13 +206,36 @@ class TicketService
 
     public function saveInputValue(Ticket $ticket, int $templateInputId, array $valueData): void
     {
-        $templateInput = \App\Models\Workflow\WorkflowTemplateInput::find($templateInputId);
+        $templateInput = WorkflowTemplateInput::find($templateInputId);
         if (!$templateInput) return;
 
-        $ticket->inputs()->updateOrCreate(
+        // Pull out multiselect option IDs — handled separately via pivot, not a column
+        $selectedOptionIds = null;
+        if (array_key_exists('_selected_option_ids', $valueData)) {
+            $selectedOptionIds = $valueData['_selected_option_ids'];
+            unset($valueData['_selected_option_ids']);
+        }
+
+        // Delete old file from storage when a new one replaces it
+        if (array_key_exists('value_file_path', $valueData) && $valueData['value_file_path']) {
+            $existing = $ticket->inputs()->where('template_input_id', $templateInputId)->first();
+            if ($existing?->value_file_path && $existing->value_file_path !== $valueData['value_file_path']) {
+                Storage::disk('local')->delete($existing->value_file_path);
+            }
+        }
+
+        $record = $ticket->inputs()->updateOrCreate(
             ['template_input_id' => $templateInputId],
-            array_merge(['name' => $templateInput->name, 'record_type' => 'ticket'], $valueData)
+            array_merge([
+                'name'        => $templateInput->name,
+                'type'        => $templateInput->type,
+                'record_type' => 'ticket',
+            ], $valueData)
         );
+
+        if ($selectedOptionIds !== null) {
+            $record->selectedOptions()->sync($selectedOptionIds);
+        }
     }
 
     private function deptUserIds(int $deptId): array

@@ -186,7 +186,7 @@ class ProcedureTemplateController extends Controller
             'inputs'                   => 'nullable|array',
             'inputs.*.id'              => 'nullable|integer',
             'inputs.*.name'            => 'required_with:inputs.*|string|max:255',
-            'inputs.*.type'            => 'required_with:inputs.*|string|in:char,int,date,datetime,boolean,select,label',
+            'inputs.*.type'            => 'required_with:inputs.*|string|in:char,int,float,date,datetime,boolean,select,multiselect,textarea,file,label',
             'inputs.*.is_required'     => 'nullable|boolean',
             'inputs.*.sort_order'      => 'nullable|integer',
             'inputs.*.options'         => 'nullable|string',

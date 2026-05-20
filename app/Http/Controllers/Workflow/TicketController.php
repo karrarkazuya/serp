@@ -17,13 +17,43 @@ use App\Models\Workflow\WorkflowUser;
 use App\Helpers\SearchFilters;
 use App\Helpers\SortsTable;
 use App\Services\Company\CompanyContextService;
+use App\Models\Workflow\WorkflowRecordInput;
 use App\Services\Workflow\ProcedureService;
 use App\Services\Workflow\TicketService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Storage;
 
 class TicketController extends Controller
 {
+    private const INPUT_ALLOWED_MIMES = [
+        'image/jpeg', 'image/png', 'image/gif', 'image/webp',
+        'application/pdf',
+        'application/msword',
+        'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+        'application/vnd.ms-excel',
+        'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+        'application/vnd.ms-powerpoint',
+        'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+        'text/plain',
+        'text/csv',
+        'application/csv',
+        'application/vnd.oasis.opendocument.text',
+        'application/vnd.oasis.opendocument.spreadsheet',
+    ];
+
+    private const INPUT_ALLOWED_EXTENSIONS = [
+        'jpg', 'jpeg', 'png', 'gif', 'webp',
+        'pdf',
+        'doc', 'docx',
+        'xls', 'xlsx',
+        'ppt', 'pptx',
+        'txt', 'csv',
+        'odt', 'ods',
+    ];
+
+    private const INPUT_MAX_FILE_SIZE = 10 * 1024 * 1024; // 10 MB
+
     public function __construct(
         private readonly TicketService $ticketService,
         private readonly ProcedureService $procedureService,
@@ -77,6 +107,7 @@ class TicketController extends Controller
             'procedure',
             'procedureLines.procedure',
             'inputs.templateInput',
+            'inputs.selectedOptions',
             'assignedDepartment',
             'assignedUser',
             'sharedLink',
@@ -170,7 +201,7 @@ class TicketController extends Controller
         $activeCompanyIds = $this->companyContext->getActiveCompanyIds();
         abort_unless(is_null($ticket->company_id) || in_array($ticket->company_id, $activeCompanyIds), 403);
 
-        $ticket->load(['template.inputs.options', 'inputs', 'viewers']);
+        $ticket->load(['template.inputs.options', 'inputs.selectedOptions', 'viewers']);
         $departments = Department::where('active', true)->orderBy('name')->get();
 
         return view('workflow.tickets.edit', compact('ticket', 'departments'));
@@ -235,43 +266,150 @@ class TicketController extends Controller
         $activeCompanyIds = $this->companyContext->getActiveCompanyIds();
         abort_unless(is_null($ticket->company_id) || in_array($ticket->company_id, $activeCompanyIds), 403);
 
-        $rawInputs = $request->input('inputs', []);
+        $ownerId   = $ticket->procedure_step_id ?? $ticket->template_id;
+        $ownerType = $ticket->procedure_step_id ? 'procedure_step' : 'ticket_template';
+        abort_unless($ownerId, 422);
 
-        if (!empty($rawInputs)) {
-            if ($ticket->procedure_step_id) {
-                $templateInputs = WorkflowTemplateInput::whereIn('id', array_keys($rawInputs))
-                    ->where('owner_type', 'procedure_step')
-                    ->where('owner_id', $ticket->procedure_step_id)
-                    ->get()
-                    ->keyBy('id');
-            } else {
-                $templateInputs = WorkflowTemplateInput::whereIn('id', array_keys($rawInputs))
-                    ->where('owner_type', 'ticket_template')
-                    ->where('owner_id', $ticket->template_id)
-                    ->get()
-                    ->keyBy('id');
-            }
+        // Load all template inputs for this ticket's current step/template
+        $templateInputs = WorkflowTemplateInput::where('owner_type', $ownerType)
+            ->where('owner_id', $ownerId)
+            ->with('options')
+            ->get()
+            ->keyBy('id');
 
-            DB::transaction(function () use ($rawInputs, $templateInputs, $ticket) {
-                foreach ($rawInputs as $templateInputId => $raw) {
-                    $templateInput = $templateInputs->get((int) $templateInputId);
-                    if (!$templateInput) continue;
+        $rawInputs  = $request->input('inputs', []);
+        $fileInputs = $request->file('inputs', []);
 
-                    $valueData = match ($templateInput->type) {
-                        'int'      => ['value_int'      => $raw !== null && $raw !== '' ? (int) $raw : null],
-                        'date'     => ['value_date'     => $raw ?: null],
-                        'datetime' => ['value_datetime' => $raw ?: null],
-                        'boolean'  => ['value_boolean'  => (bool) $raw],
-                        'select'   => ['value_select_id' => $raw !== null && $raw !== '' ? (int) $raw : null],
-                        default    => ['value_char'     => $raw ?: null],
-                    };
+        // Pass 1: validate all files before storing any — prevents orphaned files if a
+        // later validation fails and aborts before the try/catch cleanup runs.
+        $fileInputs = $fileInputs ?? [];
+        foreach ($templateInputs->where('type', 'file') as $tid => $templateInput) {
+            $file = $fileInputs[$tid] ?? null;
+            if (!$file || !$file->isValid()) continue;
 
-                    $this->ticketService->saveInputValue($ticket, $templateInput->id, $valueData);
+            abort_if(
+                $file->getSize() > self::INPUT_MAX_FILE_SIZE,
+                422,
+                "File too large for field \"{$templateInput->name}\" (max 10 MB)."
+            );
+
+            // MIME checked via finfo — reads actual file bytes, not user-supplied header
+            abort_unless(
+                in_array($file->getMimeType(), self::INPUT_ALLOWED_MIMES),
+                422,
+                "File type not allowed for field \"{$templateInput->name}\"."
+            );
+
+            // Extension check as defence-in-depth (client-supplied, secondary gate)
+            abort_unless(
+                in_array(strtolower($file->getClientOriginalExtension()), self::INPUT_ALLOWED_EXTENSIONS),
+                422,
+                "File extension not allowed for field \"{$templateInput->name}\"."
+            );
+        }
+
+        // Pass 2: all validations passed — now store files
+        $storedFiles = [];
+        foreach ($templateInputs->where('type', 'file') as $tid => $templateInput) {
+            $file = $fileInputs[$tid] ?? null;
+            if (!$file || !$file->isValid()) continue;
+
+            $path = $file->store("workflow/inputs/{$ticket->id}", 'local');
+            $storedFiles[$tid] = [
+                'value_file_path' => $path,
+                'value_file_name' => basename($file->getClientOriginalName()),
+                'value_file_mime' => $file->getMimeType(),
+                'value_file_size' => $file->getSize(),
+            ];
+        }
+
+        try {
+            DB::transaction(function () use ($rawInputs, $storedFiles, $templateInputs, $ticket) {
+                foreach ($templateInputs as $tid => $templateInput) {
+                    if ($templateInput->type === 'file') {
+                        if (!isset($storedFiles[$tid])) continue;
+                        $this->ticketService->saveInputValue($ticket, $tid, $storedFiles[$tid]);
+
+                    } elseif ($templateInput->type === 'multiselect') {
+                        $raw = $rawInputs[$tid] ?? [];
+                        $raw = is_array($raw) ? $raw : [];
+                        $validOptionIds = $templateInput->options->pluck('id')->toArray();
+                        $selectedIds    = array_values(array_intersect(array_map('intval', $raw), $validOptionIds));
+                        $this->ticketService->saveInputValue($ticket, $tid, ['_selected_option_ids' => $selectedIds]);
+
+                    } elseif (array_key_exists((string) $tid, $rawInputs)) {
+                        $raw       = $rawInputs[$tid];
+                        $valueData = match ($templateInput->type) {
+                            'int'      => ['value_int'       => $raw !== null && $raw !== '' ? (int) $raw : null],
+                            'float'    => ['value_float'     => $raw !== null && $raw !== '' ? (float) $raw : null],
+                            'date'     => ['value_date'      => $raw ?: null],
+                            'datetime' => ['value_datetime'  => $raw ?: null],
+                            'boolean'  => ['value_boolean'   => (bool) $raw],
+                            'select'   => ['value_select_id' => $this->validatedSelectOption($templateInput, $raw)],
+                            'textarea' => ['value_text'      => $raw ?: null],
+                            default    => ['value_char'      => $raw ?: null],
+                        };
+                        $this->ticketService->saveInputValue($ticket, $tid, $valueData);
+                    }
                 }
             });
+        } catch (\Throwable $e) {
+            // Clean up any files we stored before the transaction failed
+            foreach ($storedFiles as $fileData) {
+                Storage::disk('local')->delete($fileData['value_file_path']);
+            }
+            throw $e;
         }
 
         return back()->with('success', 'Fields saved.');
+    }
+
+    public function downloadInputFile(Ticket $ticket, WorkflowRecordInput $recordInput)
+    {
+        $this->authorize('view', $ticket);
+        $activeCompanyIds = $this->companyContext->getActiveCompanyIds();
+        abort_unless(is_null($ticket->company_id) || in_array($ticket->company_id, $activeCompanyIds), 403);
+
+        // Ensure the file record actually belongs to this ticket
+        abort_unless(
+            (int) $recordInput->record_id === $ticket->id && $recordInput->record_type === 'ticket',
+            403
+        );
+        abort_unless($recordInput->type === 'file' && $recordInput->value_file_path, 404);
+        abort_unless(Storage::disk('local')->exists($recordInput->value_file_path), 404);
+
+        return Storage::disk('local')->download(
+            $recordInput->value_file_path,
+            $recordInput->value_file_name,
+            ['Content-Type' => $recordInput->value_file_mime ?? 'application/octet-stream']
+        );
+    }
+
+    public function deleteInputFile(Ticket $ticket, WorkflowRecordInput $recordInput)
+    {
+        $this->authorize('act', $ticket);
+        $activeCompanyIds = $this->companyContext->getActiveCompanyIds();
+        abort_unless(is_null($ticket->company_id) || in_array($ticket->company_id, $activeCompanyIds), 403);
+
+        abort_unless(
+            (int) $recordInput->record_id === $ticket->id && $recordInput->record_type === 'ticket',
+            403
+        );
+        abort_unless($recordInput->type === 'file', 422);
+
+        DB::transaction(function () use ($recordInput) {
+            if ($recordInput->value_file_path) {
+                Storage::disk('local')->delete($recordInput->value_file_path);
+            }
+            $recordInput->update([
+                'value_file_path' => null,
+                'value_file_name' => null,
+                'value_file_mime' => null,
+                'value_file_size' => null,
+            ]);
+        });
+
+        return back()->with('success', 'File removed.');
     }
 
     // Viewer management from show page
@@ -312,6 +450,10 @@ class TicketController extends Controller
 
         if ($ticket->has_procedures && $ticket->procedures_required && !$ticket->hasAllProcedureLinesCompleted()) {
             return back()->with('error', 'All sub-procedures must be completed before this ticket can be completed.');
+        }
+
+        if (!$ticket->hasRequiredInputsFilled()) {
+            return back()->with('error', 'All required fields must be filled before completing this ticket.');
         }
 
         DB::transaction(fn () => $this->ticketService->resolve($ticket));
@@ -482,17 +624,33 @@ class TicketController extends Controller
         $type = $templateInput->type;
         $raw  = $input['value'] ?? null;
 
+        // File uploads cannot be processed via the edit form (value is a string, not a file stream)
+        if ($type === 'file') return;
+
+        // Multiselect is also handled only on the show page fields form
+        if ($type === 'multiselect') return;
+
         $valueData = match ($type) {
-            'char'     => ['value_char'     => $raw],
-            'int'      => ['value_int'      => $raw !== null ? (int) $raw : null],
-            'date'     => ['value_date'     => $raw],
-            'datetime' => ['value_datetime' => $raw],
-            'boolean'  => ['value_boolean'  => (bool) $raw],
-            'select'   => ['value_select_id' => $raw !== null ? (int) $raw : null],
-            default    => ['value_char'     => $raw],
+            'char'     => ['value_char'      => $raw],
+            'int'      => ['value_int'       => $raw !== null && $raw !== '' ? (int) $raw : null],
+            'float'    => ['value_float'     => $raw !== null && $raw !== '' ? (float) $raw : null],
+            'date'     => ['value_date'      => $raw ?: null],
+            'datetime' => ['value_datetime'  => $raw ?: null],
+            'boolean'  => ['value_boolean'   => (bool) $raw],
+            'select'   => ['value_select_id' => $this->validatedSelectOption($templateInput, $raw)],
+            'textarea' => ['value_text'      => $raw ?: null],
+            default    => ['value_char'      => $raw],
         };
 
         $this->ticketService->saveInputValue($ticket, $templateInput->id, $valueData);
+    }
+
+    private function validatedSelectOption(\App\Models\Workflow\WorkflowTemplateInput $templateInput, mixed $raw): ?int
+    {
+        if ($raw === null || $raw === '') return null;
+        $id = (int) $raw;
+        // Ensure the submitted option actually belongs to this template input
+        return $templateInput->options->pluck('id')->contains($id) ? $id : null;
     }
 
     private const CHAT_ALLOWED_MIMES = [
