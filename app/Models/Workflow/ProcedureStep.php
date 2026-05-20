@@ -14,7 +14,7 @@ class ProcedureStep extends Model
     protected $table = 'workflow_procedure_steps';
 
     protected $fillable = [
-        'uuid', 'procedure_template_id', 'name', 'description', 'task_sequence',
+        'uuid', 'procedure_template_id', 'name', 'description',
         'default_department_id', 'resolve_max_duration', 'is_approve_only', 'has_procedures',
         'ignore_state', 'has_path_choice', 'path_choice_question', 'path_choice_required',
         'has_procedures', 'procedures_required',

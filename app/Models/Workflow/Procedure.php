@@ -100,7 +100,7 @@ class Procedure extends Model
 
     public function tickets(): HasMany
     {
-        return $this->hasMany(Ticket::class, 'procedure_id')->orderBy('task_sequence');
+        return $this->hasMany(Ticket::class, 'procedure_id')->orderBy('id');
     }
 
     public function creator(): BelongsTo

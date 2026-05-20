@@ -67,6 +67,7 @@ class RelationDropdown extends Component
         public mixed $exclude = null,
         public int $limit = 8,
         public bool $compact = false,
+        public bool $list = false,
         public ?string $event = null,
         ?string $lookupUrlOverride = null,
     ) {

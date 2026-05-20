@@ -188,7 +188,6 @@
                 <div class="tasks-title">Tickets</div>
                 @foreach($procedure->tickets as $ticket)
                 <div class="task-item">
-                    <span class="task-seq">{{ $ticket->task_sequence }}.</span>
                     <div class="flex-1">
                         <div class="task-name">{{ $ticket->name }}</div>
                         @if($ticket->description)

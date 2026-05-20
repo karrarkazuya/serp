@@ -204,6 +204,13 @@ class TicketService
         $ticket->delete();
     }
 
+    public function logInputsUpdated(Ticket $ticket, array $changes): void
+    {
+        if (!empty($changes)) {
+            $this->chatterService->logUpdated($ticket, $changes, 'Fields');
+        }
+    }
+
     public function saveInputValue(Ticket $ticket, int $templateInputId, array $valueData): void
     {
         $templateInput = WorkflowTemplateInput::find($templateInputId);
@@ -216,13 +223,8 @@ class TicketService
             unset($valueData['_selected_option_ids']);
         }
 
-        // Delete old file from storage when a new one replaces it
-        if (array_key_exists('value_file_path', $valueData) && $valueData['value_file_path']) {
-            $existing = $ticket->inputs()->where('template_input_id', $templateInputId)->first();
-            if ($existing?->value_file_path && $existing->value_file_path !== $valueData['value_file_path']) {
-                Storage::disk('local')->delete($existing->value_file_path);
-            }
-        }
+        // Old files are intentionally kept on replacement — chatter logs reference them
+        // for historical thumbnails. Orphaned files are cleaned up only on explicit deletion.
 
         $record = $ticket->inputs()->updateOrCreate(
             ['template_input_id' => $templateInputId],

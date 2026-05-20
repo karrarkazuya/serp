@@ -26,6 +26,8 @@ use App\Http\Controllers\Workflow\WorkflowDashboardController;
 use App\Http\Controllers\Workflow\WorkflowReportController;
 use App\Http\Controllers\Workflow\WorkflowSettingsController;
 use App\Http\Controllers\Workflow\WorkflowUserController;
+use App\Http\Controllers\Api\Chatter\ChatterController;
+use App\Http\Controllers\Chatter\ChatterFileController;
 use App\Http\Controllers\Chat\ChatController;
 use Illuminate\Support\Facades\Route;
 
@@ -85,6 +87,13 @@ Route::middleware('auth')->group(function () {
     Route::post('/company/switch', [CompanySwitchController::class, 'switch'])->name('company.switch');
 
     Route::get('/relation-dropdown/{table}', RelationLookupController::class)->name('relation-dropdown.lookup');
+
+    // Chatter API (used by <x-chatter> component via fetch — must be web/session auth)
+    Route::prefix('chatter')->name('api.chatter.')->group(function () {
+        Route::get('/', [ChatterController::class, 'index'])->name('index');
+        Route::post('/', [ChatterController::class, 'store'])->name('store');
+        Route::get('/{chatterMessage}/file/{index}/{side}', [ChatterFileController::class, 'serve'])->name('file');
+    });
 
     /*
     |--------------------------------------------------------------------------
@@ -253,6 +262,9 @@ Route::middleware('auth')->group(function () {
                 Route::put('/{procedureTemplate}/steps/{step}', [ProcedureTemplateController::class, 'updateStep'])->middleware('permission:workflow.config.write')->name('steps.update');
                 Route::delete('/{procedureTemplate}/steps/{step}', [ProcedureTemplateController::class, 'destroyStep'])->middleware('permission:workflow.config.unlink')->name('steps.destroy');
                 Route::get('/{procedureTemplate}/steps/lookup', [ProcedureTemplateController::class, 'stepsLookup'])->middleware('permission:workflow.config.read')->name('steps.lookup');
+                Route::get('/{procedureTemplate}/flowchart', [ProcedureTemplateController::class, 'flowchart'])->middleware('permission:workflow.config.read')->name('flowchart');
+                Route::post('/{procedureTemplate}/flowchart/layout', [ProcedureTemplateController::class, 'saveFlowchartLayout'])->middleware('permission:workflow.config.write')->name('flowchart.layout.save');
+                Route::post('/{procedureTemplate}/flowchart/layout/reset', [ProcedureTemplateController::class, 'resetFlowchartLayout'])->middleware('permission:workflow.config.write')->name('flowchart.layout.reset');
             });
 
         });

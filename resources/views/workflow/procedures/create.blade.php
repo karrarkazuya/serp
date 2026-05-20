@@ -117,11 +117,10 @@
                                     <span class="text-xs text-gray-400" x-text="tpl?.steps?.length + ' steps'"></span>
                                 </div>
                                 <div class="space-y-0">
-                                    <template x-for="(step, i) in tpl?.steps ?? []" :key="step.sequence">
+                                    <template x-for="(step, i) in tpl?.steps ?? []" :key="i">
                                         <div class="flex items-stretch gap-2.5 group">
-                                            <div class="flex flex-col items-center shrink-0 w-5">
-                                                <div class="w-5 h-5 rounded-full bg-gray-100 flex items-center justify-center shrink-0 text-[10px] font-bold text-gray-400 group-hover:bg-[#714B67]/10 group-hover:text-[#714B67] transition-colors"
-                                                     x-text="step.sequence"></div>
+                                            <div class="flex flex-col items-center shrink-0 w-4">
+                                                <div class="w-2 h-2 rounded-full bg-gray-300 group-hover:bg-[#714B67]/50 mt-1.5 shrink-0 transition-colors"></div>
                                                 <div class="w-px flex-1 min-h-2 mt-1 bg-gray-100" x-show="i < (tpl?.steps?.length ?? 0) - 1"></div>
                                             </div>
                                             <div class="flex-1 min-w-0 pb-2.5">
@@ -156,7 +155,6 @@ $templateData = $templates->mapWithKeys(function ($t) {
             'steps' => $t->steps->map(function ($s) {
                 return [
                     'name'       => $s->name,
-                    'sequence'   => $s->task_sequence,
                     'department' => $s->defaultDepartment?->name ?? null,
                 ];
             })->values()->all(),

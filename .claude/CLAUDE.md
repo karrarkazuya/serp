@@ -163,6 +163,27 @@ The Workflow module is the most complex. Key specifics:
 
 ---
 
+## No Native Browser Dialogs
+
+Never use `confirm()`, `alert()`, or `prompt()`. These block the thread, cannot be styled, and look inconsistent across browsers.
+
+- **Confirmations** — use an inline Alpine.js toggle: the button flips `confirming = true`, which shows "Are you sure? / Yes / Cancel" inline. Cancel sets it back to `false`.
+- **Errors and info** — use the Laravel flash session pattern (`back()->with('error', '...')`) so the message renders as a styled HTML element on the next page load.
+
+```html
+<!-- Example inline confirm pattern -->
+<div x-data="{ confirming: false }">
+    <button type="button" x-show="!confirming" @click="confirming = true" class="... text-red-600">Delete</button>
+    <div x-show="confirming" style="display:none" class="flex items-center gap-1.5">
+        <span class="text-xs text-red-600">Are you sure?</span>
+        <button type="button" @click="/* do the action */" class="... bg-red-600 text-white">Yes</button>
+        <button type="button" @click="confirming = false" class="... text-gray-500">Cancel</button>
+    </div>
+</div>
+```
+
+---
+
 ## What Not To Do
 
 - Do not set `uuid`, `created_by`, or `updated_by` in services or controllers — the observer owns those

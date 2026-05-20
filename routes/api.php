@@ -1,6 +1,5 @@
 <?php
 
-use App\Http\Controllers\Api\Chatter\ChatterController;
 use App\Http\Controllers\Api\Contacts\ContactController;
 use App\Http\Controllers\Api\Settings\CompanyController;
 use App\Http\Controllers\Api\Settings\RoleController;
@@ -133,13 +132,4 @@ Route::middleware('auth:sanctum')->group(function () {
             ->name('delete');
     });
 
-    /*
-    |--------------------------------------------------------------------------
-    | Chatter API
-    |--------------------------------------------------------------------------
-    */
-    Route::prefix('chatter')->name('api.chatter.')->group(function () {
-        Route::get('/', [ChatterController::class, 'index'])->name('index');
-        Route::post('/', [ChatterController::class, 'store'])->name('store');
-    });
 });

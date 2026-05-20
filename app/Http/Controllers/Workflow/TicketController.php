@@ -23,6 +23,7 @@ use App\Services\Workflow\TicketService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
 
 class TicketController extends Controller
 {
@@ -277,13 +278,18 @@ class TicketController extends Controller
             ->get()
             ->keyBy('id');
 
-        $rawInputs  = $request->input('inputs', []);
-        $fileInputs = $request->file('inputs', []);
+        $rawInputs     = $request->input('inputs', []);
+        $fileInputs    = $request->file('inputs', []);
+        $inputsToDelete = array_keys(array_filter(
+            $request->input('inputs_delete', []),
+            fn($v) => $v === '1'
+        ));
 
         // Pass 1: validate all files before storing any — prevents orphaned files if a
         // later validation fails and aborts before the try/catch cleanup runs.
         $fileInputs = $fileInputs ?? [];
         foreach ($templateInputs->where('type', 'file') as $tid => $templateInput) {
+            if (in_array($tid, $inputsToDelete)) continue;
             $file = $fileInputs[$tid] ?? null;
             if (!$file || !$file->isValid()) continue;
 
@@ -311,6 +317,7 @@ class TicketController extends Controller
         // Pass 2: all validations passed — now store files
         $storedFiles = [];
         foreach ($templateInputs->where('type', 'file') as $tid => $templateInput) {
+            if (in_array($tid, $inputsToDelete)) continue;
             $file = $fileInputs[$tid] ?? null;
             if (!$file || !$file->isValid()) continue;
 
@@ -323,12 +330,31 @@ class TicketController extends Controller
             ];
         }
 
+        // Snapshot existing values before the transaction so we can diff them for chatter
+        $existingInputsMap = $ticket->inputs()
+            ->whereIn('template_input_id', $templateInputs->keys())
+            ->with(['selectedOption', 'selectedOptions'])
+            ->get()
+            ->keyBy('template_input_id');
+
         try {
-            DB::transaction(function () use ($rawInputs, $storedFiles, $templateInputs, $ticket) {
+            DB::transaction(function () use ($rawInputs, $storedFiles, $templateInputs, $ticket, $inputsToDelete) {
                 foreach ($templateInputs as $tid => $templateInput) {
                     if ($templateInput->type === 'file') {
-                        if (!isset($storedFiles[$tid])) continue;
-                        $this->ticketService->saveInputValue($ticket, $tid, $storedFiles[$tid]);
+                        if (in_array($tid, $inputsToDelete)) {
+                            $existing = $ticket->inputs()->where('template_input_id', $tid)->first();
+                            if ($existing?->value_file_path) {
+                                Storage::disk('local')->delete($existing->value_file_path);
+                            }
+                            $ticket->inputs()->where('template_input_id', $tid)->update([
+                                'value_file_path' => null,
+                                'value_file_name' => null,
+                                'value_file_mime' => null,
+                                'value_file_size' => null,
+                            ]);
+                        } elseif (isset($storedFiles[$tid])) {
+                            $this->ticketService->saveInputValue($ticket, $tid, $storedFiles[$tid]);
+                        }
 
                     } elseif ($templateInput->type === 'multiselect') {
                         $raw = $rawInputs[$tid] ?? [];
@@ -361,6 +387,83 @@ class TicketController extends Controller
             throw $e;
         }
 
+        // Build chatter log from before-snapshot vs what was just saved
+        $changes = [];
+        foreach ($templateInputs as $tid => $templateInput) {
+            if ($templateInput->type === 'label') continue;
+
+            $existing = $existingInputsMap->get($tid);
+
+            if ($templateInput->type === 'file') {
+                if (in_array($tid, $inputsToDelete)) {
+                    // Only log if there was actually a file there to begin with
+                    if ($existing?->value_file_name) {
+                        $changes[] = [
+                            'field' => "input_{$tid}",
+                            'label' => $templateInput->name,
+                            'from'  => $existing->value_file_name,
+                            'to'    => '—',
+                        ];
+                    }
+                } elseif (isset($storedFiles[$tid])) {
+                    // A stored file is always a real change — skip filename equality check.
+                    // Store paths (not URLs) so the chatter file endpoint can serve historical
+                    // versions independently of the live record.
+                    $changes[] = [
+                        'field'          => "input_{$tid}",
+                        'label'          => $templateInput->name,
+                        'from'           => $existing?->value_file_name ?? '—',
+                        'to'             => $storedFiles[$tid]['value_file_name'],
+                        'from_file_path' => $existing?->value_file_path ?? null,
+                        'from_mime'      => $existing?->value_file_mime ?? null,
+                        'to_file_path'   => $storedFiles[$tid]['value_file_path'],
+                        'to_mime'        => $storedFiles[$tid]['value_file_mime'] ?? null,
+                    ];
+                }
+                continue;
+            } elseif ($templateInput->type === 'multiselect') {
+                $raw            = $rawInputs[$tid] ?? [];
+                $raw            = is_array($raw) ? $raw : [];
+                $validOptionIds = $templateInput->options->pluck('id')->toArray();
+                $selectedIds    = array_values(array_intersect(array_map('intval', $raw), $validOptionIds));
+                $before = $existing
+                    ? $existing->selectedOptions->sortBy('name')->pluck('name')->join(', ')
+                    : '';
+                $after = $templateInput->options
+                    ->whereIn('id', $selectedIds)
+                    ->sortBy('name')
+                    ->pluck('name')
+                    ->join(', ');
+            } elseif (array_key_exists((string) $tid, $rawInputs)) {
+                $raw    = $rawInputs[$tid];
+                $before = $existing?->getResultValue() ?? '';
+                $after  = match ($templateInput->type) {
+                    'select'   => $templateInput->options->firstWhere('id', (int) $raw)?->name ?? '',
+                    'boolean'  => $raw ? 'Yes' : 'No',
+                    'int'      => $raw !== null && $raw !== '' ? (string)(int)$raw : '',
+                    'float'    => $raw !== null && $raw !== '' ? rtrim(rtrim((string)(float)$raw, '0'), '.') : '',
+                    'textarea' => Str::limit($raw ?: '', 80),
+                    default    => $raw ?: '',
+                };
+                if ($templateInput->type === 'textarea') {
+                    $before = Str::limit($before, 80);
+                }
+            } else {
+                continue;
+            }
+
+            if ($before === $after) continue;
+
+            $changes[] = [
+                'field' => "input_{$tid}",
+                'label' => $templateInput->name,
+                'from'  => $before !== '' ? $before : '—',
+                'to'    => $after  !== '' ? $after  : '—',
+            ];
+        }
+
+        $this->ticketService->logInputsUpdated($ticket, $changes);
+
         return back()->with('success', 'Fields saved.');
     }
 
@@ -378,10 +481,22 @@ class TicketController extends Controller
         abort_unless($recordInput->type === 'file' && $recordInput->value_file_path, 404);
         abort_unless(Storage::disk('local')->exists($recordInput->value_file_path), 404);
 
+        $headers = ['Content-Type' => $recordInput->value_file_mime ?? 'application/octet-stream'];
+
+        // Serve images inline so they render in chatter thumbnails and the lightbox;
+        // force-download everything else.
+        if (str_starts_with($recordInput->value_file_mime ?? '', 'image/')) {
+            return Storage::disk('local')->response(
+                $recordInput->value_file_path,
+                $recordInput->value_file_name,
+                $headers
+            );
+        }
+
         return Storage::disk('local')->download(
             $recordInput->value_file_path,
             $recordInput->value_file_name,
-            ['Content-Type' => $recordInput->value_file_mime ?? 'application/octet-stream']
+            $headers
         );
     }
 

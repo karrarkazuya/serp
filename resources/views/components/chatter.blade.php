@@ -10,6 +10,7 @@
          canComment: @js($canComment),
          apiUrl: @js($apiUrl),
          postUrl: @js($postUrl),
+         fileBaseUrl: @js($fileBaseUrl),
 
          async init() {
              await this.fetch();
@@ -77,6 +78,14 @@
 
          hasChanges(msg) {
              return msg.metadata && msg.metadata.changes && msg.metadata.changes.length > 0;
+         },
+
+         isImage(mime) {
+             return mime && mime.startsWith('image/');
+         },
+
+         fileUrl(msgId, idx, side) {
+             return `${this.fileBaseUrl}/${msgId}/file/${idx}/${side}`;
          },
      }">
 
@@ -165,12 +174,38 @@
                     </div>
 
                     <template x-if="hasChanges(msg)">
-                        <ul class="space-y-0.5">
+                        <ul class="space-y-1">
                             <template x-for="(change, i) in msg.metadata.changes" :key="i">
-                                <li class="text-sm">
+                                <li class="text-sm flex items-center gap-1.5 flex-wrap">
+                                    {{-- FROM side --}}
+                                    <template x-if="change.from_file_path && isImage(change.from_mime)">
+                                        <a :href="fileUrl(msg.id, i, 'from')" target="_blank" class="shrink-0">
+                                            <img :src="fileUrl(msg.id, i, 'from')" :alt="change.from"
+                                                 class="h-8 w-8 rounded object-cover border border-gray-200">
+                                        </a>
+                                    </template>
                                     <span class="text-gray-400" x-text="change.from"></span>
-                                    <span class="text-gray-300"> → </span>
-                                    <span class="text-blue-600 font-medium" x-text="change.to"></span>
+
+                                    <span class="text-gray-300">→</span>
+
+                                    {{-- TO side: image thumbnail --}}
+                                    <template x-if="change.to_file_path && isImage(change.to_mime)">
+                                        <a :href="fileUrl(msg.id, i, 'to')" target="_blank" class="shrink-0">
+                                            <img :src="fileUrl(msg.id, i, 'to')" :alt="change.to"
+                                                 class="h-8 w-8 rounded object-cover border border-gray-200">
+                                        </a>
+                                    </template>
+                                    {{-- TO side: linked filename (file change) --}}
+                                    <template x-if="change.to_file_path">
+                                        <a :href="fileUrl(msg.id, i, 'to')" target="_blank"
+                                           class="text-blue-600 font-medium hover:underline"
+                                           x-text="change.to"></a>
+                                    </template>
+                                    {{-- TO side: plain text (non-file change) --}}
+                                    <template x-if="!change.to_file_path">
+                                        <span class="text-blue-600 font-medium" x-text="change.to"></span>
+                                    </template>
+
                                     <span class="text-gray-400 text-xs" x-text="'(' + change.label + ')'"></span>
                                 </li>
                             </template>

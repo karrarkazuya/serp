@@ -23,7 +23,7 @@
 
         @foreach($templateTasks as $task)
         <tr class="hover:bg-purple-50/30 cursor-pointer" onclick="window.location='{{ route('workflow.config.procedure-templates.show', $task->procedureTemplate) }}'">
-            <td class="px-4 py-2 font-medium text-gray-900">{{ $task->task_sequence }}. {{ $task->name }}</td>
+            <td class="px-4 py-2 font-medium text-gray-900">{{ $task->name }}</td>
             <td class="px-3 py-2 text-gray-600">{{ $task->procedureTemplate?->name }}</td>
             <td class="px-3 py-2 text-gray-600">{{ $task->defaultDepartment?->name }}</td>
             <td class="px-3 py-2 text-gray-600">{{ $task->resolve_max_duration }} hours</td>

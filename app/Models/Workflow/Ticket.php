@@ -56,7 +56,7 @@ class Ticket extends Model
     protected $fillable = [
         'uuid', 'template_id', 'procedure_id', 'procedure_step_id',
         'company_id', 'name', 'description', 'state', 'priority',
-        'task_sequence', 'is_approve_only', 'has_path_choice', 'path_choice_question', 'path_choice_required',
+        'is_approve_only', 'has_path_choice', 'path_choice_question', 'path_choice_required',
         'has_procedures', 'procedures_required', 'ignore_state', 'return_reason',
         'assigned_to_department_id', 'assigned_to_user_id', 'created_by_user_id',
         'previous_ticket_id', 'path_chosen_id',

@@ -10,6 +10,7 @@ use App\Models\Workflow\Department;
 use App\Models\Workflow\Group;
 use App\Models\Workflow\ProcedureStep;
 use App\Models\Workflow\ProcedureTemplate;
+use App\Services\Workflow\FlowchartService;
 use App\Services\Workflow\WorkflowConfigService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -18,7 +19,8 @@ use Illuminate\Support\Facades\DB;
 class ProcedureTemplateController extends Controller
 {
     public function __construct(
-        private readonly WorkflowConfigService $configService
+        private readonly WorkflowConfigService $configService,
+        private readonly FlowchartService      $flowchartService,
     ) {}
 
     public function read(Request $request)
@@ -36,7 +38,94 @@ class ProcedureTemplateController extends Controller
     {
         $this->authorize('view', $procedureTemplate);
         $procedureTemplate->load(['defaultGroup', 'departments', 'steps.inputs.options', 'steps.nextSteps', 'steps.defaultDepartment']);
-        return view('workflow.configuration.procedure-templates.show', compact('procedureTemplate'));
+        $flowchartUrl = route('workflow.config.procedure-templates.flowchart', $procedureTemplate);
+        return view('workflow.configuration.procedure-templates.show', compact('procedureTemplate', 'flowchartUrl'));
+    }
+
+    public function flowchart(Request $request, ProcedureTemplate $procedureTemplate)
+    {
+        $this->authorize('view', $procedureTemplate);
+        $procedureTemplate->load(['steps.nextSteps', 'steps.pathChoices.targetStep', 'steps.subProcedures', 'steps.defaultDepartment']);
+        $payload   = $this->flowchartService->buildPayload($procedureTemplate);
+        $mode      = in_array($request->query('mode'), ['show', 'edit']) ? $request->query('mode') : 'show';
+
+        if ($mode === 'edit') {
+            $this->authorize('update', $procedureTemplate);
+            $tplId         = $procedureTemplate->id;
+            $payload['nodes'] = array_map(function ($node) use ($tplId) {
+                if (is_int($node['id'])) {
+                    $node['edit_url']   = route('workflow.config.procedure-templates.steps.edit',    [$tplId, $node['id']]);
+                    $node['delete_url'] = route('workflow.config.procedure-templates.steps.destroy', [$tplId, $node['id']]);
+                }
+                return $node;
+            }, $payload['nodes']);
+        }
+
+        $saveUrl   = route('workflow.config.procedure-templates.flowchart.layout.save', $procedureTemplate);
+        $resetUrl  = route('workflow.config.procedure-templates.flowchart.layout.reset', $procedureTemplate);
+        $csrfToken = csrf_token();
+        return view('workflow.configuration.procedure-templates.flowchart',
+            compact('procedureTemplate', 'payload', 'saveUrl', 'resetUrl', 'csrfToken', 'mode'));
+    }
+
+    public function saveFlowchartLayout(Request $request, ProcedureTemplate $procedureTemplate): JsonResponse
+    {
+        $this->authorize('update', $procedureTemplate);
+        $positions = $request->input('positions', []);
+        if (!is_array($positions)) {
+            return response()->json(['status' => 'error', 'message' => 'Invalid positions'], 400);
+        }
+
+        $stepIds    = $procedureTemplate->steps()->pluck('id')->flip();
+        $subUpdates = [];
+
+        DB::transaction(function () use ($positions, $stepIds, $procedureTemplate, &$subUpdates) {
+            foreach ($positions as $pos) {
+                if (!is_array($pos)) continue;
+                $rawId = $pos['id'] ?? null;
+                $x     = max((int) round((float) ($pos['x'] ?? 0)), 0);
+                $y     = max((int) round((float) ($pos['y'] ?? 0)), 0);
+
+                if (is_string($rawId) && str_starts_with($rawId, 'subproc-')) {
+                    $subId = (int) substr($rawId, 8);
+                    if ($subId > 0) {
+                        $subUpdates[$subId] = ['x' => $x, 'y' => $y];
+                    }
+                    continue;
+                }
+
+                $id = (int) $rawId;
+                if (!$stepIds->has($id)) continue;
+                ProcedureStep::where('id', $id)->update([
+                    'flowchart_position_saved' => true,
+                    'flowchart_x'              => $x,
+                    'flowchart_y'              => $y,
+                ]);
+            }
+
+            if (!empty($subUpdates)) {
+                $merged = array_replace($procedureTemplate->flowchart_sub_positions ?? [], $subUpdates);
+                $procedureTemplate->update(['flowchart_sub_positions' => $merged]);
+            }
+        });
+
+        return response()->json(['status' => 'success']);
+    }
+
+    public function resetFlowchartLayout(ProcedureTemplate $procedureTemplate): JsonResponse
+    {
+        $this->authorize('update', $procedureTemplate);
+
+        DB::transaction(function () use ($procedureTemplate) {
+            $procedureTemplate->steps()->update([
+                'flowchart_position_saved' => false,
+                'flowchart_x'              => 0,
+                'flowchart_y'              => 0,
+            ]);
+            $procedureTemplate->update(['flowchart_sub_positions' => null]);
+        });
+
+        return response()->json(['status' => 'success']);
     }
 
     public function create()
@@ -63,10 +152,11 @@ class ProcedureTemplateController extends Controller
     {
         $this->authorize('update', $procedureTemplate);
         $procedureTemplate->load(['departments', 'steps.nextSteps', 'steps.defaultDepartment', 'steps.inputs']);
-        $groups = Group::where('active', true)->orderBy('name')->get();
+        $groups      = Group::where('active', true)->orderBy('name')->get();
         $departments = Department::where('active', true)->orderBy('name')->get();
+        $flowchartUrl = route('workflow.config.procedure-templates.flowchart', $procedureTemplate);
 
-        return view('workflow.configuration.procedure-templates.edit', compact('procedureTemplate', 'groups', 'departments'));
+        return view('workflow.configuration.procedure-templates.edit', compact('procedureTemplate', 'groups', 'departments', 'flowchartUrl'));
     }
 
     public function write(Request $request, ProcedureTemplate $procedureTemplate)
@@ -104,7 +194,6 @@ class ProcedureTemplateController extends Controller
         $data = $request->validate([
             'name'                  => 'required|string|max:255',
             'description'           => 'nullable|string|max:5000',
-            'task_sequence'         => 'required|integer|min:1',
             'default_department_id' => 'nullable|exists:workflow_departments,id',
             'resolve_max_duration'  => 'nullable|integer|min:1',
             'is_approve_only'       => 'boolean',
@@ -139,6 +228,10 @@ class ProcedureTemplateController extends Controller
             $step->subProcedures()->sync($subProcedureIds);
         });
 
+        if ($request->expectsJson()) {
+            return response()->json(['status' => 'success']);
+        }
+
         return redirect()->route('workflow.config.procedure-templates.edit', $procedureTemplate)
             ->with('success', 'Step added.');
     }
@@ -149,7 +242,7 @@ class ProcedureTemplateController extends Controller
         abort_if($step->procedure_template_id !== $procedureTemplate->id, 404);
         $step->load(['inputs.options', 'nextSteps', 'defaultDepartment', 'pathChoices', 'subProcedures']);
         $departments          = Department::where('active', true)->orderBy('name')->get();
-        $siblings             = $procedureTemplate->steps()->where('id', '!=', $step->id)->orderBy('task_sequence')->get();
+        $siblings             = $procedureTemplate->steps()->where('id', '!=', $step->id)->orderBy('id')->get();
         $availableSubProcs    = \App\Models\Workflow\ProcedureTemplate::where('enabled', true)
             ->where('id', '!=', $procedureTemplate->id) // prevent self-reference
             ->orderBy('name')->get();
@@ -166,7 +259,6 @@ class ProcedureTemplateController extends Controller
         $data = $request->validate([
             'name'                  => 'required|string|max:255',
             'description'           => 'nullable|string|max:5000',
-            'task_sequence'         => 'required|integer|min:1',
             'default_department_id' => 'nullable|exists:workflow_departments,id',
             'resolve_max_duration'  => 'nullable|integer|min:1',
             'is_approve_only'          => 'boolean',
@@ -226,11 +318,15 @@ class ProcedureTemplateController extends Controller
             $this->configService->syncProcedureStepInputs($step, $inputsData);
         });
 
-        return redirect()->route('workflow.config.procedure-templates.steps.edit', [$procedureTemplate, $step])
-            ->with('success', 'Step saved.');
+        $redirectTo = route('workflow.config.procedure-templates.steps.edit', [$procedureTemplate, $step]);
+        if ($request->query('frame')) {
+            $redirectTo .= '?frame=1';
+        }
+
+        return redirect($redirectTo)->with('success', 'Step saved.');
     }
 
-    public function destroyStep(ProcedureTemplate $procedureTemplate, ProcedureStep $step)
+    public function destroyStep(Request $request, ProcedureTemplate $procedureTemplate, ProcedureStep $step)
     {
         $this->authorize('update', $procedureTemplate);
         abort_if($step->procedure_template_id !== $procedureTemplate->id, 404);
@@ -241,6 +337,10 @@ class ProcedureTemplateController extends Controller
             $step->previousSteps()->detach();
             $step->delete();
         });
+
+        if ($request->expectsJson()) {
+            return response()->json(['status' => 'success']);
+        }
 
         return redirect()->route('workflow.config.procedure-templates.edit', $procedureTemplate)
             ->with('success', 'Step deleted.');
@@ -260,12 +360,12 @@ class ProcedureTemplateController extends Controller
         $steps = $procedureTemplate->steps()
             ->when(!empty($exclude), fn ($q) => $q->whereNotIn('id', $exclude))
             ->when($search, fn ($q) => $q->where('name', 'like', "%{$search}%"))
-            ->orderBy('task_sequence')
+            ->orderBy('id')
             ->paginate($perPage);
 
         $steps->getCollection()->transform(fn ($step) => [
             'id'    => $step->id,
-            'label' => $step->task_sequence . '. ' . $step->name,
+            'label' => $step->name,
             'color' => null,
         ]);
 

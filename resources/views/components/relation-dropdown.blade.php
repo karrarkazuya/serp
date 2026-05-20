@@ -171,8 +171,17 @@
             <div class="relative">
                 <div class="min-h-8 border-0 border-b border-dotted border-gray-300 focus-within:border-purple-500"
                      @click="openDropdown()">
-                    <div class="flex flex-wrap items-center gap-1.5 pb-1">
+                    <div class="{{ $list ? 'flex flex-col gap-0.5 pb-1' : 'flex flex-wrap items-center gap-1.5 pb-1' }}">
                         <template x-for="option in selectedOptions()" :key="option.id">
+                            @if($list)
+                            <div class="flex items-center justify-between gap-2 py-1 border-b border-gray-50 last:border-0">
+                                <span class="text-sm text-gray-700" x-text="option.label"></span>
+                                <button type="button" @click.stop="remove(option.id)"
+                                        class="shrink-0 text-gray-300 hover:text-red-400 transition-colors">
+                                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                                </button>
+                            </div>
+                            @else
                             <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium"
                                   :class="option.color ? 'text-white' : 'bg-gray-100 text-gray-700 border border-gray-200'"
                                   :style="option.color ? `background-color: ${option.color}` : ''">
@@ -182,6 +191,7 @@
                                     &times;
                                 </button>
                             </span>
+                            @endif
                         </template>
 
                         <input x-ref="searchInput"
@@ -234,7 +244,7 @@
 
             <div x-show="modalOpen"
                  x-transition.opacity
-                 class="fixed inset-0 z-[100] bg-black/45 flex items-center justify-center p-6"
+                 class="fixed inset-0 z-100 bg-black/45 flex items-center justify-center p-6"
                  style="display:none">
                 <div class="bg-white w-full max-w-5xl max-h-[86vh] rounded-lg shadow-2xl border border-gray-300 flex flex-col overflow-hidden"
                      @click.outside="modalOpen = false">

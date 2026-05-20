@@ -8,7 +8,12 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 class ChatMessageFile extends Model
 {
     protected $table = 'chat_message_files';
-    protected $fillable = ['message_id', 'disk', 'path', 'original_name', 'mime_type', 'size'];
+    protected $fillable = ['uuid', 'message_id', 'disk', 'path', 'original_name', 'mime_type', 'size'];
+
+    public function getRouteKeyName(): string
+    {
+        return 'uuid';
+    }
 
     public function message(): BelongsTo
     {

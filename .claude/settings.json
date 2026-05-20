@@ -1,0 +1,11 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(php -l /Users/karrar/Projects/web/serp/app/Http/Controllers/Workflow/TicketController.php)",
+      "Bash(php -l /Users/karrar/Projects/web/serp/app/Services/Workflow/TicketService.php)",
+      "Bash(php -r ' *)",
+      "Bash(grep -n 'getRouteKeyName\\\\|protected $primaryKey\\\\|uuid' /Users/karrar/Projects/web/serp/app/Models/Chat/ChatMessageFile.php /Users/karrar/Projects/web/serp/app/Models/Chat/ChatRoom.php /Users/karrar/Projects/web/serp/app/Models/Contacts/Contact.php)",
+      "Bash(php /Users/karrar/Projects/web/serp/artisan make:migration add_flowchart_sub_positions_to_procedure_templates --table=workflow_procedure_templates)"
+    ]
+  }
+}

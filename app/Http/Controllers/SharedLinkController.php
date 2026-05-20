@@ -41,7 +41,7 @@ class SharedLinkController extends Controller
 
     private function showProcedure(WorkflowSharedLink $link, Procedure $procedure)
     {
-        $procedure->load(['procedureTemplate', 'tickets' => fn ($q) => $q->orderBy('task_sequence'), 'tickets.inputs']);
+        $procedure->load(['procedureTemplate', 'tickets' => fn ($q) => $q->orderBy('id'), 'tickets.inputs']);
         $company = $procedure->company;
 
         return view('shared.procedure', compact('link', 'procedure', 'company'));

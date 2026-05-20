@@ -1,10 +1,10 @@
-@extends('layouts.app')
+@extends(request()->boolean('frame') ? 'layouts.frame' : 'layouts.app')
 @section('title', 'Edit Step — ' . $step->name)
 
 @php
     $existingNextStepRecords = $step->nextSteps->map(fn($s) => [
         'id'    => $s->id,
-        'label' => $s->task_sequence . '. ' . $s->name,
+        'label' => $s->name,
         'color' => null,
     ])->values()->toArray();
     $pathChoiceNamesInitial = old('path_choice_names', $step->pathChoices->pluck('name', 'target_step_id')->toArray());
@@ -22,15 +22,17 @@
 <div class="flex flex-col h-full bg-gray-50">
     <div class="bg-white border-b border-gray-200 px-4 py-2 flex items-center gap-3 shrink-0">
         <div class="flex flex-col leading-tight">
+            @unless(request()->boolean('frame'))
             <div class="flex items-center gap-1 text-xs text-gray-400">
                 <a href="{{ route('workflow.config.procedure-templates.index') }}" class="hover:text-purple-600">Procedure Templates</a>
                 <span>/</span>
                 <a href="{{ route('workflow.config.procedure-templates.edit', $procedureTemplate) }}" class="hover:text-purple-600">{{ $procedureTemplate->name }}</a>
             </div>
+            @endunless
             <span class="text-sm font-semibold text-gray-800">{{ $step->name }}</span>
         </div>
         <div class="ml-auto flex items-center gap-2">
-            <a href="{{ route('workflow.config.procedure-templates.edit', $procedureTemplate) }}"
+            <a data-discard href="{{ route('workflow.config.procedure-templates.edit', $procedureTemplate) }}"
                class="px-3 py-1.5 text-sm text-gray-600 bg-white border border-gray-300 rounded hover:bg-gray-50">Discard</a>
             <button form="step-form" type="submit"
                     class="px-4 py-1.5 text-sm font-medium text-white bg-[#714B67] hover:bg-[#5c3d55] rounded shadow-sm">Save</button>
@@ -66,12 +68,6 @@
                     </div>
 
                     {{-- Shared fields --}}
-                    <div class="flex items-center gap-4 py-2 border-b border-gray-100">
-                        <label class="w-36 shrink-0 text-sm text-gray-500">Sequence</label>
-                        <input type="number" name="task_sequence" value="{{ old('task_sequence', $step->task_sequence) }}" required min="1"
-                               class="flex-1 text-sm text-gray-800 bg-transparent border-0 focus:outline-none focus:ring-0 px-0 py-0.5" placeholder="1">
-                    </div>
-
                     <div class="flex items-center gap-4 py-2 border-b border-gray-100">
                         <label class="w-36 shrink-0 text-sm text-gray-500">Department</label>
                         <select name="default_department_id"
@@ -192,17 +188,18 @@
                                 />
 
                                 {{-- Path choice labels — shown per selected next step when path choice is on --}}
-                                <div x-show="pathOn && selectedNextStepRecords.length > 0" style="display:none" class="mt-1 flex flex-col gap-1.5">
-                                    <p class="text-xs text-gray-500 font-medium">Path option labels</p>
+                                <div x-show="pathOn && selectedNextStepRecords.length > 0" style="display:none" class="mt-2 flex flex-col gap-1">
+                                    <p class="text-xs text-gray-400 font-medium mb-1">Label shown to agent for each choice</p>
                                     <template x-for="step in selectedNextStepRecords" :key="step.id">
-                                        <div class="flex items-center gap-2">
-                                            <span class="text-sm text-gray-700 flex-1 min-w-0 truncate" x-text="step.label"></span>
+                                        <div class="flex items-center gap-2 max-w-md">
+                                            <span class="w-36 shrink-0 text-sm text-gray-600 truncate" x-text="step.label"></span>
+                                            <svg class="shrink-0 text-gray-300" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
                                             <input type="text"
                                                    :name="`path_choice_names[${step.id}]`"
                                                    :value="pathChoiceNames[step.id] ?? ''"
                                                    @input="pathChoiceNames[step.id] = $event.target.value"
-                                                   placeholder="Option label…"
-                                                   class="text-sm border border-gray-200 rounded-lg px-2.5 py-1 w-40 focus:outline-none focus:ring-1 focus:ring-purple-400">
+                                                   placeholder="e.g. Approve"
+                                                   class="flex-1 text-sm border border-gray-200 rounded-lg px-2.5 py-1 focus:outline-none focus:ring-1 focus:ring-purple-400">
                                         </div>
                                     </template>
                                 </div>
@@ -319,4 +316,18 @@
         </div>
     </div>
 </div>
+@if(request()->boolean('frame'))
+<script>
+    @if(session('success'))
+    window.parent.postMessage({ action: 'step-edit-saved' }, '*');
+    @endif
+    document.addEventListener('DOMContentLoaded', () => {
+        const a = document.querySelector('[data-discard]');
+        if (a) a.addEventListener('click', e => {
+            e.preventDefault();
+            window.parent.postMessage({ action: 'close-step-edit' }, '*');
+        });
+    });
+</script>
+@endif
 @endsection

@@ -154,9 +154,6 @@
                     <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
                     Task #{{ $task->id }}
                 </span>
-                @if($task->task_sequence)
-                <span class="meta-item">Step {{ $task->task_sequence }}</span>
-                @endif
             </div>
 
             @if($task->inputs->isNotEmpty())

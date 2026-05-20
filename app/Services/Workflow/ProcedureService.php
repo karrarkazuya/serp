@@ -190,7 +190,6 @@ class ProcedureService
                 'name'                      => $step->name,
                 'description'               => $step->description,
                 'state'                     => 'draft',
-                'task_sequence'             => $step->task_sequence,
                 'assigned_to_department_id' => $step->default_department_id,
                 'has_procedures'            => $step->has_procedures,
                 'procedures_required'       => $step->procedures_required,

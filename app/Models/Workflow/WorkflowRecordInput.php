@@ -73,6 +73,11 @@ class WorkflowRecordInput extends Model
         };
     }
 
+    public function getRouteKeyName(): string
+    {
+        return 'uuid';
+    }
+
     public function isFilled(): bool
     {
         return match ($this->type) {

@@ -54,7 +54,7 @@
 
         @foreach($tasks as $task)
         <tr class="hover:bg-purple-50/30 cursor-pointer" onclick="window.location='{{ route('workflow.procedures.show', $task->procedure) }}'">
-            <td class="px-4 py-2 font-medium text-gray-900">{{ $task->task_sequence }}. {{ $task->name }}</td>
+            <td class="px-4 py-2 font-medium text-gray-900">{{ $task->name }}</td>
             <td class="px-3 py-2"><span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium {{ $task->stateColor() }}">{{ $task->stateLabel() }}</span></td>
             <td class="px-3 py-2 text-gray-600">{{ $task->procedure?->name }}</td>
             <td class="px-3 py-2 text-gray-600">{{ $task->assignedDepartment?->name }}</td>

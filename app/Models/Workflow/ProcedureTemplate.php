@@ -42,12 +42,14 @@ class ProcedureTemplate extends Model
     protected $fillable = [
         'uuid', 'name', 'description', 'default_group_id', 'resolve_max_duration',
         'creator_see_tasks', 'enabled', 'active', 'created_by', 'updated_by',
+        'flowchart_sub_positions',
     ];
 
     protected $casts = [
-        'creator_see_tasks' => 'boolean',
-        'enabled'           => 'boolean',
-        'active'            => 'boolean',
+        'creator_see_tasks'       => 'boolean',
+        'enabled'                 => 'boolean',
+        'active'                  => 'boolean',
+        'flowchart_sub_positions' => 'array',
     ];
 
     public function defaultGroup(): BelongsTo
@@ -62,7 +64,7 @@ class ProcedureTemplate extends Model
 
     public function steps(): HasMany
     {
-        return $this->hasMany(ProcedureStep::class, 'procedure_template_id')->orderBy('task_sequence');
+        return $this->hasMany(ProcedureStep::class, 'procedure_template_id')->orderBy('id');
     }
 
     public function procedures(): HasMany

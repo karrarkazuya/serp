@@ -71,7 +71,7 @@
         @php
             $visibleTickets = $procedure->tickets
                 ->filter(fn($t) => !in_array($t->state, ['draft', 'skipped']))
-                ->sortBy('task_sequence')
+                ->sortBy('id')
                 ->values();
             $totalSteps     = $visibleTickets->count();
             $completedSteps = $visibleTickets->where('state', 'completed')->count();
@@ -268,7 +268,7 @@
                                             @elseif($isClosed)
                                             <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
                                             @else
-                                            <span class="text-[10px] font-bold">{{ $ticket->task_sequence }}</span>
+                                            <span class="w-2 h-2 rounded-full bg-current inline-block"></span>
                                             @endif
                                         </div>
                                         @if(!$isLast)

@@ -18,6 +18,8 @@ use App\Models\Workflow\Ticket;
 use App\Models\Workflow\TicketTemplate;
 use App\Models\Workflow\Manager;
 use App\Models\Workflow\WorkflowSharedLink;
+use App\Models\Chat\ChatMessageFile;
+use App\Models\Workflow\WorkflowRecordInput;
 use App\Models\Workflow\WorkflowUser;
 use App\Observers\AuditableObserver;
 use App\Policies\Chat\ChatRoomPolicy;
@@ -99,6 +101,8 @@ class AppServiceProvider extends ServiceProvider
             Procedure::class,
             ProcedureTemplate::class,
             WorkflowSharedLink::class,
+            WorkflowRecordInput::class,
+            ChatMessageFile::class,
         ] as $model) {
             $model::observe(AuditableObserver::class);
         }

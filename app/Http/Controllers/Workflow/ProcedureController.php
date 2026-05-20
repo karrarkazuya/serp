@@ -72,7 +72,7 @@ class ProcedureController extends Controller
             'creator',
             'updater',
             'sharedLink',
-            'tickets' => fn ($q) => $q->orderBy('task_sequence'),
+            'tickets' => fn ($q) => $q->orderBy('id'),
             'tickets.assignedDepartment',
             'tickets.assignedUser',
             'tickets.inputs.templateInput',
