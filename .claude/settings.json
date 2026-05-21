@@ -35,7 +35,12 @@
       "Bash(php -l /Users/karrar/Projects/web/serp/app/Services/Settings/RoleService.php)",
       "Bash(php -l /Users/karrar/Projects/web/serp/app/Services/Settings/UserService.php)",
       "Bash(mkdir -p /Users/karrar/Projects/web/serp/storage/app/avatars/contacts && mv /Users/karrar/Projects/web/serp/storage/app/public/avatars/contacts/*.jpg /Users/karrar/Projects/web/serp/storage/app/avatars/contacts/ && echo \"Moved OK\" && ls /Users/karrar/Projects/web/serp/storage/app/avatars/contacts/)",
-      "Bash(xargs basename -a)"
+      "Bash(xargs basename -a)",
+      "Bash(php -l app/Services/FileService.php)",
+      "Bash(php -l app/Models/File.php)",
+      "Bash(php -l app/Http/Controllers/FileController.php)",
+      "Bash(php -l app/Http/Controllers/Contacts/ContactController.php)",
+      "Bash(php -l app/Http/Controllers/Employees/EmployeeController.php)"
     ],
     "additionalDirectories": [
       "/Users/karrar/Projects/web/serp/storage/app/public/avatars/contacts"

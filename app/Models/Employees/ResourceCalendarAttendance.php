@@ -32,8 +32,23 @@ class ResourceCalendarAttendance extends Model
 
     public function getHourToFormattedAttribute(): string
     {
-        $h = floor($this->hour_to);
-        $m = ($this->hour_to - $h) * 60;
+        $value = $this->hour_to > 24 ? $this->hour_to - 24 : $this->hour_to;
+        $h = floor($value);
+        $m = round(($value - $h) * 60);
+        $str = sprintf('%02d:%02d', $h, $m);
+        return $this->hour_to > 24 ? $str . ' +1' : $str;
+    }
+
+    public function getIsNextDayAttribute(): bool
+    {
+        return $this->hour_to > 24;
+    }
+
+    public function getHourToClockAttribute(): string
+    {
+        $value = $this->hour_to > 24 ? $this->hour_to - 24 : $this->hour_to;
+        $h = floor($value);
+        $m = round(($value - $h) * 60);
         return sprintf('%02d:%02d', $h, $m);
     }
 }

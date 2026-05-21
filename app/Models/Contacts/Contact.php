@@ -118,7 +118,7 @@ class Contact extends Model
 
     public function getAvatarUrlAttribute(): ?string
     {
-        return $this->avatar ? route('contacts.avatar', ['uuid' => $this->uuid]) : null;
+        return $this->avatar ? route('files.serve', $this->avatar) : null;
     }
 
     public function creator(): BelongsTo

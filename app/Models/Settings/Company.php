@@ -104,7 +104,7 @@ class Company extends Model
 
     public function getLogoUrlAttribute(): ?string
     {
-        return $this->logo ? asset('storage/' . $this->logo) : null;
+        return $this->logo ? route('files.serve', $this->logo) : null;
     }
 
     public function scopeActive(Builder $query): Builder

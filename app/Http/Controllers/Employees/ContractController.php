@@ -8,16 +8,16 @@ use App\Models\Employees\Contract;
 use App\Models\Employees\Employee;
 use App\Services\Company\CompanyContextService;
 use App\Services\Chatter\ChatterService;
+use App\Services\FileService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Storage;
-use Illuminate\Support\Str;
 
 class ContractController extends Controller
 {
     public function __construct(
         private readonly CompanyContextService $companyContext,
         private readonly ChatterService $chatterService,
+        private readonly FileService $fileService,
     ) {}
 
     public function store(StoreContractRequest $request, Employee $employee)
@@ -27,19 +27,20 @@ class ContractController extends Controller
         $activeCompanyIds = $this->companyContext->getActiveCompanyIds();
         abort_unless(empty($activeCompanyIds) || in_array($employee->company_id, $activeCompanyIds), 403);
 
-        DB::transaction(function () use ($request, $employee) {
+        $fileRecord = null;
+
+        $contract = DB::transaction(function () use ($request, $employee, &$fileRecord) {
             $data = array_merge($request->validated(), ['employee_id' => $employee->id]);
             if ($request->hasFile('image')) {
-                $file = $request->file('image');
-                $data['image'] = $file->storeAs(
-                    'contracts/images',
-                    Str::uuid() . '.' . $file->getClientOriginalExtension(),
-                    'local'
-                );
+                $fileRecord    = $this->fileService->store($request->file('image'), 'contracts/images', 'employees.read');
+                $data['image'] = $fileRecord->uuid;
             }
             $contract = Contract::create($data);
             $this->chatterService->log($employee, "Contract created: {$contract->name}", 'log');
+            return $contract;
         });
+
+        $fileRecord?->update(['source_type' => $contract->getTable(), 'source_id' => $contract->id]);
 
         return redirect()->route('employees.show', $employee)->with('success', 'Contract created.');
     }
@@ -112,7 +113,7 @@ class ContractController extends Controller
                 $employee->update(['contract_id' => null]);
             }
             if ($contract->image) {
-                Storage::disk('local')->delete($contract->image);
+                $this->fileService->deleteByUuid($contract->image);
             }
             $name = $contract->name;
             $contract->delete();
@@ -122,15 +123,12 @@ class ContractController extends Controller
         return redirect()->route('employees.show', $employee)->with('success', 'Contract deleted.');
     }
 
+    /** Kept for backward compat; redirects to unified file route. */
     public function serveImage(Employee $employee, Contract $contract)
     {
-        $this->authorize('view', $contract);
-
-        $activeCompanyIds = $this->companyContext->getActiveCompanyIds();
-        abort_unless(empty($activeCompanyIds) || in_array($employee->company_id, $activeCompanyIds), 403);
         abort_unless($contract->employee_id === $employee->id, 404);
-        abort_unless($contract->image && Storage::disk('local')->exists($contract->image), 404);
+        abort_unless($contract->image, 404);
 
-        return response()->file(Storage::disk('local')->path($contract->image));
+        return redirect()->route('files.serve', $contract->image);
     }
 }

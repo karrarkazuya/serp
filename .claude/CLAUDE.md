@@ -92,6 +92,79 @@ Every controller method that writes to the database must wrap in `DB::transactio
 $record = DB::transaction(fn () => $this->fooService->create($data));
 ```
 
+### 8. All file uploads — `FileService` only. All file serving — `/files/{uuid}` only.
+
+**Never** store uploaded files directly in controllers or hand-roll file-serving routes. Every file upload in the application must go through `App\Services\FileService::store()`. Every file is served through the single route `GET /files/{uuid}` (`files.serve`) handled by `App\Http\Controllers\FileController`.
+
+#### Uploading
+
+```php
+// In a controller (inside DB::transaction or wrapping try/catch):
+$fileRecord = $this->fileService->store(
+    file: $request->file('avatar'),
+    directory: 'avatars/contacts',
+    permissionKey: 'contacts.read',
+    // context: $model,   ← only when ticket/chat-room ownership check is needed
+);
+$data['avatar'] = $fileRecord->uuid; // store UUID in the model column
+```
+
+`FileService::store()` signature:
+```php
+public function store(
+    UploadedFile $file,
+    string $directory,
+    ?string $permissionKey,  // e.g. 'contacts.read', 'employees.read', 'workflow.tickets.read'
+    ?Model $context = null,  // Ticket or ChatRoom for ownership-scoped files
+    ?Model $source  = null,  // record that owns this file — used by the garbage collector
+    string $disk = 'local',
+): \App\Models\File
+```
+
+- Returns an `\App\Models\File` Eloquent record. Store its `uuid` in the owning model's column.
+- Automatically generates a thumbnail for images (≤ 200 px wide, JPEG) stored in `thumbs/` next to the original.
+- File metadata (disk, path, mime, size, uploader) lives entirely in the `files` table.
+- `source` stores the owning record's table + id in `files.source_type` / `files.source_id`. Always pass it so the garbage collector can detect orphaned files. For **create** operations (source doesn't exist yet), pass `null` and update the file record immediately after saving the source model: `$fileRecord->update(['source_type' => $model->getTable(), 'source_id' => $model->id]);`
+
+#### Permission keys per module
+
+| Upload context | `permissionKey` | `context` | `source` |
+|---|---|---|---|
+| Contact avatar | `contacts.read` | `null` | `$contact` |
+| Employee avatar | `employees.read` | `null` | `$employee` |
+| Employee document / contract image | `employees.read` | `null` | `$document` / `$contract` |
+| Company logo | `settings.read` | `null` | `$company` |
+| Workflow ticket input file | `workflow.tickets.read` | `$ticket` | `$ticket` |
+| Ticket chat attachment | `workflow.tickets.read` | `$ticket` | `$message` |
+| Chat room attachment | `null` (membership-only) | `$chatRoom` | `$message` |
+
+#### Serving & thumbnail
+
+```blade
+{{-- Full file (inline for images, download for others) --}}
+<a href="{{ route('files.serve', $model->avatar) }}">View</a>
+
+{{-- Thumbnail (images only; 404 for non-images / no thumb) --}}
+<img src="{{ route('files.thumbnail', $model->avatar) }}">
+```
+
+#### Access control in `FileController`
+
+1. Requires `auth` middleware.
+2. If `permission_key` is set → `$user->hasPermission($file->permission_key)` must pass.
+3. If `context` is a `Ticket` → user must pass `Ticket::forUser($user)` scope.
+4. If `context` is a `ChatRoom` → user must be a member of the room.
+
+#### Deleting files
+
+Always delete through `FileService::delete(File $file)` — this removes both the disk file and the DB record. Never call `Storage::delete()` directly.
+
+```php
+if ($model->avatar) {
+    $this->fileService->deleteByUuid($model->avatar);
+}
+```
+
 ---
 
 ## Controller Method Naming
@@ -139,7 +212,7 @@ The Workflow module is the most complex. Key specifics:
 
 **Ticket input types** (11 total): `char`, `int`, `float`, `date`, `datetime`, `boolean`, `select`, `multiselect`, `textarea`, `file`, `label`
 
-**File uploads**: stored on private `local` disk under `workflow/inputs/{ticket_id}/`. Served through `downloadInputFile()` which checks ownership + permission. MIME validated via `finfo` (reads file bytes). Allowed: images (jpg/png/gif/webp), pdf, office docs (doc/docx/xls/xlsx/ppt/pptx), text/csv, odt/ods. Max 10 MB. No zips or executables.
+**File uploads**: all file input values go through `FileService::store()` with `permissionKey = 'workflow.tickets.read'` and `context = $ticket`. The returned File UUID is stored in `workflow_record_inputs.value_file_path`. Served via the unified `GET /files/{uuid}` route which checks both permission and ticket ownership. MIME validated inside `FileService` via `finfo`. Allowed: images (jpg/png/gif/webp), pdf, office docs (doc/docx/xls/xlsx/ppt/pptx), text/csv, odt/ods. Max 10 MB. No zips or executables.
 
 **Input value architecture**:
 - Template definitions: `workflow_template_inputs` (owned by `ticket_template` or `procedure_step`)
@@ -161,6 +234,8 @@ The Workflow module is the most complex. Key specifics:
 - `database/seeders/PermissionSeeder.php` — all permission definitions
 - `app/Observers/AuditableObserver.php` — sets uuid/created_by/updated_by
 - `app/Services/Company/CompanyContextService.php` — active company IDs
+- `app/Services/FileService.php` — **all** file uploads and deletions go through here
+- `app/Http/Controllers/FileController.php` — single unified file-serving endpoint (`GET /files/{uuid}`)
 
 ---
 
@@ -195,3 +270,6 @@ Never use `confirm()`, `alert()`, or `prompt()`. These block the thread, cannot 
 - Do not trust posted `company_id` values — always validate against `getActiveCompanyIds()`
 - Do not add API controllers for Blade page data — API controllers are only for actual API clients
 - Do not touch anything inside `ss_workflow/`
+- Do not store files directly with `Storage::put()` or `$file->store()` in controllers — always use `FileService::store()`
+- Do not create module-specific file-serving routes (like `contacts.avatar`) — use `route('files.serve', $uuid)`
+- Do not call `Storage::delete()` directly to remove user-uploaded files — use `FileService::delete()` or `FileService::deleteByUuid()`

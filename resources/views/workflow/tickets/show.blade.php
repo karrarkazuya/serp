@@ -887,12 +887,12 @@
                                     <div class="mt-1.5 flex flex-col gap-1.5">
                                         @foreach($msg->files as $f)
                                         @if($f->isImage())
-                                        <a href="{{ route('workflow.tickets.chat.file', [$ticket, $f]) }}" target="_blank"
+                                        <a href="{{ route('files.serve', $f->path) }}" target="_blank"
                                            class="block rounded-lg overflow-hidden border border-gray-100 hover:border-[#714B67]/30 transition-colors w-fit">
-                                            <img src="{{ route('workflow.tickets.chat.file', [$ticket, $f]) }}" alt="{{ $f->original_name }}" class="max-w-full max-h-40 object-cover block">
+                                            <img src="{{ route('files.serve', $f->path) }}" alt="{{ $f->original_name }}" class="max-w-full max-h-40 object-cover block">
                                         </a>
                                         @else
-                                        <a href="{{ route('workflow.tickets.chat.file', [$ticket, $f]) }}"
+                                        <a href="{{ route('files.serve', $f->path) }}"
                                            class="inline-flex items-center gap-2 px-2.5 py-1.5 bg-gray-50 hover:bg-[#714B67]/5 border border-gray-200 hover:border-[#714B67]/30 rounded-lg transition-colors">
                                             <svg class="w-3.5 h-3.5 text-[#714B67] shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"/></svg>
                                             <span class="text-xs text-gray-700 truncate max-w-32">{{ $f->original_name }}</span>

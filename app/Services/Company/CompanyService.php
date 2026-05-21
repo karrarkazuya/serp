@@ -4,12 +4,13 @@ namespace App\Services\Company;
 
 use App\Models\Settings\Company;
 use App\Services\Chatter\ChatterService;
-use Illuminate\Support\Facades\Storage;
+use App\Services\FileService;
 
 class CompanyService
 {
     public function __construct(
-        private readonly ChatterService $chatterService
+        private readonly ChatterService $chatterService,
+        private readonly FileService $fileService,
     ) {}
 
     public function create(array $data): Company
@@ -55,7 +56,7 @@ class CompanyService
         $this->chatterService->log($company, 'Company deleted.', 'system');
 
         if ($company->logo) {
-            Storage::disk('public')->delete($company->logo);
+            $this->fileService->deleteByUuid($company->logo);
         }
 
         $company->delete();

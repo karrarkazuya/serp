@@ -18,11 +18,11 @@ use App\Helpers\SearchFilters;
 use App\Helpers\SortsTable;
 use App\Services\Company\CompanyContextService;
 use App\Models\Workflow\WorkflowRecordInput;
+use App\Services\FileService;
 use App\Services\Workflow\ProcedureService;
 use App\Services\Workflow\TicketService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 
 class TicketController extends Controller
@@ -59,6 +59,7 @@ class TicketController extends Controller
         private readonly TicketService $ticketService,
         private readonly ProcedureService $procedureService,
         private readonly CompanyContextService $companyContext,
+        private readonly FileService $fileService,
     ) {}
 
     public function read(Request $request)
@@ -288,7 +289,7 @@ class TicketController extends Controller
             fn($v) => $v === '1'
         ));
 
-        // Pass 1: validate all files before storing any — prevents orphaned files if a
+        // Pass 1: validate all files before storing any — prevents orphaned records if a
         // later validation fails and aborts before the try/catch cleanup runs.
         $fileInputs = $fileInputs ?? [];
         foreach ($templateInputs->where('type', 'file') as $tid => $templateInput) {
@@ -317,20 +318,20 @@ class TicketController extends Controller
             );
         }
 
-        // Pass 2: all validations passed — now store files
-        $storedFiles = [];
+        // Pass 2: all validations passed — store via FileService (creates File record + thumbnail)
+        $storedFiles = []; // tid => File model
         foreach ($templateInputs->where('type', 'file') as $tid => $templateInput) {
             if (in_array($tid, $inputsToDelete)) continue;
             $file = $fileInputs[$tid] ?? null;
             if (!$file || !$file->isValid()) continue;
 
-            $path = $file->store("workflow/inputs/{$ticket->id}", 'local');
-            $storedFiles[$tid] = [
-                'value_file_path' => $path,
-                'value_file_name' => basename($file->getClientOriginalName()),
-                'value_file_mime' => $file->getMimeType(),
-                'value_file_size' => $file->getSize(),
-            ];
+            $storedFiles[$tid] = $this->fileService->store(
+                $file,
+                "workflow/inputs/{$ticket->id}",
+                'workflow.tickets.read',
+                $ticket,
+                $ticket
+            );
         }
 
         // Snapshot existing values before the transaction so we can diff them for chatter
@@ -347,7 +348,7 @@ class TicketController extends Controller
                         if (in_array($tid, $inputsToDelete)) {
                             $existing = $ticket->inputs()->where('template_input_id', $tid)->first();
                             if ($existing?->value_file_path) {
-                                Storage::disk('local')->delete($existing->value_file_path);
+                                $this->fileService->deleteByUuid($existing->value_file_path);
                             }
                             $ticket->inputs()->where('template_input_id', $tid)->update([
                                 'value_file_path' => null,
@@ -356,7 +357,14 @@ class TicketController extends Controller
                                 'value_file_size' => null,
                             ]);
                         } elseif (isset($storedFiles[$tid])) {
-                            $this->ticketService->saveInputValue($ticket, $tid, $storedFiles[$tid]);
+                            /** @var \App\Models\File $fileRecord */
+                            $fileRecord = $storedFiles[$tid];
+                            $this->ticketService->saveInputValue($ticket, $tid, [
+                                'value_file_path' => $fileRecord->uuid,
+                                'value_file_name' => $fileRecord->original_name,
+                                'value_file_mime' => $fileRecord->mime_type,
+                                'value_file_size' => $fileRecord->size,
+                            ]);
                         }
 
                     } elseif ($templateInput->type === 'multiselect') {
@@ -383,9 +391,9 @@ class TicketController extends Controller
                 }
             });
         } catch (\Throwable $e) {
-            // Clean up any files we stored before the transaction failed
-            foreach ($storedFiles as $fileData) {
-                Storage::disk('local')->delete($fileData['value_file_path']);
+            // Clean up any File records + disk files stored before the transaction failed
+            foreach ($storedFiles as $fileRecord) {
+                $this->fileService->delete($fileRecord);
             }
             throw $e;
         }
@@ -399,7 +407,6 @@ class TicketController extends Controller
 
             if ($templateInput->type === 'file') {
                 if (in_array($tid, $inputsToDelete)) {
-                    // Only log if there was actually a file there to begin with
                     if ($existing?->value_file_name) {
                         $changes[] = [
                             'field' => "input_{$tid}",
@@ -409,18 +416,19 @@ class TicketController extends Controller
                         ];
                     }
                 } elseif (isset($storedFiles[$tid])) {
-                    // A stored file is always a real change — skip filename equality check.
-                    // Store paths (not URLs) so the chatter file endpoint can serve historical
-                    // versions independently of the live record.
+                    /** @var \App\Models\File $newFile */
+                    $newFile = $storedFiles[$tid];
+                    // Store File UUIDs so ChatterFileController can look them up by UUID.
+                    // Old File record is kept (not deleted) for historical viewing via /files/{uuid}.
                     $changes[] = [
                         'field'          => "input_{$tid}",
                         'label'          => $templateInput->name,
                         'from'           => $existing?->value_file_name ?? '—',
-                        'to'             => $storedFiles[$tid]['value_file_name'],
-                        'from_file_path' => $existing?->value_file_path ?? null,
-                        'from_mime'      => $existing?->value_file_mime ?? null,
-                        'to_file_path'   => $storedFiles[$tid]['value_file_path'],
-                        'to_mime'        => $storedFiles[$tid]['value_file_mime'] ?? null,
+                        'to'             => $newFile->original_name,
+                        'from_file_uuid' => $existing?->value_file_path ?? null,
+                        'from_file_mime' => $existing?->value_file_mime ?? null,
+                        'to_file_uuid'   => $newFile->uuid,
+                        'to_file_mime'   => $newFile->mime_type,
                     ];
                 }
                 continue;
@@ -470,37 +478,16 @@ class TicketController extends Controller
         return back()->with('success', 'Fields saved.');
     }
 
+    /** Kept for backward compat with Blade views; redirects to unified file route. */
     public function downloadInputFile(Ticket $ticket, WorkflowRecordInput $recordInput)
     {
-        $this->authorize('view', $ticket);
-        $activeCompanyIds = $this->companyContext->getActiveCompanyIds();
-        abort_unless(is_null($ticket->company_id) || in_array($ticket->company_id, $activeCompanyIds), 403);
-
-        // Ensure the file record actually belongs to this ticket
         abort_unless(
             (int) $recordInput->record_id === $ticket->id && $recordInput->record_type === 'ticket',
             403
         );
         abort_unless($recordInput->type === 'file' && $recordInput->value_file_path, 404);
-        abort_unless(Storage::disk('local')->exists($recordInput->value_file_path), 404);
 
-        $headers = ['Content-Type' => $recordInput->value_file_mime ?? 'application/octet-stream'];
-
-        // Serve images inline so they render in chatter thumbnails and the lightbox;
-        // force-download everything else.
-        if (str_starts_with($recordInput->value_file_mime ?? '', 'image/')) {
-            return Storage::disk('local')->response(
-                $recordInput->value_file_path,
-                $recordInput->value_file_name,
-                $headers
-            );
-        }
-
-        return Storage::disk('local')->download(
-            $recordInput->value_file_path,
-            $recordInput->value_file_name,
-            $headers
-        );
+        return redirect()->route('files.serve', $recordInput->value_file_path);
     }
 
     public function deleteInputFile(Ticket $ticket, WorkflowRecordInput $recordInput)
@@ -517,7 +504,7 @@ class TicketController extends Controller
 
         DB::transaction(function () use ($recordInput) {
             if ($recordInput->value_file_path) {
-                Storage::disk('local')->delete($recordInput->value_file_path);
+                $this->fileService->deleteByUuid($recordInput->value_file_path);
             }
             $recordInput->update([
                 'value_file_path' => null,
@@ -804,29 +791,27 @@ class TicketController extends Controller
 
         foreach ($files as $file) {
             if (!$file || !in_array($file->getMimeType(), self::CHAT_ALLOWED_MIMES)) continue;
-            $path = $file->store("chat/{$ticket->chatRoom->id}", 'local');
+            $fileRecord = $this->fileService->store($file, "chat/{$ticket->chatRoom->id}", 'workflow.tickets.read', $ticket, $message);
             ChatMessageFile::create([
                 'message_id'    => $message->id,
-                'disk'          => 'local',
-                'path'          => $path,
-                'original_name' => $file->getClientOriginalName(),
-                'mime_type'     => $file->getMimeType(),
-                'size'          => $file->getSize(),
+                'disk'          => $fileRecord->disk,
+                'path'          => $fileRecord->uuid,
+                'original_name' => $fileRecord->original_name,
+                'mime_type'     => $fileRecord->mime_type,
+                'size'          => $fileRecord->size,
             ]);
         }
 
         return back();
     }
 
+    /** Redirects to unified file route; access enforced there via ticket context. */
     public function chatFile(Ticket $ticket, ChatMessageFile $file)
     {
-        $this->authorize('view', $ticket);
-        $activeCompanyIds = $this->companyContext->getActiveCompanyIds();
-        abort_unless(is_null($ticket->company_id) || in_array($ticket->company_id, $activeCompanyIds), 403);
         abort_unless($ticket->chatRoom && $file->message?->room_id === $ticket->chatRoom->id, 403);
+        abort_unless($file->path, 404);
 
-        $fullPath = \Illuminate\Support\Facades\Storage::disk($file->disk)->path($file->path);
-        return response()->download($fullPath, $file->original_name);
+        return redirect()->route('files.serve', $file->path);
     }
 
     private function groupChatMessages(\Illuminate\Support\Collection $messages): array

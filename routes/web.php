@@ -44,6 +44,7 @@ use App\Http\Controllers\Workflow\WorkflowUserController;
 use App\Http\Controllers\Api\Chatter\ChatterController;
 use App\Http\Controllers\Chatter\ChatterFileController;
 use App\Http\Controllers\Chat\ChatController;
+use App\Http\Controllers\FileController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -54,7 +55,7 @@ use Illuminate\Support\Facades\Route;
 // Public shared-link route — no authentication required
 Route::get('/share/{token}', [SharedLinkController::class, 'show'])->name('share.show');
 
-// Contact avatar — no auth middleware; controller returns default image if unauthorized
+// Contact avatar — kept for backward compat; redirects to unified file route
 Route::get('/contacts/avatar/{uuid}', [ContactController::class, 'avatar'])->name('contacts.avatar');
 
 Route::middleware('guest')->group(function () {
@@ -70,6 +71,10 @@ Route::post('/logout', [LoginController::class, 'logout'])->name('logout')->midd
 |--------------------------------------------------------------------------
 */
 Route::middleware('auth')->group(function () {
+
+    // Unified file serving — UUID-based, permission-aware
+    Route::get('/files/{uuid}', [FileController::class, 'serve'])->name('files.serve');
+    Route::get('/files/{uuid}/thumbnail', [FileController::class, 'thumbnail'])->name('files.thumbnail');
 
     // Notifications
     Route::prefix('notifications')->name('notifications.')->group(function () {

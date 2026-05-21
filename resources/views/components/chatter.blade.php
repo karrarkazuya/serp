@@ -178,7 +178,7 @@
                             <template x-for="(change, i) in msg.metadata.changes" :key="i">
                                 <li class="text-sm flex items-center gap-1.5 flex-wrap">
                                     {{-- FROM side --}}
-                                    <template x-if="change.from_file_path && isImage(change.from_mime)">
+                                    <template x-if="change.from_file_uuid && isImage(change.from_file_mime)">
                                         <a :href="fileUrl(msg.id, i, 'from')" target="_blank" class="shrink-0">
                                             <img :src="fileUrl(msg.id, i, 'from')" :alt="change.from"
                                                  class="h-8 w-8 rounded object-cover border border-gray-200">
@@ -189,20 +189,20 @@
                                     <span class="text-gray-300">→</span>
 
                                     {{-- TO side: image thumbnail --}}
-                                    <template x-if="change.to_file_path && isImage(change.to_mime)">
+                                    <template x-if="change.to_file_uuid && isImage(change.to_file_mime)">
                                         <a :href="fileUrl(msg.id, i, 'to')" target="_blank" class="shrink-0">
                                             <img :src="fileUrl(msg.id, i, 'to')" :alt="change.to"
                                                  class="h-8 w-8 rounded object-cover border border-gray-200">
                                         </a>
                                     </template>
                                     {{-- TO side: linked filename (file change) --}}
-                                    <template x-if="change.to_file_path">
+                                    <template x-if="change.to_file_uuid">
                                         <a :href="fileUrl(msg.id, i, 'to')" target="_blank"
                                            class="text-blue-600 font-medium hover:underline"
                                            x-text="change.to"></a>
                                     </template>
                                     {{-- TO side: plain text (non-file change) --}}
-                                    <template x-if="!change.to_file_path">
+                                    <template x-if="!change.to_file_uuid">
                                         <span class="text-blue-600 font-medium" x-text="change.to"></span>
                                     </template>
 

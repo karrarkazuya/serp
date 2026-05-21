@@ -55,7 +55,7 @@
                     </div>
                     <div class="flex items-center gap-2 shrink-0">
                         @if($doc->file_path)
-                        <a href="{{ route('employees.documents.download', [$employee, $doc]) }}" target="_blank"
+                        <a href="{{ route('files.serve', $doc->file_path) }}" target="_blank"
                            class="text-xs text-purple-600 border border-purple-200 rounded px-2 py-1 hover:bg-purple-50">Download</a>
                         @endif
                         <div x-data="{ confirming: false }">

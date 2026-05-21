@@ -6,7 +6,6 @@ use App\Http\Controllers\Controller;
 use App\Models\Chatter\ChatterMessage;
 use App\Models\Workflow\Procedure;
 use App\Models\Workflow\Ticket;
-use Illuminate\Support\Facades\Storage;
 
 class ChatterFileController extends Controller
 {
@@ -24,6 +23,10 @@ class ChatterFileController extends Controller
         'App\Models\Workflow\WorkflowUser'         => 'workflow.config.read',
     ];
 
+    /**
+     * Resolve the File UUID from chatter metadata and redirect to the unified file route.
+     * Metadata uses from_file_uuid / to_file_uuid keys (written by TicketController::saveInputs).
+     */
     public function serve(ChatterMessage $chatterMessage, int $index, string $side)
     {
         abort_unless(in_array($side, ['from', 'to']), 404);
@@ -32,7 +35,7 @@ class ChatterFileController extends Controller
         abort_unless(array_key_exists($modelType, self::ALLOWED_TYPES), 403);
         abort_unless(auth()->user()->hasPermission(self::ALLOWED_TYPES[$modelType]), 403);
 
-        // For ticket/procedure, also enforce viewer-level access on the specific record
+        // For ticket/procedure, enforce viewer-level access on the specific record
         $record = match ($modelType) {
             'App\Models\Workflow\Ticket'    => Ticket::findOrFail($chatterMessage->model_id),
             'App\Models\Workflow\Procedure' => Procedure::findOrFail($chatterMessage->model_id),
@@ -45,21 +48,13 @@ class ChatterFileController extends Controller
         $changes = $chatterMessage->metadata['changes'] ?? [];
         abort_unless(isset($changes[$index]), 404);
 
-        $change   = $changes[$index];
-        $pathKey  = $side === 'from' ? 'from_file_path' : 'to_file_path';
-        $mimeKey  = $side === 'from' ? 'from_mime'      : 'to_mime';
-        $nameKey  = $side === 'from' ? 'from'           : 'to';
+        $change  = $changes[$index];
+        $uuidKey = $side === 'from' ? 'from_file_uuid' : 'to_file_uuid';
+        $uuid    = $change[$uuidKey] ?? null;
 
-        $path = $change[$pathKey] ?? null;
-        abort_unless($path && Storage::disk('local')->exists($path), 404);
+        abort_unless($uuid, 404);
 
-        $mime = $change[$mimeKey] ?? 'application/octet-stream';
-        $name = $change[$nameKey] ?? 'file';
-
-        if (str_starts_with($mime, 'image/')) {
-            return Storage::disk('local')->response($path, $name, ['Content-Type' => $mime]);
-        }
-
-        return Storage::disk('local')->download($path, $name, ['Content-Type' => $mime]);
+        // Access control (permission + context ownership) is enforced by FileController
+        return redirect()->route('files.serve', $uuid);
     }
 }

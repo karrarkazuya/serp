@@ -688,11 +688,11 @@
                             <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
                                 @foreach($employee->documents as $doc)
                                 @php
-                                    $ext         = $doc->file_path ? strtolower(pathinfo($doc->file_path, PATHINFO_EXTENSION)) : '';
+                                    $ext         = $doc->attachedFile ? strtolower($doc->attachedFile->extension) : '';
                                     $isImage     = in_array($ext, $imgExts);
                                     $isPdf       = $ext === 'pdf';
-                                    $previewUrl  = $doc->file_path ? route('employees.documents.preview', [$employee, $doc]) : null;
-                                    $downloadUrl = $doc->file_path ? route('employees.documents.download', [$employee, $doc]) : null;
+                                    $previewUrl  = $doc->file_path ? route('files.serve', $doc->file_path) : null;
+                                    $downloadUrl = $doc->file_path ? route('files.serve', $doc->file_path) : null;
                                     $docIcon     = $docIcons[$doc->document_type] ?? '📁';
                                     $docData     = json_encode([
                                         'name'        => $doc->name,

@@ -41,7 +41,7 @@ class ResourceCalendar extends Model
     ];
 
     protected $fillable = [
-        'uuid', 'name', 'timezone', 'hours_per_day', 'flexible_hours',
+        'uuid', 'name', 'timezone', 'hours_per_day', 'company_hours_per_week', 'flexible_hours',
         'active', 'company_id', 'created_by', 'updated_by',
     ];
 

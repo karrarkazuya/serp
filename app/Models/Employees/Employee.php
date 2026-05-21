@@ -280,7 +280,7 @@ class Employee extends Model
 
     public function getAvatarUrlAttribute(): ?string
     {
-        return $this->avatar ? route('employees.avatar', $this->uuid) : null;
+        return $this->avatar ? route('files.serve', $this->avatar) : null;
     }
 
     public static function employmentStatusLabel(string $status): string

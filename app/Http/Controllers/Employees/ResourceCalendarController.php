@@ -52,7 +52,7 @@ class ResourceCalendarController extends Controller
         $activeCompanyIds = $this->companyContext->getActiveCompanyIds();
         abort_unless(empty($activeCompanyIds) || in_array($schedule->company_id, $activeCompanyIds), 403);
 
-        $schedule->load(['company', 'attendances', 'employees.job']);
+        $schedule->load(['company', 'attendances', 'employees.job', 'employees.department']);
 
         return view('employees.schedules.show', compact('schedule'));
     }
@@ -72,27 +72,32 @@ class ResourceCalendarController extends Controller
         $companyRule      = Rule::exists('companies', 'id')->whereIn('id', $activeCompanyIds);
 
         $data = $request->validate([
-            'name'          => 'required|string|max:255',
-            'timezone'      => 'nullable|string|max:100',
-            'hours_per_day' => 'nullable|numeric|min:0|max:24',
-            'flexible_hours' => 'boolean',
-            'active'        => 'boolean',
-            'company_id'    => ['nullable', $companyRule],
-            'attendances'   => 'nullable|array',
+            'name'                    => 'required|string|max:255',
+            'timezone'                => 'nullable|string|max:100',
+            'hours_per_day'           => 'nullable|numeric|min:0|max:24',
+            'company_hours_per_week'  => 'nullable|numeric|min:0|max:168',
+            'flexible_hours'          => 'boolean',
+            'active'                  => 'boolean',
+            'company_id'              => ['nullable', $companyRule],
+            'attendances'             => 'nullable|array',
             'attendances.*.day_of_week' => 'required|integer|between:0,6',
             'attendances.*.hour_from'   => 'required|string',
             'attendances.*.hour_to'     => 'required|string',
-            'attendances.*.day_period'  => 'nullable|in:morning,afternoon,evening,night',
+            'attendances.*.next_day'    => 'nullable|boolean',
             'attendances.*.sequence'    => 'nullable|integer',
         ]);
 
         $attendancesData = $data['attendances'] ?? [];
         unset($data['attendances']);
 
-        // Convert HH:MM time strings to decimal hours for storage
         foreach ($attendancesData as &$att) {
-            $att['hour_from'] = $this->timeToDecimal($att['hour_from'] ?? '00:00');
-            $att['hour_to']   = $this->timeToDecimal($att['hour_to']   ?? '00:00');
+            $from    = $this->timeToDecimal($att['hour_from'] ?? '00:00');
+            $to      = $this->timeToDecimal($att['hour_to']   ?? '00:00');
+            $nextDay = !empty($att['next_day']);
+            $att['hour_from']   = $from;
+            $att['hour_to']     = $to + ($nextDay ? 24 : 0);
+            $att['day_period']  = $this->computePeriod($from);
+            unset($att['next_day']);
         }
         unset($att);
 
@@ -114,7 +119,7 @@ class ResourceCalendarController extends Controller
         $activeCompanyIds = $this->companyContext->getActiveCompanyIds();
         abort_unless(empty($activeCompanyIds) || in_array($schedule->company_id, $activeCompanyIds), 403);
 
-        $schedule->load(['attendances']);
+        $schedule->load(['attendances', 'employees.job']);
 
         return view('employees.schedules.edit', compact('schedule'));
     }
@@ -129,17 +134,18 @@ class ResourceCalendarController extends Controller
         $companyRule = Rule::exists('companies', 'id')->whereIn('id', $activeCompanyIds);
 
         $data = $request->validate([
-            'name'          => 'sometimes|required|string|max:255',
-            'timezone'      => 'nullable|string|max:100',
-            'hours_per_day' => 'nullable|numeric|min:0|max:24',
-            'flexible_hours' => 'boolean',
-            'active'        => 'boolean',
-            'company_id'    => ['nullable', $companyRule],
-            'attendances'   => 'nullable|array',
+            'name'                    => 'sometimes|required|string|max:255',
+            'timezone'                => 'nullable|string|max:100',
+            'hours_per_day'           => 'nullable|numeric|min:0|max:24',
+            'company_hours_per_week'  => 'nullable|numeric|min:0|max:168',
+            'flexible_hours'          => 'boolean',
+            'active'                  => 'boolean',
+            'company_id'              => ['nullable', $companyRule],
+            'attendances'             => 'nullable|array',
             'attendances.*.day_of_week' => 'required|integer|between:0,6',
             'attendances.*.hour_from'   => 'required|string',
             'attendances.*.hour_to'     => 'required|string',
-            'attendances.*.day_period'  => 'nullable|in:morning,afternoon,evening,night',
+            'attendances.*.next_day'    => 'nullable|boolean',
             'attendances.*.sequence'    => 'nullable|integer',
         ]);
 
@@ -148,8 +154,13 @@ class ResourceCalendarController extends Controller
 
         if ($attendancesData !== null) {
             foreach ($attendancesData as &$att) {
-                $att['hour_from'] = $this->timeToDecimal($att['hour_from'] ?? '00:00');
-                $att['hour_to']   = $this->timeToDecimal($att['hour_to']   ?? '00:00');
+                $from    = $this->timeToDecimal($att['hour_from'] ?? '00:00');
+                $to      = $this->timeToDecimal($att['hour_to']   ?? '00:00');
+                $nextDay = !empty($att['next_day']);
+                $att['hour_from']   = $from;
+                $att['hour_to']     = $to + ($nextDay ? 24 : 0);
+                $att['day_period']  = $this->computePeriod($from);
+                unset($att['next_day']);
             }
             unset($att);
         }
@@ -216,5 +227,14 @@ class ResourceCalendarController extends Controller
     {
         [$h, $m] = explode(':', $time . ':00');
         return (int)$h + ((int)$m / 60);
+    }
+
+    private function computePeriod(float $hourFrom): string
+    {
+        return match(true) {
+            $hourFrom < 12 => 'morning',
+            $hourFrom < 17 => 'afternoon',
+            default        => 'evening',
+        };
     }
 }

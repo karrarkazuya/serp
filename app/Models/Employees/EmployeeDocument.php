@@ -2,6 +2,7 @@
 
 namespace App\Models\Employees;
 
+use App\Models\File;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -24,6 +25,11 @@ class EmployeeDocument extends Model
     public function employee(): BelongsTo
     {
         return $this->belongsTo(Employee::class, 'employee_id');
+    }
+
+    public function attachedFile(): BelongsTo
+    {
+        return $this->belongsTo(File::class, 'file_path', 'uuid');
     }
 
     public function creator(): BelongsTo

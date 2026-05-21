@@ -4,12 +4,13 @@ namespace App\Services\Employees;
 
 use App\Models\Employees\Employee;
 use App\Services\Chatter\ChatterService;
-use Illuminate\Support\Facades\Storage;
+use App\Services\FileService;
 
 class EmployeeService
 {
     public function __construct(
-        private readonly ChatterService $chatterService
+        private readonly ChatterService $chatterService,
+        private readonly FileService $fileService,
     ) {}
 
     public function create(array $data): Employee
@@ -48,7 +49,7 @@ class EmployeeService
     public function delete(Employee $employee): void
     {
         if ($employee->avatar) {
-            Storage::disk('local')->delete($employee->avatar);
+            $this->fileService->deleteByUuid($employee->avatar);
         }
         $this->chatterService->log($employee, 'Employee deleted.', 'system');
         $employee->delete();

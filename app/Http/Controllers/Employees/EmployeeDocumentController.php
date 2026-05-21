@@ -6,15 +6,15 @@ use App\Http\Controllers\Controller;
 use App\Models\Employees\Employee;
 use App\Models\Employees\EmployeeDocument;
 use App\Services\Company\CompanyContextService;
+use App\Services\FileService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Storage;
-use Illuminate\Support\Str;
 
 class EmployeeDocumentController extends Controller
 {
     public function __construct(
         private readonly CompanyContextService $companyContext,
+        private readonly FileService $fileService,
     ) {}
 
     public function store(Request $request, Employee $employee)
@@ -34,19 +34,18 @@ class EmployeeDocumentController extends Controller
             'file'               => 'nullable|file|max:10240',
         ]);
 
+        $fileRecord = null;
         if ($request->hasFile('file')) {
-            $file = $request->file('file');
-            $data['file_path'] = $file->storeAs(
-                'documents/employees/' . $employee->id,
-                Str::uuid() . '.' . $file->getClientOriginalExtension(),
-                'local'
-            );
+            $fileRecord        = $this->fileService->store($request->file('file'), 'documents/employees/' . $employee->id, 'employees.read');
+            $data['file_path'] = $fileRecord->uuid;
         }
         unset($data['file']);
         $data['employee_id']   = $employee->id;
         $data['document_type'] ??= 'other';
 
-        DB::transaction(fn () => EmployeeDocument::create($data));
+        $document = DB::transaction(fn () => EmployeeDocument::create($data));
+
+        $fileRecord?->update(['source_type' => $document->getTable(), 'source_id' => $document->id]);
 
         return redirect()->route('employees.edit', $employee)->with('success', 'Document added.');
     }
@@ -61,7 +60,7 @@ class EmployeeDocumentController extends Controller
 
         DB::transaction(function () use ($document) {
             if ($document->file_path) {
-                Storage::disk('local')->delete($document->file_path);
+                $this->fileService->deleteByUuid($document->file_path);
             }
             $document->delete();
         });
@@ -69,30 +68,21 @@ class EmployeeDocumentController extends Controller
         return redirect()->back()->with('success', 'Document deleted.');
     }
 
+    /** Redirects to unified file route; access control is enforced there. */
     public function download(Request $_request, Employee $employee, EmployeeDocument $document)
     {
-        $this->authorize('view', $employee);
-
-        $activeCompanyIds = $this->companyContext->getActiveCompanyIds();
-        abort_unless(empty($activeCompanyIds) || in_array($employee->company_id, $activeCompanyIds), 403);
         abort_unless($document->employee_id === $employee->id, 403);
-        abort_unless($document->file_path && Storage::disk('local')->exists($document->file_path), 404);
+        abort_unless($document->file_path, 404);
 
-        return response()->download(
-            Storage::disk('local')->path($document->file_path),
-            $document->name . '.' . pathinfo($document->file_path, PATHINFO_EXTENSION)
-        );
+        return redirect()->route('files.serve', $document->file_path);
     }
 
+    /** Redirects to unified file route; access control is enforced there. */
     public function preview(Request $_request, Employee $employee, EmployeeDocument $document)
     {
-        $this->authorize('view', $employee);
-
-        $activeCompanyIds = $this->companyContext->getActiveCompanyIds();
-        abort_unless(empty($activeCompanyIds) || in_array($employee->company_id, $activeCompanyIds), 403);
         abort_unless($document->employee_id === $employee->id, 403);
-        abort_unless($document->file_path && Storage::disk('local')->exists($document->file_path), 404);
+        abort_unless($document->file_path, 404);
 
-        return response()->file(Storage::disk('local')->path($document->file_path));
+        return redirect()->route('files.serve', $document->file_path);
     }
 }

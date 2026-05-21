@@ -7,15 +7,18 @@ use App\Http\Requests\Settings\StoreCompanyRequest;
 use App\Http\Requests\Settings\UpdateCompanyRequest;
 use App\Models\Settings\Company;
 use App\Services\Company\CompanyService;
+use App\Services\FileService;
 use App\Helpers\SearchFilters;
 use App\Helpers\SortsTable;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Storage;
 
 class CompanyController extends Controller
 {
-    public function __construct(private readonly CompanyService $companyService) {}
+    public function __construct(
+        private readonly CompanyService $companyService,
+        private readonly FileService $fileService,
+    ) {}
 
     public function read(Request $request)
     {
@@ -59,11 +62,15 @@ class CompanyController extends Controller
     {
         $data = $request->validated();
 
+        $fileRecord = null;
         if ($request->hasFile('logo')) {
-            $data['logo'] = $request->file('logo')->store('logos/companies', 'public');
+            $fileRecord   = $this->fileService->store($request->file('logo'), 'logos/companies', 'settings.read', null, null, 'public');
+            $data['logo'] = $fileRecord->uuid;
         }
 
         $company = DB::transaction(fn () => $this->companyService->create($data));
+
+        $fileRecord?->update(['source_type' => $company->getTable(), 'source_id' => $company->id]);
 
         return redirect()
             ->route('settings.companies.show', $company)
@@ -83,11 +90,12 @@ class CompanyController extends Controller
 
         if ($request->hasFile('logo')) {
             if ($company->logo) {
-                Storage::disk('public')->delete($company->logo);
+                $this->fileService->deleteByUuid($company->logo);
             }
-            $data['logo'] = $request->file('logo')->store('logos/companies', 'public');
+            $fileRecord   = $this->fileService->store($request->file('logo'), 'logos/companies', 'settings.read', null, $company, 'public');
+            $data['logo'] = $fileRecord->uuid;
         } elseif ($request->input('remove_logo') === '1' && $company->logo) {
-            Storage::disk('public')->delete($company->logo);
+            $this->fileService->deleteByUuid($company->logo);
             $data['logo'] = null;
         }
 

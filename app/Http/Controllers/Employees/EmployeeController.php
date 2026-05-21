@@ -15,18 +15,18 @@ use App\Models\Employees\SkillType;
 use App\Models\Employees\WorkLocation;
 use App\Services\Company\CompanyContextService;
 use App\Services\Employees\EmployeeService;
+use App\Services\FileService;
 use App\Helpers\SearchFilters;
 use App\Helpers\SortsTable;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Storage;
-use Illuminate\Support\Str;
 
 class EmployeeController extends Controller
 {
     public function __construct(
         private readonly EmployeeService $employeeService,
         private readonly CompanyContextService $companyContext,
+        private readonly FileService $fileService,
     ) {}
 
     public function read(Request $request)
@@ -80,7 +80,7 @@ class EmployeeController extends Controller
             'categories', 'departureReason',
             'currentContract', 'contracts',
             'skills.skill', 'skills.skillType', 'skills.skillLevel',
-            'documents', 'emergencyContacts', 'dependents', 'bankAccounts',
+            'documents.attachedFile', 'emergencyContacts', 'dependents', 'bankAccounts',
             'subordinates', 'creator', 'updater',
         ]);
 
@@ -134,13 +134,10 @@ class EmployeeController extends Controller
         $categoryIds = $data['categories'] ?? [];
         unset($data['categories']);
 
+        $fileRecord = null;
         if ($request->hasFile('avatar')) {
-            $file = $request->file('avatar');
-            $data['avatar'] = $file->storeAs(
-                'avatars/employees',
-                Str::uuid() . '.' . $file->getClientOriginalExtension(),
-                'local'
-            );
+            $fileRecord     = $this->fileService->store($request->file('avatar'), 'avatars/employees', 'employees.read');
+            $data['avatar'] = $fileRecord->uuid;
         }
 
         $employee = DB::transaction(function () use ($data, $categoryIds) {
@@ -148,6 +145,8 @@ class EmployeeController extends Controller
             $employee->categories()->sync($categoryIds);
             return $employee;
         });
+
+        $fileRecord?->update(['source_type' => $employee->getTable(), 'source_id' => $employee->id]);
 
         return redirect()->route('employees.show', $employee)->with('success', 'Employee created successfully.');
     }
@@ -159,7 +158,7 @@ class EmployeeController extends Controller
         $activeCompanyIds = $this->companyContext->getActiveCompanyIds();
         abort_unless(empty($activeCompanyIds) || in_array($employee->company_id, $activeCompanyIds), 403);
 
-        $employee->load(['categories', 'skills.skill', 'skills.skillType', 'skills.skillLevel', 'documents', 'emergencyContacts', 'dependents', 'bankAccounts', 'resourceCalendar.attendances']);
+        $employee->load(['categories', 'skills.skill', 'skills.skillType', 'skills.skillLevel', 'documents.attachedFile', 'emergencyContacts', 'dependents', 'bankAccounts', 'resourceCalendar.attendances']);
 
         $departments   = Department::active()->when(!empty($activeCompanyIds), fn($q) => $q->forCompanies($activeCompanyIds))->orderBy('name')->get(['id', 'name']);
         $jobs          = Job::active()->when(!empty($activeCompanyIds), fn($q) => $q->forCompanies($activeCompanyIds))->orderBy('name')->get(['id', 'name']);
@@ -190,14 +189,10 @@ class EmployeeController extends Controller
 
         if ($request->hasFile('avatar')) {
             if ($employee->avatar) {
-                Storage::disk('local')->delete($employee->avatar);
+                $this->fileService->deleteByUuid($employee->avatar);
             }
-            $file = $request->file('avatar');
-            $data['avatar'] = $file->storeAs(
-                'avatars/employees',
-                Str::uuid() . '.' . $file->getClientOriginalExtension(),
-                'local'
-            );
+            $fileRecord     = $this->fileService->store($request->file('avatar'), 'avatars/employees', 'employees.read', null, $employee);
+            $data['avatar'] = $fileRecord->uuid;
         }
 
         $skillsData      = $request->input('skills');
@@ -226,7 +221,7 @@ class EmployeeController extends Controller
                 $docsToDelete = $employee->documents()->whereIn('id', $deleteDocIds)->get();
                 foreach ($docsToDelete as $doc) {
                     if ($doc->file_path) {
-                        Storage::disk('local')->delete($doc->file_path);
+                        $this->fileService->deleteByUuid($doc->file_path);
                     }
                     $doc->delete();
                 }
@@ -242,15 +237,17 @@ class EmployeeController extends Controller
                     'notify_before_days' => $newDoc['notify_before_days'] ?? 30,
                     'notes'              => $newDoc['notes'] ?? null,
                 ];
+                $docFileRecord = null;
                 if ($request->hasFile('new_document.file')) {
-                    $file = $request->file('new_document.file');
-                    $docData['file_path'] = $file->storeAs(
+                    $docFileRecord        = $this->fileService->store(
+                        $request->file('new_document.file'),
                         'documents/employees/' . $employee->id,
-                        Str::uuid() . '.' . $file->getClientOriginalExtension(),
-                        'local'
+                        'employees.read'
                     );
+                    $docData['file_path'] = $docFileRecord->uuid;
                 }
-                EmployeeDocument::create($docData);
+                $doc = EmployeeDocument::create($docData);
+                $docFileRecord?->update(['source_type' => $doc->getTable(), 'source_id' => $doc->id]);
             }
         });
 
@@ -290,18 +287,13 @@ class EmployeeController extends Controller
         return redirect()->route('employees.index')->with('success', 'Employee deleted.');
     }
 
+    /** Kept for backward compat with Blade views; redirects to unified file route. */
     public function serveAvatar(string $uuid)
     {
         $employee = Employee::where('uuid', $uuid)->firstOrFail();
+        abort_unless($employee->avatar, 404);
 
-        $this->authorize('view', $employee);
-
-        $activeCompanyIds = $this->companyContext->getActiveCompanyIds();
-        abort_unless(empty($activeCompanyIds) || in_array($employee->company_id, $activeCompanyIds), 403);
-
-        abort_unless($employee->avatar && Storage::disk('local')->exists($employee->avatar), 404);
-
-        return response()->file(Storage::disk('local')->path($employee->avatar));
+        return redirect()->route('files.serve', $employee->avatar);
     }
 
     public function addComment(Request $request, Employee $employee)

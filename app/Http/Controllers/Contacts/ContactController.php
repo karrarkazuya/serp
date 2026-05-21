@@ -8,18 +8,19 @@ use App\Http\Requests\Contacts\UpdateContactRequest;
 use App\Models\Contacts\Contact;
 use App\Services\Company\CompanyContextService;
 use App\Services\Contacts\ContactService;
+use App\Services\FileService;
 use App\Helpers\SearchFilters;
 use App\Helpers\SortsTable;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Storage;
 
 class ContactController extends Controller
 {
     public function __construct(
         private readonly ContactService $contactService,
         private readonly CompanyContextService $companyContext,
+        private readonly FileService $fileService,
     ) {}
 
     public function read(Request $request)
@@ -96,8 +97,10 @@ class ContactController extends Controller
         $relatedContactIds = $data['related_contacts'] ?? [];
         unset($data['tags'], $data['related_contacts']);
 
+        $fileRecord = null;
         if ($request->hasFile('avatar')) {
-            $data['avatar'] = $request->file('avatar')->store('avatars/contacts', 'local');
+            $fileRecord      = $this->fileService->store($request->file('avatar'), 'avatars/contacts', 'contacts.read');
+            $data['avatar']  = $fileRecord->uuid;
         }
 
         try {
@@ -110,10 +113,12 @@ class ContactController extends Controller
             });
         } catch (\Throwable $e) {
             if (isset($data['avatar'])) {
-                Storage::disk('local')->delete($data['avatar']);
+                $this->fileService->deleteByUuid($data['avatar']);
             }
             throw $e;
         }
+
+        $fileRecord?->update(['source_type' => $contact->getTable(), 'source_id' => $contact->id]);
 
         return redirect()
             ->route('contacts.show', $contact)
@@ -143,10 +148,11 @@ class ContactController extends Controller
         $relatedContactIds = $data['related_contacts'] ?? [];
         unset($data['tags'], $data['related_contacts']);
 
-        $oldAvatar = $contact->avatar;
+        $oldAvatarUuid = $contact->avatar;
 
         if ($request->hasFile('avatar')) {
-            $data['avatar'] = $request->file('avatar')->store('avatars/contacts', 'local');
+            $fileRecord     = $this->fileService->store($request->file('avatar'), 'avatars/contacts', 'contacts.read', null, $contact);
+            $data['avatar'] = $fileRecord->uuid;
         }
 
         try {
@@ -157,13 +163,13 @@ class ContactController extends Controller
             });
         } catch (\Throwable $e) {
             if (isset($data['avatar'])) {
-                Storage::disk('local')->delete($data['avatar']);
+                $this->fileService->deleteByUuid($data['avatar']);
             }
             throw $e;
         }
 
-        if ($request->hasFile('avatar') && $oldAvatar) {
-            Storage::disk('local')->delete($oldAvatar);
+        if ($request->hasFile('avatar') && $oldAvatarUuid) {
+            $this->fileService->deleteByUuid($oldAvatarUuid);
         }
 
         return redirect()
@@ -202,11 +208,11 @@ class ContactController extends Controller
         $activeCompanyIds = $this->companyContext->getActiveCompanyIds();
         abort_unless(in_array($contact->company_id, $activeCompanyIds), 403);
 
-        $avatar = $contact->avatar;
+        $avatarUuid = $contact->avatar;
         DB::transaction(fn () => $this->contactService->delete($contact));
 
-        if ($avatar) {
-            Storage::disk('local')->delete($avatar);
+        if ($avatarUuid) {
+            $this->fileService->deleteByUuid($avatarUuid);
         }
 
         return redirect()->route('contacts.index')->with('success', 'Contact deleted.');
@@ -225,27 +231,19 @@ class ContactController extends Controller
         return back()->with('success', 'Comment added.');
     }
 
-    public function avatar(string $uuid): Response
+    /**
+     * Redirect to the unified file route. Kept for backward compat with existing Blade views.
+     * Falls back to an inline SVG placeholder when the contact has no avatar.
+     */
+    public function avatar(string $uuid): Response|\Illuminate\Http\RedirectResponse
     {
         $contact = Contact::where('uuid', $uuid)->first();
 
-        if (
-            !$contact ||
-            !$contact->avatar ||
-            !auth()->check() ||
-            !auth()->user()->hasPermission('contacts.read') ||
-            !Storage::disk('local')->exists($contact->avatar)
-        ) {
+        if (!$contact || !$contact->avatar) {
             return $this->defaultAvatarResponse();
         }
 
-        $path     = Storage::disk('local')->path($contact->avatar);
-        $mime     = mime_content_type($path) ?: 'image/jpeg';
-
-        return response(Storage::disk('local')->get($contact->avatar), 200, [
-            'Content-Type'  => $mime,
-            'Cache-Control' => 'private, max-age=3600',
-        ]);
+        return redirect()->route('files.serve', $contact->avatar);
     }
 
     private function defaultAvatarResponse(): Response

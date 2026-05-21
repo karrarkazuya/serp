@@ -41,9 +41,11 @@ use App\Models\Workflow\TicketTemplate;
 use App\Models\Workflow\Manager;
 use App\Models\Workflow\WorkflowSharedLink;
 use App\Models\Chat\ChatMessageFile;
+use App\Models\File;
 use App\Models\Workflow\WorkflowRecordInput;
 use App\Models\Workflow\WorkflowUser;
 use App\Observers\AuditableObserver;
+use App\Services\FileService;
 use App\Policies\Chat\ChatRoomPolicy;
 use App\Policies\CompanyPolicy;
 use App\Policies\ContactPolicy;
@@ -100,6 +102,7 @@ class AppServiceProvider extends ServiceProvider
         $this->app->singleton(TicketService::class);
         $this->app->singleton(ProcedureService::class);
         $this->app->singleton(WorkflowConfigService::class);
+        $this->app->singleton(FileService::class);
     }
 
     public function boot(): void
@@ -155,6 +158,7 @@ class AppServiceProvider extends ServiceProvider
             WorkflowSharedLink::class,
             WorkflowRecordInput::class,
             ChatMessageFile::class,
+            File::class,
             // Employees module
             Employee::class,
             EmployeeDepartment::class,

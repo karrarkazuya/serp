@@ -7,10 +7,10 @@ use App\Models\Chat\ChatMessage;
 use App\Models\Chat\ChatMessageFile;
 use App\Models\Chat\ChatRoom;
 use App\Models\User;
+use App\Services\FileService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 
 class ChatController extends Controller
@@ -24,6 +24,8 @@ class ChatController extends Controller
         'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
         'text/plain', 'text/csv',
     ];
+
+    public function __construct(private readonly FileService $fileService) {}
 
     public function index()
     {
@@ -82,14 +84,14 @@ class ChatController extends Controller
             if (!$file || !in_array($file->getMimeType(), self::ALLOWED_MIMES)) {
                 continue;
             }
-            $path = $file->store("chat/{$room->id}", 'local');
+            $fileRecord = $this->fileService->store($file, "chat/{$room->id}", null, $room, $message);
             ChatMessageFile::create([
                 'message_id'    => $message->id,
-                'disk'          => 'local',
-                'path'          => $path,
-                'original_name' => $file->getClientOriginalName(),
-                'mime_type'     => $file->getMimeType(),
-                'size'          => $file->getSize(),
+                'disk'          => $fileRecord->disk,
+                'path'          => $fileRecord->uuid,
+                'original_name' => $fileRecord->original_name,
+                'mime_type'     => $fileRecord->mime_type,
+                'size'          => $fileRecord->size,
             ]);
         }
 
@@ -196,12 +198,13 @@ class ChatController extends Controller
         return redirect()->route('chat.show', $room);
     }
 
+    /** Redirects to unified file route; access enforced there via ChatRoom context. */
     public function file(ChatRoom $room, ChatMessageFile $file)
     {
-        $this->authorize('view', $room);
         abort_unless($file->message->room_id === $room->id, 403);
+        abort_unless($file->path, 404);
 
-        return Storage::disk($file->disk)->download($file->path, $file->original_name);
+        return redirect()->route('files.serve', $file->path);
     }
 
     private function sidebarData(): array
