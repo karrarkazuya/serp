@@ -1,16 +1,16 @@
 @extends('layouts.app')
-@section('title', 'Edit Group')
+@section('title', __('common.edit'))
 
 @section('content')
 <div class="flex flex-col h-full bg-gray-50">
     <div class="bg-white border-b border-gray-200 px-4 py-2 flex items-center gap-3 shrink-0">
         <div class="flex flex-col leading-tight">
-            <a href="{{ route('workflow.config.groups.index') }}" class="text-xs text-purple-600 hover:text-purple-700">Groups</a>
+            <a href="{{ route('workflow.config.groups.index') }}" class="text-xs text-purple-600 hover:text-purple-700">{{ __('workflow.groups_title') }}</a>
             <span class="text-sm font-semibold text-gray-800">{{ $group->name }}</span>
         </div>
-        <div class="ml-auto flex items-center gap-2">
-            <a href="{{ route('workflow.config.groups.index') }}" class="px-3 py-1.5 text-sm text-gray-600 bg-white border border-gray-300 rounded hover:bg-gray-50">Discard</a>
-            <button form="group-form" type="submit" class="px-4 py-1.5 text-sm font-medium text-white bg-[#714B67] hover:bg-[#5c3d55] rounded shadow-sm">Save</button>
+        <div class="flex items-center gap-2">
+            <a href="{{ route('workflow.config.groups.index') }}" class="px-3 py-1.5 text-sm text-gray-600 bg-white border border-gray-300 rounded hover:bg-gray-50">{{ __('workflow.discard') }}</a>
+            <button form="group-form" type="submit" class="px-4 py-1.5 text-sm font-medium text-white bg-[#714B67] hover:bg-[#5c3d55] rounded shadow-sm">{{ __('common.save') }}</button>
         </div>
     </div>
 
@@ -31,15 +31,15 @@
 
                 <div class="p-6">
                     <div class="mb-6">
-                        <input type="text" name="name" value="{{ old('name', $group->name) }}" required placeholder="Group Name"
+                        <input type="text" name="name" value="{{ old('name', $group->name) }}" required placeholder="{{ __('workflow.group_name_placeholder') }}"
                                class="w-full text-3xl font-bold text-gray-900 placeholder-gray-300 border-0 border-b-2 border-gray-200 focus:outline-none focus:border-purple-500 pb-1 bg-transparent">
                     </div>
 
                     <div class="flex items-center gap-4 py-2 border-b border-gray-100">
-                        <label class="w-32 shrink-0 text-sm text-gray-500">Active</label>
+                        <label class="w-32 shrink-0 text-sm text-gray-500">{{ __('common.active') }}</label>
                         <label class="flex items-center gap-2 text-sm text-gray-800 cursor-pointer">
                             <input type="checkbox" name="active" value="1" {{ $group->active ? 'checked' : '' }} class="rounded border-gray-300 text-purple-600">
-                            <span>Active</span>
+                            <span>{{ __('common.active') }}</span>
                         </label>
                     </div>
                 </div>

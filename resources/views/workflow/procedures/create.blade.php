@@ -12,7 +12,7 @@
                 <span class="text-sm font-semibold text-gray-800 block">{{ __('workflow.new_procedure_title') }}</span>
             </div>
         </div>
-        <div class="ml-auto flex items-center gap-2 shrink-0">
+        <div class="flex items-center gap-2 shrink-0">
             <a href="{{ route('workflow.procedures.index') }}"
                class="px-3 py-1.5 text-sm text-gray-600 border border-gray-200 rounded hover:bg-gray-50 transition-colors">
                 {{ __('workflow.discard') }}

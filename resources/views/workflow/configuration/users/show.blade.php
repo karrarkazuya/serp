@@ -5,13 +5,13 @@
 <div class="flex flex-col h-full bg-gray-50">
     <div class="bg-white border-b border-gray-200 px-4 py-2 flex items-center gap-3 shrink-0">
         <div class="flex flex-col leading-tight">
-            <a href="{{ route('workflow.config.users.index') }}" class="text-xs text-purple-600 hover:text-purple-700">Workflow Users</a>
+            <a href="{{ route('workflow.config.users.index') }}" class="text-xs text-purple-600 hover:text-purple-700">{{ __('workflow.workflow_users_title') }}</a>
             <span class="text-sm font-semibold text-gray-800">{{ $user->name }}</span>
         </div>
-        <div class="ml-auto flex items-center gap-2">
+        <div class="flex items-center gap-2">
             @can('create', \App\Models\Workflow\WorkflowUser::class)
             <a href="{{ route('workflow.config.users.edit', $user) }}"
-               class="px-3 py-1.5 text-sm border border-gray-300 rounded hover:bg-gray-50">Configure</a>
+               class="px-3 py-1.5 text-sm border border-gray-300 rounded hover:bg-gray-50">{{ __('workflow.configure_btn') }}</a>
             @endcan
         </div>
     </div>
@@ -32,38 +32,38 @@
                         <p class="text-sm text-gray-400">{{ $user->email }}{{ $user->job_position ? ' · ' . $user->job_position : '' }}</p>
                     </div>
                     @if($wu)
-                        <span class="ml-auto inline-flex px-2 py-0.5 rounded text-xs font-medium {{ $wu->active ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500' }}">
-                            {{ $wu->active ? 'Enrolled' : 'Inactive' }}
+                        <span class="ms-auto inline-flex px-2 py-0.5 rounded text-xs font-medium {{ $wu->active ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500' }}">
+                            {{ $wu->active ? __('workflow.enrolled_label') : __('workflow.inactive_label') }}
                         </span>
                     @else
-                        <span class="ml-auto inline-flex px-2 py-0.5 rounded text-xs font-medium bg-gray-100 text-gray-400">Not enrolled</span>
+                        <span class="ms-auto inline-flex px-2 py-0.5 rounded text-xs font-medium bg-gray-100 text-gray-400">{{ __('workflow.not_enrolled_label') }}</span>
                     @endif
                 </div>
 
                 @if($wu)
                 <div class="flex items-center gap-4 py-2 border-b border-gray-100">
-                    <label class="w-36 shrink-0 text-sm text-gray-500">Default Dept.</label>
+                    <label class="w-36 shrink-0 text-sm text-gray-500">{{ __('workflow.default_dept_col') }}</label>
                     <span class="flex-1 text-sm text-gray-800">{{ $wu->defaultDepartment?->name ?? '—' }}</span>
                 </div>
                 <div class="flex items-start gap-4 py-2 border-b border-gray-100">
-                    <label class="w-36 shrink-0 text-sm text-gray-500 pt-0.5">Groups</label>
+                    <label class="w-36 shrink-0 text-sm text-gray-500 pt-0.5">{{ __('workflow.groups_col') }}</label>
                     <span class="flex-1 text-sm text-gray-800">{{ $wu->groups->pluck('name')->join(', ') ?: '—' }}</span>
                 </div>
                 <div class="flex items-start gap-4 py-2 border-b border-gray-100">
-                    <label class="w-36 shrink-0 text-sm text-gray-500 pt-0.5">Assignable Depts.</label>
+                    <label class="w-36 shrink-0 text-sm text-gray-500 pt-0.5">{{ __('workflow.assignable_depts_label') }}</label>
                     <span class="flex-1 text-sm text-gray-800">{{ $wu->assignableDepartments->pluck('name')->join(', ') ?: '—' }}</span>
                 </div>
                 @if($wu->manager)
                 <div class="flex items-center gap-4 py-2 border-b border-gray-100">
-                    <label class="w-36 shrink-0 text-sm text-gray-500">Role</label>
-                    <span class="flex-1 text-sm text-gray-800">Manager</span>
+                    <label class="w-36 shrink-0 text-sm text-gray-500">{{ __('workflow.role_label') }}</label>
+                    <span class="flex-1 text-sm text-gray-800">{{ __('workflow.manager_role') }}</span>
                 </div>
                 @endif
                 @else
                 <div class="py-6 text-center text-sm text-gray-400">
-                    This user has no workflow profile yet.
+                    {{ __('workflow.no_workflow_profile') }}
                     @can('create', \App\Models\Workflow\WorkflowUser::class)
-                    <a href="{{ route('workflow.config.users.edit', $user) }}" class="text-purple-600 hover:text-purple-700 ml-1">Set it up →</a>
+                    <a href="{{ route('workflow.config.users.edit', $user) }}" class="text-purple-600 hover:text-purple-700 ml-1">{{ __('workflow.set_it_up') }}</a>
                     @endcan
                 </div>
                 @endif

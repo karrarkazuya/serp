@@ -14,7 +14,7 @@
             </div>
         </div>
 
-        <div class="ms-auto flex items-center gap-3 shrink-0">
+        <div class="flex items-center gap-3 shrink-0">
             @if(auth()->user()->hasPermission('contacts.write'))
             <a href="{{ route('contacts.tags.edit', $tag) }}"
                class="px-3 py-1.5 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded hover:bg-gray-50">

@@ -1,63 +1,90 @@
 @extends('layouts.app')
-@section('title', 'Departments')
+@section('title', __('employees.departments_title'))
 
 @php
+    $view = $view ?? request('view', 'list');
     $quickFilters = [
-        ['label' => 'Active',   'params' => ['filter' => ''],         'url' => route('employees.departments.index', array_merge(request()->except('page'), ['filter' => '']))],
-        ['label' => 'Archived', 'params' => ['filter' => 'archived'],  'url' => route('employees.departments.index', array_merge(request()->except('page'), ['filter' => 'archived']))],
-        ['label' => 'All',      'params' => ['filter' => 'all'],       'url' => route('employees.departments.index', array_merge(request()->except('page'), ['filter' => 'all']))],
+        ['label' => __('common.active'),   'params' => ['filter' => ''],         'url' => route('employees.departments.index', array_merge(request()->except('page'), ['filter' => '']))],
+        ['label' => __('common.archived'), 'params' => ['filter' => 'archived'],  'url' => route('employees.departments.index', array_merge(request()->except('page'), ['filter' => 'archived']))],
+        ['label' => __('common.all'),      'params' => ['filter' => 'all'],       'url' => route('employees.departments.index', array_merge(request()->except('page'), ['filter' => 'all']))],
     ];
 @endphp
 
 @section('content')
-<div class="flex min-w-0 flex-col h-full bg-white">
+<div class="flex min-w-0 flex-col h-full {{ $view === 'tree' ? 'bg-gray-50' : 'bg-white' }}">
     <div class="flex flex-wrap items-center gap-2 sm:gap-3 px-3 sm:px-4 py-2 border-b border-gray-200 bg-white shrink-0">
-        @can('create', \App\Models\Employees\Employee::class)
+        @can('create', \App\Models\Employees\Department::class)
         <a href="{{ route('employees.departments.create') }}" class="px-3 sm:px-4 py-2 bg-[#714B67] hover:bg-[#5c3d55] text-white text-sm font-semibold rounded shadow-sm shrink-0">
-            New
+            {{ __('common.new') }}
         </a>
         @endcan
 
         <div class="flex items-center gap-1.5 min-w-0 shrink-0">
-            <span class="text-xl font-semibold text-gray-700">Departments</span>
+            <span class="text-xl font-semibold text-gray-700">{{ __('employees.departments_title') }}</span>
         </div>
 
         <x-search
             :model="\App\Models\Employees\Department::class"
             :action="route('employees.departments.index')"
+            :preserve="['view' => $view]"
             :quick-filters="$quickFilters"
         />
 
-        <div class="ml-auto flex items-center gap-2 sm:gap-3 text-sm text-gray-500 shrink-0">
-            @if($departments->total() > 0)
-                <span class="text-sm font-semibold text-gray-600 whitespace-nowrap">
-                    {{ $departments->firstItem() }}-{{ $departments->lastItem() }} / {{ $departments->total() }}
-                </span>
+        <div class="ms-auto flex items-center gap-2 sm:gap-3 text-sm text-gray-500 shrink-0">
+            {{-- Count / pagination --}}
+            @if($view === 'tree')
+                <span class="text-sm font-semibold text-gray-600 whitespace-nowrap">{{ $total ?? 0 }}</span>
             @else
-                <span class="text-sm font-semibold text-gray-400">0</span>
+                @if($departments->total() > 0)
+                    <span class="text-sm font-semibold text-gray-600 whitespace-nowrap">
+                        {{ $departments->firstItem() }}-{{ $departments->lastItem() }} / {{ $departments->total() }}
+                    </span>
+                @else
+                    <span class="text-sm font-semibold text-gray-400">0</span>
+                @endif
+
+                <div class="flex items-center gap-1">
+                    @if($departments->onFirstPage())
+                        <span class="w-10 h-10 inline-flex items-center justify-center rounded bg-gray-100 text-gray-300">‹</span>
+                    @else
+                        <a href="{{ $departments->previousPageUrl() }}" class="w-10 h-10 inline-flex items-center justify-center rounded bg-gray-100 text-gray-600 hover:text-gray-900">‹</a>
+                    @endif
+                    @if($departments->hasMorePages())
+                        <a href="{{ $departments->nextPageUrl() }}" class="w-10 h-10 inline-flex items-center justify-center rounded bg-gray-100 text-gray-600 hover:text-gray-900">›</a>
+                    @else
+                        <span class="w-10 h-10 inline-flex items-center justify-center rounded bg-gray-100 text-gray-300">›</span>
+                    @endif
+                </div>
             @endif
 
-            <div class="flex items-center gap-1">
-                @if($departments->onFirstPage())
-                    <span class="w-10 h-10 inline-flex items-center justify-center rounded bg-gray-100 text-gray-300">‹</span>
-                @else
-                    <a href="{{ $departments->previousPageUrl() }}" class="w-10 h-10 inline-flex items-center justify-center rounded bg-gray-100 text-gray-600 hover:text-gray-900">‹</a>
-                @endif
-                @if($departments->hasMorePages())
-                    <a href="{{ $departments->nextPageUrl() }}" class="w-10 h-10 inline-flex items-center justify-center rounded bg-gray-100 text-gray-600 hover:text-gray-900">›</a>
-                @else
-                    <span class="w-10 h-10 inline-flex items-center justify-center rounded bg-gray-100 text-gray-300">›</span>
-                @endif
+            {{-- View toggles --}}
+            <div class="hidden sm:flex items-center rounded overflow-hidden bg-gray-200">
+                <a href="{{ route('employees.departments.index', array_merge(request()->except('view','page'), ['view' => 'list'])) }}"
+                   class="w-10 h-10 inline-flex items-center justify-center border border-gray-300 {{ $view === 'list' ? 'bg-purple-100 text-gray-900 border-purple-400' : 'text-gray-600 hover:bg-gray-100' }}"
+                   title="{{ __('common.list_view') }}">
+                    <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20"><path d="M4 5h12v2H4V5zm0 4h12v2H4V9zm0 4h12v2H4v-2z"/></svg>
+                </a>
+                <a href="{{ route('employees.departments.index', array_merge(request()->except('view','page'), ['view' => 'tree'])) }}"
+                   class="w-10 h-10 inline-flex items-center justify-center border border-gray-300 {{ $view === 'tree' ? 'bg-purple-100 text-gray-900 border-purple-400' : 'text-gray-600 hover:bg-gray-100' }}"
+                   title="{{ __('common.tree_view') }}">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8"
+                              d="M3 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H5a2 2 0 01-2-2V6zM13 4h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6a2 2 0 012-2zM9 18a2 2 0 012-2h2a2 2 0 012 2v1a2 2 0 01-2 2h-2a2 2 0 01-2-2v-1zM6 10v4M12 10v4M9 14h6"/>
+                    </svg>
+                </a>
             </div>
         </div>
     </div>
 
-    <x-list :paginator="$departments" empty-text="No departments found.">
+    @if($view === 'tree')
+    <x-tree :nodes="$treeNodes" :empty-text="__('employees.no_departments')" class="flex-1" />
+    @else
+    <x-list :paginator="$departments" :empty-text="__('employees.no_departments')">
         <x-slot:columns>
-            <x-sortable-th column="name"     label="Name"       class="px-4 py-2" :default="true" />
-            <th class="px-3 py-2 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Manager</th>
-            <x-sortable-th column="company"  label="Company"    class="px-3 py-2" />
-            <th class="px-3 py-2 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Employees</th>
+            <x-sortable-th column="name"     :label="__('common.name')"       class="px-4 py-2" :default="true" />
+            <th class="px-3 py-2 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">{{ __('common.manager') }}</th>
+            <x-sortable-th column="company"  :label="__('common.company')"    class="px-3 py-2" />
+            <th class="px-3 py-2 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">{{ __('common.employees') }}</th>
         </x-slot:columns>
 
         @foreach($departments as $department)
@@ -69,7 +96,7 @@
                         <p class="text-xs text-gray-400">{{ $department->parent->name }}</p>
                     @endif
                     @if(!$department->active)
-                        <span class="inline-block px-1.5 py-0.5 rounded text-[10px] font-semibold text-amber-700 bg-amber-50">Archived</span>
+                        <span class="inline-block px-1.5 py-0.5 rounded text-[10px] font-semibold text-amber-700 bg-amber-50">{{ __('common.archived') }}</span>
                     @endif
                 </div>
             </td>
@@ -79,5 +106,6 @@
         </tr>
         @endforeach
     </x-list>
+    @endif
 </div>
 @endsection

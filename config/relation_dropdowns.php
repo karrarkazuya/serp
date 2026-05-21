@@ -66,16 +66,6 @@ return [
         'fields' => ['name'],
     ],
 
-    'workflow_departments' => [
-        'read' => 'workflow.config.read',
-        'write' => 'workflow.config.write',
-        'create_permission' => 'workflow.config.write',
-        'route' => 'workflow.config.departments.index',
-        'create' => 'workflow.config.departments.create',
-        'color' => null,
-        'fields' => ['name'],
-    ],
-
     'workflow_users' => [
         'read' => 'workflow.config.read',
         'write' => 'workflow.config.write',

@@ -19,6 +19,7 @@ use App\Services\FileService;
 use App\Helpers\SearchFilters;
 use App\Helpers\SortsTable;
 use Illuminate\Http\Request;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 
 class EmployeeController extends Controller
@@ -59,11 +60,26 @@ class EmployeeController extends Controller
             $query->where('employment_status', $status);
         }
 
+        $view = $request->query('view', 'kanban');
+
+        if ($view === 'tree') {
+            $all = (clone $query)
+                ->with(['job', 'department'])
+                ->orderBy('name')
+                ->limit(500)
+                ->get();
+
+            $treeNodes = $this->buildEmployeeTree($all);
+            $total     = $all->count();
+
+            return view('employees.index', compact('treeNodes', 'total', 'view'));
+        }
+
         SortsTable::apply($query, $request);
 
         $employees = $query->paginate(24)->withQueryString();
 
-        return view('employees.index', compact('employees'));
+        return view('employees.index', compact('employees', 'view'));
     }
 
     public function show(Employee $employee)
@@ -325,5 +341,45 @@ class EmployeeController extends Controller
             'conflict' => $existing !== null,
             'employee' => $existing ? ['id' => $existing->id, 'name' => $existing->name] : null,
         ]);
+    }
+
+    private function buildEmployeeTree(Collection $employees): array
+    {
+        $map = [];
+        foreach ($employees as $emp) {
+            $map[$emp->id] = [
+                'id'       => $emp->id,
+                'name'     => $emp->name,
+                'url'      => route('employees.show', $emp),
+                'avatar'   => $emp->avatar_url,
+                'initials' => mb_strtoupper(mb_substr($emp->name, 0, 2)),
+                'subtitle' => $emp->job_title ?? $emp->job?->name,
+                'meta'     => $emp->department?->name,
+                'badge'    => $emp->active ? null : 'Archived',
+                'badge_color' => 'gray',
+                'children' => [],
+            ];
+        }
+
+        $childrenOf = [];
+        $roots      = [];
+
+        foreach ($employees as $emp) {
+            if ($emp->parent_id && isset($map[$emp->parent_id])) {
+                $childrenOf[$emp->parent_id][] = $emp->id;
+            } else {
+                $roots[] = $emp->id;
+            }
+        }
+
+        $buildNode = function (int $id) use (&$buildNode, &$map, $childrenOf): array {
+            $node = $map[$id];
+            foreach ($childrenOf[$id] ?? [] as $childId) {
+                $node['children'][] = $buildNode($childId);
+            }
+            return $node;
+        };
+
+        return array_map($buildNode, $roots);
     }
 }

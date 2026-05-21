@@ -3,7 +3,7 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>{{ $procedureTemplate->name }} — Flowchart</title>
+    <title>{{ $procedureTemplate->name }} — {{ __('workflow.flowchart_tab') }}</title>
     <style>
         :root {
             --bg: #fafaf7;
@@ -161,12 +161,12 @@
         <button id="zoomOut" type="button">−</button>
         <span id="pct">100%</span>
         <button id="zoomIn" type="button">+</button>
-        <button id="fit" type="button">Fit</button>
+        <button id="fit" type="button">{{ __('workflow.fit_btn') }}</button>
     </div>
 
     @can('update', $procedureTemplate)
     <div class="layout-tools">
-        <button id="resetLayout" type="button">Reset</button>
+        <button id="resetLayout" type="button">{{ __('workflow.reset_btn') }}</button>
         <span id="layoutStatus"></span>
     </div>
     @endcan
@@ -198,6 +198,24 @@
     const RESET_URL      = @js($resetUrl);
     const CSRF_TOKEN     = @js($csrfToken);
     const FLOWCHART_MODE = @js($mode);
+    const I18N = {
+        edit:          @js(__('common.edit')),
+        delete:        @js(__('common.delete')),
+        view:          @js(__('common.view')),
+        description:   @js(__('common.description')),
+        department:    @js(__('common.department')),
+        sla:           @js(__('workflow.step_sla_label')),
+        next_steps:    @js(__('workflow.next_steps_label')),
+        flags:         @js(__('workflow.options_section')),
+        no_details:    @js(__('workflow.no_popup_details')),
+        no_steps:      @js(__('workflow.no_steps_to_draw')),
+        no_steps_body: @js(__('workflow.no_steps_to_draw_body')),
+        saving:        @js(__('workflow.saving')),
+        saved:         @js(__('workflow.saved_status')),
+        save_failed:   @js(__('workflow.save_failed_status')),
+        resetting:     @js(__('workflow.resetting_status')),
+        failed:        @js(__('workflow.failed_status')),
+    };
 
     const stage              = document.getElementById('stage');
     const world              = document.getElementById('world');
@@ -214,7 +232,7 @@
     if (!nodes.length) {
         const empty = document.createElement('div');
         empty.className = 'empty-state';
-        empty.innerHTML = '<h2>No steps to draw</h2><p>Add procedure template steps and connect them to preview the flowchart here.</p>';
+        empty.innerHTML = `<h2>${I18N.no_steps}</h2><p>${I18N.no_steps_body}</p>`;
         root.appendChild(empty);
     }
 
@@ -255,9 +273,9 @@
                 const ov = document.createElement('div');
                 ov.className = 'node-overlay';
                 if (FLOWCHART_MODE === 'edit') {
-                    ov.innerHTML = `<button class="nab nab-edit" data-id="${node.id}">Edit</button><button class="nab nab-del" data-id="${node.id}">Delete</button>`;
+                    ov.innerHTML = `<button class="nab nab-edit" data-id="${node.id}">${I18N.edit}</button><button class="nab nab-del" data-id="${node.id}">${I18N.delete}</button>`;
                 } else {
-                    ov.innerHTML = `<button class="nab nab-view" data-id="${node.id}">View</button>`;
+                    ov.innerHTML = `<button class="nab nab-view" data-id="${node.id}">${I18N.view}</button>`;
                 }
                 el.appendChild(ov);
             }
@@ -430,22 +448,22 @@
     async function saveLayout() {
         if (!layoutDirty) return;
         layoutDirty = false;
-        if (layoutStatus) layoutStatus.textContent = 'Saving…';
+        if (layoutStatus) layoutStatus.textContent = I18N.saving;
         try {
             await post(SAVE_URL, { positions: nodes.map(n => ({ id: n.id, x: n.x, y: n.y })) });
-            if (layoutStatus) layoutStatus.textContent = 'Saved';
+            if (layoutStatus) layoutStatus.textContent = I18N.saved;
         } catch {
             layoutDirty = true;
-            if (layoutStatus) layoutStatus.textContent = 'Save failed';
+            if (layoutStatus) layoutStatus.textContent = I18N.save_failed;
         }
     }
 
     async function resetLayout() {
         if (!resetLayoutBtn) return;
         if (saveLayoutBtn)  saveLayoutBtn.disabled = true;
-        resetLayoutBtn.disabled = true; if (layoutStatus) layoutStatus.textContent = 'Resetting…';
+        resetLayoutBtn.disabled = true; if (layoutStatus) layoutStatus.textContent = I18N.resetting;
         try { await post(RESET_URL, {}); window.location.reload(); }
-        catch { resetLayoutBtn.disabled = false; if (saveLayoutBtn) saveLayoutBtn.disabled = !layoutDirty; if (layoutStatus) layoutStatus.textContent = 'Failed'; }
+        catch { resetLayoutBtn.disabled = false; if (saveLayoutBtn) saveLayoutBtn.disabled = !layoutDirty; if (layoutStatus) layoutStatus.textContent = I18N.failed; }
     }
 
     function fitView() {
@@ -475,15 +493,15 @@
     function openPopup(node) {
         document.getElementById('pp-ttl').textContent = node.label || 'Untitled';
         let html = '';
-        if (node.description) html += `<div class="stp-row"><span class="stp-k">Description</span><span class="stp-v">${escHtml(node.description)}</span></div>`;
-        if (node.department)  html += `<div class="stp-row"><span class="stp-k">Department</span><span class="stp-v">${escHtml(node.department)}</span></div>`;
-        if (node.sla)         html += `<div class="stp-row"><span class="stp-k">SLA</span><span class="stp-v">${escHtml(String(node.sla))}h</span></div>`;
-        if (node.next_steps?.length) html += `<div class="stp-row"><span class="stp-k">Next Steps</span><span class="stp-v">${escHtml(node.next_steps.join(', '))}</span></div>`;
+        if (node.description) html += `<div class="stp-row"><span class="stp-k">${I18N.description}</span><span class="stp-v">${escHtml(node.description)}</span></div>`;
+        if (node.department)  html += `<div class="stp-row"><span class="stp-k">${I18N.department}</span><span class="stp-v">${escHtml(node.department)}</span></div>`;
+        if (node.sla)         html += `<div class="stp-row"><span class="stp-k">${I18N.sla}</span><span class="stp-v">${escHtml(String(node.sla))}h</span></div>`;
+        if (node.next_steps?.length) html += `<div class="stp-row"><span class="stp-k">${I18N.next_steps}</span><span class="stp-v">${escHtml(node.next_steps.join(', '))}</span></div>`;
         if (node.badges?.length) {
             const bdg = node.badges.map(b => `<span class="badge">${escHtml(b)}</span>`).join('');
-            html += `<div class="stp-row"><span class="stp-k">Flags</span><div class="badges stp-v">${bdg}</div></div>`;
+            html += `<div class="stp-row"><span class="stp-k">${I18N.flags}</span><div class="badges stp-v">${bdg}</div></div>`;
         }
-        document.getElementById('pp-body').innerHTML = html || '<p style="color:#aaa;font-size:13px">No additional details available.</p>';
+        document.getElementById('pp-body').innerHTML = html || `<p style="color:#aaa;font-size:13px">${I18N.no_details}</p>`;
         document.getElementById('stp-popup').style.display = 'flex';
     }
     function closePopup() { document.getElementById('stp-popup').style.display = 'none'; }

@@ -26,23 +26,22 @@
 
     {{-- Top bar --}}
     <div class="bg-white border-b border-gray-200 px-5 py-2 flex items-center gap-3 shrink-0">
-        <div class="flex items-center gap-2 shrink-0">
-            @can('create', \App\Models\Workflow\Ticket::class)
-            <a href="{{ route('workflow.tickets.create') }}" class="px-3 py-1.5 bg-[#714B67] hover:bg-[#5c3d55] text-white text-sm font-medium rounded">{{ __('common.new') }}</a>
-            @endcan
-            <div>
-                <div class="flex items-center gap-1 text-xs text-purple-600">
-                    <a href="{{ route('workflow.tickets.index') }}" class="hover:text-purple-700">{{ __('workflow.tickets_title') }}</a>
-                    @if($ticket->procedure)
-                    <span class="text-gray-300">/</span>
-                    <a href="{{ route('workflow.procedures.show', $ticket->procedure) }}" class="hover:text-purple-700 truncate max-w-36">{{ $ticket->procedure->name }}</a>
-                    @endif
-                </div>
-                <span class="text-sm font-semibold text-gray-800 leading-tight block truncate max-w-xs">{{ $ticket->name }}</span>
+        @can('create', \App\Models\Workflow\Ticket::class)
+        <a href="{{ route('workflow.tickets.create') }}" class="shrink-0 px-3 py-1.5 bg-[#714B67] hover:bg-[#5c3d55] text-white text-sm font-medium rounded">{{ __('common.new') }}</a>
+        @endcan
+
+        <div class="shrink-0">
+            <div class="flex items-center gap-1 text-xs text-purple-600">
+                <a href="{{ route('workflow.tickets.index') }}" class="hover:text-purple-700">{{ __('workflow.tickets_title') }}</a>
+                @if($ticket->procedure)
+                <span class="text-gray-300">/</span>
+                <a href="{{ route('workflow.procedures.show', $ticket->procedure) }}" class="hover:text-purple-700 truncate max-w-36">{{ $ticket->procedure->name }}</a>
+                @endif
             </div>
+            <span class="text-sm font-semibold text-gray-800 leading-tight block truncate max-w-xs">{{ $ticket->name }}</span>
         </div>
 
-        <div class="ml-auto flex items-center gap-2 shrink-0">
+        <div class="flex items-center gap-2 shrink-0">
             @can('update', $ticket)
             @if($ticket->state === 'pending')
             @php $pathRequired = $ticket->has_path_choice && $ticket->path_choice_required && !$ticket->path_chosen_id; @endphp
@@ -123,7 +122,7 @@
                         <button @click="navigator.clipboard.writeText('{{ $ticket->sharedLink->shareUrl() }}'); copied=true; setTimeout(()=>copied=false,2000)"
                                 class="shrink-0 px-2.5 py-1.5 text-xs border rounded-lg transition-colors"
                                 :class="copied ? 'border-green-300 text-green-700 bg-green-50' : 'border-gray-200 text-gray-600 hover:bg-gray-50'">
-                            <span x-text="copied ? 'Copied!' : 'Copy'"></span>
+                            <span x-text="copied ? @js(__('workflow.copied')) : @js(__('workflow.copy'))"></span>
                         </button>
                     </div>
                     <form method="POST" action="{{ route('workflow.share.ticket.toggle', $ticket) }}">@csrf
@@ -174,7 +173,7 @@
                     <div class="flex items-center gap-2 mb-3">
                         <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold {{ $ticket->stateColor() }}">{{ $ticket->stateLabel() }}</span>
                         @if($ticket->isOverdue())<span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold bg-red-100 text-red-600">{{ __('workflow.overdue_label') }}</span>@endif
-                        <span class="ml-auto text-xs text-gray-300 font-mono">#{{ $ticket->id }}</span>
+                        <span class="ms-auto text-xs text-gray-300 font-mono">#{{ $ticket->id }}</span>
                     </div>
 
                     {{-- Editable title --}}
@@ -230,7 +229,7 @@
                                     class="flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-full border transition-colors
                                            {{ $ticket->assignedDepartment ? 'bg-purple-50 border-purple-200 text-purple-700 hover:bg-purple-100' : 'bg-gray-50 border-gray-200 text-gray-500 hover:bg-gray-100' }}">
                                 <svg class="w-3 h-3 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/></svg>
-                                {{ $ticket->assignedDepartment?->name ?? 'Department' }}
+                                {{ $ticket->assignedDepartment?->name ?? __('workflow.department_label') }}
                                 <svg class="w-2.5 h-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M19 9l-7 7-7-7"/></svg>
                             </button>
                             <div x-show="open" x-transition style="display:none"
@@ -240,7 +239,7 @@
                                     <input type="hidden" name="field" value="assigned_to_department_id">
                                     <div class="mb-3">
                                         <x-relation-dropdown
-                                            table="workflow_departments"
+                                            table="hr_departments"
                                             field="name"
                                             name="value"
                                             label=""
@@ -250,8 +249,8 @@
                                         />
                                     </div>
                                     <div class="flex gap-2">
-                                        <button type="submit" class="flex-1 py-1.5 text-xs bg-[#714B67] text-white rounded-lg hover:bg-[#5c3d55]">Save</button>
-                                        <button type="button" @click="open=false" class="flex-1 py-1.5 text-xs border border-gray-200 rounded-lg hover:bg-gray-50">Cancel</button>
+                                        <button type="submit" class="flex-1 py-1.5 text-xs bg-[#714B67] text-white rounded-lg hover:bg-[#5c3d55]">{{ __('common.save_short') }}</button>
+                                        <button type="button" @click="open=false" class="flex-1 py-1.5 text-xs border border-gray-200 rounded-lg hover:bg-gray-50">{{ __('common.cancel') }}</button>
                                     </div>
                                 </form>
                             </div>
@@ -290,8 +289,8 @@
                                         />
                                     </div>
                                     <div class="flex gap-2">
-                                        <button type="submit" class="flex-1 py-1.5 text-xs bg-[#714B67] text-white rounded-lg hover:bg-[#5c3d55]">Save</button>
-                                        <button type="button" @click="open=false" class="flex-1 py-1.5 text-xs border border-gray-200 rounded-lg hover:bg-gray-50">Cancel</button>
+                                        <button type="submit" class="flex-1 py-1.5 text-xs bg-[#714B67] text-white rounded-lg hover:bg-[#5c3d55]">{{ __('common.save_short') }}</button>
+                                        <button type="button" @click="open=false" class="flex-1 py-1.5 text-xs border border-gray-200 rounded-lg hover:bg-gray-50">{{ __('common.cancel') }}</button>
                                     </div>
                                 </form>
                             </div>
@@ -379,7 +378,7 @@
                         <svg class="w-4 h-4 text-amber-500 shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
                         <div class="flex-1 min-w-0">
                             <p class="text-sm font-semibold text-amber-800 mb-1">
-                                {{ $ticket->path_choice_question ?: 'Select a path to continue' }}
+                                {{ $ticket->path_choice_question ?: __('workflow.select_path_to_continue') }}
                                 @if($ticket->path_choice_required)<span class="text-red-500 ml-0.5">*</span>@endif
                             </p>
                             @if($ticket->path_chosen_id)
@@ -387,7 +386,7 @@
                             <div class="flex items-center gap-2">
                                 <span class="inline-flex items-center gap-1.5 text-xs font-medium px-3 py-1 rounded-full bg-green-100 text-green-800 border border-green-200">
                                     <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/></svg>
-                                    {{ $chosen?->name ?? 'Path selected' }}
+                                    {{ $chosen?->name ?? __('workflow.path_selected') }}
                                 </span>
                                 @can('act', $ticket)
                                 @if($ticket->state === 'pending')
@@ -519,7 +518,7 @@
                             <thead>
                                 <tr class="bg-gray-50 border-b border-gray-100">
                                     <th class="px-7 py-2.5 text-left text-xs font-medium text-gray-400 uppercase tracking-wide w-52">{{ __('workflow.field_name_col') }}</th>
-                                    <th class="px-4 py-2.5 text-left text-xs font-medium text-gray-400 uppercase tracking-wide">Value</th>
+                                    <th class="px-4 py-2.5 text-left text-xs font-medium text-gray-400 uppercase tracking-wide">{{ __('workflow.value_col') }}</th>
                                 </tr>
                             </thead>
                             <tbody class="divide-y divide-gray-50">
@@ -773,7 +772,7 @@
                             <button @click="navigator.clipboard.writeText('{{ $ticket->sharedLink->shareUrl() }}'); copied=true; setTimeout(()=>copied=false,2000)"
                                     class="px-3 py-1.5 text-sm border rounded-lg transition-colors shrink-0"
                                     :class="copied ? 'border-green-300 text-green-700 bg-green-50' : 'border-gray-200 text-gray-600 hover:bg-gray-50'">
-                                <span x-text="copied ? 'Copied!' : 'Copy'"></span>
+                                <span x-text="copied ? @js(__('workflow.copied')) : @js(__('workflow.copy'))"></span>
                             </button>
                         </div>
                         <form method="POST" action="{{ route('workflow.share.ticket.message', $ticket) }}">
@@ -802,7 +801,7 @@
                             @if($viewer->id !== $ticket->created_by_user_id)
                             <form method="POST" action="{{ route('workflow.tickets.remove-viewer', [$ticket, $viewer]) }}">
                                 @csrf @method('DELETE')
-                                <button type="submit" class="text-gray-300 hover:text-red-400 transition-colors p-1" title="Remove">
+                                <button type="submit" class="text-gray-300 hover:text-red-400 transition-colors p-1" title="{{ __('workflow.remove') }}">
                                     <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
                                 </button>
                             </form>
@@ -850,7 +849,7 @@
                     <div class="px-5 py-3 border-b border-gray-100 shrink-0 flex items-center justify-between">
                         <span class="text-sm font-semibold text-gray-800">{{ __('workflow.chat_label') }}</span>
                         @if(!empty($chatGrouped))
-                        <span class="text-xs text-gray-400">{{ count($chatGrouped) }} {{ Str::plural('message', count($chatGrouped)) }}</span>
+                        <span class="text-xs text-gray-400">{{ count($chatGrouped) }} {{ __('workflow.messages_label') }}</span>
                         @endif
                     </div>
 
@@ -876,7 +875,7 @@
                                 <div class="flex-1 min-w-0">
                                     @if($item['show_header'])
                                     <div class="flex items-baseline gap-2 mb-0.5">
-                                        <span class="text-xs font-bold {{ $isOwn ? 'text-[#714B67]' : 'text-gray-800' }}">{{ $msg->user?->name ?? 'Deleted User' }}</span>
+                                        <span class="text-xs font-bold {{ $isOwn ? 'text-[#714B67]' : 'text-gray-800' }}">{{ $msg->user?->name ?? __('workflow.deleted_user') }}</span>
                                         <span class="text-xs text-gray-400">{{ $msg->created_at->format('g:i A') }}</span>
                                     </div>
                                     @endif
@@ -936,7 +935,7 @@
                                 <template x-for="(f,i) in previews" :key="i">
                                     <span class="text-xs bg-purple-50 text-purple-700 border border-purple-200 rounded px-2 py-0.5 truncate max-w-28" x-text="f.name"></span>
                                 </template>
-                                <button type="button" @click="clear()" class="text-xs text-gray-400 hover:text-red-400 ml-auto">✕</button>
+                                <button type="button" @click="clear()" class="text-xs text-gray-400 hover:text-red-400  ms-auto">✕</button>
                             </div>
                             <input type="file" name="files[]" multiple x-ref="fi" @change="handleFiles"
                                    accept=".jpg,.jpeg,.png,.gif,.webp,.pdf,.doc,.docx,.xls,.xlsx,.txt,.csv" class="hidden">
@@ -944,10 +943,10 @@
                                         focus-within:bg-white focus-within:border-[#714B67]/40 focus-within:ring-2 focus-within:ring-[#714B67]/10 transition-all">
                                 <button type="button" @click="$refs.fi.click()"
                                         class="shrink-0 w-7 h-7 flex items-center justify-center rounded-lg text-gray-400 hover:text-[#714B67] hover:bg-gray-100 transition-colors self-end mb-0.5"
-                                        title="Attach file (images, PDF, Office docs — max 10 MB)">
+                                        title="{{ __('workflow.attach_file_hint') }}">
                                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13"/></svg>
                                 </button>
-                                <textarea name="body" rows="1" placeholder="Message…"
+                                <textarea name="body" rows="1" placeholder="{{ __('workflow.message_placeholder') }}"
                                           class="flex-1 text-sm bg-transparent border-0 focus:outline-none focus:ring-0 resize-none leading-relaxed py-1 text-gray-800 placeholder-gray-400 min-w-0"
                                           @keydown.enter.prevent.exact="$el.closest('form').requestSubmit()"
                                           @input="$el.style.height='auto';$el.style.height=Math.min($el.scrollHeight,96)+'px'"></textarea>
@@ -996,7 +995,7 @@
             </button>
             <button type="button" @click="showSaveConfirm = false"
                     class="w-full px-4 py-2 text-sm text-gray-400 hover:text-gray-600 transition-colors">
-                Cancel
+                {{ __('common.cancel') }}
             </button>
         </div>
     </div>

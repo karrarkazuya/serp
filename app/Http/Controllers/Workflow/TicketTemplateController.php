@@ -6,7 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Helpers\SearchFilters;
 use App\Helpers\SortsTable;
 use App\Http\Requests\Workflow\StoreTicketTemplateRequest;
-use App\Models\Workflow\Department;
+use App\Models\Employees\Department;
 use App\Models\Workflow\Group;
 use App\Models\Workflow\TicketTemplate;
 use App\Services\Workflow\WorkflowConfigService;
@@ -79,11 +79,11 @@ class TicketTemplateController extends Controller
             'name'                  => 'required|string|max:255',
             'description'           => 'nullable|string|max:5000',
             'default_group_id'      => 'nullable|exists:workflow_groups,id',
-            'default_department_id' => 'nullable|exists:workflow_departments,id',
+            'default_department_id' => 'nullable|exists:hr_departments,id',
             'resolve_max_duration'  => 'nullable|integer|min:1',
             'enabled'               => 'boolean',
             'departments'           => 'nullable|array',
-            'departments.*'         => 'exists:workflow_departments,id',
+            'departments.*'         => 'exists:hr_departments,id',
             'inputs'                => 'nullable|array',
             'inputs.*.id'           => 'nullable|integer',
             'inputs.*.name'         => 'required_with:inputs.*|string|max:255',

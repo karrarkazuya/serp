@@ -149,7 +149,7 @@
 </head>
 <body>
     <div class="wrapper">
-        <div class="brand">{{ $company?->name ? $company->name . ' · Workflow' : 'Workflow' }}</div>
+        <div class="brand">{{ $company?->name ? $company->name . ' · ' . __('workflow.workflow_brand') : __('workflow.workflow_brand') }}</div>
 
         <div class="card">
             <div class="banner banner-{{ $procedure->state }}">
@@ -164,7 +164,7 @@
                 </span>
                 <span class="meta-item">
                     <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-                    Procedure #{{ $procedure->id }}
+                    {{ __('workflow.procedure_number') }}{{ $procedure->id }}
                 </span>
                 @if($procedure->procedureTemplate)
                 <span class="meta-item">
@@ -175,17 +175,17 @@
             </div>
 
             <div class="message-section">
-                <div class="message-label">Message</div>
+                <div class="message-label">{{ __('workflow.message_heading') }}</div>
                 @if($link->message)
                     <div class="message-body">{{ $link->message }}</div>
                 @else
-                    <div class="no-message">No message has been provided for this procedure.</div>
+                    <div class="no-message">{{ __('workflow.no_message_procedure') }}</div>
                 @endif
             </div>
 
             @if($procedure->tickets->isNotEmpty())
             <div class="tasks-section">
-                <div class="tasks-title">Tickets</div>
+                <div class="tasks-title">{{ __('workflow.tickets_heading') }}</div>
                 @foreach($procedure->tickets as $ticket)
                 <div class="task-item">
                     <div class="flex-1">
@@ -202,7 +202,7 @@
 
             <div class="card-foot">
                 <span>{{ $company?->name }}</span>
-                <span>Confidential — do not forward</span>
+                <span>{{ __('workflow.confidential_footer') }}</span>
             </div>
         </div>
     </div>

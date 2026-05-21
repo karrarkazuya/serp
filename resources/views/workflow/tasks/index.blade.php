@@ -1,19 +1,19 @@
 @extends('layouts.app')
-@section('title', 'Tasks')
+@section('title', __('workflow.tasks_title'))
 
 @php
     $taskQuickFilters = [
-        ['label' => 'Waiting', 'params' => ['state' => 'draft'], 'url' => route('workflow.tasks.index', array_merge(request()->except('page'), ['state' => 'draft']))],
-        ['label' => 'In Progress', 'params' => ['state' => 'pending'], 'url' => route('workflow.tasks.index', array_merge(request()->except('page'), ['state' => 'pending']))],
-        ['label' => 'Completed', 'params' => ['state' => 'completed'], 'url' => route('workflow.tasks.index', array_merge(request()->except('page'), ['state' => 'completed']))],
-        ['label' => 'Returned', 'params' => ['state' => 'rejected'], 'url' => route('workflow.tasks.index', array_merge(request()->except('page'), ['state' => 'rejected']))],
+        ['label' => __('workflow.state_waiting'), 'params' => ['state' => 'draft'], 'url' => route('workflow.tasks.index', array_merge(request()->except('page'), ['state' => 'draft']))],
+        ['label' => __('workflow.state_in_progress'), 'params' => ['state' => 'pending'], 'url' => route('workflow.tasks.index', array_merge(request()->except('page'), ['state' => 'pending']))],
+        ['label' => __('workflow.state_completed'), 'params' => ['state' => 'completed'], 'url' => route('workflow.tasks.index', array_merge(request()->except('page'), ['state' => 'completed']))],
+        ['label' => __('workflow.state_returned'), 'params' => ['state' => 'rejected'], 'url' => route('workflow.tasks.index', array_merge(request()->except('page'), ['state' => 'rejected']))],
     ];
 @endphp
 
 @section('content')
 <div class="flex min-w-0 flex-col h-full bg-white">
     <div class="flex flex-wrap items-center gap-3 px-4 py-2 border-b border-gray-200 bg-white shrink-0">
-        <span class="text-xl font-semibold text-gray-700">Tasks</span>
+        <span class="text-xl font-semibold text-gray-700">{{ __('workflow.tasks_title') }}</span>
 
         <x-search
             :model="\App\Models\Workflow\Task::class"
@@ -21,11 +21,11 @@
             :quick-filters="$taskQuickFilters"
         />
 
-        <div class="ml-auto flex items-center gap-3 text-sm text-gray-500 shrink-0">
+        <div class="ms-auto flex items-center gap-3 text-sm text-gray-500 shrink-0">
             @if($tasks->total() > 0)
                 <span class="text-sm font-semibold text-gray-600 whitespace-nowrap">{{ $tasks->firstItem() }}-{{ $tasks->lastItem() }} / {{ $tasks->total() }}</span>
             @else
-                <span class="text-sm font-semibold text-gray-400">0 records</span>
+                <span class="text-sm font-semibold text-gray-400">{{ __('workflow.zero_records') }}</span>
             @endif
             <div class="flex items-center gap-1">
                 @if($tasks->onFirstPage())
@@ -42,14 +42,14 @@
         </div>
     </div>
 
-    <x-list :paginator="$tasks" empty-text="No tasks found.">
+    <x-list :paginator="$tasks" :empty-text="__('workflow.tasks_no_records')">
         <x-slot:columns>
-            <x-sortable-th column="name"     label="Task"       class="px-4 py-2.5" />
-            <x-sortable-th column="state"    label="State"      class="px-3 py-2.5" />
-            <th class="px-3 py-2.5 text-left text-xs font-semibold uppercase tracking-wide text-gray-500">Procedure</th>
-            <th class="px-3 py-2.5 text-left text-xs font-semibold uppercase tracking-wide text-gray-500">Department</th>
-            <th class="px-3 py-2.5 text-left text-xs font-semibold uppercase tracking-wide text-gray-500">Assigned To</th>
-            <x-sortable-th column="deadline" label="Deadline"   class="px-3 py-2.5" :default="true" />
+            <x-sortable-th column="name"     :label="__('workflow.task_label')"    class="px-4 py-2.5" />
+            <x-sortable-th column="state"    :label="__('workflow.state_col')"     class="px-3 py-2.5" />
+            <th class="px-3 py-2.5 text-left text-xs font-semibold uppercase tracking-wide text-gray-500">{{ __('workflow.procedure_col') }}</th>
+            <th class="px-3 py-2.5 text-left text-xs font-semibold uppercase tracking-wide text-gray-500">{{ __('workflow.department_label') }}</th>
+            <th class="px-3 py-2.5 text-left text-xs font-semibold uppercase tracking-wide text-gray-500">{{ __('workflow.assigned_to_label') }}</th>
+            <x-sortable-th column="deadline" :label="__('workflow.deadline_label')" class="px-3 py-2.5" :default="true" />
         </x-slot:columns>
 
         @foreach($tasks as $task)

@@ -54,6 +54,7 @@ return [
     'tag_updated'     => 'Tag updated.',
     'tag_deleted'     => 'Tag deleted.',
     'click_upload'    => 'Click to upload',
+    'add_phone'       => 'Add phone number',
     'fix_errors'      => 'Please fix the following errors:',
     'no_notes'        => 'No internal notes.',
     'tagged_contacts' => 'Tagged Contacts',

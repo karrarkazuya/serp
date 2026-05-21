@@ -24,28 +24,28 @@
     <div class="bg-white border-b border-gray-200 px-4 py-2 flex items-center gap-3 shrink-0">
         <div class="flex flex-col leading-tight">
             <a href="{{ route('employees.schedules.index') }}"
-               class="text-xs text-purple-600 hover:text-purple-700">Working Schedules</a>
+               class="text-xs text-purple-600 hover:text-purple-700">{{ __('employees.schedules_title') }}</a>
             <span class="text-sm font-semibold text-gray-800">{{ $schedule->name }}</span>
         </div>
 
-        <div class="ms-auto flex items-center gap-2">
+        <div class="flex items-center gap-2">
             @can('update', \App\Models\Employees\Employee::class)
             <a href="{{ route('employees.schedules.edit', $schedule) }}"
-               class="px-3 py-1.5 text-sm text-gray-600 bg-white border border-gray-300 rounded hover:bg-gray-50">Edit</a>
+               class="px-3 py-1.5 text-sm text-gray-600 bg-white border border-gray-300 rounded hover:bg-gray-50">{{ __('common.edit') }}</a>
             @endcan
 
             @can('delete', \App\Models\Employees\Employee::class)
             <div x-data="{ confirming: false }">
                 <button type="button" x-show="!confirming" @click="confirming = true"
-                        class="px-3 py-1.5 text-sm text-red-600 bg-white border border-red-200 rounded hover:bg-red-50">Delete</button>
+                        class="px-3 py-1.5 text-sm text-red-600 bg-white border border-red-200 rounded hover:bg-red-50">{{ __('common.delete') }}</button>
                 <div x-show="confirming" style="display:none" class="flex items-center gap-1.5">
-                    <span class="text-xs text-red-600">Are you sure?</span>
+                    <span class="text-xs text-red-600">{{ __('common.are_you_sure') }}</span>
                     <form method="POST" action="{{ route('employees.schedules.delete', $schedule) }}">
                         @csrf @method('DELETE')
-                        <button type="submit" class="px-2 py-1 text-xs bg-red-600 text-white rounded">Yes</button>
+                        <button type="submit" class="px-2 py-1 text-xs bg-red-600 text-white rounded">{{ __('common.yes') }}</button>
                     </form>
                     <button type="button" @click="confirming = false"
-                            class="px-2 py-1 text-xs text-gray-500 border border-gray-300 rounded">Cancel</button>
+                            class="px-2 py-1 text-xs text-gray-500 border border-gray-300 rounded">{{ __('common.cancel') }}</button>
                 </div>
             </div>
             @endcan
@@ -67,7 +67,7 @@
                 {{-- Left --}}
                 <div class="divide-y divide-gray-100">
                     <div class="flex items-center py-2.5">
-                        <span class="w-48 text-sm text-gray-500 shrink-0">Flexible Hours</span>
+                        <span class="w-48 text-sm text-gray-500 shrink-0">{{ __('employees.flexible_hours') }}</span>
                         @if($schedule->flexible_hours)
                             <svg class="w-4 h-4 text-purple-600" fill="currentColor" viewBox="0 0 20 20">
                                 <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/>
@@ -77,13 +77,13 @@
                         @endif
                     </div>
                     <div class="flex items-center py-2.5">
-                        <span class="w-48 text-sm text-gray-500 shrink-0">Company Full Time</span>
+                        <span class="w-48 text-sm text-gray-500 shrink-0">{{ __('employees.company_full_time') }}</span>
                         <span class="text-sm text-gray-900">
-                            {{ $schedule->company_hours_per_week ? $fmtHours($schedule->company_hours_per_week) . ' hours/week' : '—' }}
+                            {{ $schedule->company_hours_per_week ? $fmtHours($schedule->company_hours_per_week) . ' ' . __('employees.hours_per_week') : '—' }}
                         </span>
                     </div>
                     <div class="flex items-center py-2.5">
-                        <span class="w-48 text-sm text-gray-500 shrink-0">Average Hour per Day</span>
+                        <span class="w-48 text-sm text-gray-500 shrink-0">{{ __('employees.avg_hour_per_day') }}</span>
                         <span class="text-sm text-gray-900">
                             {{ $schedule->hours_per_day ? $fmtHours($schedule->hours_per_day) : '—' }}
                         </span>
@@ -93,11 +93,11 @@
                 {{-- Right --}}
                 <div class="divide-y divide-gray-100">
                     <div class="flex items-center py-2.5">
-                        <span class="w-28 text-sm text-gray-500 shrink-0">Company</span>
+                        <span class="w-28 text-sm text-gray-500 shrink-0">{{ __('common.company') }}</span>
                         <span class="text-sm text-gray-900">{{ $schedule->company?->name ?? '—' }}</span>
                     </div>
                     <div class="flex items-center py-2.5">
-                        <span class="w-28 text-sm text-gray-500 shrink-0">Timezone</span>
+                        <span class="w-28 text-sm text-gray-500 shrink-0">{{ __('employees.timezone') }}</span>
                         <span class="text-sm text-gray-900">{{ $schedule->timezone ?? '—' }}</span>
                     </div>
                 </div>
@@ -109,19 +109,19 @@
                         :class="tab === 'working_hours'
                             ? 'border-b-2 border-gray-900 text-gray-900 font-medium -mb-px'
                             : 'text-purple-600 hover:text-purple-800'"
-                        class="px-4 pb-2.5 text-sm transition-colors">Working Hours</button>
+                        class="px-4 pb-2.5 text-sm transition-colors">{{ __('employees.working_hours') }}</button>
                 <button type="button" @click="tab = 'modifier'"
                         :class="tab === 'modifier'
                             ? 'border-b-2 border-gray-900 text-gray-900 font-medium -mb-px'
                             : 'text-purple-600 hover:text-purple-800'"
-                        class="px-4 pb-2.5 text-sm transition-colors">Modifier</button>
+                        class="px-4 pb-2.5 text-sm transition-colors">{{ __('employees.modifier_tab') }}</button>
                 @if($schedule->employees->isNotEmpty())
                 <button type="button" @click="tab = 'employees'"
                         :class="tab === 'employees'
                             ? 'border-b-2 border-gray-900 text-gray-900 font-medium -mb-px'
                             : 'text-purple-600 hover:text-purple-800'"
                         class="px-4 pb-2.5 text-sm transition-colors">
-                    Employees
+                    {{ __('employees.employees_tab') }}
                     <span class="ml-1 text-xs text-gray-400">({{ $schedule->employees->count() }})</span>
                 </button>
                 @endif
@@ -130,12 +130,12 @@
             {{-- Working Hours tab --}}
             <div x-show="tab === 'working_hours'">
                 @if($schedule->attendances->isEmpty())
-                    <p class="text-sm text-gray-400 py-6 text-center">No working hours defined.</p>
+                    <p class="text-sm text-gray-400 py-6 text-center">{{ __('employees.no_schedule_hours') }}</p>
                 @else
                     <div class="grid grid-cols-[1fr_130px_150px] gap-2 pb-2 mb-1 border-b border-gray-200">
-                        <div class="text-xs font-semibold text-gray-500 uppercase tracking-wide">Day</div>
-                        <div class="text-xs font-semibold text-gray-500 uppercase tracking-wide">From</div>
-                        <div class="text-xs font-semibold text-gray-500 uppercase tracking-wide">To</div>
+                        <div class="text-xs font-semibold text-gray-500 uppercase tracking-wide">{{ __('employees.day') }}</div>
+                        <div class="text-xs font-semibold text-gray-500 uppercase tracking-wide">{{ __('employees.from') }}</div>
+                        <div class="text-xs font-semibold text-gray-500 uppercase tracking-wide">{{ __('employees.to') }}</div>
                     </div>
                     @foreach($schedule->attendances as $line)
                     <div class="grid grid-cols-[1fr_130px_150px] gap-2 items-center py-2 border-b border-gray-50">
@@ -155,12 +155,12 @@
             {{-- Modifier tab (read-only) --}}
             <div x-show="tab === 'modifier'" style="display:none">
                 @if($schedule->attendances->isEmpty())
-                    <p class="text-sm text-gray-400 py-6 text-center">No modifier configuration.</p>
+                    <p class="text-sm text-gray-400 py-6 text-center">{{ __('employees.no_modifier') }}</p>
                 @else
                     <div class="grid grid-cols-2 gap-x-16">
                         {{-- Working Days --}}
                         <div>
-                            <p class="text-xs font-bold text-gray-500 uppercase tracking-wider mb-4">Working Days</p>
+                            <p class="text-xs font-bold text-gray-500 uppercase tracking-wider mb-4">{{ __('employees.working_days') }}</p>
                             <div class="flex gap-10">
                                 <div class="space-y-3">
                                     @foreach(array_slice($dayNamesMap, 0, 4, true) as $num => $dayLabel)
@@ -187,17 +187,17 @@
 
                         {{-- Working Hours --}}
                         <div>
-                            <p class="text-xs font-bold text-gray-500 uppercase tracking-wider mb-4">Working Hours</p>
+                            <p class="text-xs font-bold text-gray-500 uppercase tracking-wider mb-4">{{ __('employees.working_hours') }}</p>
                             <div class="space-y-3">
                                 <div class="flex items-center gap-6">
-                                    <span class="text-sm text-gray-500 w-24">Start Time</span>
+                                    <span class="text-sm text-gray-500 w-24">{{ __('employees.start_time') }}</span>
                                     <span class="text-sm text-gray-900 font-medium">{{ $modStart ?? '—' }}</span>
                                 </div>
                                 <div class="flex items-center gap-6">
-                                    <span class="text-sm text-gray-500 w-24">End Time</span>
+                                    <span class="text-sm text-gray-500 w-24">{{ __('employees.end_time') }}</span>
                                     <span class="text-sm text-gray-900 font-medium">{{ $modEnd ?? '—' }}</span>
                                     @if($modOvernight)
-                                    <span class="text-xs font-semibold text-amber-700 bg-amber-100 px-2 py-0.5 rounded">+1 day</span>
+                                    <span class="text-xs font-semibold text-amber-700 bg-amber-100 px-2 py-0.5 rounded">{{ __('employees.next_day') }}</span>
                                     @endif
                                 </div>
                             </div>

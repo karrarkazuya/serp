@@ -2,6 +2,8 @@
     $val = fn($field, $default = '') => old($field, $contact?->{$field} ?? $default);
     $selectedTags = old('tags', $contact ? $contact->tags->pluck('id')->toArray() : []);
     $selectedRelatedContacts = old('related_contacts', $relatedContactIds ?? []);
+    $selectedPhones = old('phones', $contact ? $contact->phones->pluck('phone')->toArray() : []);
+    if (empty($selectedPhones)) $selectedPhones = [''];
 @endphp
 
 @if($errors->any())
@@ -17,7 +19,7 @@
 </div>
 @endif
 
-<div class="p-6" x-data="{ type: '{{ $val('contact_type', 'individual') }}', avatarPreview: '{{ $contact?->avatar_url ?? '' }}' }">
+<div class="p-6" x-data="{ type: '{{ $val('contact_type', 'individual') }}', avatarPreview: '{{ $contact?->avatar_url ?? '' }}', phones: {{ Js::from($selectedPhones) }} }">
     <div class="flex items-center gap-4 mb-3 text-sm">
         <label class="flex items-center gap-1.5 cursor-pointer">
             <input type="radio" name="contact_type" value="individual" x-model="type" class="text-purple-600">
@@ -70,9 +72,32 @@
         </div>
 
         <div class="flex-1">
+            {{-- Dynamic multi-phone section --}}
+            <template x-for="(phone, i) in phones" :key="'p'+i">
+                <div class="flex items-center gap-4 py-2 border-b border-gray-100">
+                    <label class="w-24 shrink-0 text-sm text-gray-500" x-show="i === 0">{{ __('contacts.phone') }}</label>
+                    <span class="w-24 shrink-0" x-show="i > 0"></span>
+                    <input type="tel"
+                           :name="'phones['+i+']'"
+                           :value="phone"
+                           @input="phones[i] = $event.target.value"
+                           class="flex-1 text-sm text-gray-800 bg-transparent border-0 focus:outline-none focus:ring-0 px-0 py-0.5"
+                           placeholder="-">
+                    <button type="button" @click="phones.splice(i, 1)"
+                            class="shrink-0 p-1 text-gray-300 hover:text-red-500 rounded transition-colors">
+                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                    </button>
+                </div>
+            </template>
+            <div class="flex items-center gap-4 py-1.5">
+                <span class="w-24 shrink-0"></span>
+                <button type="button" @click="phones.push('')"
+                        class="text-xs font-medium text-purple-600 hover:text-purple-700">
+                    + {{ __('contacts.add_phone') }}
+                </button>
+            </div>
+
             @foreach([
-                [__('contacts.phone'),   'phone',   'text'],
-                [__('contacts.mobile'),  'mobile',  'text'],
                 [__('contacts.email'),   'email',   'email'],
                 [__('contacts.website'), 'website', 'url'],
                 [__('contacts.street'),  'street',  'text'],

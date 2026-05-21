@@ -5,24 +5,24 @@
 <div class="flex flex-col h-full bg-gray-50">
     <div class="bg-white border-b border-gray-200 px-4 py-2 flex items-center gap-3 shrink-0">
         <div class="flex flex-col leading-tight">
-            <a href="{{ route('employees.employment-types.index') }}" class="text-xs text-purple-600 hover:text-purple-700">Employment Types</a>
+            <a href="{{ route('employees.employment-types.index') }}" class="text-xs text-purple-600 hover:text-purple-700">{{ __('employees.employment_types_title') }}</a>
             <span class="text-sm font-semibold text-gray-800">{{ $employmentType->name }}</span>
         </div>
 
-        <div class="ms-auto flex items-center gap-2">
+        <div class="flex items-center gap-2">
             @can('update', $employmentType)
             <a href="{{ route('employees.employment-types.edit', $employmentType) }}"
-               class="px-3 py-1.5 text-sm text-gray-600 bg-white border border-gray-300 rounded hover:bg-gray-50">Edit</a>
+               class="px-3 py-1.5 text-sm text-gray-600 bg-white border border-gray-300 rounded hover:bg-gray-50">{{ __('common.edit') }}</a>
 
             @if($employmentType->active)
             <form method="POST" action="{{ route('employees.employment-types.archive', $employmentType) }}">
                 @csrf @method('PATCH')
-                <button type="submit" class="px-3 py-1.5 text-sm text-gray-600 bg-white border border-gray-300 rounded hover:bg-gray-50">Archive</button>
+                <button type="submit" class="px-3 py-1.5 text-sm text-gray-600 bg-white border border-gray-300 rounded hover:bg-gray-50">{{ __('common.archive') }}</button>
             </form>
             @else
             <form method="POST" action="{{ route('employees.employment-types.unarchive', $employmentType) }}">
                 @csrf @method('PATCH')
-                <button type="submit" class="px-3 py-1.5 text-sm text-gray-600 bg-white border border-gray-300 rounded hover:bg-gray-50">Restore</button>
+                <button type="submit" class="px-3 py-1.5 text-sm text-gray-600 bg-white border border-gray-300 rounded hover:bg-gray-50">{{ __('common.unarchive') }}</button>
             </form>
             @endif
             @endcan
@@ -30,14 +30,14 @@
             @can('delete', $employmentType)
             <div x-data="{ confirming: false }">
                 <button type="button" x-show="!confirming" @click="confirming = true"
-                        class="px-3 py-1.5 text-sm text-red-600 bg-white border border-red-200 rounded hover:bg-red-50">Delete</button>
+                        class="px-3 py-1.5 text-sm text-red-600 bg-white border border-red-200 rounded hover:bg-red-50">{{ __('common.delete') }}</button>
                 <div x-show="confirming" style="display:none" class="flex items-center gap-1.5">
-                    <span class="text-xs text-red-600">Are you sure?</span>
+                    <span class="text-xs text-red-600">{{ __('common.are_you_sure') }}</span>
                     <form method="POST" action="{{ route('employees.employment-types.delete', $employmentType) }}">
                         @csrf @method('DELETE')
-                        <button type="submit" class="px-2 py-1 text-xs bg-red-600 text-white rounded">Yes</button>
+                        <button type="submit" class="px-2 py-1 text-xs bg-red-600 text-white rounded">{{ __('common.yes') }}</button>
                     </form>
-                    <button type="button" @click="confirming = false" class="px-2 py-1 text-xs text-gray-500 border border-gray-300 rounded">Cancel</button>
+                    <button type="button" @click="confirming = false" class="px-2 py-1 text-xs text-gray-500 border border-gray-300 rounded">{{ __('common.cancel') }}</button>
                 </div>
             </div>
             @endcan
@@ -53,16 +53,16 @@
             <h2 class="text-lg font-semibold text-gray-900 mb-6">{{ $employmentType->name }}</h2>
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-4">
                 <div>
-                    <p class="text-xs font-semibold text-gray-400 uppercase tracking-wide">Name</p>
+                    <p class="text-xs font-semibold text-gray-400 uppercase tracking-wide">{{ __('common.name') }}</p>
                     <p class="text-sm text-gray-900 mt-0.5">{{ $employmentType->name }}</p>
                 </div>
                 <div>
-                    <p class="text-xs font-semibold text-gray-400 uppercase tracking-wide">Status</p>
+                    <p class="text-xs font-semibold text-gray-400 uppercase tracking-wide">{{ __('common.status') }}</p>
                     <p class="text-sm mt-0.5">
                         @if($employmentType->active)
-                            <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-green-100 text-green-700">Active</span>
+                            <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-green-100 text-green-700">{{ __('common.active') }}</span>
                         @else
-                            <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-gray-100 text-gray-500">Archived</span>
+                            <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-gray-100 text-gray-500">{{ __('common.archived') }}</span>
                         @endif
                     </p>
                 </div>

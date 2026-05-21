@@ -2,7 +2,7 @@
 
 namespace App\Services\Workflow;
 
-use App\Models\Workflow\Department;
+use App\Models\Employees\Department;
 use App\Models\Workflow\Group;
 use App\Models\Workflow\ProcedureTemplate;
 use App\Models\Workflow\TicketTemplate;
@@ -33,25 +33,6 @@ class WorkflowConfigService
     public function deleteGroup(Group $group): void
     {
         $group->delete();
-    }
-
-    // Departments
-    public function createDepartment(array $data): Department
-    {
-        $dept = Department::create($data);
-        $this->chatterService->logCreated($dept, 'Department');
-        return $dept;
-    }
-
-    public function updateDepartment(Department $dept, array $data): Department
-    {
-        $dept->update($data);
-        return $dept->fresh();
-    }
-
-    public function deleteDepartment(Department $dept): void
-    {
-        $dept->delete();
     }
 
     // Workflow Users

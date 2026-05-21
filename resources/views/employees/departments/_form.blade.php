@@ -11,14 +11,14 @@
 
     <div class="grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-4">
         <div>
-            <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1">Department Name <span class="text-red-500">*</span></label>
+            <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1">{{ __('employees.department_name') }} <span class="text-red-500">*</span></label>
             <input type="text" name="name" value="{{ old('name', $department?->name) }}"
                    class="w-full border-b border-gray-300 focus:border-purple-500 focus:outline-none py-1.5 text-sm bg-transparent"
                    required>
         </div>
 
         <div>
-            <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1">Manager</label>
+            <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1">{{ __('common.manager') }}</label>
             <x-relation-dropdown
                 name="manager_id"
                 table="hr_employees"
@@ -29,7 +29,7 @@
         </div>
 
         <div>
-            <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1">Parent Department</label>
+            <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1">{{ __('employees.parent_department') }}</label>
             <x-relation-dropdown
                 name="parent_id"
                 table="hr_departments"
@@ -40,7 +40,7 @@
         </div>
 
         <div>
-            <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1">Company</label>
+            <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1">{{ __('common.company') }}</label>
             <x-relation-dropdown
                 name="company_id"
                 table="companies"
@@ -51,7 +51,7 @@
         </div>
 
         <div class="sm:col-span-2">
-            <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1">Notes</label>
+            <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1">{{ __('common.notes') }}</label>
             <textarea name="note" rows="3"
                       class="w-full border border-gray-300 rounded-lg focus:border-purple-500 focus:outline-none p-2 text-sm bg-transparent resize-none">{{ old('note', $department?->note) }}</textarea>
         </div>

@@ -2,6 +2,7 @@
 
 namespace App\Models\Workflow;
 
+use App\Models\Employees\Department;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
@@ -25,11 +26,10 @@ class ProcedureStep extends Model
     protected $casts = [
         'is_approve_only'          => 'boolean',
         'has_procedures'           => 'boolean',
+        'procedures_required'      => 'boolean',
         'ignore_state'             => 'boolean',
         'has_path_choice'          => 'boolean',
         'path_choice_required'     => 'boolean',
-        'has_procedures'           => 'boolean',
-        'procedures_required'      => 'boolean',
         'flowchart_position_saved' => 'boolean',
         'enabled'                  => 'boolean',
         'active'                   => 'boolean',

@@ -139,7 +139,7 @@
                     <div class="flex items-center gap-1.5">
                         <span class="w-2 h-2 rounded-full shrink-0 {{ $item['color'] }}"></span>
                         <span class="text-xs text-gray-500 truncate">{{ $item['label'] }}</span>
-                        <span class="text-xs font-semibold text-gray-800 ml-auto">{{ $item['value'] }}</span>
+                        <span class="text-xs font-semibold text-gray-800  ms-auto">{{ $item['value'] }}</span>
                     </div>
                     @endforeach
                 </div>

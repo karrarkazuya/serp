@@ -6,21 +6,21 @@
     {{-- Top bar --}}
     <div class="bg-white border-b border-gray-200 px-4 py-2 flex items-center gap-3 shrink-0">
         <div class="flex flex-col leading-tight">
-            <a href="{{ route('employees.departments.index') }}" class="text-xs text-purple-600 hover:text-purple-700">Departments</a>
+            <a href="{{ route('employees.departments.index') }}" class="text-xs text-purple-600 hover:text-purple-700">{{ __('employees.departments_title') }}</a>
             <span class="text-sm font-semibold text-gray-800">{{ $department->name }}</span>
         </div>
 
-        <div class="ms-auto flex items-center gap-2">
+        <div class="flex items-center gap-2">
             @can('update', $department)
             <a href="{{ route('employees.departments.edit', $department) }}"
-               class="px-3 py-1.5 text-sm text-gray-600 bg-white border border-gray-300 rounded hover:bg-gray-50">Edit</a>
+               class="px-3 py-1.5 text-sm text-gray-600 bg-white border border-gray-300 rounded hover:bg-gray-50">{{ __('common.edit') }}</a>
             @endcan
 
             @can('update', $department)
             <form method="POST" action="{{ $department->active ? route('employees.departments.archive', $department) : route('employees.departments.unarchive', $department) }}">
                 @csrf @method('PATCH')
                 <button type="submit" class="px-3 py-1.5 text-sm text-gray-600 bg-white border border-gray-300 rounded hover:bg-gray-50">
-                    {{ $department->active ? 'Archive' : 'Unarchive' }}
+                    {{ $department->active ? __('common.archive') : __('common.unarchive') }}
                 </button>
             </form>
             @endcan
@@ -28,14 +28,14 @@
             @can('delete', $department)
             <div x-data="{ confirming: false }">
                 <button type="button" x-show="!confirming" @click="confirming = true"
-                        class="px-3 py-1.5 text-sm text-red-600 bg-white border border-red-200 rounded hover:bg-red-50">Delete</button>
+                        class="px-3 py-1.5 text-sm text-red-600 bg-white border border-red-200 rounded hover:bg-red-50">{{ __('common.delete') }}</button>
                 <div x-show="confirming" style="display:none" class="flex items-center gap-1.5">
-                    <span class="text-xs text-red-600">Are you sure?</span>
+                    <span class="text-xs text-red-600">{{ __('common.are_you_sure') }}</span>
                     <form method="POST" action="{{ route('employees.departments.delete', $department) }}">
                         @csrf @method('DELETE')
-                        <button type="submit" class="px-2 py-1 text-xs bg-red-600 text-white rounded">Yes</button>
+                        <button type="submit" class="px-2 py-1 text-xs bg-red-600 text-white rounded">{{ __('common.yes') }}</button>
                     </form>
-                    <button type="button" @click="confirming = false" class="px-2 py-1 text-xs text-gray-500 border border-gray-300 rounded">Cancel</button>
+                    <button type="button" @click="confirming = false" class="px-2 py-1 text-xs text-gray-500 border border-gray-300 rounded">{{ __('common.cancel') }}</button>
                 </div>
             </div>
             @endcan
@@ -46,16 +46,16 @@
         {{-- Detail card --}}
         <div class="bg-white rounded-xl border border-gray-200 shadow-sm p-6">
             @if(!$department->active)
-                <div class="mb-4 rounded-lg bg-amber-50 border border-amber-200 px-3 py-2 text-sm text-amber-700 font-medium">This department is archived.</div>
+                <div class="mb-4 rounded-lg bg-amber-50 border border-amber-200 px-3 py-2 text-sm text-amber-700 font-medium">{{ __('employees.dept_is_archived') }}</div>
             @endif
 
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-4">
                 <div>
-                    <p class="text-xs font-semibold text-gray-400 uppercase tracking-wide">Department Name</p>
+                    <p class="text-xs font-semibold text-gray-400 uppercase tracking-wide">{{ __('employees.department_name') }}</p>
                     <p class="text-sm text-gray-900 mt-0.5">{{ $department->name }}</p>
                 </div>
                 <div>
-                    <p class="text-xs font-semibold text-gray-400 uppercase tracking-wide">Manager</p>
+                    <p class="text-xs font-semibold text-gray-400 uppercase tracking-wide">{{ __('common.manager') }}</p>
                     <p class="text-sm text-gray-900 mt-0.5">
                         @if($department->manager)
                             <a href="{{ route('employees.show', $department->manager) }}" class="text-purple-600 hover:underline">{{ $department->manager->name }}</a>
@@ -65,7 +65,7 @@
                     </p>
                 </div>
                 <div>
-                    <p class="text-xs font-semibold text-gray-400 uppercase tracking-wide">Parent Department</p>
+                    <p class="text-xs font-semibold text-gray-400 uppercase tracking-wide">{{ __('employees.parent_department') }}</p>
                     <p class="text-sm text-gray-900 mt-0.5">
                         @if($department->parent)
                             <a href="{{ route('employees.departments.show', $department->parent) }}" class="text-purple-600 hover:underline">{{ $department->parent->name }}</a>
@@ -75,12 +75,12 @@
                     </p>
                 </div>
                 <div>
-                    <p class="text-xs font-semibold text-gray-400 uppercase tracking-wide">Company</p>
+                    <p class="text-xs font-semibold text-gray-400 uppercase tracking-wide">{{ __('common.company') }}</p>
                     <p class="text-sm text-gray-900 mt-0.5">{{ $department->company?->name ?? '—' }}</p>
                 </div>
                 @if($department->note)
                 <div class="sm:col-span-2">
-                    <p class="text-xs font-semibold text-gray-400 uppercase tracking-wide">Notes</p>
+                    <p class="text-xs font-semibold text-gray-400 uppercase tracking-wide">{{ __('common.notes') }}</p>
                     <p class="text-sm text-gray-900 mt-0.5 whitespace-pre-line">{{ $department->note }}</p>
                 </div>
                 @endif
@@ -90,10 +90,10 @@
         {{-- Employees in this department --}}
         <div class="bg-white rounded-xl border border-gray-200 shadow-sm">
             <div class="px-5 py-3 border-b border-gray-100 flex items-center justify-between">
-                <h3 class="text-sm font-semibold text-gray-700">Employees ({{ $department->employees->count() }})</h3>
+                <h3 class="text-sm font-semibold text-gray-700">{{ __('common.employees') }} ({{ $department->employees->count() }})</h3>
             </div>
             @if($department->employees->isEmpty())
-                <p class="px-5 py-6 text-sm text-gray-400 text-center">No employees in this department.</p>
+                <p class="px-5 py-6 text-sm text-gray-400 text-center">{{ __('employees.dept_no_employees') }}</p>
             @else
                 <ul class="divide-y divide-gray-100">
                     @foreach($department->employees as $emp)
@@ -119,7 +119,7 @@
         @if($department->children->isNotEmpty())
         <div class="bg-white rounded-xl border border-gray-200 shadow-sm">
             <div class="px-5 py-3 border-b border-gray-100">
-                <h3 class="text-sm font-semibold text-gray-700">Sub-departments ({{ $department->children->count() }})</h3>
+                <h3 class="text-sm font-semibold text-gray-700">{{ __('employees.sub_departments') }} ({{ $department->children->count() }})</h3>
             </div>
             <ul class="divide-y divide-gray-100">
                 @foreach($department->children as $child)

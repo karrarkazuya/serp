@@ -2,6 +2,7 @@
 
 namespace App\Models\Workflow;
 
+use App\Models\Employees\Department;
 use App\Models\User;
 use App\Traits\HasChatter;
 use Illuminate\Database\Eloquent\Builder;

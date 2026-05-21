@@ -2,6 +2,7 @@
 
 namespace App\Models\Workflow;
 
+use App\Models\Employees\Department;
 use App\Models\User;
 use App\Traits\HasChatter;
 use Illuminate\Database\Eloquent\Builder;
@@ -34,7 +35,7 @@ class WorkflowUser extends Model
             'label' => 'Default Department',
             'column' => 'default_department_id',
             'type' => 'relation',
-            'relation' => ['table' => 'workflow_departments', 'field' => 'name'],
+            'relation' => ['table' => 'hr_departments', 'field' => 'name'],
         ],
         'active'     => ['label' => 'Active', 'column' => 'active', 'type' => 'boolean'],
         'created_at' => ['label' => 'Created on', 'column' => 'created_at', 'type' => 'datetime'],
@@ -83,6 +84,6 @@ class WorkflowUser extends Model
 
     public function getAssignableDepartmentIds(): array
     {
-        return $this->assignableDepartments()->pluck('workflow_departments.id')->toArray();
+        return $this->assignableDepartments()->pluck('hr_departments.id')->toArray();
     }
 }

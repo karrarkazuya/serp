@@ -4,7 +4,7 @@ namespace App\Http\Controllers\Workflow;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Workflow\StoreProcedureRequest;
-use App\Models\Workflow\Department;
+use App\Models\Employees\Department;
 use App\Models\Workflow\Procedure;
 use App\Models\Workflow\ProcedureTemplate;
 use App\Models\Workflow\Ticket;

@@ -28,7 +28,7 @@
             </div>
         </div>
 
-        <div class="ml-auto flex items-center gap-2 shrink-0">
+        <div class="flex items-center gap-2 shrink-0">
             @can('update', $procedure)
             @if($procedure->state !== 'pending')
             @if($procedure->active)
@@ -196,7 +196,7 @@
                             <button @click="navigator.clipboard.writeText('{{ $procedure->sharedLink->shareUrl() }}'); copied=true; setTimeout(()=>copied=false,2000)"
                                     class="px-3 py-1.5 text-sm border rounded-lg transition-colors shrink-0"
                                     :class="copied ? 'border-green-300 text-green-700 bg-green-50' : 'border-gray-200 text-gray-600 hover:bg-gray-50'">
-                                <span x-text="copied ? 'Copied!' : 'Copy'"></span>
+                                <span x-text="copied ? @js(__('workflow.copied')) : @js(__('workflow.copy'))"></span>
                             </button>
                         </div>
                         <form method="POST" action="{{ route('workflow.share.procedure.message', $procedure) }}">

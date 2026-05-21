@@ -21,7 +21,7 @@ class StoreProcedureTemplateRequest extends FormRequest
             'creator_see_tasks'    => 'boolean',
             'enabled'              => 'boolean',
             'departments'          => 'nullable|array',
-            'departments.*'        => 'exists:workflow_departments,id',
+            'departments.*'        => 'exists:hr_departments,id',
         ];
     }
 }

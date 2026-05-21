@@ -21,6 +21,7 @@ class Department extends Model
         'parent_id'  => 'Parent Department',
         'manager_id' => 'Manager',
         'company_id' => 'Company',
+        'active'     => 'Active',
     ];
 
     public array $sortable = [

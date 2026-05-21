@@ -11,6 +11,7 @@ use App\Services\Employees\DepartmentService;
 use App\Helpers\SearchFilters;
 use App\Helpers\SortsTable;
 use Illuminate\Http\Request;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 
 class DepartmentController extends Controller
@@ -41,11 +42,27 @@ class DepartmentController extends Controller
             $query->active();
         }
 
+        $view = $request->query('view', 'list');
+
+        if ($view === 'tree') {
+            $all = (clone $query)
+                ->with(['manager'])
+                ->withCount('employees')
+                ->orderBy('name')
+                ->limit(500)
+                ->get();
+
+            $treeNodes = $this->buildDepartmentTree($all);
+            $total     = $all->count();
+
+            return view('employees.departments.index', compact('treeNodes', 'total', 'view'));
+        }
+
         SortsTable::apply($query, $request);
 
         $departments = $query->withCount('employees')->paginate(50)->withQueryString();
 
-        return view('employees.departments.index', compact('departments'));
+        return view('employees.departments.index', compact('departments', 'view'));
     }
 
     public function show(Department $department)
@@ -139,5 +156,45 @@ class DepartmentController extends Controller
         $department->logComment($request->body);
 
         return back()->with('success', 'Comment added.');
+    }
+
+    private function buildDepartmentTree(Collection $departments): array
+    {
+        $map = [];
+        foreach ($departments as $dept) {
+            $map[$dept->id] = [
+                'id'          => $dept->id,
+                'name'        => $dept->name,
+                'url'         => route('employees.departments.show', $dept),
+                'avatar'      => null,
+                'initials'    => mb_strtoupper(mb_substr($dept->name, 0, 2)),
+                'subtitle'    => $dept->manager?->name,
+                'meta'        => $dept->employees_count ? $dept->employees_count . ' employee' . ($dept->employees_count !== 1 ? 's' : '') : null,
+                'badge'       => $dept->active ? null : 'Archived',
+                'badge_color' => 'gray',
+                'children'    => [],
+            ];
+        }
+
+        $childrenOf = [];
+        $roots      = [];
+
+        foreach ($departments as $dept) {
+            if ($dept->parent_id && isset($map[$dept->parent_id])) {
+                $childrenOf[$dept->parent_id][] = $dept->id;
+            } else {
+                $roots[] = $dept->id;
+            }
+        }
+
+        $buildNode = function (int $id) use (&$buildNode, &$map, $childrenOf): array {
+            $node = $map[$id];
+            foreach ($childrenOf[$id] ?? [] as $childId) {
+                $node['children'][] = $buildNode($childId);
+            }
+            return $node;
+        };
+
+        return array_map($buildNode, $roots);
     }
 }

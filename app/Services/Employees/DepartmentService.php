@@ -81,6 +81,7 @@ class DepartmentService
             'company_id'  => \App\Models\Settings\Company::find($value)?->name ?? "#{$value}",
             'parent_id'   => Department::find($value)?->name ?? "#{$value}",
             'manager_id'  => \App\Models\Employees\Employee::find($value)?->name ?? "#{$value}",
+            'active'      => $value ? 'Yes' : 'No',
             default       => (string) $value,
         };
     }

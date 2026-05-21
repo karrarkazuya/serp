@@ -8,7 +8,7 @@
             <a href="{{ route('workflow.tickets.show', $ticket) }}" class="text-xs text-purple-600 hover:text-purple-700">{{ $ticket->name }}</a>
             <span class="text-sm font-semibold text-gray-800">{{ __('common.edit') }}</span>
         </div>
-        <div class="ml-auto flex items-center gap-2">
+        <div class="flex items-center gap-2">
             <a href="{{ route('workflow.tickets.show', $ticket) }}" class="px-3 py-1.5 text-sm text-gray-600 bg-white border border-gray-300 rounded hover:bg-gray-50">{{ __('workflow.discard') }}</a>
             <button form="ticket-edit-form" type="submit" class="px-4 py-1.5 text-sm font-medium text-white bg-[#714B67] hover:bg-[#5c3d55] rounded shadow-sm">{{ __('common.save') }}</button>
         </div>
@@ -45,10 +45,10 @@
                     </div>
 
                     <x-relation-dropdown
-                        table="workflow_departments"
+                        table="hr_departments"
                         field="name"
                         name="assigned_to_department_id"
-                        label="{{ __('workflow.department_label') }}"
+                        :label="__('workflow.department_label')"
                         :selected="old('assigned_to_department_id', $ticket->assigned_to_department_id)"
                         relation="many2one"
                     />
@@ -57,7 +57,7 @@
                         table="workflow_users"
                         field="name"
                         name="assigned_to_user_id"
-                        label="{{ __('workflow.assigned_to_label') }}"
+                        :label="__('workflow.assigned_to_label')"
                         :selected="old('assigned_to_user_id', $ticket->assigned_to_user_id)"
                         relation="many2one"
                     />

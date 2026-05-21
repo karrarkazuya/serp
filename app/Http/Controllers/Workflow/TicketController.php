@@ -8,7 +8,7 @@ use App\Http\Requests\Workflow\UpdateTicketRequest;
 use App\Models\Chat\ChatMessageFile;
 use App\Models\Chat\ChatRoom;
 use App\Models\User;
-use App\Models\Workflow\Department;
+use App\Models\Employees\Department;
 use App\Models\Workflow\Ticket;
 use App\Models\Workflow\TicketTemplate;
 use App\Models\Workflow\WorkflowTemplateInput;

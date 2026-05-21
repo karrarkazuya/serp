@@ -19,8 +19,6 @@ class Contact extends Model
         'name'         => 'Name',
         'contact_type' => 'Contact Type',
         'email'        => 'Email',
-        'phone'        => 'Phone',
-        'mobile'       => 'Mobile',
         'job_position' => 'Job Position',
         'company_name' => 'Company Name',
         'company_id'   => 'Company',
@@ -30,37 +28,34 @@ class Contact extends Model
     ];
 
     public array $sortable = [
-        'name' => 'name',
-        'email' => 'email',
-        'phone' => 'phone',
-        'city' => 'city',
+        'name'    => 'name',
+        'email'   => 'email',
+        'city'    => 'city',
         'country' => 'country',
         'company' => 'company_name',
     ];
 
     public array $searchable = [
-        'name' => ['label' => 'Name', 'column' => 'name', 'type' => 'string'],
-        'email' => ['label' => 'Email', 'column' => 'email', 'type' => 'email'],
-        'phone' => ['label' => 'Phone', 'column' => 'phone', 'type' => 'string'],
-        'mobile' => ['label' => 'Mobile', 'column' => 'mobile', 'type' => 'string'],
+        'name'         => ['label' => 'Name',         'column' => 'name',         'type' => 'string'],
+        'email'        => ['label' => 'Email',        'column' => 'email',        'type' => 'email'],
         'company_name' => ['label' => 'Company Name', 'column' => 'company_name', 'type' => 'string'],
         'contact_type' => ['label' => 'Contact type', 'column' => 'contact_type', 'type' => 'string'],
-        'city' => ['label' => 'City', 'column' => 'city', 'type' => 'string'],
-        'state' => ['label' => 'State', 'column' => 'state', 'type' => 'string'],
-        'country' => ['label' => 'Country', 'column' => 'country', 'type' => 'string'],
-        'tax_id' => ['label' => 'Tax ID', 'column' => 'tax_id', 'type' => 'string'],
+        'city'         => ['label' => 'City',         'column' => 'city',         'type' => 'string'],
+        'state'        => ['label' => 'State',        'column' => 'state',        'type' => 'string'],
+        'country'      => ['label' => 'Country',      'column' => 'country',      'type' => 'string'],
+        'tax_id'       => ['label' => 'Tax ID',       'column' => 'tax_id',       'type' => 'string'],
         'job_position' => ['label' => 'Job Position', 'column' => 'job_position', 'type' => 'string'],
-        'active' => ['label' => 'Active', 'column' => 'active', 'type' => 'boolean'],
-        'created_by' => [
-            'label' => 'Created by',
-            'column' => 'created_by',
-            'type' => 'relation',
+        'active'       => ['label' => 'Active',       'column' => 'active',       'type' => 'boolean'],
+        'created_by'   => [
+            'label'    => 'Created by',
+            'column'   => 'created_by',
+            'type'     => 'relation',
             'relation' => ['table' => 'users', 'field' => 'name'],
         ],
-        'updated_by' => [
-            'label' => 'Updated by',
-            'column' => 'updated_by',
-            'type' => 'relation',
+        'updated_by'   => [
+            'label'    => 'Updated by',
+            'column'   => 'updated_by',
+            'type'     => 'relation',
             'relation' => ['table' => 'users', 'field' => 'name'],
         ],
         'created_at' => ['label' => 'Created on', 'column' => 'created_at', 'type' => 'datetime'],
@@ -75,8 +70,6 @@ class Contact extends Model
         'company_name',
         'contact_type',
         'email',
-        'phone',
-        'mobile',
         'website',
         'street',
         'city',
@@ -116,6 +109,11 @@ class Contact extends Model
         return $this->belongsToMany(Tag::class, 'contact_tag');
     }
 
+    public function phones(): HasMany
+    {
+        return $this->hasMany(ContactPhone::class)->orderBy('id');
+    }
+
     public function getAvatarUrlAttribute(): ?string
     {
         return $this->avatar ? route('files.serve', $this->avatar) : null;
@@ -146,12 +144,11 @@ class Contact extends Model
         return $query->where(function ($q) use ($search) {
             $q->where('name', 'like', "%{$search}%")
               ->orWhere('email', 'like', "%{$search}%")
-              ->orWhere('phone', 'like', "%{$search}%")
-              ->orWhere('company_name', 'like', "%{$search}%");
+              ->orWhere('company_name', 'like', "%{$search}%")
+              ->orWhereHas('phones', fn($pq) => $pq->where('phone', 'like', "%{$search}%"));
         });
     }
 
-    /** Filter by one or more ERP company IDs (multi-company context) */
     public function scopeForCompanies(Builder $query, array $companyIds): Builder
     {
         if (empty($companyIds)) {

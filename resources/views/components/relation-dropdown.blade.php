@@ -250,7 +250,7 @@
                      @click.outside="modalOpen = false">
                     <div class="flex items-center gap-4 px-6 py-5 border-b border-gray-200">
                         <h2 class="text-xl font-bold text-gray-800">Search: {{ $label ?? ucfirst($name) }}</h2>
-                        <button type="button" @click="modalOpen = false" class="ml-auto text-gray-500 hover:text-gray-800">
+                        <button type="button" @click="modalOpen = false" class="ms-auto text-gray-500 hover:text-gray-800">
                             <svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M6 18L18 6M6 6l12 12"/>
                             </svg>

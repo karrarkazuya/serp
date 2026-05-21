@@ -20,30 +20,57 @@ class Employee extends Model
     protected $table = 'hr_employees';
 
     public array $chatterTracked = [
-        'name'                  => 'Name',
-        'name_ar'               => 'Arabic Name',
-        'name_en'               => 'English Name',
-        'family_name'           => 'Family Name',
-        'department_id'         => 'Department',
-        'job_id'                => 'Job Position',
-        'job_title'             => 'Job Title',
-        'parent_id'             => 'Manager',
-        'coach_id'              => 'Coach',
-        'expense_manager_id'    => 'Expense Approver',
-        'attendance_manager_id' => 'Attendance Approver',
-        'work_email'            => 'Work Email',
-        'work_phone'            => 'Work Phone',
-        'work_location_id'      => 'Work Location',
-        'resource_calendar_id'  => 'Working Schedule',
-        'employment_status'     => 'Employment Status',
-        'contract_id'           => 'Contract',
-        'company_id'            => 'Company',
-        'user_id'               => 'Linked User',
-        'contact_id'            => 'Linked Contact',
-        'departure_date'        => 'Departure Date',
-        'departure_reason_id'   => 'Departure Reason',
-        'hire_date'             => 'Hire Date',
-        'active'                => 'Active',
+        // Identity
+        'name'                       => 'Name',
+        'name_ar'                    => 'Arabic Name',
+        'name_en'                    => 'English Name',
+        'family_name'                => 'Family Name',
+        'employee_code'              => 'Employee Code',
+        // Position
+        'company_id'                 => 'Company',
+        'department_id'              => 'Department',
+        'job_id'                     => 'Job Position',
+        'job_title'                  => 'Job Title',
+        'parent_id'                  => 'Manager',
+        'coach_id'                   => 'Coach',
+        'expense_manager_id'         => 'Expense Approver',
+        'attendance_manager_id'      => 'Attendance Approver',
+        'work_location_id'           => 'Work Location',
+        'resource_calendar_id'       => 'Working Schedule',
+        // Contact
+        'work_email'                 => 'Work Email',
+        'work_phone'                 => 'Work Phone',
+        'work_mobile'                => 'Work Mobile',
+        'private_email'              => 'Private Email',
+        // Contract & Status
+        'employment_status'          => 'Employment Status',
+        'contract_id'                => 'Contract',
+        'hire_date'                  => 'Hire Date',
+        'first_contract_date'        => 'First Contract Date',
+        'wage'                       => 'Wage',
+        'payment_method'             => 'Payment Method',
+        'probation_start_date'       => 'Probation Start',
+        'probation_end_date'         => 'Probation End',
+        // Personal
+        'gender'                     => 'Gender',
+        'birthday'                   => 'Date of Birth',
+        'marital_status'             => 'Marital Status',
+        'nationality'                => 'Nationality',
+        'certificate_level'          => 'Certificate Level',
+        // Documents
+        'visa_no'                    => 'Visa Number',
+        'visa_expire'                => 'Visa Expiry',
+        'work_permit_no'             => 'Work Permit No.',
+        'work_permit_expiration_date' => 'Work Permit Expiry',
+        // Linked records
+        'user_id'                    => 'Linked User',
+        'contact_id'                 => 'Linked Contact',
+        // Departure
+        'departure_date'             => 'Departure Date',
+        'departure_reason_id'        => 'Departure Reason',
+        'departure_description'      => 'Departure Notes',
+        // Status
+        'active'                     => 'Active',
     ];
 
     public array $sortable = [

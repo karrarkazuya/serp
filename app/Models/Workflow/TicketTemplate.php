@@ -2,6 +2,7 @@
 
 namespace App\Models\Workflow;
 
+use App\Models\Employees\Department;
 use App\Models\User;
 use App\Traits\HasChatter;
 use Illuminate\Database\Eloquent\Builder;
@@ -39,7 +40,7 @@ class TicketTemplate extends Model
             'label' => 'Default Department',
             'column' => 'default_department_id',
             'type' => 'relation',
-            'relation' => ['table' => 'workflow_departments', 'field' => 'name'],
+            'relation' => ['table' => 'hr_departments', 'field' => 'name'],
         ],
         'enabled'    => ['label' => 'Enabled', 'column' => 'enabled', 'type' => 'boolean'],
         'active'     => ['label' => 'Active', 'column' => 'active', 'type' => 'boolean'],
@@ -111,7 +112,7 @@ class TicketTemplate extends Model
         // Department: must be in the allowed list (AND logic; no departments = unrestricted)
         $query->where(function ($q) use ($deptId) {
             $q->whereDoesntHave('departments')
-              ->orWhereHas('departments', fn ($d) => $d->where('workflow_departments.id', $deptId));
+              ->orWhereHas('departments', fn ($d) => $d->where('hr_departments.id', $deptId));
         });
 
         return $query;

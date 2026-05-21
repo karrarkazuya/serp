@@ -6,7 +6,7 @@
 @if($errors->any())
 <div class="px-6 pt-4 pb-0">
     <div class="bg-red-50 border border-red-200 rounded-lg px-4 py-3">
-        <p class="text-sm font-medium text-red-700 mb-1">Please fix the following errors:</p>
+        <p class="text-sm font-medium text-red-700 mb-1">{{ __('employees.fix_errors') }}</p>
         <ul class="list-disc list-inside text-sm text-red-600 space-y-0.5">
             @foreach($errors->all() as $error)<li>{{ $error }}</li>@endforeach
         </ul>
@@ -36,11 +36,11 @@
 
     {{-- Name + job title --}}
     <div class="mb-1">
-        <input type="text" name="name" value="{{ $val('name') }}" required placeholder="Employee Name"
+        <input type="text" name="name" value="{{ $val('name') }}" required placeholder="{{ __('employees.employee_name') }}"
                class="w-full text-3xl font-bold text-gray-900 placeholder-gray-300 border-0 border-b-2 focus:outline-none focus:border-purple-500 pb-1 bg-transparent {{ $errors->has('name') ? 'border-red-400' : 'border-gray-200' }}">
     </div>
     <div class="mb-5">
-        <input type="text" name="job_title" value="{{ $val('job_title') }}" placeholder="Job Position"
+        <input type="text" name="job_title" value="{{ $val('job_title') }}" placeholder="{{ __('employees.job_position') }}"
                class="w-full text-sm text-gray-500 placeholder-gray-300 border-0 focus:outline-none bg-transparent pb-0.5">
     </div>
 
@@ -50,13 +50,13 @@
         {{-- Left col: contact + org fields --}}
         <div class="flex-1 min-w-0">
             @foreach([
-                ['Full Name (Arabic)', 'name_ar',  'text'],
-                ['Full Name (English)','name_en',  'text'],
-                ['Family Name',        'family_name','text'],
-                ['Mother Name',        'mother_name','text'],
-                ['Work Email',         'work_email', 'email'],
-                ['Work Phone',         'work_phone', 'text'],
-                ['Work Mobile',        'work_mobile','text'],
+                [__('employees.full_name_ar'), 'name_ar',  'text'],
+                [__('employees.full_name_en'), 'name_en',  'text'],
+                [__('employees.family_name'),  'family_name','text'],
+                [__('employees.mother_name'),  'mother_name','text'],
+                [__('employees.work_email'),   'work_email', 'email'],
+                [__('employees.work_phone'),   'work_phone', 'text'],
+                [__('employees.work_mobile'),  'work_mobile','text'],
             ] as [$label, $name, $type])
             <div class="flex items-center gap-4 py-1.5 border-b border-gray-100">
                 <label class="w-44 shrink-0 text-sm text-gray-500">{{ $label }}</label>
@@ -71,14 +71,14 @@
                     table="hr_employee_categories"
                     field="name"
                     name="categories"
-                    label="Tags"
+                    :label="__('employees.tags')"
                     :selected="$selectedCategoryIds"
                     relation="many2many"
                 />
             </div>
 
             <div class="flex items-center gap-4 py-1.5 border-b border-gray-100">
-                <label class="w-44 shrink-0 text-sm text-gray-500">Company</label>
+                <label class="w-44 shrink-0 text-sm text-gray-500">{{ __('common.company') }}</label>
                 <x-relation-dropdown table="companies" field="name" name="company_id" relation="many2one"
                     :selected="old('company_id', $employee?->company_id ?? ($defaultCompanyId ?? null))" class="flex-1" compact />
             </div>
@@ -87,47 +87,47 @@
         {{-- Right col: org fields --}}
         <div class="flex-1 min-w-0">
             <div class="flex items-center gap-4 py-1.5 border-b border-gray-100">
-                <label class="w-44 shrink-0 text-sm text-gray-500">Department</label>
+                <label class="w-44 shrink-0 text-sm text-gray-500">{{ __('common.department') }}</label>
                 <x-relation-dropdown table="hr_departments" field="name" name="department_id" relation="many2one"
                     :selected="old('department_id', $employee?->department_id)" class="flex-1" compact />
             </div>
             <div class="flex items-center gap-4 py-1.5 border-b border-gray-100">
-                <label class="w-44 shrink-0 text-sm text-gray-500">Job Position</label>
+                <label class="w-44 shrink-0 text-sm text-gray-500">{{ __('employees.job_position') }}</label>
                 <x-relation-dropdown table="hr_jobs" field="name" name="job_id" relation="many2one"
                     :selected="old('job_id', $employee?->job_id)" class="flex-1" compact />
             </div>
             <div class="flex items-center gap-4 py-1.5 border-b border-gray-100">
-                <label class="w-44 shrink-0 text-sm text-gray-500">Manager</label>
+                <label class="w-44 shrink-0 text-sm text-gray-500">{{ __('common.manager') }}</label>
                 <x-relation-dropdown table="hr_employees" field="name" name="parent_id" relation="many2one"
                     :selected="old('parent_id', $employee?->parent_id)"
                     :exclude="$employee?->id" class="flex-1" compact />
             </div>
             <div class="flex items-center gap-4 py-1.5 border-b border-gray-100">
-                <label class="w-44 shrink-0 text-sm text-gray-500">Coach</label>
+                <label class="w-44 shrink-0 text-sm text-gray-500">{{ __('employees.coach') }}</label>
                 <x-relation-dropdown table="hr_employees" field="name" name="coach_id" relation="many2one"
                     :selected="old('coach_id', $employee?->coach_id)"
                     :exclude="$employee?->id" class="flex-1" compact />
             </div>
             <div class="flex flex-col py-1.5 border-b border-gray-100 gap-0.5">
                 <div class="flex items-center gap-4">
-                    <label class="w-44 shrink-0 text-sm text-gray-500">Linked User</label>
+                    <label class="w-44 shrink-0 text-sm text-gray-500">{{ __('employees.linked_user') }}</label>
                     <x-relation-dropdown table="users" field="name" name="user_id" relation="many2one"
                         :selected="old('user_id', $employee?->user_id)" class="flex-1" compact event="emp-user-changed" />
                 </div>
                 <div x-show="warnings.user_id" x-cloak class="flex items-center gap-1.5 pl-48 text-xs text-amber-700">
                     <svg class="w-3.5 h-3.5 shrink-0" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M8.485 2.495c.673-1.167 2.357-1.167 3.03 0l6.28 10.875c.673 1.167-.17 2.625-1.516 2.625H3.72c-1.347 0-2.189-1.458-1.515-2.625L8.485 2.495zM10 5a.75.75 0 01.75.75v3.5a.75.75 0 01-1.5 0v-3.5A.75.75 0 0110 5zm0 9a1 1 0 100-2 1 1 0 000 2z" clip-rule="evenodd"/></svg>
-                    Already linked to <span class="font-semibold" x-text="warnings.user_id"></span>
+                    {{ __('employees.already_linked_to') }} <span class="font-semibold" x-text="warnings.user_id"></span>
                 </div>
             </div>
             <div class="flex flex-col py-1.5 border-b border-gray-100 gap-0.5">
                 <div class="flex items-center gap-4">
-                    <label class="w-44 shrink-0 text-sm text-gray-500">Linked Contact</label>
+                    <label class="w-44 shrink-0 text-sm text-gray-500">{{ __('employees.linked_contact') }}</label>
                     <x-relation-dropdown table="contacts" field="name" name="contact_id" relation="many2one"
                         :selected="old('contact_id', $employee?->contact_id)" class="flex-1" compact event="emp-contact-changed" />
                 </div>
                 <div x-show="warnings.contact_id" x-cloak class="flex items-center gap-1.5 pl-48 text-xs text-amber-700">
                     <svg class="w-3.5 h-3.5 shrink-0" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M8.485 2.495c.673-1.167 2.357-1.167 3.03 0l6.28 10.875c.673 1.167-.17 2.625-1.516 2.625H3.72c-1.347 0-2.189-1.458-1.515-2.625L8.485 2.495zM10 5a.75.75 0 01.75.75v3.5a.75.75 0 01-1.5 0v-3.5A.75.75 0 0110 5zm0 9a1 1 0 100-2 1 1 0 000 2z" clip-rule="evenodd"/></svg>
-                    Already linked to <span class="font-semibold" x-text="warnings.contact_id"></span>
+                    {{ __('employees.already_linked_to') }} <span class="font-semibold" x-text="warnings.contact_id"></span>
                 </div>
             </div>
         </div>
@@ -143,7 +143,7 @@
                 </div>
                 <input type="file" name="avatar" accept="image/*" class="hidden"
                        @change="avatarPreview = $event.target.files[0] ? URL.createObjectURL($event.target.files[0]) : avatarPreview">
-                <p class="mt-1.5 text-center text-xs text-gray-400">Click to upload</p>
+                <p class="mt-1.5 text-center text-xs text-gray-400">{{ __('employees.click_to_upload') }}</p>
             </label>
         </div>
     </div>
@@ -152,10 +152,10 @@
     <div x-data="{ tab: 'work' }" class="border-t border-gray-200 mt-5">
         <div class="flex items-end gap-1 pt-3 border-b border-gray-200 overflow-x-auto">
             @foreach([
-                ['work',    'Work Information'],
-                ['private', 'Private Information'],
-                ['hr',      'HR Settings'],
-                ['skills',  'Skills'],
+                ['work',    __('employees.work_info')],
+                ['private', __('employees.private_info')],
+                ['hr',      __('employees.hr_settings')],
+                ['skills',  __('employees.skills_tab')],
             ] as [$key, $label])
             <button type="button"
                     @click="tab = '{{ $key }}'"
@@ -170,35 +170,35 @@
         <div x-show="tab === 'work'" style="display:none" class="pt-4">
             <div class="flex gap-8">
                 <div class="flex-1">
-                    <p class="text-xs font-semibold text-gray-400 uppercase mb-2">Location</p>
+                    <p class="text-xs font-semibold text-gray-400 uppercase mb-2">{{ __('employees.location') }}</p>
                     <div class="flex items-center gap-4 py-1.5 border-b border-gray-100">
-                        <label class="w-44 shrink-0 text-sm text-gray-500">Work Location</label>
+                        <label class="w-44 shrink-0 text-sm text-gray-500">{{ __('employees.work_location') }}</label>
                         <x-relation-dropdown table="hr_work_locations" field="name" name="work_location_id" relation="many2one"
                             :selected="old('work_location_id', $employee?->work_location_id)" class="flex-1" compact />
                     </div>
 
-                    <p class="text-xs font-semibold text-gray-400 uppercase mt-4 mb-2">Approvers</p>
+                    <p class="text-xs font-semibold text-gray-400 uppercase mt-4 mb-2">{{ __('employees.approvers') }}</p>
                     <div class="flex items-center gap-4 py-1.5 border-b border-gray-100">
-                        <label class="w-44 shrink-0 text-sm text-gray-500">Expense</label>
+                        <label class="w-44 shrink-0 text-sm text-gray-500">{{ __('employees.expense_approver') }}</label>
                         <x-relation-dropdown table="hr_employees" field="name" name="expense_manager_id" relation="many2one"
                             :selected="old('expense_manager_id', $employee?->expense_manager_id)"
                             :exclude="$employee?->id" class="flex-1" compact />
                     </div>
                     <div class="flex items-center gap-4 py-1.5 border-b border-gray-100">
-                        <label class="w-44 shrink-0 text-sm text-gray-500">Attendance</label>
+                        <label class="w-44 shrink-0 text-sm text-gray-500">{{ __('employees.attendance_approver') }}</label>
                         <x-relation-dropdown table="hr_employees" field="name" name="attendance_manager_id" relation="many2one"
                             :selected="old('attendance_manager_id', $employee?->attendance_manager_id)"
                             :exclude="$employee?->id" class="flex-1" compact />
                     </div>
 
-                    <p class="text-xs font-semibold text-gray-400 uppercase mt-4 mb-2">Schedule</p>
+                    <p class="text-xs font-semibold text-gray-400 uppercase mt-4 mb-2">{{ __('employees.schedule') }}</p>
                     <div class="flex items-center gap-4 py-1.5 border-b border-gray-100">
-                        <label class="w-44 shrink-0 text-sm text-gray-500">Working Hours</label>
+                        <label class="w-44 shrink-0 text-sm text-gray-500">{{ __('employees.working_hours') }}</label>
                         <x-relation-dropdown table="hr_resource_calendars" field="name" name="resource_calendar_id" relation="many2one"
                             :selected="old('resource_calendar_id', $employee?->resource_calendar_id)" class="flex-1" compact />
                     </div>
                     <div class="flex items-center gap-4 py-1.5 border-b border-gray-100">
-                        <label class="w-44 shrink-0 text-sm text-gray-500">Timezone</label>
+                        <label class="w-44 shrink-0 text-sm text-gray-500">{{ __('employees.timezone') }}</label>
                         <input type="text" name="timezone" value="{{ $val('timezone') }}"
                                class="flex-1 text-sm text-gray-800 bg-transparent border-0 focus:outline-none px-0 py-0" placeholder="e.g. Asia/Baghdad">
                     </div>
@@ -212,15 +212,15 @@
             <div class="flex gap-8">
                 {{-- Left col --}}
                 <div class="flex-1">
-                    <p class="text-xs font-semibold text-gray-400 uppercase mb-2">Private Contact</p>
+                    <p class="text-xs font-semibold text-gray-400 uppercase mb-2">{{ __('employees.private_contact') }}</p>
                     <div class="flex items-start gap-4 py-1.5 border-b border-gray-100">
-                        <label class="w-44 shrink-0 text-sm text-gray-500 pt-0.5">Private Address</label>
+                        <label class="w-44 shrink-0 text-sm text-gray-500 pt-0.5">{{ __('employees.private_address') }}</label>
                         <textarea name="private_address" rows="2" class="flex-1 text-sm text-gray-800 bg-transparent border-0 focus:outline-none px-0 py-0 resize-none" placeholder="-">{{ $val('private_address') }}</textarea>
                     </div>
                     @foreach([
-                        ['Private Email',  'private_email',  'email'],
-                        ['Private Phone',  'private_phone',  'text'],
-                        ['Private Mobile', 'private_mobile', 'text'],
+                        [__('employees.private_email'),  'private_email',  'email'],
+                        [__('employees.private_phone'),  'private_phone',  'text'],
+                        [__('employees.private_mobile'), 'private_mobile', 'text'],
                     ] as [$label, $name, $type])
                     <div class="flex items-center gap-4 py-1.5 border-b border-gray-100">
                         <label class="w-44 shrink-0 text-sm text-gray-500">{{ $label }}</label>
@@ -229,24 +229,24 @@
                     </div>
                     @endforeach
                     <div class="flex items-center gap-4 py-1.5 border-b border-gray-100">
-                        <label class="w-44 shrink-0 text-sm text-gray-500">Home-Work Distance</label>
+                        <label class="w-44 shrink-0 text-sm text-gray-500">{{ __('employees.home_work_distance') }}</label>
                         <div class="flex items-center gap-1 flex-1">
                             <input type="number" name="km_home_work" value="{{ $val('km_home_work') }}" min="0"
                                    class="w-24 text-sm text-gray-800 bg-transparent border-0 focus:outline-none px-0 py-0" placeholder="0">
-                            <span class="text-sm text-gray-400">km</span>
+                            <span class="text-sm text-gray-400">{{ __('employees.km') }}</span>
                         </div>
                     </div>
                     <div class="flex items-center gap-4 py-1.5 border-b border-gray-100">
-                        <label class="w-44 shrink-0 text-sm text-gray-500">Private Car Plate</label>
+                        <label class="w-44 shrink-0 text-sm text-gray-500">{{ __('employees.private_car_plate') }}</label>
                         <input type="text" name="private_car_plate" value="{{ $val('private_car_plate') }}"
                                class="flex-1 text-sm text-gray-800 bg-transparent border-0 focus:outline-none px-0 py-0" placeholder="-">
                     </div>
 
-                    <p class="text-xs font-semibold text-gray-400 uppercase mt-4 mb-2">Emergency</p>
+                    <p class="text-xs font-semibold text-gray-400 uppercase mt-4 mb-2">{{ __('employees.emergency') }}</p>
                     @foreach([
-                        ['Contact Name', 'emergency_contact',  'text'],
-                        ['Phone',        'emergency_phone',    'text'],
-                        ['Relationship', 'emergency_relation', 'text'],
+                        [__('employees.contact_name'), 'emergency_contact',  'text'],
+                        [__('common.phone'),           'emergency_phone',    'text'],
+                        [__('employees.relationship'), 'emergency_relation', 'text'],
                     ] as [$label, $name, $type])
                     <div class="flex items-center gap-4 py-1.5 border-b border-gray-100">
                         <label class="w-44 shrink-0 text-sm text-gray-500">{{ $label }}</label>
@@ -255,9 +255,9 @@
                     </div>
                     @endforeach
 
-                    <p class="text-xs font-semibold text-gray-400 uppercase mt-4 mb-2">Family Status</p>
+                    <p class="text-xs font-semibold text-gray-400 uppercase mt-4 mb-2">{{ __('employees.family_status') }}</p>
                     <div class="flex items-center gap-4 py-1.5 border-b border-gray-100">
-                        <label class="w-44 shrink-0 text-sm text-gray-500">Marital Status</label>
+                        <label class="w-44 shrink-0 text-sm text-gray-500">{{ __('employees.marital_status') }}</label>
                         <select name="marital_status" class="flex-1 text-sm text-gray-800 bg-transparent border-0 focus:outline-none px-0 py-0">
                             <option value="">—</option>
                             @foreach(['single' => 'Single', 'married' => 'Married', 'cohabitant' => 'Cohabitant', 'widower' => 'Widower', 'divorced' => 'Divorced'] as $k => $v)
@@ -266,7 +266,7 @@
                         </select>
                     </div>
                     <div class="flex items-center gap-4 py-1.5 border-b border-gray-100">
-                        <label class="w-44 shrink-0 text-sm text-gray-500">Dependent Children</label>
+                        <label class="w-44 shrink-0 text-sm text-gray-500">{{ __('employees.dependent_children') }}</label>
                         <input type="number" name="children" value="{{ $val('children', '0') }}" min="0"
                                class="flex-1 text-sm text-gray-800 bg-transparent border-0 focus:outline-none px-0 py-0">
                     </div>
@@ -274,16 +274,16 @@
 
                 {{-- Right col --}}
                 <div class="flex-1">
-                    <p class="text-xs font-semibold text-gray-400 uppercase mb-2">Citizenship</p>
+                    <p class="text-xs font-semibold text-gray-400 uppercase mb-2">{{ __('employees.citizenship') }}</p>
                     <div class="flex items-center gap-4 py-1.5 border-b border-gray-100">
-                        <label class="w-44 shrink-0 text-sm text-gray-500">Nationality (Country)</label>
+                        <label class="w-44 shrink-0 text-sm text-gray-500">{{ __('employees.nationality') }}</label>
                         <input type="text" name="nationality" value="{{ $val('nationality') }}"
                                class="flex-1 text-sm text-gray-800 bg-transparent border-0 focus:outline-none px-0 py-0" placeholder="-">
                     </div>
                     @foreach([
-                        ['Identification No', 'identification_id', 'text'],
-                        ['SSN No',            'ssnid',             'text'],
-                        ['Passport No',       'passport_id',       'text'],
+                        [__('employees.identification_no'), 'identification_id', 'text'],
+                        [__('employees.ssn_no'),            'ssnid',             'text'],
+                        [__('employees.passport_no'),       'passport_id',       'text'],
                     ] as [$label, $name, $type])
                     <div class="flex items-center gap-4 py-1.5 border-b border-gray-100">
                         <label class="w-44 shrink-0 text-sm text-gray-500">{{ $label }}</label>
@@ -292,7 +292,7 @@
                     </div>
                     @endforeach
                     <div class="flex items-center gap-4 py-1.5 border-b border-gray-100">
-                        <label class="w-44 shrink-0 text-sm text-gray-500">Gender</label>
+                        <label class="w-44 shrink-0 text-sm text-gray-500">{{ __('employees.gender') }}</label>
                         <select name="gender" class="flex-1 text-sm text-gray-800 bg-transparent border-0 focus:outline-none px-0 py-0">
                             <option value="">—</option>
                             @foreach(['male' => 'Male', 'female' => 'Female', 'other' => 'Other'] as $k => $v)
@@ -301,9 +301,9 @@
                         </select>
                     </div>
                     @foreach([
-                        ['Date of Birth',   'birthday',        'date'],
-                        ['Place of Birth',  'place_of_birth',  'text'],
-                        ['Country of Birth','country_of_birth','text'],
+                        [__('employees.date_of_birth'),    'birthday',        'date'],
+                        [__('employees.place_of_birth'),   'place_of_birth',  'text'],
+                        [__('employees.country_of_birth'), 'country_of_birth','text'],
                     ] as [$label, $name, $type])
                     <div class="flex items-center gap-4 py-1.5 border-b border-gray-100">
                         <label class="w-44 shrink-0 text-sm text-gray-500">{{ $label }}</label>
@@ -312,9 +312,9 @@
                     </div>
                     @endforeach
 
-                    <p class="text-xs font-semibold text-gray-400 uppercase mt-4 mb-2">Education</p>
+                    <p class="text-xs font-semibold text-gray-400 uppercase mt-4 mb-2">{{ __('employees.education') }}</p>
                     <div class="flex items-center gap-4 py-1.5 border-b border-gray-100">
-                        <label class="w-44 shrink-0 text-sm text-gray-500">Certificate Level</label>
+                        <label class="w-44 shrink-0 text-sm text-gray-500">{{ __('employees.certificate_level') }}</label>
                         <select name="certificate_level" class="flex-1 text-sm text-gray-800 bg-transparent border-0 focus:outline-none px-0 py-0">
                             <option value="">—</option>
                             @foreach(['none' => 'None', 'graduate' => 'Graduate', 'bachelor' => 'Bachelor', 'master' => 'Master', 'doctor' => 'Doctor', 'other' => 'Other'] as $k => $v)
@@ -323,8 +323,8 @@
                         </select>
                     </div>
                     @foreach([
-                        ['Field of Study', 'study_field',  'text'],
-                        ['School',         'study_school', 'text'],
+                        [__('employees.field_of_study'), 'study_field',  'text'],
+                        [__('employees.school'),         'study_school', 'text'],
                     ] as [$label, $name, $type])
                     <div class="flex items-center gap-4 py-1.5 border-b border-gray-100">
                         <label class="w-44 shrink-0 text-sm text-gray-500">{{ $label }}</label>
@@ -333,12 +333,12 @@
                     </div>
                     @endforeach
 
-                    <p class="text-xs font-semibold text-gray-400 uppercase mt-4 mb-2">Work Permit</p>
+                    <p class="text-xs font-semibold text-gray-400 uppercase mt-4 mb-2">{{ __('employees.work_permit') }}</p>
                     @foreach([
-                        ['Visa No',           'visa_no',           'text'],
-                        ['Work Permit No',    'work_permit_no',    'text'],
-                        ['Visa Expiration',   'visa_expire',       'date'],
-                        ['Permit Expiration', 'work_permit_expiration_date', 'date'],
+                        [__('employees.visa_no'),           'visa_no',           'text'],
+                        [__('employees.work_permit_no'),    'work_permit_no',    'text'],
+                        [__('employees.visa_expiration'),   'visa_expire',       'date'],
+                        [__('employees.permit_expiration'), 'work_permit_expiration_date', 'date'],
                     ] as [$label, $name, $type])
                     <div class="flex items-center gap-4 py-1.5 border-b border-gray-100">
                         <label class="w-44 shrink-0 text-sm text-gray-500">{{ $label }}</label>
@@ -355,12 +355,12 @@
             <div class="flex gap-8">
                 <div class="flex-1">
                     <div class="flex items-center gap-4 py-1.5 border-b border-gray-100">
-                        <label class="w-44 shrink-0 text-sm text-gray-500">Employee Code</label>
+                        <label class="w-44 shrink-0 text-sm text-gray-500">{{ __('employees.employee_code') }}</label>
                         <input type="text" name="employee_code" value="{{ $val('employee_code') }}"
                                class="flex-1 text-sm text-gray-800 bg-transparent border-0 focus:outline-none px-0 py-0" placeholder="-">
                     </div>
                     <div class="flex items-center gap-4 py-1.5 border-b border-gray-100">
-                        <label class="w-44 shrink-0 text-sm text-gray-500">Status</label>
+                        <label class="w-44 shrink-0 text-sm text-gray-500">{{ __('common.status') }}</label>
                         <select name="employment_status" class="flex-1 text-sm text-gray-800 bg-transparent border-0 focus:outline-none px-0 py-0">
                             @foreach(['draft' => 'Draft', 'active' => 'Active', 'probation' => 'Probation', 'suspended' => 'Suspended', 'resigned' => 'Resigned', 'terminated' => 'Terminated'] as $k => $v)
                                 <option value="{{ $k }}" {{ $val('employment_status', 'active') === $k ? 'selected' : '' }}>{{ $v }}</option>
@@ -368,12 +368,12 @@
                         </select>
                     </div>
                     @foreach([
-                        ['Hire Date',       'hire_date',           'date'],
-                        ['First Contract',  'first_contract_date', 'date'],
-                        ['End Date',        'end_date',            'date'],
-                        ['Probation Start', 'probation_start_date','date'],
-                        ['Probation End',   'probation_end_date',  'date'],
-                        ['Departure Date',  'departure_date',      'date'],
+                        [__('employees.hire_date'),       'hire_date',           'date'],
+                        [__('employees.first_contract'),  'first_contract_date', 'date'],
+                        [__('employees.end_date'),        'end_date',            'date'],
+                        [__('employees.probation_start'), 'probation_start_date','date'],
+                        [__('employees.probation_end'),   'probation_end_date',  'date'],
+                        [__('employees.departure_date'),  'departure_date',      'date'],
                     ] as [$label, $name, $type])
                     <div class="flex items-center gap-4 py-1.5 border-b border-gray-100">
                         <label class="w-44 shrink-0 text-sm text-gray-500">{{ $label }}</label>
@@ -382,19 +382,19 @@
                     </div>
                     @endforeach
                     <div class="flex items-center gap-4 py-1.5 border-b border-gray-100">
-                        <label class="w-44 shrink-0 text-sm text-gray-500">Departure Reason</label>
+                        <label class="w-44 shrink-0 text-sm text-gray-500">{{ __('employees.departure_reason') }}</label>
                         <x-relation-dropdown table="hr_departure_reasons" field="name" name="departure_reason_id" relation="many2one"
                             :selected="old('departure_reason_id', $employee?->departure_reason_id)" class="flex-1" compact />
                     </div>
                 </div>
                 <div class="flex-1">
                     <div class="flex items-center gap-4 py-1.5 border-b border-gray-100">
-                        <label class="w-44 shrink-0 text-sm text-gray-500">Wage</label>
+                        <label class="w-44 shrink-0 text-sm text-gray-500">{{ __('employees.wage') }}</label>
                         <input type="number" name="wage" step="0.01" value="{{ $val('wage') }}"
                                class="flex-1 text-sm text-gray-800 bg-transparent border-0 focus:outline-none px-0 py-0" placeholder="0.00">
                     </div>
                     <div class="flex items-center gap-4 py-1.5 border-b border-gray-100">
-                        <label class="w-44 shrink-0 text-sm text-gray-500">Payment Method</label>
+                        <label class="w-44 shrink-0 text-sm text-gray-500">{{ __('employees.payment_method') }}</label>
                         <select name="payment_method" class="flex-1 text-sm text-gray-800 bg-transparent border-0 focus:outline-none px-0 py-0">
                             <option value="">—</option>
                             @foreach(['cash' => 'Cash', 'bank_transfer' => 'Bank Transfer', 'cheque' => 'Cheque'] as $k => $v)
@@ -403,11 +403,11 @@
                         </select>
                     </div>
                     <div class="flex items-start gap-4 py-1.5 border-b border-gray-100 mt-2">
-                        <label class="w-44 shrink-0 text-sm text-gray-500 pt-0.5">Departure Notes</label>
+                        <label class="w-44 shrink-0 text-sm text-gray-500 pt-0.5">{{ __('employees.departure_notes') }}</label>
                         <textarea name="departure_description" rows="2" class="flex-1 text-sm text-gray-800 bg-transparent border-0 focus:outline-none px-0 py-0 resize-y" placeholder="-">{{ $val('departure_description') }}</textarea>
                     </div>
                     <div class="flex items-start gap-4 py-1.5 border-b border-gray-100">
-                        <label class="w-44 shrink-0 text-sm text-gray-500 pt-0.5">Notes</label>
+                        <label class="w-44 shrink-0 text-sm text-gray-500 pt-0.5">{{ __('common.notes') }}</label>
                         <textarea name="notes" rows="4" class="flex-1 text-sm text-gray-800 bg-transparent border-0 focus:outline-none px-0 py-0 resize-y" placeholder="Internal notes...">{{ $val('notes') }}</textarea>
                     </div>
                 </div>
@@ -439,15 +439,15 @@
                  onTypeChange(row) { row.skill_id = ''; row.level_id = ''; }
              }">
             <div class="flex items-center justify-between mb-3">
-                <p class="text-xs font-semibold text-gray-400 uppercase tracking-wide">Skills</p>
+                <p class="text-xs font-semibold text-gray-400 uppercase tracking-wide">{{ __('employees.skills_tab') }}</p>
                 <button type="button" @click="addRow()"
                         class="inline-flex items-center gap-1 text-xs text-purple-700 border border-purple-200 rounded px-2.5 py-1 hover:bg-purple-50">
-                    + Add Skill
+                    {{ __('employees.add_skill') }}
                 </button>
             </div>
 
             <div x-show="rows.length === 0" class="py-8 text-center text-sm text-gray-400">
-                No skills added yet. Click "+ Add Skill" to add one.
+                {{ __('employees.no_skills') }}
             </div>
 
             <template x-for="(row, i) in rows" :key="i">

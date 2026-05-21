@@ -6,7 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Helpers\SearchFilters;
 use App\Helpers\SortsTable;
 use App\Http\Requests\Workflow\StoreProcedureTemplateRequest;
-use App\Models\Workflow\Department;
+use App\Models\Employees\Department;
 use App\Models\Workflow\Group;
 use App\Models\Workflow\ProcedureStep;
 use App\Models\Workflow\ProcedureTemplate;
@@ -169,7 +169,7 @@ class ProcedureTemplateController extends Controller
             'creator_see_tasks'    => 'boolean',
             'enabled'              => 'boolean',
             'departments'          => 'nullable|array',
-            'departments.*'        => 'exists:workflow_departments,id',
+            'departments.*'        => 'exists:hr_departments,id',
         ]);
         $deptIds = $data['departments'] ?? [];
         unset($data['departments']);
@@ -193,7 +193,7 @@ class ProcedureTemplateController extends Controller
         $data = $request->validate([
             'name'                  => 'required|string|max:255',
             'description'           => 'nullable|string|max:5000',
-            'default_department_id' => 'nullable|exists:workflow_departments,id',
+            'default_department_id' => 'nullable|exists:hr_departments,id',
             'resolve_max_duration'  => 'nullable|integer|min:1',
             'is_approve_only'       => 'boolean',
             'has_procedures'        => 'boolean',
@@ -258,7 +258,7 @@ class ProcedureTemplateController extends Controller
         $data = $request->validate([
             'name'                  => 'required|string|max:255',
             'description'           => 'nullable|string|max:5000',
-            'default_department_id' => 'nullable|exists:workflow_departments,id',
+            'default_department_id' => 'nullable|exists:hr_departments,id',
             'resolve_max_duration'  => 'nullable|integer|min:1',
             'is_approve_only'          => 'boolean',
             'has_procedures'           => 'boolean',

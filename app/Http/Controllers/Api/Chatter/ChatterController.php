@@ -24,7 +24,7 @@ class ChatterController extends Controller
         'App\Models\Workflow\TicketTemplate'       => 'workflow.config.read',
         'App\Models\Workflow\ProcedureTemplate'    => 'workflow.config.read',
         'App\Models\Workflow\Group'                => 'workflow.config.read',
-        'App\Models\Workflow\Department'           => 'workflow.config.read',
+        'App\Models\Employees\Department'           => 'employees.read',
         'App\Models\Workflow\Manager'              => 'workflow.config.read',
         'App\Models\Workflow\WorkflowUser'         => 'workflow.config.read',
     ];
@@ -38,7 +38,7 @@ class ChatterController extends Controller
         'App\Models\Workflow\TicketTemplate'       => 'workflow.config.write',
         'App\Models\Workflow\ProcedureTemplate'    => 'workflow.config.write',
         'App\Models\Workflow\Group'                => 'workflow.config.write',
-        'App\Models\Workflow\Department'           => 'workflow.config.write',
+        'App\Models\Employees\Department'           => 'employees.write',
         'App\Models\Workflow\Manager'              => 'workflow.config.write',
         'App\Models\Workflow\WorkflowUser'         => 'workflow.config.write',
     ];

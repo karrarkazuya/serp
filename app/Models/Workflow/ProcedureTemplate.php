@@ -2,6 +2,7 @@
 
 namespace App\Models\Workflow;
 
+use App\Models\Employees\Department;
 use App\Models\User;
 use App\Traits\HasChatter;
 use Illuminate\Database\Eloquent\Builder;
@@ -103,7 +104,7 @@ class ProcedureTemplate extends Model
         // Department: must be in the allowed list (AND logic; no departments = unrestricted)
         $query->where(function ($q) use ($deptId) {
             $q->whereDoesntHave('departments')
-              ->orWhereHas('departments', fn ($d) => $d->where('workflow_departments.id', $deptId));
+              ->orWhereHas('departments', fn ($d) => $d->where('hr_departments.id', $deptId));
         });
 
         return $query;

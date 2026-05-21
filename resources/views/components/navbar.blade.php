@@ -54,12 +54,6 @@
                     {{ __('nav.groups') }}
                 </a>
                 @endcan
-                @can('viewAny', \App\Models\Workflow\Department::class)
-                <a href="{{ route('workflow.config.departments.index') }}"
-                   class="block px-4 py-2.5 text-sm text-gray-800 hover:bg-gray-100 {{ request()->routeIs('workflow.config.departments.*') ? 'bg-gray-100 font-semibold' : '' }}">
-                    {{ __('nav.departments') }}
-                </a>
-                @endcan
                 @can('viewAny', \App\Models\Workflow\WorkflowUser::class)
                 <a href="{{ route('workflow.config.users.index') }}"
                    class="block px-4 py-2.5 text-sm text-gray-800 hover:bg-gray-100 {{ request()->routeIs('workflow.config.users.*') ? 'bg-gray-100 font-semibold' : '' }}">

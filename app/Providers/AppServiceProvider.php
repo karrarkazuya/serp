@@ -32,7 +32,6 @@ use App\Models\Settings\Company;
 use App\Models\Settings\Setting;
 use App\Models\Notification;
 use App\Models\User;
-use App\Models\Workflow\Department;
 use App\Models\Workflow\Group;
 use App\Models\Workflow\Procedure;
 use App\Models\Workflow\ProcedureTemplate;
@@ -65,7 +64,6 @@ use App\Policies\PermissionPolicy;
 use App\Policies\RolePolicy;
 use App\Policies\SettingPolicy;
 use App\Policies\UserPolicy;
-use App\Policies\Workflow\DepartmentPolicy;
 use App\Policies\Workflow\GroupPolicy;
 use App\Policies\Workflow\ManagerPolicy;
 use App\Policies\Workflow\ProcedurePolicy;
@@ -129,7 +127,6 @@ class AppServiceProvider extends ServiceProvider
         Gate::policy(Setting::class, SettingPolicy::class);
         Gate::policy(Company::class, CompanyPolicy::class);
         Gate::policy(Group::class, GroupPolicy::class);
-        Gate::policy(Department::class, DepartmentPolicy::class);
         Gate::policy(Manager::class, ManagerPolicy::class);
         Gate::policy(WorkflowUser::class, WorkflowUserPolicy::class);
         Gate::policy(TicketTemplate::class, TicketTemplatePolicy::class);
@@ -148,7 +145,6 @@ class AppServiceProvider extends ServiceProvider
             Setting::class,
             \App\Models\Chatter\ChatterMessage::class,
             Group::class,
-            Department::class,
             Manager::class,
             WorkflowUser::class,
             Ticket::class,

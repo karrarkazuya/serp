@@ -8,7 +8,7 @@
             <a href="{{ route('workflow.tickets.index') }}" class="text-xs text-purple-600 hover:text-purple-700">{{ __('workflow.tickets_title') }}</a>
             <span class="text-sm font-semibold text-gray-800">{{ __('workflow.new_ticket') }}</span>
         </div>
-        <div class="ml-auto flex items-center gap-2">
+        <div class="flex items-center gap-2">
             <a href="{{ route('workflow.tickets.index') }}" class="px-3 py-1.5 text-sm text-gray-600 bg-white border border-gray-300 rounded hover:bg-gray-50">{{ __('workflow.discard') }}</a>
             <button form="ticket-form" type="submit" class="px-4 py-1.5 text-sm font-medium text-white bg-[#714B67] hover:bg-[#5c3d55] rounded shadow-sm">{{ __('common.save') }}</button>
         </div>
@@ -39,7 +39,7 @@
                         table="workflow_ticket_templates"
                         field="name"
                         name="ticket_template_id"
-                        label="Template *"
+                        :label="__('workflow.template_required') . ' *'"
                         :selected="old('ticket_template_id', $selectedTemplate?->id)"
                         relation="many2one"
                     />

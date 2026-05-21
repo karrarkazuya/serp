@@ -70,7 +70,7 @@
             :group-by="$contactGroups"
         />
 
-        <div class="ml-auto flex items-center gap-2 sm:gap-3 text-sm text-gray-500 shrink-0">
+        <div class="ms-auto flex items-center gap-2 sm:gap-3 text-sm text-gray-500 shrink-0">
             @if($contacts->total() > 0)
                 <span class="text-sm font-semibold text-gray-600 whitespace-nowrap">
                     {{ $contacts->firstItem() }}-{{ $contacts->lastItem() }} / {{ $contacts->total() }}
@@ -147,6 +147,9 @@
                             @if($contact->email)
                                 <p class="text-xs text-blue-500 truncate mt-0.5">{{ $contact->email }}</p>
                             @endif
+                            @if($contact->phones->isNotEmpty())
+                                <p class="text-xs text-gray-500 truncate mt-0.5">{{ $contact->phones->first()->phone }}</p>
+                            @endif
                             @if(!$contact->active)
                                 <span class="inline-block mt-1 text-[10px] font-semibold text-amber-600 uppercase">{{ __('contacts.archived') }}</span>
                             @endif
@@ -162,7 +165,7 @@
         <x-slot:columns>
             <x-sortable-th column="name"    :label="__('contacts.name')"    class="px-4 py-2" :default="true" />
             <x-sortable-th column="email"   :label="__('contacts.email')"   class="px-3 py-2" />
-            <x-sortable-th column="phone"   :label="__('contacts.phone')"   class="px-3 py-2" />
+            <th class="px-3 py-2 text-xs font-semibold text-gray-500 uppercase tracking-wide text-left">{{ __('contacts.phone') }}</th>
             <x-sortable-th column="city"    :label="__('contacts.city')"    class="px-3 py-2" />
             <x-sortable-th column="country" :label="__('contacts.country')" class="px-3 py-2" />
             <x-sortable-th column="company" :label="__('contacts.company')" class="px-3 py-2" />
@@ -177,7 +180,7 @@
                 @endif
             </td>
             <td class="px-3 py-2 text-gray-600">{{ $contact->email }}</td>
-            <td class="px-3 py-2 text-gray-600">{{ $contact->phone }}</td>
+            <td class="px-3 py-2 text-gray-600">{{ $contact->phones->pluck('phone')->join(', ') }}</td>
             <td class="px-3 py-2 text-gray-600">{{ $contact->city }}</td>
             <td class="px-3 py-2 text-gray-600">{{ $contact->country }}</td>
             <td class="px-3 py-2 text-gray-600">{{ $contact->company?->name ?? $contact->company_name }}</td>

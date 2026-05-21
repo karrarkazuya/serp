@@ -28,7 +28,7 @@ class ContactController extends Controller
         $this->authorize('viewAny', Contact::class);
 
         $activeCompanyIds = $this->companyContext->getActiveCompanyIds();
-        $query = Contact::query()->with(['creator', 'company', 'tags']);
+        $query = Contact::query()->with(['creator', 'company', 'tags', 'phones']);
 
         if (!empty($activeCompanyIds)) {
             $query->forCompanies($activeCompanyIds);
@@ -62,7 +62,7 @@ class ContactController extends Controller
         $activeCompanyIds = $this->companyContext->getActiveCompanyIds();
         abort_unless(in_array($contact->company_id, $activeCompanyIds), 403);
 
-        $contact->load(['company', 'tags', 'children.tags', 'parent', 'creator', 'updater']);
+        $contact->load(['company', 'tags', 'phones', 'children.tags', 'parent', 'creator', 'updater']);
 
         $allIds = Contact::active()
             ->when(!empty($activeCompanyIds), fn($q) => $q->forCompanies($activeCompanyIds))
@@ -95,7 +95,8 @@ class ContactController extends Controller
         $data = $request->validated();
         $tagIds = $data['tags'] ?? [];
         $relatedContactIds = $data['related_contacts'] ?? [];
-        unset($data['tags'], $data['related_contacts']);
+        $phones = $this->cleanPhones($data['phones'] ?? []);
+        unset($data['tags'], $data['related_contacts'], $data['phones']);
 
         $fileRecord = null;
         if ($request->hasFile('avatar')) {
@@ -104,10 +105,11 @@ class ContactController extends Controller
         }
 
         try {
-            $contact = DB::transaction(function () use ($data, $tagIds, $relatedContactIds) {
+            $contact = DB::transaction(function () use ($data, $tagIds, $relatedContactIds, $phones) {
                 $contact = $this->contactService->create($data);
                 $contact->tags()->sync($tagIds);
                 $this->syncRelatedContacts($contact, $relatedContactIds);
+                $this->syncPhones($contact, $phones);
 
                 return $contact;
             });
@@ -132,7 +134,7 @@ class ContactController extends Controller
         $activeCompanyIds = $this->companyContext->getActiveCompanyIds();
         abort_unless(in_array($contact->company_id, $activeCompanyIds), 403);
 
-        $contact->load(['company', 'tags', 'children', 'parent']);
+        $contact->load(['company', 'tags', 'phones', 'children', 'parent']);
         $relatedContactIds = $contact->children->pluck('id')->toArray();
 
         return view('contacts.edit', compact('contact', 'relatedContactIds'));
@@ -146,7 +148,8 @@ class ContactController extends Controller
         $data = $request->validated();
         $tagIds = $data['tags'] ?? [];
         $relatedContactIds = $data['related_contacts'] ?? [];
-        unset($data['tags'], $data['related_contacts']);
+        $phones = $this->cleanPhones($data['phones'] ?? []);
+        unset($data['tags'], $data['related_contacts'], $data['phones']);
 
         $oldAvatarUuid = $contact->avatar;
 
@@ -156,10 +159,11 @@ class ContactController extends Controller
         }
 
         try {
-            DB::transaction(function () use ($contact, $data, $tagIds, $relatedContactIds) {
+            DB::transaction(function () use ($contact, $data, $tagIds, $relatedContactIds, $phones) {
                 $this->contactService->update($contact, $data);
                 $contact->tags()->sync($tagIds);
                 $this->syncRelatedContacts($contact, $relatedContactIds);
+                $this->syncPhones($contact, $phones);
             });
         } catch (\Throwable $e) {
             if (isset($data['avatar'])) {
@@ -258,6 +262,24 @@ class ContactController extends Controller
             'Content-Type'  => 'image/svg+xml',
             'Cache-Control' => 'private, max-age=60',
         ]);
+    }
+
+    private function cleanPhones(array $raw): array
+    {
+        return collect($raw)
+            ->map('trim')
+            ->filter(fn($p) => $p !== '')
+            ->unique()
+            ->values()
+            ->all();
+    }
+
+    private function syncPhones(Contact $contact, array $phones): void
+    {
+        $contact->phones()->delete();
+        foreach ($phones as $phone) {
+            $contact->phones()->create(['phone' => $phone]);
+        }
     }
 
     private function syncRelatedContacts(Contact $contact, array $relatedContactIds): void

@@ -121,7 +121,7 @@
 </head>
 <body>
     <div class="wrapper">
-        <div class="brand">{{ $company?->name ? $company->name . ' · Support' : 'Support' }}</div>
+        <div class="brand">{{ $company?->name ? $company->name . ' · ' . __('workflow.support_brand') : __('workflow.support_brand') }}</div>
 
         <div class="card">
             <div class="banner banner-{{ $ticket->state }}">
@@ -136,7 +136,7 @@
                 </span>
                 <span class="meta-item">
                     <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-                    Ticket #{{ $ticket->id }}
+                    {{ __('workflow.ticket_number') }}{{ $ticket->id }}
                 </span>
                 @if($ticket->assignedDepartment)
                 <span class="meta-item">
@@ -150,19 +150,19 @@
             <div class="fields">
                 @if($ticket->priority)
                 <div class="field-row">
-                    <span class="field-label">Priority</span>
+                    <span class="field-label">{{ __('workflow.priority_field') }}</span>
                     <span class="field-value">{{ $ticket->priorityLabel() }}</span>
                 </div>
                 @endif
                 @if($ticket->resolve_deadline)
                 <div class="field-row">
-                    <span class="field-label">Deadline</span>
+                    <span class="field-label">{{ __('workflow.deadline_field') }}</span>
                     <span class="field-value">{{ $ticket->resolve_deadline->format('M j, Y H:i') }}</span>
                 </div>
                 @endif
                 @if($ticket->resolve_duration)
                 <div class="field-row">
-                    <span class="field-label">Duration</span>
+                    <span class="field-label">{{ __('workflow.duration_field') }}</span>
                     <span class="field-value">{{ $ticket->resolve_duration }}h</span>
                 </div>
                 @endif
@@ -170,17 +170,17 @@
             @endif
 
             <div class="message-section">
-                <div class="message-label">Message</div>
+                <div class="message-label">{{ __('workflow.message_heading') }}</div>
                 @if($link->message)
                     <div class="message-body">{{ $link->message }}</div>
                 @else
-                    <div class="no-message">No message has been provided for this ticket.</div>
+                    <div class="no-message">{{ __('workflow.no_message_ticket') }}</div>
                 @endif
             </div>
 
             <div class="card-foot">
                 <span>{{ $company?->name }}</span>
-                <span>Confidential — do not forward</span>
+                <span>{{ __('workflow.confidential_footer') }}</span>
             </div>
         </div>
     </div>

@@ -186,6 +186,90 @@ Use exactly these names — do not invent synonyms:
 
 ---
 
+## Tree Views — `<x-tree>` component
+
+Any hierarchical index view (org chart, department tree, category tree, etc.) must use `<x-tree>`. Never hand-build a recursive tree in a view.
+
+### Usage
+
+```blade
+<x-tree :nodes="$treeNodes" empty-text="No records found." />
+```
+
+### Node structure
+
+Build nodes in the controller, never in the view. Each node:
+
+```php
+[
+    'id'          => int,
+    'name'        => string,
+    'url'         => string,        // route to detail page
+    'avatar'      => string|null,   // image URL or null
+    'initials'    => string,        // 2-char fallback, e.g. 'JD'
+    'subtitle'    => string|null,   // secondary label (job title, etc.)
+    'meta'        => string|null,   // tertiary label (department, etc.)
+    'badge'       => string|null,   // optional status chip text
+    'badge_color' => string|null,   // 'green'|'blue'|'orange'|'red'|'gray'
+    'children'    => [...same],     // empty array for leaf nodes
+]
+```
+
+### Building the tree (two-pass pattern)
+
+```php
+private function buildTree(Collection $records): array
+{
+    $map = [];
+    foreach ($records as $r) {
+        $map[$r->id] = [
+            'id' => $r->id, 'name' => $r->name,
+            'url' => route('module.show', $r),
+            'avatar' => null,
+            'initials' => mb_strtoupper(mb_substr($r->name, 0, 2)),
+            'subtitle' => null, 'meta' => null,
+            'badge' => null, 'badge_color' => 'gray',
+            'children' => [],
+        ];
+    }
+    $childrenOf = []; $roots = [];
+    foreach ($records as $r) {
+        if ($r->parent_id && isset($map[$r->parent_id])) {
+            $childrenOf[$r->parent_id][] = $r->id;
+        } else {
+            $roots[] = $r->id;
+        }
+    }
+    $build = function (int $id) use (&$build, &$map, $childrenOf): array {
+        $node = $map[$id];
+        foreach ($childrenOf[$id] ?? [] as $childId) {
+            $node['children'][] = $build($childId);
+        }
+        return $node;
+    };
+    return array_map($build, $roots);
+}
+```
+
+### Controller: adding tree alongside kanban/list
+
+- Detect `$view = $request->query('view', 'kanban')` before the paginator.
+- For `tree`: fetch all filtered records (no pagination, limit 500), build nodes, return `compact('treeNodes', 'total', 'view')`.
+- For kanban/list: paginate normally, return `compact('employees', 'view')`.
+- In Blade: use `$view = $view ?? request('view', 'kanban')` so both paths work.
+- Skip pagination arrows when `$view === 'tree'`; show `$total` count instead.
+- Add a tree toggle button next to kanban/list buttons.
+
+### Component files
+
+- `app/View/Components/Tree.php`
+- `resources/views/components/tree.blade.php` — wrapper, passes `$nodes` array
+- `resources/views/components/_tree-node.blade.php` — recursive Blade partial (includes itself for children)
+
+Nodes start collapsed. Click the chevron to expand. Children are indented with a left-border connector line.
+
+---
+
 ## New Module Checklist
 
 When building a new module, follow `docs/implement_new_module.md` using Contacts as the reference. Quick checklist:

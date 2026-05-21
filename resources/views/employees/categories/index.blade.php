@@ -1,11 +1,11 @@
 @extends('layouts.app')
-@section('title', 'Employee Categories')
+@section('title', __('employees.categories_title'))
 
 @php
     $quickFilters = [
-        ['label' => 'Active',   'params' => ['filter' => ''],         'url' => route('employees.categories.index', array_merge(request()->except('page'), ['filter' => '']))],
-        ['label' => 'Archived', 'params' => ['filter' => 'archived'],  'url' => route('employees.categories.index', array_merge(request()->except('page'), ['filter' => 'archived']))],
-        ['label' => 'All',      'params' => ['filter' => 'all'],       'url' => route('employees.categories.index', array_merge(request()->except('page'), ['filter' => 'all']))],
+        ['label' => __('common.active'),   'params' => ['filter' => ''],         'url' => route('employees.categories.index', array_merge(request()->except('page'), ['filter' => '']))],
+        ['label' => __('common.archived'), 'params' => ['filter' => 'archived'],  'url' => route('employees.categories.index', array_merge(request()->except('page'), ['filter' => 'archived']))],
+        ['label' => __('common.all'),      'params' => ['filter' => 'all'],       'url' => route('employees.categories.index', array_merge(request()->except('page'), ['filter' => 'all']))],
     ];
 @endphp
 
@@ -14,12 +14,12 @@
     <div class="flex flex-wrap items-center gap-2 sm:gap-3 px-3 sm:px-4 py-2 border-b border-gray-200 bg-white shrink-0">
         @can('create', \App\Models\Employees\Employee::class)
         <a href="{{ route('employees.categories.create') }}" class="px-3 sm:px-4 py-2 bg-[#714B67] hover:bg-[#5c3d55] text-white text-sm font-semibold rounded shadow-sm shrink-0">
-            New
+            {{ __('employees.new_category') }}
         </a>
         @endcan
 
         <div class="flex items-center gap-1.5 min-w-0 shrink-0">
-            <span class="text-xl font-semibold text-gray-700">Employee Categories</span>
+            <span class="text-xl font-semibold text-gray-700">{{ __('employees.categories_title') }}</span>
         </div>
 
         <x-search
@@ -28,7 +28,7 @@
             :quick-filters="$quickFilters"
         />
 
-        <div class="ml-auto flex items-center gap-2 sm:gap-3 text-sm text-gray-500 shrink-0">
+        <div class="ms-auto flex items-center gap-2 sm:gap-3 text-sm text-gray-500 shrink-0">
             @if($categories->total() > 0)
                 <span class="text-sm font-semibold text-gray-600 whitespace-nowrap">
                     {{ $categories->firstItem() }}-{{ $categories->lastItem() }} / {{ $categories->total() }}
@@ -52,11 +52,11 @@
         </div>
     </div>
 
-    <x-list :paginator="$categories" empty-text="No employee categories found.">
+    <x-list :paginator="$categories" :empty-text="__('employees.no_categories')">
         <x-slot:columns>
-            <th class="px-4 py-2 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Name</th>
-            <th class="px-3 py-2 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Color</th>
-            <th class="px-3 py-2 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Employees</th>
+            <th class="px-4 py-2 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">{{ __('common.name') }}</th>
+            <th class="px-3 py-2 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">{{ __('common.color') }}</th>
+            <th class="px-3 py-2 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">{{ __('common.employees') }}</th>
         </x-slot:columns>
 
         @foreach($categories as $category)
@@ -68,7 +68,7 @@
                     @endif
                     <span class="text-sm font-semibold text-gray-900">{{ $category->name }}</span>
                     @if(!$category->active)
-                        <span class="inline-block px-1.5 py-0.5 rounded text-[10px] font-semibold text-amber-700 bg-amber-50">Archived</span>
+                        <span class="inline-block px-1.5 py-0.5 rounded text-[10px] font-semibold text-amber-700 bg-amber-50">{{ __('common.archived') }}</span>
                     @endif
                 </div>
             </td>

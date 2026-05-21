@@ -7,16 +7,16 @@
     {{-- Header --}}
     <div class="bg-white border-b border-gray-200 px-4 py-2 flex items-center gap-3 shrink-0">
         <div class="flex flex-col leading-tight">
-            <a href="{{ route('workflow.config.procedure-templates.index') }}" class="text-xs text-purple-600 hover:text-purple-700">Procedure Templates</a>
+            <a href="{{ route('workflow.config.procedure-templates.index') }}" class="text-xs text-purple-600 hover:text-purple-700">{{ __('workflow.procedure_templates_title') }}</a>
             <span class="text-sm font-semibold text-gray-800">{{ $procedureTemplate->name }}</span>
         </div>
-        <div class="ml-auto flex items-center gap-2">
+        <div class="flex items-center gap-2">
             @can('update', $procedureTemplate)
-            <a href="{{ route('workflow.config.procedure-templates.edit', $procedureTemplate) }}" class="px-3 py-1.5 text-sm border border-gray-300 rounded hover:bg-gray-50">Edit</a>
+            <a href="{{ route('workflow.config.procedure-templates.edit', $procedureTemplate) }}" class="px-3 py-1.5 text-sm border border-gray-300 rounded hover:bg-gray-50">{{ __('common.edit') }}</a>
             @endcan
             @can('create', \App\Models\Workflow\Procedure::class)
             <a href="{{ route('workflow.procedures.create', ['template_id' => $procedureTemplate->id]) }}"
-               class="px-3 py-1.5 text-sm bg-[#714B67] text-white rounded hover:bg-[#5c3d55]">Start Procedure</a>
+               class="px-3 py-1.5 text-sm bg-[#714B67] text-white rounded hover:bg-[#5c3d55]">{{ __('workflow.start_procedure') }}</a>
             @endcan
         </div>
     </div>
@@ -41,40 +41,40 @@
                 </div>
                 <div class="px-4 py-2.5 space-y-2">
                     <div class="flex items-center justify-between gap-2 text-xs">
-                        <span class="text-gray-400 shrink-0">Group</span>
+                        <span class="text-gray-400 shrink-0">{{ __('workflow.default_group_label') }}</span>
                         <span class="text-gray-700 font-medium truncate">{{ $procedureTemplate->defaultGroup?->name ?? '—' }}</span>
                     </div>
                     <div class="flex items-center justify-between gap-2 text-xs">
-                        <span class="text-gray-400 shrink-0">SLA</span>
+                        <span class="text-gray-400 shrink-0">{{ __('workflow.sla_hrs_label') }}</span>
                         <span class="text-gray-700 font-medium">{{ $procedureTemplate->resolve_max_duration ? $procedureTemplate->resolve_max_duration . 'h' : '—' }}</span>
                     </div>
                     <div class="flex items-center justify-between gap-2 text-xs">
-                        <span class="text-gray-400 shrink-0">Creator sees tickets</span>
-                        <span class="text-gray-700 font-medium">{{ $procedureTemplate->creator_see_tasks ? 'Yes' : 'No' }}</span>
+                        <span class="text-gray-400 shrink-0">{{ __('workflow.creator_sees_tickets') }}</span>
+                        <span class="text-gray-700 font-medium">{{ $procedureTemplate->creator_see_tasks ? __('workflow.yes_label') : __('workflow.no_label') }}</span>
                     </div>
                     <div class="flex items-center justify-between gap-2 text-xs">
-                        <span class="text-gray-400 shrink-0">Status</span>
+                        <span class="text-gray-400 shrink-0">{{ __('common.status') }}</span>
                         <span class="inline-flex items-center px-1.5 py-0.5 rounded text-[11px] font-medium {{ $procedureTemplate->enabled ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500' }}">
-                            {{ $procedureTemplate->enabled ? 'Enabled' : 'Disabled' }}
+                            {{ $procedureTemplate->enabled ? __('workflow.enabled_text') : __('workflow.disabled_text') }}
                         </span>
                     </div>
                     @if($procedureTemplate->departments->isNotEmpty())
                     <div class="flex items-start justify-between gap-2 text-xs">
-                        <span class="text-gray-400 shrink-0">Departments</span>
+                        <span class="text-gray-400 shrink-0">{{ __('workflow.departments_label') }}</span>
                         <span class="text-gray-700 font-medium text-right">{{ $procedureTemplate->departments->pluck('name')->join(', ') }}</span>
                     </div>
                     @endif
                 </div>
                 <div class="px-4 py-2.5 border-t border-gray-100 text-xs text-gray-400">
-                    Created {{ $procedureTemplate->created_at->format('M d, Y') }}
+                    {{ __('common.created') }} {{ $procedureTemplate->created_at->format('M d, Y') }}
                 </div>
             </div>
 
             {{-- Steps list --}}
             <div class="bg-gray-50 rounded-xl border border-gray-200 overflow-hidden">
                 <div class="px-4 py-3 border-b border-gray-100 flex items-center justify-between">
-                    <span class="text-sm font-semibold text-gray-800">Steps</span>
-                    <span class="text-xs text-gray-400">{{ $procedureTemplate->steps->count() }} step{{ $procedureTemplate->steps->count() !== 1 ? 's' : '' }}</span>
+                    <span class="text-sm font-semibold text-gray-800">{{ __('workflow.show_steps') }}</span>
+                    <span class="text-xs text-gray-400">{{ $procedureTemplate->steps->count() }} {{ __('workflow.steps_count') }}</span>
                 </div>
                 @if($procedureTemplate->steps->isNotEmpty())
                 <div class="divide-y divide-gray-100">
@@ -88,7 +88,7 @@
                             @endif
                             <div class="flex items-center gap-2 mt-1 flex-wrap">
                                 @if($step->inputs->isNotEmpty())
-                                <span class="text-[10px] text-gray-400">{{ $step->inputs->count() }} field{{ $step->inputs->count() !== 1 ? 's' : '' }}</span>
+                                <span class="text-[10px] text-gray-400">{{ $step->inputs->count() }} {{ __('workflow.fields_count') }}</span>
                                 @endif
                                 @if($step->nextSteps->isNotEmpty())
                                 <span class="text-[10px] text-blue-400 truncate">→ {{ $step->nextSteps->pluck('name')->join(', ') }}</span>
@@ -99,7 +99,7 @@
                     @endforeach
                 </div>
                 @else
-                <div class="px-4 py-8 text-center text-xs text-gray-400">No steps defined yet.</div>
+                <div class="px-4 py-8 text-center text-xs text-gray-400">{{ __('workflow.no_steps_defined') }}</div>
                 @endif
             </div>
 
@@ -114,13 +114,13 @@
                     @click="tab = 'flowchart'"
                     :class="tab === 'flowchart' ? 'border-b-2 border-[#714B67] text-[#714B67]' : 'text-gray-500 hover:text-gray-700'"
                     class="px-4 py-2.5 text-sm font-medium transition-colors">
-                    Flowchart
+                    {{ __('workflow.flowchart_tab') }}
                 </button>
                 <button type="button"
                     @click="tab = 'activity'"
                     :class="tab === 'activity' ? 'border-b-2 border-[#714B67] text-[#714B67]' : 'text-gray-500 hover:text-gray-700'"
                     class="px-4 py-2.5 text-sm font-medium transition-colors">
-                    Activity
+                    {{ __('common.activity_tab') }}
                 </button>
             </div>
 

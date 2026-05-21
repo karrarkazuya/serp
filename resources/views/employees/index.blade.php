@@ -1,33 +1,34 @@
 @extends('layouts.app')
-@section('title', 'Employees')
+@section('title', __('employees.title'))
 
 @php
-    $view = request('view', 'kanban');
+    $view = $view ?? request('view', 'kanban');
     $quickFilters = [
-        ['label' => 'Active',     'params' => ['filter' => ''],         'url' => route('employees.index', array_merge(request()->except('page'), ['filter' => '']))],
-        ['label' => 'Archived',   'params' => ['filter' => 'archived'],  'url' => route('employees.index', array_merge(request()->except('page'), ['filter' => 'archived']))],
-        ['label' => 'All',        'params' => ['filter' => 'all'],       'url' => route('employees.index', array_merge(request()->except('page'), ['filter' => 'all']))],
-        ['label' => 'Probation',  'params' => ['status' => 'probation'], 'url' => route('employees.index', array_merge(request()->except('page'), ['status' => 'probation']))],
+        ['label' => __('common.active'),        'params' => ['filter' => ''],         'url' => route('employees.index', array_merge(request()->except('page'), ['filter' => '']))],
+        ['label' => __('common.archived'),      'params' => ['filter' => 'archived'],  'url' => route('employees.index', array_merge(request()->except('page'), ['filter' => 'archived']))],
+        ['label' => __('common.all'),           'params' => ['filter' => 'all'],       'url' => route('employees.index', array_merge(request()->except('page'), ['filter' => 'all']))],
+        ['label' => __('employees.probation'),  'params' => ['status' => 'probation'], 'url' => route('employees.index', array_merge(request()->except('page'), ['status' => 'probation']))],
     ];
     $groupOptions = [
-        ['label' => 'Department',  'url' => route('employees.index', array_merge(request()->except('page'), ['group_by' => 'department_id']))],
-        ['label' => 'Job Position','url' => route('employees.index', array_merge(request()->except('page'), ['group_by' => 'job_id']))],
-        ['label' => 'Company',     'url' => route('employees.index', array_merge(request()->except('page'), ['group_by' => 'company_id']))],
-        ['label' => 'Status',      'url' => route('employees.index', array_merge(request()->except('page'), ['group_by' => 'employment_status']))],
+        ['label' => __('common.department'),      'url' => route('employees.index', array_merge(request()->except('page'), ['group_by' => 'department_id']))],
+        ['label' => __('employees.job_position'),'url' => route('employees.index', array_merge(request()->except('page'), ['group_by' => 'job_id']))],
+        ['label' => __('common.company'),         'url' => route('employees.index', array_merge(request()->except('page'), ['group_by' => 'company_id']))],
+        ['label' => __('common.status'),          'url' => route('employees.index', array_merge(request()->except('page'), ['group_by' => 'employment_status']))],
     ];
 @endphp
 
 @section('content')
-<div class="flex min-w-0 flex-col h-full {{ $view === 'kanban' ? 'bg-gray-100' : 'bg-white' }}" x-data="{ checked: [] }">
+<div class="flex min-w-0 flex-col h-full {{ $view === 'kanban' ? 'bg-gray-100' : 'bg-white' }}" x-data="{ checked: [] }"
+     @if($view === 'tree') style="background:#f9fafb" @endif>
     <div class="flex flex-wrap items-center gap-2 sm:gap-3 px-3 sm:px-4 py-2 border-b border-gray-200 bg-white shrink-0">
         @can('create', \App\Models\Employees\Employee::class)
         <a href="{{ route('employees.create') }}" class="px-3 sm:px-4 py-2 bg-[#714B67] hover:bg-[#5c3d55] text-white text-sm font-semibold rounded shadow-sm shrink-0">
-            New
+            {{ __('common.new') }}
         </a>
         @endcan
 
         <div class="flex items-center gap-1.5 min-w-0 shrink-0">
-            <span class="text-xl font-semibold text-gray-700">Employees</span>
+            <span class="text-xl font-semibold text-gray-700">{{ __('employees.title') }}</span>
         </div>
 
         <x-search
@@ -38,48 +39,65 @@
             :group-by="$groupOptions"
         />
 
-        <div class="ml-auto flex items-center gap-2 sm:gap-3 text-sm text-gray-500 shrink-0">
-            @if($employees->total() > 0)
-                <span class="text-sm font-semibold text-gray-600 whitespace-nowrap">
-                    {{ $employees->firstItem() }}-{{ $employees->lastItem() }} / {{ $employees->total() }}
-                </span>
+        <div class="ms-auto flex items-center gap-2 sm:gap-3 text-sm text-gray-500 shrink-0">
+            {{-- Count / pagination --}}
+            @if($view === 'tree')
+                <span class="text-sm font-semibold text-gray-600 whitespace-nowrap">{{ $total ?? 0 }}</span>
             @else
-                <span class="text-sm font-semibold text-gray-400">0</span>
+                @if($employees->total() > 0)
+                    <span class="text-sm font-semibold text-gray-600 whitespace-nowrap">
+                        {{ $employees->firstItem() }}-{{ $employees->lastItem() }} / {{ $employees->total() }}
+                    </span>
+                @else
+                    <span class="text-sm font-semibold text-gray-400">0</span>
+                @endif
+
+                <div class="flex items-center gap-1">
+                    @if($employees->onFirstPage())
+                        <span class="w-10 h-10 inline-flex items-center justify-center rounded bg-gray-100 text-gray-300">‹</span>
+                    @else
+                        <a href="{{ $employees->previousPageUrl() }}" class="w-10 h-10 inline-flex items-center justify-center rounded bg-gray-100 text-gray-600 hover:text-gray-900">‹</a>
+                    @endif
+                    @if($employees->hasMorePages())
+                        <a href="{{ $employees->nextPageUrl() }}" class="w-10 h-10 inline-flex items-center justify-center rounded bg-gray-100 text-gray-600 hover:text-gray-900">›</a>
+                    @else
+                        <span class="w-10 h-10 inline-flex items-center justify-center rounded bg-gray-100 text-gray-300">›</span>
+                    @endif
+                </div>
             @endif
 
-            <div class="flex items-center gap-1">
-                @if($employees->onFirstPage())
-                    <span class="w-10 h-10 inline-flex items-center justify-center rounded bg-gray-100 text-gray-300">‹</span>
-                @else
-                    <a href="{{ $employees->previousPageUrl() }}" class="w-10 h-10 inline-flex items-center justify-center rounded bg-gray-100 text-gray-600 hover:text-gray-900">‹</a>
-                @endif
-                @if($employees->hasMorePages())
-                    <a href="{{ $employees->nextPageUrl() }}" class="w-10 h-10 inline-flex items-center justify-center rounded bg-gray-100 text-gray-600 hover:text-gray-900">›</a>
-                @else
-                    <span class="w-10 h-10 inline-flex items-center justify-center rounded bg-gray-100 text-gray-300">›</span>
-                @endif
-            </div>
-
+            {{-- View toggles --}}
             <div class="hidden sm:flex items-center rounded overflow-hidden bg-gray-200">
                 <a href="{{ route('employees.index', array_merge(request()->except('view','page'), ['view' => 'kanban'])) }}"
                    class="w-10 h-10 inline-flex items-center justify-center border border-gray-300 {{ $view === 'kanban' ? 'bg-purple-100 text-gray-900 border-purple-400' : 'text-gray-600 hover:bg-gray-100' }}"
-                   title="Kanban View">
+                   title="{{ __('common.kanban_view') }}">
                     <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20"><path d="M3 3h6v14H3V3zm8 0h6v6h-6V3zm0 8h6v6h-6v-6z"/></svg>
                 </a>
                 <a href="{{ route('employees.index', array_merge(request()->except('view','page'), ['view' => 'list'])) }}"
                    class="w-10 h-10 inline-flex items-center justify-center border border-gray-300 {{ $view === 'list' ? 'bg-purple-100 text-gray-900 border-purple-400' : 'text-gray-600 hover:bg-gray-100' }}"
-                   title="List View">
+                   title="{{ __('common.list_view') }}">
                     <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20"><path d="M4 5h12v2H4V5zm0 4h12v2H4V9zm0 4h12v2H4v-2z"/></svg>
+                </a>
+                <a href="{{ route('employees.index', array_merge(request()->except('view','page'), ['view' => 'tree'])) }}"
+                   class="w-10 h-10 inline-flex items-center justify-center border border-gray-300 {{ $view === 'tree' ? 'bg-purple-100 text-gray-900 border-purple-400' : 'text-gray-600 hover:bg-gray-100' }}"
+                   title="{{ __('common.tree_view') }}">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8"
+                              d="M3 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H5a2 2 0 01-2-2V6zM13 4h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6a2 2 0 012-2zM9 18a2 2 0 012-2h2a2 2 0 012 2v1a2 2 0 01-2 2h-2a2 2 0 01-2-2v-1zM6 10v4M12 10v4M9 14h6"/>
+                    </svg>
                 </a>
             </div>
         </div>
     </div>
 
-    @if($view === 'kanban')
+    @if($view === 'tree')
+    <x-tree :nodes="$treeNodes" :empty-text="__('employees.no_employees')" class="flex-1" />
+
+    @elseif($view === 'kanban')
     <div class="flex-1 overflow-y-auto p-3 sm:p-4">
         @if($employees->isEmpty())
             <div class="py-24 text-center text-gray-400">
-                <p class="text-sm font-medium text-gray-500">No employees found.</p>
+                <p class="text-sm font-medium text-gray-500">{{ __('employees.no_employees') }}</p>
             </div>
         @else
             <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
@@ -115,7 +133,7 @@
                                     {{ \App\Models\Employees\Employee::employmentStatusLabel($employee->employment_status) }}
                                 </span>
                                 @if(!$employee->active)
-                                    <span class="inline-block px-1.5 py-0.5 rounded text-[10px] font-semibold text-amber-700 bg-amber-50">Archived</span>
+                                    <span class="inline-block px-1.5 py-0.5 rounded text-[10px] font-semibold text-amber-700 bg-amber-50">{{ __('common.archived') }}</span>
                                 @endif
                             </div>
                         </div>
@@ -133,15 +151,16 @@
         @endif
     </div>
     @else
-    <x-list :paginator="$employees" empty-text="No employees found.">
+    {{-- list view --}}
+    <x-list :paginator="$employees" :empty-text="__('employees.no_employees')">
         <x-slot:columns>
-            <x-sortable-th column="name"       label="Name"        class="px-4 py-2" :default="true" />
-            <x-sortable-th column="department"  label="Department"  class="px-3 py-2" />
-            <x-sortable-th column="job"         label="Job Position" class="px-3 py-2" />
-            <th class="px-3 py-2 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Work Email</th>
-            <th class="px-3 py-2 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Phone</th>
-            <x-sortable-th column="status"      label="Status"      class="px-3 py-2" />
-            <x-sortable-th column="company"     label="Company"     class="px-3 py-2" />
+            <x-sortable-th column="name"       :label="__('common.name')"             class="px-4 py-2" :default="true" />
+            <x-sortable-th column="department"  :label="__('common.department')"       class="px-3 py-2" />
+            <x-sortable-th column="job"         :label="__('employees.job_position')"  class="px-3 py-2" />
+            <th class="px-3 py-2 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">{{ __('employees.work_email') }}</th>
+            <th class="px-3 py-2 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">{{ __('employees.work_phone') }}</th>
+            <x-sortable-th column="status"      :label="__('common.status')"           class="px-3 py-2" />
+            <x-sortable-th column="company"     :label="__('common.company')"          class="px-3 py-2" />
         </x-slot:columns>
 
         @foreach($employees as $employee)

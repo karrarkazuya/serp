@@ -59,11 +59,11 @@ class WorkflowUserController extends Controller
         $this->authorize('create', WorkflowUser::class);
 
         $data = $request->validate([
-            'default_department_id' => 'required|exists:workflow_departments,id',
+            'default_department_id' => 'required|exists:hr_departments,id',
             'groups'                => 'nullable|array',
             'groups.*'              => 'exists:workflow_groups,id',
             'departments'           => 'nullable|array',
-            'departments.*'         => 'exists:workflow_departments,id',
+            'departments.*'         => 'exists:hr_departments,id',
         ]);
 
         $data['active'] = $request->boolean('active');

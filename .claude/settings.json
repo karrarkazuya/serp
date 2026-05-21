@@ -40,7 +40,25 @@
       "Bash(php -l app/Models/File.php)",
       "Bash(php -l app/Http/Controllers/FileController.php)",
       "Bash(php -l app/Http/Controllers/Contacts/ContactController.php)",
-      "Bash(php -l app/Http/Controllers/Employees/EmployeeController.php)"
+      "Bash(php -l app/Http/Controllers/Employees/EmployeeController.php)",
+      "Bash(awk '/protected \\\\$fillable/,/\\\\];/' /Users/karrar/Projects/web/serp/app/Models/Employees/Employee.php)",
+      "Bash(python3 -c \"import sys,json; data=json.load\\(sys.stdin\\); print\\(data[0]['text']\\)\")",
+      "Bash(python3 -c ' *)",
+      "Bash(sqlite3 database/database.sqlite \".tables\")",
+      "Bash(grep -v '^$')",
+      "Bash(# Save clean schema *)",
+      "Read(//tmp/**)",
+      "Bash(diff /tmp/orig_schema.txt /tmp/clean_schema.txt)",
+      "Read(//private/tmp/**)",
+      "Bash(php -r \"echo PHP_EOL; echo 'CPU: ' . \\(is_file\\('/proc/cpuinfo'\\) ? shell_exec\\('nproc'\\) : sys_get_temp_dir\\(\\)\\) . PHP_EOL; echo 'RAM: ' . \\(is_file\\('/proc/meminfo'\\) ? shell_exec\\('grep MemTotal /proc/meminfo'\\) : 'n/a'\\);\")",
+      "Bash(php -r \"echo 'PHP: ' . PHP_VERSION . PHP_EOL; echo 'OS: ' . PHP_OS . PHP_EOL; echo 'SAPI: ' . php_sapi_name\\(\\) . PHP_EOL;\")",
+      "Bash(php -r \"echo shell_exec\\('php --version'\\);\")",
+      "Bash(php -l /Users/karrar/Projects/web/serp/app/Http/Controllers/Settings/SettingsController.php)",
+      "Bash(grep -n 'No modules\\\\|modules available\\\\|administrator\\\\|isEmpty\\\\|$modules' /Users/karrar/Projects/web/serp/resources/views/dashboard.blade.php)",
+      "Bash(xargs sed -i '' 's/ ml-auto / ms-auto /g; s/\"ml-auto /\\\\\"ms-auto /g; s/ ml-auto\"/  ms-auto\"/g; s/ ml-auto\t/ ms-auto\t/g')",
+      "Bash(php -r \"echo json_encode\\(['', '07712372256'], JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_AMP | JSON_HEX_QUOT | JSON_UNESCAPED_UNICODE\\);\")",
+      "Bash(grep -n 'prop\\\\|attribute\\\\|$label' /Users/karrar/Projects/web/serp/resources/views/components/sortable-th.blade.php)",
+      "Bash(python3 -)"
     ],
     "additionalDirectories": [
       "/Users/karrar/Projects/web/serp/storage/app/public/avatars/contacts"

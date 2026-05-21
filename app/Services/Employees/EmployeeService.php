@@ -115,18 +115,23 @@ class EmployeeService
         if ($value === null || $value === '') return '—';
 
         return match ($field) {
-            'company_id'         => \App\Models\Settings\Company::find($value)?->name ?? "#{$value}",
-            'department_id'      => \App\Models\Employees\Department::find($value)?->name ?? "#{$value}",
-            'job_id'             => \App\Models\Employees\Job::find($value)?->name ?? "#{$value}",
+            'company_id'              => \App\Models\Settings\Company::find($value)?->name ?? "#{$value}",
+            'department_id'           => \App\Models\Employees\Department::find($value)?->name ?? "#{$value}",
+            'job_id'                  => \App\Models\Employees\Job::find($value)?->name ?? "#{$value}",
+            'work_location_id'        => \App\Models\Employees\WorkLocation::find($value)?->name ?? "#{$value}",
+            'resource_calendar_id'    => \App\Models\Employees\ResourceCalendar::find($value)?->name ?? "#{$value}",
             'parent_id',
-            'coach_id'           => \App\Models\Employees\Employee::find($value)?->name ?? "#{$value}",
-            'contract_id'        => \App\Models\Employees\Contract::find($value)?->name ?? "#{$value}",
-            'contact_id'         => \App\Models\Contacts\Contact::find($value)?->name ?? "#{$value}",
-            'user_id'            => \App\Models\User::find($value)?->name ?? "#{$value}",
-            'departure_reason_id' => \App\Models\Employees\DepartureReason::find($value)?->name ?? "#{$value}",
-            'employment_status'  => Employee::employmentStatusLabel((string) $value),
-            'active'             => $value ? 'Yes' : 'No',
-            default              => (string) $value,
+            'coach_id',
+            'expense_manager_id',
+            'attendance_manager_id'   => \App\Models\Employees\Employee::find($value)?->name ?? "#{$value}",
+            'contract_id'             => \App\Models\Employees\Contract::find($value)?->name ?? "#{$value}",
+            'contact_id'              => \App\Models\Contacts\Contact::find($value)?->name ?? "#{$value}",
+            'user_id'                 => \App\Models\User::find($value)?->name ?? "#{$value}",
+            'departure_reason_id'     => \App\Models\Employees\DepartureReason::find($value)?->name ?? "#{$value}",
+            'employment_status'       => Employee::employmentStatusLabel((string) $value),
+            'active',
+            'flexible_hours'          => $value ? 'Yes' : 'No',
+            default                   => (string) $value,
         };
     }
 }

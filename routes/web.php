@@ -30,7 +30,6 @@ use App\Http\Controllers\Settings\PermissionController;
 use App\Http\Controllers\Settings\RoleController;
 use App\Http\Controllers\Settings\SettingsController;
 use App\Http\Controllers\Settings\UserController;
-use App\Http\Controllers\Workflow\DepartmentController;
 use App\Http\Controllers\Workflow\GroupController;
 use App\Http\Controllers\Workflow\ManagerController;
 use App\Http\Controllers\Workflow\ProcedureController;
@@ -439,17 +438,6 @@ Route::middleware('auth')->group(function () {
                 Route::post('/{group}/comment', [GroupController::class, 'addComment'])->middleware('permission:workflow.config.write')->name('comment');
             });
 
-            Route::prefix('departments')->name('departments.')->group(function () {
-                Route::get('/', [DepartmentController::class, 'read'])->middleware('permission:workflow.config.read')->name('index');
-                Route::get('/create', [DepartmentController::class, 'create'])->middleware('permission:workflow.config.write')->name('create');
-                Route::post('/', [DepartmentController::class, 'store'])->middleware('permission:workflow.config.write')->name('store');
-                Route::get('/{department}', [DepartmentController::class, 'show'])->middleware('permission:workflow.config.read')->name('show');
-                Route::get('/{department}/edit', [DepartmentController::class, 'edit'])->middleware('permission:workflow.config.write')->name('edit');
-                Route::put('/{department}', [DepartmentController::class, 'write'])->middleware('permission:workflow.config.write')->name('update');
-                Route::delete('/{department}', [DepartmentController::class, 'unlink'])->middleware('permission:workflow.config.unlink')->name('delete');
-                Route::post('/{department}/comment', [DepartmentController::class, 'addComment'])->middleware('permission:workflow.config.write')->name('comment');
-            });
-
             Route::prefix('managers')->name('managers.')->group(function () {
                 Route::get('/', [ManagerController::class, 'read'])->middleware('permission:workflow.config.read')->name('index');
                 Route::get('/{manager}', [ManagerController::class, 'show'])->middleware('permission:workflow.config.read')->name('show');
@@ -508,6 +496,7 @@ Route::middleware('auth')->group(function () {
         // General settings
         Route::get('/', [SettingsController::class, 'index'])->middleware('permission:settings.read')->name('index');
         Route::put('/', [SettingsController::class, 'write'])->middleware('permission:settings.write')->name('update');
+        Route::get('/system', [SettingsController::class, 'system'])->middleware('permission:settings.read')->name('system');
 
         // Companies
         Route::prefix('companies')->name('companies.')->group(function () {

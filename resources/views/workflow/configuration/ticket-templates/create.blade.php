@@ -1,5 +1,5 @@
 @extends('layouts.app')
-@section('title', 'New Ticket Template')
+@section('title', __('workflow.new_ticket_template'))
 
 @php
     $selectedDepartments = old('departments', []);
@@ -10,12 +10,12 @@
 <div class="flex flex-col h-full bg-gray-50">
     <div class="bg-white border-b border-gray-200 px-4 py-2 flex items-center gap-3 shrink-0">
         <div class="flex flex-col leading-tight">
-            <a href="{{ route('workflow.config.ticket-templates.index') }}" class="text-xs text-purple-600 hover:text-purple-700">Ticket Templates</a>
-            <span class="text-sm font-semibold text-gray-800">New Ticket Template</span>
+            <a href="{{ route('workflow.config.ticket-templates.index') }}" class="text-xs text-purple-600 hover:text-purple-700">{{ __('workflow.ticket_templates_title') }}</a>
+            <span class="text-sm font-semibold text-gray-800">{{ __('workflow.new_ticket_template') }}</span>
         </div>
-        <div class="ml-auto flex items-center gap-2">
-            <a href="{{ route('workflow.config.ticket-templates.index') }}" class="px-3 py-1.5 text-sm text-gray-600 bg-white border border-gray-300 rounded hover:bg-gray-50">Discard</a>
-            <button form="template-form" type="submit" class="px-4 py-1.5 text-sm font-medium text-white bg-[#714B67] hover:bg-[#5c3d55] rounded shadow-sm">Save</button>
+        <div class="flex items-center gap-2">
+            <a href="{{ route('workflow.config.ticket-templates.index') }}" class="px-3 py-1.5 text-sm text-gray-600 bg-white border border-gray-300 rounded hover:bg-gray-50">{{ __('workflow.discard') }}</a>
+            <button form="template-form" type="submit" class="px-4 py-1.5 text-sm font-medium text-white bg-[#714B67] hover:bg-[#5c3d55] rounded shadow-sm">{{ __('common.save') }}</button>
         </div>
     </div>
 
@@ -36,7 +36,7 @@
 
                 <div class="p-6">
                     <div class="mb-6">
-                        <input type="text" name="name" value="{{ old('name') }}" required placeholder="Template Name"
+                        <input type="text" name="name" value="{{ old('name') }}" required placeholder="{{ __('workflow.template_name_label') }}"
                                class="w-full text-3xl font-bold text-gray-900 placeholder-gray-300 border-0 border-b-2 border-gray-200 focus:outline-none focus:border-purple-500 pb-1 bg-transparent">
                     </div>
 
@@ -44,31 +44,31 @@
                         table="workflow_groups"
                         field="name"
                         name="default_group_id"
-                        label="Default Group"
+                        :label="__('workflow.default_group_label')"
                         :selected="old('default_group_id')"
                         relation="many2one"
                     />
 
                     <x-relation-dropdown
-                        table="workflow_departments"
+                        table="hr_departments"
                         field="name"
                         name="default_department_id"
-                        label="Default Dept."
+                        :label="__('workflow.default_dept_label2')"
                         :selected="old('default_department_id')"
                         relation="many2one"
                     />
 
                     <div class="flex items-center gap-4 py-2 border-b border-gray-100">
-                        <label class="w-36 shrink-0 text-sm text-gray-500">SLA (hours)</label>
+                        <label class="w-36 shrink-0 text-sm text-gray-500">{{ __('workflow.sla_hours_label') }}</label>
                         <input type="number" name="resolve_max_duration" value="{{ old('resolve_max_duration') }}" min="1"
                                class="flex-1 text-sm text-gray-800 bg-transparent border-0 focus:outline-none focus:ring-0 px-0 py-0.5" placeholder="-">
                     </div>
 
                     <div class="flex items-center gap-4 py-2 border-b border-gray-100">
-                        <label class="w-36 shrink-0 text-sm text-gray-500">Enabled</label>
+                        <label class="w-36 shrink-0 text-sm text-gray-500">{{ __('workflow.enabled_label') }}</label>
                         <label class="flex items-center gap-2 text-sm text-gray-800 cursor-pointer">
                             <input type="checkbox" name="enabled" value="1" checked class="rounded border-gray-300 text-purple-600">
-                            <span>Enabled</span>
+                            <span>{{ __('workflow.enabled_text') }}</span>
                         </label>
                     </div>
 
@@ -87,17 +87,17 @@
                             <button type="button" @click="tab = 'fields'"
                                     class="px-4 py-2 text-sm font-semibold border border-b-0 rounded-t bg-white"
                                     :class="tab === 'fields' ? 'text-gray-900 border-gray-300 -mb-px pb-2.25' : 'text-[#714B67] border-transparent hover:text-[#5c3d55]'">
-                                Form Fields
+                                {{ __('workflow.form_fields_tab') }}
                             </button>
                             <button type="button" @click="tab = 'description'"
                                     class="px-4 py-2 text-sm font-semibold border border-b-0 rounded-t bg-white"
                                     :class="tab === 'description' ? 'text-gray-900 border-gray-300 -mb-px pb-2.25' : 'text-[#714B67] border-transparent hover:text-[#5c3d55]'">
-                                Description
+                                {{ __('workflow.description_tab') }}
                             </button>
                             <button type="button" @click="tab = 'departments'"
                                     class="px-4 py-2 text-sm font-semibold border border-b-0 rounded-t bg-white"
                                     :class="tab === 'departments' ? 'text-gray-900 border-gray-300 -mb-px pb-2.25' : 'text-[#714B67] border-transparent hover:text-[#5c3d55]'">
-                                Departments
+                                {{ __('workflow.departments_label') }}
                             </button>
                         </div>
 
@@ -107,10 +107,10 @@
                                 <table class="w-full text-sm border-collapse">
                                     <thead>
                                         <tr class="border-b border-gray-200">
-                                            <th class="pb-2 text-left text-xs font-semibold text-gray-400 uppercase tracking-wide pr-3">Name</th>
-                                            <th class="pb-2 text-left text-xs font-semibold text-gray-400 uppercase tracking-wide pr-3 w-32">Type</th>
-                                            <th class="pb-2 text-center text-xs font-semibold text-gray-400 uppercase tracking-wide pr-3 w-20">Required</th>
-                                            <th class="pb-2 text-left text-xs font-semibold text-gray-400 uppercase tracking-wide pr-3">Options <span class="normal-case font-normal text-gray-300">(select only)</span></th>
+                                            <th class="pb-2 text-left text-xs font-semibold text-gray-400 uppercase tracking-wide pr-3">{{ __('workflow.field_name_col') }}</th>
+                                            <th class="pb-2 text-left text-xs font-semibold text-gray-400 uppercase tracking-wide pr-3 w-32">{{ __('workflow.field_type_col') }}</th>
+                                            <th class="pb-2 text-center text-xs font-semibold text-gray-400 uppercase tracking-wide pr-3 w-20">{{ __('workflow.field_required_col') }}</th>
+                                            <th class="pb-2 text-left text-xs font-semibold text-gray-400 uppercase tracking-wide pr-3">{{ __('workflow.field_options_col') }} <span class="normal-case font-normal text-gray-300">{{ __('workflow.field_options_hint') }}</span></th>
                                             <th class="w-8"></th>
                                         </tr>
                                     </thead>
@@ -120,23 +120,23 @@
                                                 <td class="py-2 pr-3">
                                                     <input type="hidden" :name="`inputs[${i}][id]`" :value="inp.id">
                                                     <input type="hidden" :name="`inputs[${i}][sort_order]`" :value="i">
-                                                    <input type="text" :name="`inputs[${i}][name]`" x-model="inp.name" placeholder="Field name"
+                                                    <input type="text" :name="`inputs[${i}][name]`" x-model="inp.name" placeholder="{{ __('workflow.field_name_placeholder') }}"
                                                            class="w-full text-sm border border-gray-200 rounded px-2 py-1.5 focus:outline-none focus:ring-1 focus:ring-purple-400">
                                                 </td>
                                                 <td class="py-2 pr-3">
                                                     <select :name="`inputs[${i}][type]`" x-model="inp.type"
                                                             class="w-full text-sm border border-gray-200 rounded px-2 py-1.5 focus:outline-none focus:ring-1 focus:ring-purple-400">
-                                                        <option value="char">Text</option>
-                                                        <option value="int">Number</option>
-                                                        <option value="float">Decimal</option>
-                                                        <option value="date">Date</option>
-                                                        <option value="datetime">Date &amp; Time</option>
-                                                        <option value="boolean">Yes/No</option>
-                                                        <option value="select">Select</option>
-                                                        <option value="multiselect">Multi-Select</option>
-                                                        <option value="textarea">Long Text</option>
-                                                        <option value="file">File Upload</option>
-                                                        <option value="label">Label</option>
+                                                        <option value="char">{{ __('workflow.field_type_text') }}</option>
+                                                        <option value="int">{{ __('workflow.field_type_number') }}</option>
+                                                        <option value="float">{{ __('workflow.field_type_decimal') }}</option>
+                                                        <option value="date">{{ __('workflow.field_type_date') }}</option>
+                                                        <option value="datetime">{{ __('workflow.field_type_datetime') }}</option>
+                                                        <option value="boolean">{{ __('workflow.field_type_boolean') }}</option>
+                                                        <option value="select">{{ __('workflow.field_type_select') }}</option>
+                                                        <option value="multiselect">{{ __('workflow.field_type_multiselect') }}</option>
+                                                        <option value="textarea">{{ __('workflow.field_type_textarea') }}</option>
+                                                        <option value="file">{{ __('workflow.field_type_file') }}</option>
+                                                        <option value="label">{{ __('workflow.field_type_label') }}</option>
                                                     </select>
                                                 </td>
                                                 <td class="py-2 pr-3 text-center">
@@ -149,7 +149,7 @@
                                                 <td class="py-2 pr-3">
                                                     <template x-if="inp.type === 'select' || inp.type === 'multiselect'">
                                                         <textarea :name="`inputs[${i}][options]`" x-model="inp.options"
-                                                                  rows="3" placeholder="One option per line"
+                                                                  rows="3" placeholder="{{ __('workflow.one_option_per_line') }}"
                                                                   class="w-full text-sm border border-gray-200 rounded px-2 py-1.5 focus:outline-none focus:ring-1 focus:ring-purple-400 resize-y"></textarea>
                                                     </template>
                                                     <template x-if="inp.type !== 'select' && inp.type !== 'multiselect'">
@@ -169,21 +169,21 @@
                                 <button type="button" @click="addInput()"
                                         class="mt-3 flex items-center gap-1 text-sm text-purple-600 hover:text-purple-800">
                                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
-                                    Add field
+                                    {{ __('workflow.add_field') }}
                                 </button>
                             </div>
 
                             <div x-show="tab === 'description'" style="display:none">
-                                <textarea name="description" rows="5" placeholder="Internal description..."
+                                <textarea name="description" rows="5" placeholder="{{ __('workflow.internal_description') }}"
                                           class="w-full px-4 py-4 border-0 text-sm focus:outline-none focus:ring-0 resize-y text-gray-800 placeholder-gray-400">{{ old('description') }}</textarea>
                             </div>
 
                             <div x-show="tab === 'departments'" style="display:none" class="p-4">
                                 <x-relation-dropdown
-                                    table="workflow_departments"
+                                    table="hr_departments"
                                     field="name"
                                     name="departments"
-                                    label="Departments"
+                                    :label="__('workflow.departments_label')"
                                     :selected="$selectedDepartments"
                                     relation="many2many"
                                 />

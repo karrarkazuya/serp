@@ -1,11 +1,11 @@
 @extends('layouts.app')
-@section('title', 'Job Positions')
+@section('title', __('employees.jobs_title'))
 
 @php
     $quickFilters = [
-        ['label' => 'Active',   'params' => ['filter' => ''],         'url' => route('employees.jobs.index', array_merge(request()->except('page'), ['filter' => '']))],
-        ['label' => 'Archived', 'params' => ['filter' => 'archived'],  'url' => route('employees.jobs.index', array_merge(request()->except('page'), ['filter' => 'archived']))],
-        ['label' => 'All',      'params' => ['filter' => 'all'],       'url' => route('employees.jobs.index', array_merge(request()->except('page'), ['filter' => 'all']))],
+        ['label' => __('common.active'),   'params' => ['filter' => ''],         'url' => route('employees.jobs.index', array_merge(request()->except('page'), ['filter' => '']))],
+        ['label' => __('common.archived'), 'params' => ['filter' => 'archived'],  'url' => route('employees.jobs.index', array_merge(request()->except('page'), ['filter' => 'archived']))],
+        ['label' => __('common.all'),      'params' => ['filter' => 'all'],       'url' => route('employees.jobs.index', array_merge(request()->except('page'), ['filter' => 'all']))],
     ];
 @endphp
 
@@ -14,12 +14,12 @@
     <div class="flex flex-wrap items-center gap-2 sm:gap-3 px-3 sm:px-4 py-2 border-b border-gray-200 bg-white shrink-0">
         @can('create', \App\Models\Employees\Employee::class)
         <a href="{{ route('employees.jobs.create') }}" class="px-3 sm:px-4 py-2 bg-[#714B67] hover:bg-[#5c3d55] text-white text-sm font-semibold rounded shadow-sm shrink-0">
-            New
+            {{ __('common.new') }}
         </a>
         @endcan
 
         <div class="flex items-center gap-1.5 min-w-0 shrink-0">
-            <span class="text-xl font-semibold text-gray-700">Job Positions</span>
+            <span class="text-xl font-semibold text-gray-700">{{ __('employees.jobs_title') }}</span>
         </div>
 
         <x-search
@@ -28,7 +28,7 @@
             :quick-filters="$quickFilters"
         />
 
-        <div class="ml-auto flex items-center gap-2 sm:gap-3 text-sm text-gray-500 shrink-0">
+        <div class="ms-auto flex items-center gap-2 sm:gap-3 text-sm text-gray-500 shrink-0">
             @if($jobs->total() > 0)
                 <span class="text-sm font-semibold text-gray-600 whitespace-nowrap">
                     {{ $jobs->firstItem() }}-{{ $jobs->lastItem() }} / {{ $jobs->total() }}
@@ -52,14 +52,14 @@
         </div>
     </div>
 
-    <x-list :paginator="$jobs" empty-text="No job positions found.">
+    <x-list :paginator="$jobs" :empty-text="__('employees.no_jobs')">
         <x-slot:columns>
-            <x-sortable-th column="name"       label="Job Position" class="px-4 py-2" :default="true" />
-            <x-sortable-th column="department"  label="Department"   class="px-3 py-2" />
-            <x-sortable-th column="company"     label="Company"      class="px-3 py-2" />
-            <th class="px-3 py-2 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Employees</th>
-            <th class="px-3 py-2 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Expected</th>
-            <th class="px-3 py-2 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Status</th>
+            <x-sortable-th column="name"       :label="__('employees.job_position')" class="px-4 py-2" :default="true" />
+            <x-sortable-th column="department"  :label="__('common.department')"      class="px-3 py-2" />
+            <x-sortable-th column="company"     :label="__('common.company')"         class="px-3 py-2" />
+            <th class="px-3 py-2 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">{{ __('common.employees') }}</th>
+            <th class="px-3 py-2 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">{{ __('employees.expected_employees') }}</th>
+            <th class="px-3 py-2 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">{{ __('common.status') }}</th>
         </x-slot:columns>
 
         @foreach($jobs as $job)
@@ -67,7 +67,7 @@
             <td class="px-4 py-2.5 font-medium text-gray-900">
                 <p class="text-sm font-semibold text-gray-900">{{ $job->name }}</p>
                 @if(!$job->active)
-                    <span class="inline-block px-1.5 py-0.5 rounded text-[10px] font-semibold text-amber-700 bg-amber-50">Archived</span>
+                    <span class="inline-block px-1.5 py-0.5 rounded text-[10px] font-semibold text-amber-700 bg-amber-50">{{ __('common.archived') }}</span>
                 @endif
             </td>
             <td class="px-3 py-2.5 text-sm text-gray-600">{{ $job->department?->name }}</td>
@@ -76,7 +76,7 @@
             <td class="px-3 py-2.5 text-sm text-gray-600">{{ $job->expected_employees }}</td>
             <td class="px-3 py-2.5">
                 <span class="inline-block px-2 py-0.5 rounded text-xs font-semibold {{ $job->state === 'open' ? 'text-green-700 bg-green-50' : 'text-gray-600 bg-gray-100' }}">
-                    {{ $job->state === 'open' ? 'Recruiting' : 'Not Recruiting' }}
+                    {{ $job->state === 'open' ? __('employees.recruiting') : __('employees.not_recruiting') }}
                 </span>
             </td>
         </tr>

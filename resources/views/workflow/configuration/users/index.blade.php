@@ -1,10 +1,10 @@
 @extends('layouts.app')
-@section('title', 'Workflow Users')
+@section('title', __('workflow.workflow_users_title'))
 
 @section('content')
 <div class="flex flex-col h-full bg-white">
     <div class="flex flex-wrap items-center gap-3 px-4 py-2 border-b border-gray-200 shrink-0">
-        <span class="text-xl font-semibold text-gray-700">Workflow Users</span>
+        <span class="text-xl font-semibold text-gray-700">{{ __('workflow.workflow_users_title') }}</span>
         <x-search
             :model="\App\Models\User::class"
             :action="route('workflow.config.users.index')"
@@ -15,14 +15,14 @@
     <div class="mx-4 mt-3 px-4 py-2 bg-green-50 border border-green-200 text-green-700 text-sm rounded">{{ session('success') }}</div>
     @endif
 
-    <x-list :paginator="$users" empty-text="No active users found.">
+    <x-list :paginator="$users" :empty-text="__('workflow.no_active_users')">
         <x-slot:columns>
-            <x-sortable-th column="name"         label="Name"         class="px-4 py-2" :default="true" />
-            <x-sortable-th column="email"        label="Email"        class="px-3 py-2" />
-            <x-sortable-th column="job_position" label="Position"     class="px-3 py-2 hidden sm:table-cell" />
-            <th class="px-3 py-2 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">Default Dept.</th>
-            <th class="px-3 py-2 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide hidden md:table-cell">Groups</th>
-            <th class="px-3 py-2 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">Status</th>
+            <x-sortable-th column="name"         :label="__('common.name')"          class="px-4 py-2" :default="true" />
+            <x-sortable-th column="email"        :label="__('common.email')"         class="px-3 py-2" />
+            <x-sortable-th column="job_position" :label="__('workflow.position_label')" class="px-3 py-2 hidden sm:table-cell" />
+            <th class="px-3 py-2 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">{{ __('workflow.default_dept_col') }}</th>
+            <th class="px-3 py-2 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide hidden md:table-cell">{{ __('workflow.groups_col') }}</th>
+            <th class="px-3 py-2 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">{{ __('common.status') }}</th>
             <th class="px-3 py-2"></th>
         </x-slot:columns>
 
@@ -43,16 +43,16 @@
             <td class="px-3 py-2">
                 @if($user->workflowUser)
                     <span class="inline-flex px-2 py-0.5 rounded text-xs {{ $user->workflowUser->active ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500' }}">
-                        {{ $user->workflowUser->active ? 'Enrolled' : 'Inactive' }}
+                        {{ $user->workflowUser->active ? __('workflow.enrolled_label') : __('workflow.inactive_label') }}
                     </span>
                 @else
-                    <span class="inline-flex px-2 py-0.5 rounded text-xs bg-gray-100 text-gray-400">Not enrolled</span>
+                    <span class="inline-flex px-2 py-0.5 rounded text-xs bg-gray-100 text-gray-400">{{ __('workflow.not_enrolled_label') }}</span>
                 @endif
             </td>
             <td class="px-3 py-2 text-right" onclick="event.stopPropagation()">
-                <a href="{{ route('workflow.config.users.show', $user) }}" class="text-xs text-purple-600 hover:text-purple-700 mr-3">View</a>
+                <a href="{{ route('workflow.config.users.show', $user) }}" class="text-xs text-purple-600 hover:text-purple-700 mr-3">{{ __('common.view') }}</a>
                 @can('create', \App\Models\Workflow\WorkflowUser::class)
-                <a href="{{ route('workflow.config.users.edit', $user) }}" class="text-xs text-gray-600 hover:text-gray-700">Configure</a>
+                <a href="{{ route('workflow.config.users.edit', $user) }}" class="text-xs text-gray-600 hover:text-gray-700">{{ __('workflow.configure_btn') }}</a>
                 @endcan
             </td>
         </tr>

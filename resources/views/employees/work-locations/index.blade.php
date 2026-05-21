@@ -1,11 +1,11 @@
 @extends('layouts.app')
-@section('title', 'Work Locations')
+@section('title', __('employees.locations_title'))
 
 @php
     $quickFilters = [
-        ['label' => 'Active',   'params' => ['filter' => ''],        'url' => route('employees.work-locations.index', array_merge(request()->except('page'), ['filter' => '']))],
-        ['label' => 'Archived', 'params' => ['filter' => 'archived'], 'url' => route('employees.work-locations.index', array_merge(request()->except('page'), ['filter' => 'archived']))],
-        ['label' => 'All',      'params' => ['filter' => 'all'],      'url' => route('employees.work-locations.index', array_merge(request()->except('page'), ['filter' => 'all']))],
+        ['label' => __('common.active'),   'params' => ['filter' => ''],        'url' => route('employees.work-locations.index', array_merge(request()->except('page'), ['filter' => '']))],
+        ['label' => __('common.archived'), 'params' => ['filter' => 'archived'], 'url' => route('employees.work-locations.index', array_merge(request()->except('page'), ['filter' => 'archived']))],
+        ['label' => __('common.all'),      'params' => ['filter' => 'all'],      'url' => route('employees.work-locations.index', array_merge(request()->except('page'), ['filter' => 'all']))],
     ];
 @endphp
 
@@ -14,12 +14,12 @@
     <div class="flex flex-wrap items-center gap-2 sm:gap-3 px-3 sm:px-4 py-2 border-b border-gray-200 bg-white shrink-0">
         @can('create', \App\Models\Employees\Employee::class)
         <a href="{{ route('employees.work-locations.create') }}" class="px-3 sm:px-4 py-2 bg-[#714B67] hover:bg-[#5c3d55] text-white text-sm font-semibold rounded shadow-sm shrink-0">
-            New
+            {{ __('employees.new_location') }}
         </a>
         @endcan
 
         <div class="flex items-center gap-1.5 min-w-0 shrink-0">
-            <span class="text-xl font-semibold text-gray-700">Work Locations</span>
+            <span class="text-xl font-semibold text-gray-700">{{ __('employees.locations_title') }}</span>
         </div>
 
         <x-search
@@ -28,7 +28,7 @@
             :quick-filters="$quickFilters"
         />
 
-        <div class="ml-auto flex items-center gap-2 sm:gap-3 text-sm text-gray-500 shrink-0">
+        <div class="ms-auto flex items-center gap-2 sm:gap-3 text-sm text-gray-500 shrink-0">
             @if($locations->total() > 0)
                 <span class="text-sm font-semibold text-gray-600 whitespace-nowrap">
                     {{ $locations->firstItem() }}-{{ $locations->lastItem() }} / {{ $locations->total() }}
@@ -52,12 +52,12 @@
         </div>
     </div>
 
-    <x-list :paginator="$locations" empty-text="No work locations found.">
+    <x-list :paginator="$locations" :empty-text="__('employees.no_locations')">
         <x-slot:columns>
-            <th class="px-4 py-2 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Name</th>
-            <th class="px-3 py-2 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Address</th>
-            <th class="px-3 py-2 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Company</th>
-            <th class="px-3 py-2 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Employees</th>
+            <th class="px-4 py-2 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">{{ __('common.name') }}</th>
+            <th class="px-3 py-2 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">{{ __('employees.location_address') }}</th>
+            <th class="px-3 py-2 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">{{ __('common.company') }}</th>
+            <th class="px-3 py-2 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">{{ __('common.employees') }}</th>
         </x-slot:columns>
 
         @foreach($locations as $location)

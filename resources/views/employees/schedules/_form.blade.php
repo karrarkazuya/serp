@@ -25,7 +25,7 @@
     {{-- Name (large heading style) --}}
     <div class="border-b border-gray-200 pb-4 mb-5">
         <input type="text" name="name" value="{{ old('name', $schedule?->name) }}"
-               placeholder="Working Schedule Name"
+               placeholder="{{ __('employees.schedule_name') }}"
                class="w-full text-xl font-semibold text-gray-900 border-0 focus:outline-none bg-transparent placeholder-gray-300"
                required>
     </div>
@@ -35,23 +35,23 @@
         {{-- Left column --}}
         <div class="divide-y divide-gray-100">
             <div class="flex items-center py-2.5">
-                <span class="w-48 text-sm text-gray-500 shrink-0">Flexible Hours</span>
+                <span class="w-48 text-sm text-gray-500 shrink-0">{{ __('employees.flexible_hours') }}</span>
                 <input type="checkbox" name="flexible_hours" value="1"
                        {{ old('flexible_hours', $schedule?->flexible_hours) ? 'checked' : '' }}
                        class="w-4 h-4 rounded border-gray-300 text-purple-600 focus:ring-purple-400">
             </div>
             <div class="flex items-center py-2.5">
-                <span class="w-48 text-sm text-gray-500 shrink-0">Company Full Time</span>
+                <span class="w-48 text-sm text-gray-500 shrink-0">{{ __('employees.company_full_time') }}</span>
                 <div class="flex items-center gap-2">
                     <input type="number" step="0.5" name="company_hours_per_week"
                            value="{{ old('company_hours_per_week', $schedule?->company_hours_per_week ?? 40) }}"
                            min="0" max="168"
                            class="w-16 border-b border-gray-300 focus:border-purple-500 focus:outline-none py-0.5 text-sm bg-transparent text-right">
-                    <span class="text-sm text-gray-400">hours/week</span>
+                    <span class="text-sm text-gray-400">{{ __('employees.hours_per_week') }}</span>
                 </div>
             </div>
             <div class="flex items-center py-2.5">
-                <span class="w-48 text-sm text-gray-500 shrink-0">Average Hour per Day</span>
+                <span class="w-48 text-sm text-gray-500 shrink-0">{{ __('employees.avg_hour_per_day') }}</span>
                 <input type="number" step="0.25" name="hours_per_day"
                        value="{{ old('hours_per_day', $schedule?->hours_per_day ?? 8) }}"
                        min="0" max="24"
@@ -62,14 +62,14 @@
         {{-- Right column --}}
         <div class="divide-y divide-gray-100">
             <div class="flex items-center py-2.5">
-                <span class="w-28 text-sm text-gray-500 shrink-0">Company</span>
+                <span class="w-28 text-sm text-gray-500 shrink-0">{{ __('common.company') }}</span>
                 <div class="flex-1">
                     <x-relation-dropdown name="company_id" table="companies" field="name" relation="many2one"
                         :selected="old('company_id', $schedule?->company_id)" />
                 </div>
             </div>
             <div class="flex items-center py-2.5">
-                <span class="w-28 text-sm text-gray-500 shrink-0">Timezone</span>
+                <span class="w-28 text-sm text-gray-500 shrink-0">{{ __('employees.timezone') }}</span>
                 <input type="text" name="timezone"
                        value="{{ old('timezone', $schedule?->timezone ?? 'Asia/Baghdad') }}"
                        list="tz-list"
@@ -92,19 +92,19 @@
                     :class="tab === 'working_hours'
                         ? 'border-b-2 border-gray-900 text-gray-900 font-medium -mb-px'
                         : 'text-purple-600 hover:text-purple-800'"
-                    class="px-4 pb-2.5 text-sm transition-colors">Working Hours</button>
+                    class="px-4 pb-2.5 text-sm transition-colors">{{ __('employees.working_hours') }}</button>
             <button type="button" @click="tab = 'modifier'"
                     :class="tab === 'modifier'
                         ? 'border-b-2 border-gray-900 text-gray-900 font-medium -mb-px'
                         : 'text-purple-600 hover:text-purple-800'"
-                    class="px-4 pb-2.5 text-sm transition-colors">Modifier</button>
+                    class="px-4 pb-2.5 text-sm transition-colors">{{ __('employees.modifier_tab') }}</button>
             @if($schedule && $schedule->employees->isNotEmpty())
             <button type="button" @click="tab = 'employees'"
                     :class="tab === 'employees'
                         ? 'border-b-2 border-gray-900 text-gray-900 font-medium -mb-px'
                         : 'text-purple-600 hover:text-purple-800'"
                     class="px-4 pb-2.5 text-sm transition-colors">
-                Employees
+                {{ __('employees.employees_tab') }}
                 <span class="ml-1 text-xs text-gray-400">({{ $schedule->employees->count() }})</span>
             </button>
             @endif
@@ -113,18 +113,18 @@
         {{-- Working Hours tab --}}
         <div x-show="tab === 'working_hours'">
             <div x-show="lines.length === 0" class="py-8 text-center">
-                <p class="text-sm text-gray-400">No working hours defined.</p>
+                <p class="text-sm text-gray-400">{{ __('employees.no_schedule_hours') }}</p>
                 <button type="button" @click="tab = 'modifier'"
                         class="mt-2 text-sm text-purple-600 hover:text-purple-800 hover:underline">
-                    Configure in Modifier tab →
+                    {{ __('employees.configure_modifier') }}
                 </button>
             </div>
 
             <div x-show="lines.length > 0">
                 <div class="grid grid-cols-[1fr_130px_150px_32px] gap-2 pb-2 mb-1 border-b border-gray-200">
-                    <div class="text-xs font-semibold text-gray-500 uppercase tracking-wide">Day</div>
-                    <div class="text-xs font-semibold text-gray-500 uppercase tracking-wide">From</div>
-                    <div class="text-xs font-semibold text-gray-500 uppercase tracking-wide">To</div>
+                    <div class="text-xs font-semibold text-gray-500 uppercase tracking-wide">{{ __('employees.day') }}</div>
+                    <div class="text-xs font-semibold text-gray-500 uppercase tracking-wide">{{ __('employees.from') }}</div>
+                    <div class="text-xs font-semibold text-gray-500 uppercase tracking-wide">{{ __('employees.to') }}</div>
                     <div></div>
                 </div>
                 <template x-for="(line, index) in lines" :key="index">
@@ -158,7 +158,7 @@
             <div class="grid grid-cols-2 gap-x-16">
                 {{-- Working Days --}}
                 <div>
-                    <p class="text-xs font-bold text-gray-500 uppercase tracking-wider mb-4">Working Days</p>
+                    <p class="text-xs font-bold text-gray-500 uppercase tracking-wider mb-4">{{ __('employees.work_days') }}</p>
                     <div class="flex gap-10">
                         {{-- Left days: Saturday–Tuesday --}}
                         <div class="space-y-3">
@@ -189,32 +189,32 @@
 
                 {{-- Working Hours --}}
                 <div>
-                    <p class="text-xs font-bold text-gray-500 uppercase tracking-wider mb-4">Working Hours</p>
+                    <p class="text-xs font-bold text-gray-500 uppercase tracking-wider mb-4">{{ __('employees.working_hours') }}</p>
                     <div class="space-y-3">
                         <div class="flex items-center gap-6">
-                            <span class="text-sm text-gray-500 w-24">Start Time</span>
+                            <span class="text-sm text-gray-500 w-24">{{ __('employees.start_time') }}</span>
                             <input type="time" x-model="modifier.startTime"
                                    class="border-b border-gray-300 focus:border-purple-500 focus:outline-none py-1 text-sm bg-transparent w-28">
                         </div>
                         <div class="flex items-center gap-6">
-                            <span class="text-sm text-gray-500 w-24">End Time</span>
+                            <span class="text-sm text-gray-500 w-24">{{ __('employees.end_time') }}</span>
                             <div class="flex items-center gap-3">
                                 <input type="time" x-model="modifier.endTime"
                                        class="border-b border-gray-300 focus:border-purple-500 focus:outline-none py-1 text-sm bg-transparent w-28">
                                 <span x-show="isOvernight()" x-cloak
                                       class="text-xs font-semibold text-amber-700 bg-amber-50 border border-amber-200 px-2 py-0.5 rounded">
-                                    +1 day
+                                    {{ __('employees.next_day') }}
                                 </span>
                             </div>
                         </div>
                         <div x-show="isOvernight()" x-cloak
                              class="text-xs text-amber-700 bg-amber-50 border border-amber-100 rounded px-3 py-2 leading-relaxed">
-                            End time is before start — this shift extends past midnight into the next day.
+                            {{ __('employees.overnight_warning') }}
                         </div>
                     </div>
                     <button type="button" @click="applyModifier()"
                             class="mt-6 px-4 py-2 text-sm font-medium text-white bg-[#714B67] hover:bg-[#5c3d55] rounded shadow-sm transition-colors">
-                        Apply
+                        {{ __('common.apply') }}
                     </button>
                 </div>
             </div>

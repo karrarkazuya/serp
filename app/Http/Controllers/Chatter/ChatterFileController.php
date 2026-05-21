@@ -18,7 +18,7 @@ class ChatterFileController extends Controller
         'App\Models\Workflow\TicketTemplate'       => 'workflow.config.read',
         'App\Models\Workflow\ProcedureTemplate'    => 'workflow.config.read',
         'App\Models\Workflow\Group'                => 'workflow.config.read',
-        'App\Models\Workflow\Department'           => 'workflow.config.read',
+        'App\Models\Employees\Department'           => 'employees.read',
         'App\Models\Workflow\Manager'              => 'workflow.config.read',
         'App\Models\Workflow\WorkflowUser'         => 'workflow.config.read',
     ];

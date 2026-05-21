@@ -3,6 +3,7 @@
 namespace App\Models\Workflow;
 
 use App\Models\Contacts\Contact;
+use App\Models\Employees\Department;
 use App\Models\Settings\Company;
 use App\Models\User;
 use App\Models\Chat\ChatRoom;
@@ -48,7 +49,7 @@ class Ticket extends Model
         'name'                      => 'Name',
         'state'                     => 'State',
         'priority'                  => 'Priority',
-        'assigned_to_department_id' => ['label' => 'Department',    'table' => 'workflow_departments'],
+        'assigned_to_department_id' => ['label' => 'Department',    'table' => 'hr_departments'],
         'assigned_to_user_id'       => ['label' => 'Assigned User', 'table' => 'users'],
         'return_reason'             => 'Return Reason',
     ];

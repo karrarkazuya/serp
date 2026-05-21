@@ -17,12 +17,13 @@ class ResourceCalendar extends Model
     protected $table = 'hr_resource_calendars';
 
     public array $chatterTracked = [
-        'name'           => 'Name',
-        'timezone'       => 'Timezone',
-        'hours_per_day'  => 'Hours per Day',
-        'flexible_hours' => 'Flexible Hours',
-        'company_id'     => 'Company',
-        'active'         => 'Active',
+        'name'                   => 'Name',
+        'timezone'               => 'Timezone',
+        'hours_per_day'          => 'Hours per Day',
+        'company_hours_per_week' => 'Company Full Time',
+        'flexible_hours'         => 'Flexible Hours',
+        'company_id'             => 'Company',
+        'active'                 => 'Active',
     ];
 
     public array $sortable = [

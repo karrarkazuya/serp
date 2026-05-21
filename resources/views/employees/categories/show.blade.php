@@ -5,27 +5,27 @@
 <div class="flex flex-col h-full bg-gray-50">
     <div class="bg-white border-b border-gray-200 px-4 py-2 flex items-center gap-3 shrink-0">
         <div class="flex flex-col leading-tight">
-            <a href="{{ route('employees.categories.index') }}" class="text-xs text-purple-600 hover:text-purple-700">Employee Categories</a>
+            <a href="{{ route('employees.categories.index') }}" class="text-xs text-purple-600 hover:text-purple-700">{{ __('employees.categories_title') }}</a>
             <span class="text-sm font-semibold text-gray-800">{{ $employeeCategory->name }}</span>
         </div>
 
-        <div class="ms-auto flex items-center gap-2">
+        <div class="flex items-center gap-2">
             @can('update', \App\Models\Employees\Employee::class)
             <a href="{{ route('employees.categories.edit', $employeeCategory) }}"
-               class="px-3 py-1.5 text-sm text-gray-600 bg-white border border-gray-300 rounded hover:bg-gray-50">Edit</a>
+               class="px-3 py-1.5 text-sm text-gray-600 bg-white border border-gray-300 rounded hover:bg-gray-50">{{ __('common.edit') }}</a>
             @endcan
 
             @can('delete', \App\Models\Employees\Employee::class)
             <div x-data="{ confirming: false }">
                 <button type="button" x-show="!confirming" @click="confirming = true"
-                        class="px-3 py-1.5 text-sm text-red-600 bg-white border border-red-200 rounded hover:bg-red-50">Delete</button>
+                        class="px-3 py-1.5 text-sm text-red-600 bg-white border border-red-200 rounded hover:bg-red-50">{{ __('common.delete') }}</button>
                 <div x-show="confirming" style="display:none" class="flex items-center gap-1.5">
-                    <span class="text-xs text-red-600">Are you sure?</span>
+                    <span class="text-xs text-red-600">{{ __('common.are_you_sure') }}</span>
                     <form method="POST" action="{{ route('employees.categories.delete', $employeeCategory) }}">
                         @csrf @method('DELETE')
-                        <button type="submit" class="px-2 py-1 text-xs bg-red-600 text-white rounded">Yes</button>
+                        <button type="submit" class="px-2 py-1 text-xs bg-red-600 text-white rounded">{{ __('common.yes') }}</button>
                     </form>
-                    <button type="button" @click="confirming = false" class="px-2 py-1 text-xs text-gray-500 border border-gray-300 rounded">Cancel</button>
+                    <button type="button" @click="confirming = false" class="px-2 py-1 text-xs text-gray-500 border border-gray-300 rounded">{{ __('common.cancel') }}</button>
                 </div>
             </div>
             @endcan
@@ -42,11 +42,11 @@
             </div>
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-4">
                 <div>
-                    <p class="text-xs font-semibold text-gray-400 uppercase tracking-wide">Name</p>
+                    <p class="text-xs font-semibold text-gray-400 uppercase tracking-wide">{{ __('common.name') }}</p>
                     <p class="text-sm text-gray-900 mt-0.5">{{ $employeeCategory->name }}</p>
                 </div>
                 <div>
-                    <p class="text-xs font-semibold text-gray-400 uppercase tracking-wide">Color</p>
+                    <p class="text-xs font-semibold text-gray-400 uppercase tracking-wide">{{ __('common.color') }}</p>
                     <div class="flex items-center gap-2 mt-0.5">
                         @if($employeeCategory->color)
                             <span class="w-4 h-4 rounded" style="background-color: {{ $employeeCategory->color }}"></span>
@@ -62,7 +62,7 @@
         @if($employeeCategory->employees->isNotEmpty())
         <div class="bg-white rounded-xl border border-gray-200 shadow-sm">
             <div class="px-5 py-3 border-b border-gray-100">
-                <h3 class="text-sm font-semibold text-gray-700">Employees ({{ $employeeCategory->employees->count() }})</h3>
+                <h3 class="text-sm font-semibold text-gray-700">{{ __('common.employees') }} ({{ $employeeCategory->employees->count() }})</h3>
             </div>
             <ul class="divide-y divide-gray-100">
                 @foreach($employeeCategory->employees as $emp)

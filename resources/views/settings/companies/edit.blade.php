@@ -13,7 +13,7 @@
             ['label' => __('common.edit')],
         ]])
 
-        <div class="ms-auto flex items-center gap-2">
+        <div class="flex items-center gap-2">
             <a href="{{ route('settings.companies.show', $company) }}"
                class="px-4 py-2 text-sm font-medium text-gray-600 bg-white border border-gray-300 rounded-md hover:bg-gray-50 transition-colors">
                 {{ __('common.cancel') }}
