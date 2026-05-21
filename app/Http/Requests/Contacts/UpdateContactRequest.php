@@ -23,6 +23,8 @@ class UpdateContactRequest extends FormRequest
                 : $query->whereIn('company_id', $activeCompanyIds);
         });
 
+        $contactId = $this->route('contact')?->id;
+
         return [
             'company_id'   => ['nullable', $companyRule],
             'parent_id'    => ['nullable', $contactRule],
@@ -35,7 +37,7 @@ class UpdateContactRequest extends FormRequest
             'company_name' => 'nullable|string|max:255',
             'contact_type' => 'sometimes|required|in:individual,company',
             'email'        => 'nullable|email|max:255',
-            'phone'        => 'nullable|string|max:50',
+            'phone'        => ['nullable', 'string', 'max:50', Rule::unique('contacts', 'phone')->ignore($contactId)],
             'mobile'       => 'nullable|string|max:50',
             'website'      => 'nullable|url|max:255',
             'street'       => 'nullable|string|max:255',
@@ -45,7 +47,7 @@ class UpdateContactRequest extends FormRequest
             'zip'          => 'nullable|string|max:20',
             'tax_id'       => 'nullable|string|max:50',
             'job_position' => 'nullable|string|max:100',
-            'notes'        => 'nullable|string',
+            'notes'        => 'nullable|string|max:10000',
         ];
     }
 }

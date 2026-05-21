@@ -26,9 +26,7 @@
                 @method('PUT')
                 @include('contacts._form', [
                     'contact' => $contact,
-                    'companies' => $companies,
-                    'tags' => $tags,
-                    'contacts' => $contacts,
+                    'relatedContactIds' => $relatedContactIds,
                 ])
             </form>
         </div>

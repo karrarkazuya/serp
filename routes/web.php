@@ -9,6 +9,21 @@ use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\Contacts\ContactController;
 use App\Http\Controllers\Contacts\TagController;
+use App\Http\Controllers\Employees\EmployeeController;
+use App\Http\Controllers\Employees\DepartmentController as EmployeeDepartmentController;
+use App\Http\Controllers\Employees\JobController;
+use App\Http\Controllers\Employees\WorkLocationController;
+use App\Http\Controllers\Employees\ResourceCalendarController;
+use App\Http\Controllers\Employees\EmployeeCategoryController;
+use App\Http\Controllers\Employees\ContractController;
+use App\Http\Controllers\Employees\DepartureReasonController;
+use App\Http\Controllers\Employees\SkillTypeController;
+use App\Http\Controllers\Employees\ResumeLineTypeController;
+use App\Http\Controllers\Employees\EmploymentTypeController;
+use App\Http\Controllers\Employees\BadgeController;
+use App\Http\Controllers\Employees\ChallengeController;
+use App\Http\Controllers\Employees\GoalController;
+use App\Http\Controllers\Employees\EmployeeDocumentController;
 use App\Http\Controllers\Components\RelationLookupController;
 use App\Http\Controllers\Settings\CompanyController;
 use App\Http\Controllers\Settings\PermissionController;
@@ -38,6 +53,9 @@ use Illuminate\Support\Facades\Route;
 */
 // Public shared-link route — no authentication required
 Route::get('/share/{token}', [SharedLinkController::class, 'show'])->name('share.show');
+
+// Contact avatar — no auth middleware; controller returns default image if unauthorized
+Route::get('/contacts/avatar/{uuid}', [ContactController::class, 'avatar'])->name('contacts.avatar');
 
 Route::middleware('guest')->group(function () {
     Route::get('/login', [LoginController::class, 'showLoginForm'])->name('login');
@@ -122,6 +140,210 @@ Route::middleware('auth')->group(function () {
         Route::patch('/{contact}/archive', [ContactController::class, 'archive'])->middleware('permission:contacts.write')->name('archive');
         Route::patch('/{contact}/unarchive', [ContactController::class, 'unarchive'])->middleware('permission:contacts.write')->name('unarchive');
         Route::post('/{contact}/comment', [ContactController::class, 'addComment'])->middleware('permission:contacts.write')->name('comment');
+    });
+
+    /*
+    |--------------------------------------------------------------------------
+    | Employees module
+    |--------------------------------------------------------------------------
+    */
+    Route::prefix('employees')->name('employees.')->group(function () {
+        // Main employees CRUD
+        Route::get('/', [EmployeeController::class, 'read'])->middleware('permission:employees.read')->name('index');
+        Route::get('/create', [EmployeeController::class, 'create'])->middleware('permission:employees.create')->name('create');
+        Route::post('/', [EmployeeController::class, 'store'])->middleware('permission:employees.create')->name('store');
+        Route::get('/check-link', [EmployeeController::class, 'checkLinkConflict'])->middleware('permission:employees.read')->name('check-link');
+
+        // Departments (before /{employee} to avoid binding conflict)
+        Route::prefix('departments')->name('departments.')->group(function () {
+            Route::get('/', [EmployeeDepartmentController::class, 'read'])->middleware('permission:employees.read')->name('index');
+            Route::get('/create', [EmployeeDepartmentController::class, 'create'])->middleware('permission:employees.create')->name('create');
+            Route::post('/', [EmployeeDepartmentController::class, 'store'])->middleware('permission:employees.create')->name('store');
+            Route::get('/{department}', [EmployeeDepartmentController::class, 'show'])->middleware('permission:employees.read')->name('show');
+            Route::get('/{department}/edit', [EmployeeDepartmentController::class, 'edit'])->middleware('permission:employees.write')->name('edit');
+            Route::put('/{department}', [EmployeeDepartmentController::class, 'write'])->middleware('permission:employees.write')->name('update');
+            Route::patch('/{department}/archive', [EmployeeDepartmentController::class, 'archive'])->middleware('permission:employees.write')->name('archive');
+            Route::patch('/{department}/unarchive', [EmployeeDepartmentController::class, 'unarchive'])->middleware('permission:employees.write')->name('unarchive');
+            Route::delete('/{department}', [EmployeeDepartmentController::class, 'unlink'])->middleware('permission:employees.unlink')->name('delete');
+            Route::post('/{department}/comment', [EmployeeDepartmentController::class, 'addComment'])->middleware('permission:employees.write')->name('comment');
+        });
+
+        // Job Positions
+        Route::prefix('jobs')->name('jobs.')->group(function () {
+            Route::get('/', [JobController::class, 'read'])->middleware('permission:employees.read')->name('index');
+            Route::get('/create', [JobController::class, 'create'])->middleware('permission:employees.create')->name('create');
+            Route::post('/', [JobController::class, 'store'])->middleware('permission:employees.create')->name('store');
+            Route::get('/{job}', [JobController::class, 'show'])->middleware('permission:employees.read')->name('show');
+            Route::get('/{job}/edit', [JobController::class, 'edit'])->middleware('permission:employees.write')->name('edit');
+            Route::put('/{job}', [JobController::class, 'write'])->middleware('permission:employees.write')->name('update');
+            Route::patch('/{job}/archive', [JobController::class, 'archive'])->middleware('permission:employees.write')->name('archive');
+            Route::patch('/{job}/unarchive', [JobController::class, 'unarchive'])->middleware('permission:employees.write')->name('unarchive');
+            Route::delete('/{job}', [JobController::class, 'unlink'])->middleware('permission:employees.unlink')->name('delete');
+            Route::post('/{job}/comment', [JobController::class, 'addComment'])->middleware('permission:employees.write')->name('comment');
+        });
+
+        // Work Locations
+        Route::prefix('work-locations')->name('work-locations.')->group(function () {
+            Route::get('/', [WorkLocationController::class, 'read'])->middleware('permission:employees.read')->name('index');
+            Route::get('/create', [WorkLocationController::class, 'create'])->middleware('permission:employees.create')->name('create');
+            Route::post('/', [WorkLocationController::class, 'store'])->middleware('permission:employees.create')->name('store');
+            Route::get('/{location}', [WorkLocationController::class, 'show'])->middleware('permission:employees.read')->name('show');
+            Route::get('/{location}/edit', [WorkLocationController::class, 'edit'])->middleware('permission:employees.write')->name('edit');
+            Route::put('/{location}', [WorkLocationController::class, 'write'])->middleware('permission:employees.write')->name('update');
+            Route::patch('/{location}/archive', [WorkLocationController::class, 'archive'])->middleware('permission:employees.write')->name('archive');
+            Route::patch('/{location}/unarchive', [WorkLocationController::class, 'unarchive'])->middleware('permission:employees.write')->name('unarchive');
+            Route::delete('/{location}', [WorkLocationController::class, 'unlink'])->middleware('permission:employees.unlink')->name('delete');
+            Route::post('/{location}/comment', [WorkLocationController::class, 'addComment'])->middleware('permission:employees.write')->name('comment');
+        });
+
+        // Working Schedules
+        Route::prefix('schedules')->name('schedules.')->group(function () {
+            Route::get('/', [ResourceCalendarController::class, 'read'])->middleware('permission:employees.read')->name('index');
+            Route::get('/create', [ResourceCalendarController::class, 'create'])->middleware('permission:employees.create')->name('create');
+            Route::post('/', [ResourceCalendarController::class, 'store'])->middleware('permission:employees.create')->name('store');
+            Route::get('/{schedule}', [ResourceCalendarController::class, 'show'])->middleware('permission:employees.read')->name('show');
+            Route::get('/{schedule}/edit', [ResourceCalendarController::class, 'edit'])->middleware('permission:employees.write')->name('edit');
+            Route::put('/{schedule}', [ResourceCalendarController::class, 'write'])->middleware('permission:employees.write')->name('update');
+            Route::patch('/{schedule}/archive', [ResourceCalendarController::class, 'archive'])->middleware('permission:employees.write')->name('archive');
+            Route::patch('/{schedule}/unarchive', [ResourceCalendarController::class, 'unarchive'])->middleware('permission:employees.write')->name('unarchive');
+            Route::delete('/{schedule}', [ResourceCalendarController::class, 'unlink'])->middleware('permission:employees.unlink')->name('delete');
+            Route::post('/{schedule}/comment', [ResourceCalendarController::class, 'addComment'])->middleware('permission:employees.write')->name('comment');
+        });
+
+        // Categories / Tags
+        Route::prefix('categories')->name('categories.')->group(function () {
+            Route::get('/', [EmployeeCategoryController::class, 'read'])->middleware('permission:employees.read')->name('index');
+            Route::get('/create', [EmployeeCategoryController::class, 'create'])->middleware('permission:employees.create')->name('create');
+            Route::post('/', [EmployeeCategoryController::class, 'store'])->middleware('permission:employees.create')->name('store');
+            Route::get('/{employeeCategory}', [EmployeeCategoryController::class, 'show'])->middleware('permission:employees.read')->name('show');
+            Route::get('/{employeeCategory}/edit', [EmployeeCategoryController::class, 'edit'])->middleware('permission:employees.write')->name('edit');
+            Route::put('/{employeeCategory}', [EmployeeCategoryController::class, 'write'])->middleware('permission:employees.write')->name('update');
+            Route::patch('/{employeeCategory}/archive', [EmployeeCategoryController::class, 'archive'])->middleware('permission:employees.write')->name('archive');
+            Route::patch('/{employeeCategory}/unarchive', [EmployeeCategoryController::class, 'unarchive'])->middleware('permission:employees.write')->name('unarchive');
+            Route::delete('/{employeeCategory}', [EmployeeCategoryController::class, 'unlink'])->middleware('permission:employees.unlink')->name('delete');
+            Route::post('/{employeeCategory}/comment', [EmployeeCategoryController::class, 'addComment'])->middleware('permission:employees.write')->name('comment');
+        });
+
+        // Departure Reasons
+        Route::prefix('departure-reasons')->name('departure-reasons.')->group(function () {
+            Route::get('/', [DepartureReasonController::class, 'read'])->middleware('permission:employees.read')->name('index');
+            Route::get('/create', [DepartureReasonController::class, 'create'])->middleware('permission:employees.write')->name('create');
+            Route::post('/', [DepartureReasonController::class, 'store'])->middleware('permission:employees.write')->name('store');
+            Route::get('/{departureReason}', [DepartureReasonController::class, 'show'])->middleware('permission:employees.read')->name('show');
+            Route::get('/{departureReason}/edit', [DepartureReasonController::class, 'edit'])->middleware('permission:employees.write')->name('edit');
+            Route::put('/{departureReason}', [DepartureReasonController::class, 'write'])->middleware('permission:employees.write')->name('update');
+            Route::patch('/{departureReason}/archive', [DepartureReasonController::class, 'archive'])->middleware('permission:employees.write')->name('archive');
+            Route::patch('/{departureReason}/unarchive', [DepartureReasonController::class, 'unarchive'])->middleware('permission:employees.write')->name('unarchive');
+            Route::delete('/{departureReason}', [DepartureReasonController::class, 'unlink'])->middleware('permission:employees.unlink')->name('delete');
+            Route::post('/{departureReason}/comment', [DepartureReasonController::class, 'addComment'])->middleware('permission:employees.write')->name('comment');
+        });
+
+        // Skill Types
+        Route::prefix('skill-types')->name('skill-types.')->group(function () {
+            Route::get('/', [SkillTypeController::class, 'read'])->middleware('permission:employees.read')->name('index');
+            Route::get('/create', [SkillTypeController::class, 'create'])->middleware('permission:employees.write')->name('create');
+            Route::post('/', [SkillTypeController::class, 'store'])->middleware('permission:employees.write')->name('store');
+            Route::get('/{skillType}', [SkillTypeController::class, 'show'])->middleware('permission:employees.read')->name('show');
+            Route::get('/{skillType}/edit', [SkillTypeController::class, 'edit'])->middleware('permission:employees.write')->name('edit');
+            Route::put('/{skillType}', [SkillTypeController::class, 'write'])->middleware('permission:employees.write')->name('update');
+            Route::patch('/{skillType}/archive', [SkillTypeController::class, 'archive'])->middleware('permission:employees.write')->name('archive');
+            Route::patch('/{skillType}/unarchive', [SkillTypeController::class, 'unarchive'])->middleware('permission:employees.write')->name('unarchive');
+            Route::delete('/{skillType}', [SkillTypeController::class, 'unlink'])->middleware('permission:employees.unlink')->name('delete');
+            Route::post('/{skillType}/comment', [SkillTypeController::class, 'addComment'])->middleware('permission:employees.write')->name('comment');
+        });
+
+        // Resume Line Types
+        Route::prefix('resume-line-types')->name('resume-line-types.')->group(function () {
+            Route::get('/', [ResumeLineTypeController::class, 'read'])->middleware('permission:employees.read')->name('index');
+            Route::get('/create', [ResumeLineTypeController::class, 'create'])->middleware('permission:employees.write')->name('create');
+            Route::post('/', [ResumeLineTypeController::class, 'store'])->middleware('permission:employees.write')->name('store');
+            Route::get('/{resumeLineType}', [ResumeLineTypeController::class, 'show'])->middleware('permission:employees.read')->name('show');
+            Route::get('/{resumeLineType}/edit', [ResumeLineTypeController::class, 'edit'])->middleware('permission:employees.write')->name('edit');
+            Route::put('/{resumeLineType}', [ResumeLineTypeController::class, 'write'])->middleware('permission:employees.write')->name('update');
+            Route::patch('/{resumeLineType}/archive', [ResumeLineTypeController::class, 'archive'])->middleware('permission:employees.write')->name('archive');
+            Route::patch('/{resumeLineType}/unarchive', [ResumeLineTypeController::class, 'unarchive'])->middleware('permission:employees.write')->name('unarchive');
+            Route::delete('/{resumeLineType}', [ResumeLineTypeController::class, 'unlink'])->middleware('permission:employees.unlink')->name('delete');
+            Route::post('/{resumeLineType}/comment', [ResumeLineTypeController::class, 'addComment'])->middleware('permission:employees.write')->name('comment');
+        });
+
+        // Employment Types
+        Route::prefix('employment-types')->name('employment-types.')->group(function () {
+            Route::get('/', [EmploymentTypeController::class, 'read'])->middleware('permission:employees.read')->name('index');
+            Route::get('/create', [EmploymentTypeController::class, 'create'])->middleware('permission:employees.write')->name('create');
+            Route::post('/', [EmploymentTypeController::class, 'store'])->middleware('permission:employees.write')->name('store');
+            Route::get('/{employmentType}', [EmploymentTypeController::class, 'show'])->middleware('permission:employees.read')->name('show');
+            Route::get('/{employmentType}/edit', [EmploymentTypeController::class, 'edit'])->middleware('permission:employees.write')->name('edit');
+            Route::put('/{employmentType}', [EmploymentTypeController::class, 'write'])->middleware('permission:employees.write')->name('update');
+            Route::patch('/{employmentType}/archive', [EmploymentTypeController::class, 'archive'])->middleware('permission:employees.write')->name('archive');
+            Route::patch('/{employmentType}/unarchive', [EmploymentTypeController::class, 'unarchive'])->middleware('permission:employees.write')->name('unarchive');
+            Route::delete('/{employmentType}', [EmploymentTypeController::class, 'unlink'])->middleware('permission:employees.unlink')->name('delete');
+            Route::post('/{employmentType}/comment', [EmploymentTypeController::class, 'addComment'])->middleware('permission:employees.write')->name('comment');
+        });
+
+        // Badges
+        Route::prefix('badges')->name('badges.')->group(function () {
+            Route::get('/', [BadgeController::class, 'read'])->middleware('permission:employees.read')->name('index');
+            Route::get('/create', [BadgeController::class, 'create'])->middleware('permission:employees.write')->name('create');
+            Route::post('/', [BadgeController::class, 'store'])->middleware('permission:employees.write')->name('store');
+            Route::get('/{badge}', [BadgeController::class, 'show'])->middleware('permission:employees.read')->name('show');
+            Route::get('/{badge}/edit', [BadgeController::class, 'edit'])->middleware('permission:employees.write')->name('edit');
+            Route::put('/{badge}', [BadgeController::class, 'write'])->middleware('permission:employees.write')->name('update');
+            Route::patch('/{badge}/archive', [BadgeController::class, 'archive'])->middleware('permission:employees.write')->name('archive');
+            Route::patch('/{badge}/unarchive', [BadgeController::class, 'unarchive'])->middleware('permission:employees.write')->name('unarchive');
+            Route::delete('/{badge}', [BadgeController::class, 'unlink'])->middleware('permission:employees.unlink')->name('delete');
+            Route::post('/{badge}/comment', [BadgeController::class, 'addComment'])->middleware('permission:employees.write')->name('comment');
+        });
+
+        // Challenges
+        Route::prefix('challenges')->name('challenges.')->group(function () {
+            Route::get('/', [ChallengeController::class, 'read'])->middleware('permission:employees.read')->name('index');
+            Route::get('/create', [ChallengeController::class, 'create'])->middleware('permission:employees.write')->name('create');
+            Route::post('/', [ChallengeController::class, 'store'])->middleware('permission:employees.write')->name('store');
+            Route::get('/{challenge}', [ChallengeController::class, 'show'])->middleware('permission:employees.read')->name('show');
+            Route::get('/{challenge}/edit', [ChallengeController::class, 'edit'])->middleware('permission:employees.write')->name('edit');
+            Route::put('/{challenge}', [ChallengeController::class, 'write'])->middleware('permission:employees.write')->name('update');
+            Route::patch('/{challenge}/archive', [ChallengeController::class, 'archive'])->middleware('permission:employees.write')->name('archive');
+            Route::patch('/{challenge}/unarchive', [ChallengeController::class, 'unarchive'])->middleware('permission:employees.write')->name('unarchive');
+            Route::delete('/{challenge}', [ChallengeController::class, 'unlink'])->middleware('permission:employees.unlink')->name('delete');
+            Route::post('/{challenge}/comment', [ChallengeController::class, 'addComment'])->middleware('permission:employees.write')->name('comment');
+        });
+
+        // Goals
+        Route::prefix('goals')->name('goals.')->group(function () {
+            Route::get('/', [GoalController::class, 'read'])->middleware('permission:employees.read')->name('index');
+            Route::get('/create', [GoalController::class, 'create'])->middleware('permission:employees.write')->name('create');
+            Route::post('/', [GoalController::class, 'store'])->middleware('permission:employees.write')->name('store');
+            Route::get('/{goal}', [GoalController::class, 'show'])->middleware('permission:employees.read')->name('show');
+            Route::get('/{goal}/edit', [GoalController::class, 'edit'])->middleware('permission:employees.write')->name('edit');
+            Route::put('/{goal}', [GoalController::class, 'write'])->middleware('permission:employees.write')->name('update');
+            Route::patch('/{goal}/archive', [GoalController::class, 'archive'])->middleware('permission:employees.write')->name('archive');
+            Route::patch('/{goal}/unarchive', [GoalController::class, 'unarchive'])->middleware('permission:employees.write')->name('unarchive');
+            Route::delete('/{goal}', [GoalController::class, 'unlink'])->middleware('permission:employees.unlink')->name('delete');
+            Route::post('/{goal}/comment', [GoalController::class, 'addComment'])->middleware('permission:employees.write')->name('comment');
+        });
+
+        // Employee CRUD (after fixed sub-routes)
+        Route::get('/avatar/{uuid}', [EmployeeController::class, 'serveAvatar'])->middleware('permission:employees.read')->name('avatar');
+        Route::get('/{employee}', [EmployeeController::class, 'show'])->middleware('permission:employees.read')->name('show');
+        Route::get('/{employee}/edit', [EmployeeController::class, 'edit'])->middleware('permission:employees.write')->name('edit');
+        Route::put('/{employee}', [EmployeeController::class, 'write'])->middleware('permission:employees.write')->name('update');
+        Route::patch('/{employee}/archive', [EmployeeController::class, 'archive'])->middleware('permission:employees.write')->name('archive');
+        Route::patch('/{employee}/unarchive', [EmployeeController::class, 'unarchive'])->middleware('permission:employees.write')->name('unarchive');
+        Route::delete('/{employee}', [EmployeeController::class, 'unlink'])->middleware('permission:employees.unlink')->name('delete');
+        Route::post('/{employee}/comment', [EmployeeController::class, 'addComment'])->middleware('permission:employees.write')->name('comment');
+
+        // Documents (nested under employee)
+        Route::post('/{employee}/documents', [EmployeeDocumentController::class, 'store'])->middleware('permission:employees.write')->name('documents.store');
+        Route::delete('/{employee}/documents/{document}', [EmployeeDocumentController::class, 'unlink'])->middleware('permission:employees.write')->name('documents.delete');
+        Route::get('/{employee}/documents/{document}/download', [EmployeeDocumentController::class, 'download'])->middleware('permission:employees.read')->name('documents.download');
+        Route::get('/{employee}/documents/{document}/preview', [EmployeeDocumentController::class, 'preview'])->middleware('permission:employees.read')->name('documents.preview');
+
+        // Contracts (nested under employee)
+        Route::post('/{employee}/contracts', [ContractController::class, 'store'])->middleware('permission:employees.write')->name('contracts.store');
+        Route::get('/{employee}/contracts/{contract}/image', [ContractController::class, 'serveImage'])->middleware('permission:employees.read')->name('contracts.image');
+        Route::put('/{employee}/contracts/{contract}', [ContractController::class, 'write'])->middleware('permission:employees.write')->name('contracts.update');
+        Route::patch('/{employee}/contracts/{contract}/set-active', [ContractController::class, 'setActive'])->middleware('permission:employees.write')->name('contracts.set-active');
+        Route::delete('/{employee}/contracts/{contract}', [ContractController::class, 'unlink'])->middleware('permission:employees.unlink')->name('contracts.delete');
     });
 
     /*
@@ -313,6 +535,7 @@ Route::middleware('auth')->group(function () {
             Route::get('/', [RoleController::class, 'read'])->middleware('permission:roles.read')->name('index');
             Route::get('/create', [RoleController::class, 'create'])->middleware('permission:roles.create')->name('create');
             Route::post('/', [RoleController::class, 'store'])->middleware('permission:roles.create')->name('store');
+            Route::get('/{role}', [RoleController::class, 'show'])->middleware('permission:roles.read')->name('show');
             Route::get('/{role}/edit', [RoleController::class, 'edit'])->middleware('permission:roles.write')->name('edit');
             Route::put('/{role}', [RoleController::class, 'write'])->middleware('permission:roles.write')->name('update');
             Route::delete('/{role}', [RoleController::class, 'unlink'])->middleware('permission:roles.unlink')->name('delete');

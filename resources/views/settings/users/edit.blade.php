@@ -11,10 +11,10 @@
             ['label' => $user->name],
         ]])
         <div class="ms-auto flex gap-2">
-            <a href="{{ route('settings.users.index') }}"
+            <a href="{{ route('settings.users.show', $user) }}"
                class="px-3 py-2 text-sm text-gray-600 bg-white border border-gray-300 rounded-md hover:bg-gray-50">{{ __('common.cancel') }}</a>
             <button form="user-form" type="submit"
-                    class="px-4 py-2 text-sm font-medium text-white bg-purple-600 rounded-md hover:bg-purple-700 shadow-sm">{{ __('common.save') }}</button>
+                    class="px-4 py-2 text-sm font-medium text-white bg-[#714B67] rounded-md hover:bg-[#5c3d55] shadow-sm transition-colors">{{ __('common.save') }}</button>
         </div>
     </div>
 

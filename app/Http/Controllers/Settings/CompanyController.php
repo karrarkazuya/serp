@@ -11,6 +11,7 @@ use App\Helpers\SearchFilters;
 use App\Helpers\SortsTable;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Storage;
 
 class CompanyController extends Controller
 {
@@ -56,7 +57,13 @@ class CompanyController extends Controller
 
     public function store(StoreCompanyRequest $request)
     {
-        $company = DB::transaction(fn () => $this->companyService->create($request->validated()));
+        $data = $request->validated();
+
+        if ($request->hasFile('logo')) {
+            $data['logo'] = $request->file('logo')->store('logos/companies', 'public');
+        }
+
+        $company = DB::transaction(fn () => $this->companyService->create($data));
 
         return redirect()
             ->route('settings.companies.show', $company)
@@ -72,7 +79,19 @@ class CompanyController extends Controller
 
     public function write(UpdateCompanyRequest $request, Company $company)
     {
-        DB::transaction(fn () => $this->companyService->update($company, $request->validated()));
+        $data = $request->validated();
+
+        if ($request->hasFile('logo')) {
+            if ($company->logo) {
+                Storage::disk('public')->delete($company->logo);
+            }
+            $data['logo'] = $request->file('logo')->store('logos/companies', 'public');
+        } elseif ($request->input('remove_logo') === '1' && $company->logo) {
+            Storage::disk('public')->delete($company->logo);
+            $data['logo'] = null;
+        }
+
+        DB::transaction(fn () => $this->companyService->update($company, $data));
 
         return redirect()
             ->route('settings.companies.show', $company)

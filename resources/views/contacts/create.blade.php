@@ -21,10 +21,7 @@
                 @csrf
                 @include('contacts._form', [
                     'contact' => null,
-                    'companies' => $companies,
                     'defaultCompanyId' => $defaultCompanyId ?? null,
-                    'tags' => $tags,
-                    'contacts' => $contacts,
                 ])
             </form>
         </div>

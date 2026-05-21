@@ -98,7 +98,7 @@
                     </div>
                 </div>
                 <input type="file" name="avatar" accept="image/*" class="hidden" @change="avatarPreview = $event.target.files[0] ? URL.createObjectURL($event.target.files[0]) : avatarPreview">
-                <p class="mt-1.5 text-center text-xs text-gray-400">{{ __('contacts.click_upload') ?? 'Click to upload' }}</p>
+                <p class="mt-1.5 text-center text-xs text-gray-400">{{ __('contacts.click_upload') }}</p>
             </label>
         </div>
     </div>

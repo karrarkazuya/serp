@@ -6,12 +6,12 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Contacts\StoreContactRequest;
 use App\Http\Requests\Contacts\UpdateContactRequest;
 use App\Models\Contacts\Contact;
-use App\Models\Contacts\Tag;
 use App\Services\Company\CompanyContextService;
 use App\Services\Contacts\ContactService;
 use App\Helpers\SearchFilters;
 use App\Helpers\SortsTable;
 use Illuminate\Http\Request;
+use Illuminate\Http\Response;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 
@@ -58,9 +58,11 @@ class ContactController extends Controller
     {
         $this->authorize('view', $contact);
 
+        $activeCompanyIds = $this->companyContext->getActiveCompanyIds();
+        abort_unless(in_array($contact->company_id, $activeCompanyIds), 403);
+
         $contact->load(['company', 'tags', 'children.tags', 'parent', 'creator', 'updater']);
 
-        $activeCompanyIds = $this->companyContext->getActiveCompanyIds();
         $allIds = Contact::active()
             ->when(!empty($activeCompanyIds), fn($q) => $q->forCompanies($activeCompanyIds))
             ->orderBy('name')
@@ -83,10 +85,8 @@ class ContactController extends Controller
 
         $activeCompanyIds = $this->companyContext->getActiveCompanyIds();
         $defaultCompanyId = count($activeCompanyIds) === 1 ? $activeCompanyIds[0] : null;
-        $tags = Tag::orderBy('name')->get();
-        $contacts = Contact::active()->orderBy('name')->get(['id', 'name']);
 
-        return view('contacts.create', compact('defaultCompanyId', 'tags', 'contacts'));
+        return view('contacts.create', compact('defaultCompanyId'));
     }
 
     public function store(StoreContactRequest $request)
@@ -94,20 +94,26 @@ class ContactController extends Controller
         $data = $request->validated();
         $tagIds = $data['tags'] ?? [];
         $relatedContactIds = $data['related_contacts'] ?? [];
-        unset($data['tags']);
-        unset($data['related_contacts']);
+        unset($data['tags'], $data['related_contacts']);
 
         if ($request->hasFile('avatar')) {
-            $data['avatar'] = $request->file('avatar')->store('avatars/contacts', 'public');
+            $data['avatar'] = $request->file('avatar')->store('avatars/contacts', 'local');
         }
 
-        $contact = DB::transaction(function () use ($data, $tagIds, $relatedContactIds) {
-            $contact = $this->contactService->create($data);
-            $contact->tags()->sync($tagIds);
-            $this->syncRelatedContacts($contact, $relatedContactIds);
+        try {
+            $contact = DB::transaction(function () use ($data, $tagIds, $relatedContactIds) {
+                $contact = $this->contactService->create($data);
+                $contact->tags()->sync($tagIds);
+                $this->syncRelatedContacts($contact, $relatedContactIds);
 
-            return $contact;
-        });
+                return $contact;
+            });
+        } catch (\Throwable $e) {
+            if (isset($data['avatar'])) {
+                Storage::disk('local')->delete($data['avatar']);
+            }
+            throw $e;
+        }
 
         return redirect()
             ->route('contacts.show', $contact)
@@ -118,34 +124,47 @@ class ContactController extends Controller
     {
         $this->authorize('update', $contact);
 
+        $activeCompanyIds = $this->companyContext->getActiveCompanyIds();
+        abort_unless(in_array($contact->company_id, $activeCompanyIds), 403);
+
         $contact->load(['company', 'tags', 'children', 'parent']);
-        $tags = Tag::orderBy('name')->get();
-        $contacts = Contact::active()->where('id', '!=', $contact->id)->orderBy('name')->get(['id', 'name']);
         $relatedContactIds = $contact->children->pluck('id')->toArray();
 
-        return view('contacts.edit', compact('contact', 'tags', 'contacts', 'relatedContactIds'));
+        return view('contacts.edit', compact('contact', 'relatedContactIds'));
     }
 
     public function write(UpdateContactRequest $request, Contact $contact)
     {
+        $activeCompanyIds = $this->companyContext->getActiveCompanyIds();
+        abort_unless(in_array($contact->company_id, $activeCompanyIds), 403);
+
         $data = $request->validated();
         $tagIds = $data['tags'] ?? [];
         $relatedContactIds = $data['related_contacts'] ?? [];
-        unset($data['tags']);
-        unset($data['related_contacts']);
+        unset($data['tags'], $data['related_contacts']);
+
+        $oldAvatar = $contact->avatar;
 
         if ($request->hasFile('avatar')) {
-            if ($contact->avatar) {
-                Storage::disk('public')->delete($contact->avatar);
-            }
-            $data['avatar'] = $request->file('avatar')->store('avatars/contacts', 'public');
+            $data['avatar'] = $request->file('avatar')->store('avatars/contacts', 'local');
         }
 
-        DB::transaction(function () use ($contact, $data, $tagIds, $relatedContactIds) {
-            $this->contactService->update($contact, $data);
-            $contact->tags()->sync($tagIds);
-            $this->syncRelatedContacts($contact, $relatedContactIds);
-        });
+        try {
+            DB::transaction(function () use ($contact, $data, $tagIds, $relatedContactIds) {
+                $this->contactService->update($contact, $data);
+                $contact->tags()->sync($tagIds);
+                $this->syncRelatedContacts($contact, $relatedContactIds);
+            });
+        } catch (\Throwable $e) {
+            if (isset($data['avatar'])) {
+                Storage::disk('local')->delete($data['avatar']);
+            }
+            throw $e;
+        }
+
+        if ($request->hasFile('avatar') && $oldAvatar) {
+            Storage::disk('local')->delete($oldAvatar);
+        }
 
         return redirect()
             ->route('contacts.show', $contact)
@@ -155,6 +174,10 @@ class ContactController extends Controller
     public function archive(Request $_request, Contact $contact)
     {
         $this->authorize('update', $contact);
+
+        $activeCompanyIds = $this->companyContext->getActiveCompanyIds();
+        abort_unless(in_array($contact->company_id, $activeCompanyIds), 403);
+
         DB::transaction(fn () => $this->contactService->archive($contact));
 
         return redirect()->route('contacts.index')->with('success', 'Contact archived.');
@@ -163,6 +186,10 @@ class ContactController extends Controller
     public function unarchive(Request $_request, Contact $contact)
     {
         $this->authorize('update', $contact);
+
+        $activeCompanyIds = $this->companyContext->getActiveCompanyIds();
+        abort_unless(in_array($contact->company_id, $activeCompanyIds), 403);
+
         DB::transaction(fn () => $this->contactService->unarchive($contact));
 
         return redirect()->route('contacts.show', $contact)->with('success', 'Contact restored.');
@@ -172,11 +199,15 @@ class ContactController extends Controller
     {
         $this->authorize('delete', $contact);
 
-        if ($contact->avatar) {
-            Storage::disk('public')->delete($contact->avatar);
-        }
+        $activeCompanyIds = $this->companyContext->getActiveCompanyIds();
+        abort_unless(in_array($contact->company_id, $activeCompanyIds), 403);
 
+        $avatar = $contact->avatar;
         DB::transaction(fn () => $this->contactService->delete($contact));
+
+        if ($avatar) {
+            Storage::disk('local')->delete($avatar);
+        }
 
         return redirect()->route('contacts.index')->with('success', 'Contact deleted.');
     }
@@ -184,10 +215,51 @@ class ContactController extends Controller
     public function addComment(Request $request, Contact $contact)
     {
         $this->authorize('comment', $contact);
+
+        $activeCompanyIds = $this->companyContext->getActiveCompanyIds();
+        abort_unless(in_array($contact->company_id, $activeCompanyIds), 403);
+
         $request->validate(['body' => 'required|string|max:5000']);
-        $contact->logComment($request->body);
+        DB::transaction(fn () => $contact->logComment($request->body));
 
         return back()->with('success', 'Comment added.');
+    }
+
+    public function avatar(string $uuid): Response
+    {
+        $contact = Contact::where('uuid', $uuid)->first();
+
+        if (
+            !$contact ||
+            !$contact->avatar ||
+            !auth()->check() ||
+            !auth()->user()->hasPermission('contacts.read') ||
+            !Storage::disk('local')->exists($contact->avatar)
+        ) {
+            return $this->defaultAvatarResponse();
+        }
+
+        $path     = Storage::disk('local')->path($contact->avatar);
+        $mime     = mime_content_type($path) ?: 'image/jpeg';
+
+        return response(Storage::disk('local')->get($contact->avatar), 200, [
+            'Content-Type'  => $mime,
+            'Cache-Control' => 'private, max-age=3600',
+        ]);
+    }
+
+    private function defaultAvatarResponse(): Response
+    {
+        $svg = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">'
+             . '<rect width="100" height="100" fill="#e5e7eb"/>'
+             . '<circle cx="50" cy="37" r="19" fill="#9ca3af"/>'
+             . '<ellipse cx="50" cy="82" rx="30" ry="22" fill="#9ca3af"/>'
+             . '</svg>';
+
+        return response($svg, 200, [
+            'Content-Type'  => 'image/svg+xml',
+            'Cache-Control' => 'private, max-age=60',
+        ]);
     }
 
     private function syncRelatedContacts(Contact $contact, array $relatedContactIds): void

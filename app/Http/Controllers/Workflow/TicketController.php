@@ -119,12 +119,15 @@ class TicketController extends Controller
 
         // Lazily create a chat room for tickets created before this feature
         if (!$ticket->chatRoom) {
-            $room = ChatRoom::create([
-                'name'               => $ticket->name,
-                'description'        => 'Ticket #' . $ticket->id,
-                'created_by_user_id' => $ticket->created_by_user_id,
-            ]);
-            $ticket->update(['chat_room_id' => $room->id]);
+            $room = DB::transaction(function () use ($ticket) {
+                $room = ChatRoom::create([
+                    'name'               => $ticket->name,
+                    'description'        => 'Ticket #' . $ticket->id,
+                    'created_by_user_id' => $ticket->created_by_user_id,
+                ]);
+                $ticket->update(['chat_room_id' => $room->id]);
+                return $room;
+            });
             $ticket->setRelation('chatRoom', $room);
         }
 
@@ -820,7 +823,7 @@ class TicketController extends Controller
         $this->authorize('view', $ticket);
         $activeCompanyIds = $this->companyContext->getActiveCompanyIds();
         abort_unless(is_null($ticket->company_id) || in_array($ticket->company_id, $activeCompanyIds), 403);
-        abort_unless($ticket->chatRoom && $file->message->room_id === $ticket->chatRoom->id, 403);
+        abort_unless($ticket->chatRoom && $file->message?->room_id === $ticket->chatRoom->id, 403);
 
         $fullPath = \Illuminate\Support\Facades\Storage::disk($file->disk)->path($file->path);
         return response()->download($fullPath, $file->original_name);

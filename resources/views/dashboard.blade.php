@@ -4,6 +4,12 @@
 @section('content')
 @php
 $icons = [
+    'employees' => '<svg viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg" class="w-14 h-14">
+        <circle cx="24" cy="22" r="9" fill="#5a2ca0"/>
+        <path d="M6 46c0-9.9 8.1-14 18-14s18 4.1 18 14H6z" fill="#5a2ca0"/>
+        <circle cx="44" cy="20" r="7" fill="#1f66d1"/>
+        <path d="M34 44c0-7.7 4.5-12 10-13.5 5.5 1.5 14 5.8 14 13.5H34z" fill="#1f66d1"/>
+    </svg>',
     'contacts' => '<svg viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg" class="w-14 h-14">
         <rect x="14" y="10" width="36" height="44" rx="6" fill="#1f66d1"/>
         <rect x="18" y="14" width="36" height="36" rx="5" fill="#13bfd7"/>

@@ -4,6 +4,7 @@ namespace App\Services\Company;
 
 use App\Models\Settings\Company;
 use App\Services\Chatter\ChatterService;
+use Illuminate\Support\Facades\Storage;
 
 class CompanyService
 {
@@ -52,6 +53,11 @@ class CompanyService
     public function delete(Company $company): void
     {
         $this->chatterService->log($company, 'Company deleted.', 'system');
+
+        if ($company->logo) {
+            Storage::disk('public')->delete($company->logo);
+        }
+
         $company->delete();
     }
 

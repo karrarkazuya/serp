@@ -149,6 +149,97 @@
     </div>
     @endif
 
+    @if(request()->routeIs('employees.*'))
+    <div class="flex min-w-0 flex-1 items-center h-full">
+        @can('viewAny', \App\Models\Employees\Employee::class)
+        <a href="{{ route('employees.index') }}"
+           class="flex items-center h-full px-3 sm:px-4 text-white/85 hover:text-white hover:bg-[#5c3d55] transition-colors text-sm font-semibold shrink-0
+                  {{ request()->routeIs('employees.index', 'employees.show', 'employees.create', 'employees.edit') ? 'bg-[#5c3d55]' : '' }}">
+            Employees
+        </a>
+        @endcan
+
+        {{-- Configuration dropdown --}}
+        @can('viewAny', \App\Models\Employees\Employee::class)
+        <div x-data="{ open: false }" class="relative h-full shrink-0" @click.outside="open = false">
+            <button type="button"
+                    @click="open = !open"
+                    class="hidden sm:flex items-center h-full px-4 text-white/85 hover:text-white hover:bg-[#5c3d55] transition-colors text-sm font-semibold
+                           {{ request()->routeIs('employees.departments.*', 'employees.jobs.*', 'employees.work-locations.*', 'employees.schedules.*', 'employees.categories.*', 'employees.departure-reasons.*', 'employees.skill-types.*', 'employees.resume-line-types.*', 'employees.employment-types.*', 'employees.badges.*', 'employees.challenges.*', 'employees.goals.*') ? 'bg-[#5c3d55]' : '' }}">
+                Configuration
+                <svg class="ms-1 w-3.5 h-3.5 transition-transform" :class="open ? 'rotate-180' : ''" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
+                </svg>
+            </button>
+
+            <div x-show="open"
+                 x-transition:enter="transition ease-out duration-100"
+                 x-transition:enter-start="opacity-0 scale-95"
+                 x-transition:enter-end="opacity-100 scale-100"
+                 x-transition:leave="transition ease-in duration-75"
+                 x-transition:leave-start="opacity-100 scale-100"
+                 x-transition:leave-end="opacity-0 scale-95"
+                 class="absolute start-0 top-full w-56 bg-white rounded-b-lg shadow-xl border border-gray-200 z-50 py-1"
+                 style="display:none">
+                <div class="px-3 py-1.5 text-[10px] font-semibold text-gray-400 uppercase">Organization</div>
+                <a href="{{ route('employees.departments.index') }}"
+                   class="block px-4 py-2.5 text-sm text-gray-800 hover:bg-gray-100 {{ request()->routeIs('employees.departments.*') ? 'bg-gray-100 font-semibold' : '' }}">
+                    Departments
+                </a>
+                <a href="{{ route('employees.jobs.index') }}"
+                   class="block px-4 py-2.5 text-sm text-gray-800 hover:bg-gray-100 {{ request()->routeIs('employees.jobs.*') ? 'bg-gray-100 font-semibold' : '' }}">
+                    Job Positions
+                </a>
+                <div class="border-t border-gray-100 my-1"></div>
+                <div class="px-3 py-1.5 text-[10px] font-semibold text-gray-400 uppercase">Settings</div>
+                <a href="{{ route('employees.work-locations.index') }}"
+                   class="block px-4 py-2.5 text-sm text-gray-800 hover:bg-gray-100 {{ request()->routeIs('employees.work-locations.*') ? 'bg-gray-100 font-semibold' : '' }}">
+                    Work Locations
+                </a>
+                <a href="{{ route('employees.schedules.index') }}"
+                   class="block px-4 py-2.5 text-sm text-gray-800 hover:bg-gray-100 {{ request()->routeIs('employees.schedules.*') ? 'bg-gray-100 font-semibold' : '' }}">
+                    Working Schedules
+                </a>
+                <a href="{{ route('employees.categories.index') }}"
+                   class="block px-4 py-2.5 text-sm text-gray-800 hover:bg-gray-100 {{ request()->routeIs('employees.categories.*') ? 'bg-gray-100 font-semibold' : '' }}">
+                    Tags
+                </a>
+                <a href="{{ route('employees.departure-reasons.index') }}"
+                   class="block px-4 py-2.5 text-sm text-gray-800 hover:bg-gray-100 {{ request()->routeIs('employees.departure-reasons.*') ? 'bg-gray-100 font-semibold' : '' }}">
+                    Departure Reasons
+                </a>
+                <a href="{{ route('employees.skill-types.index') }}"
+                   class="block px-4 py-2.5 text-sm text-gray-800 hover:bg-gray-100 {{ request()->routeIs('employees.skill-types.*') ? 'bg-gray-100 font-semibold' : '' }}">
+                    Skill Types
+                </a>
+                <a href="{{ route('employees.resume-line-types.index') }}"
+                   class="block px-4 py-2.5 text-sm text-gray-800 hover:bg-gray-100 {{ request()->routeIs('employees.resume-line-types.*') ? 'bg-gray-100 font-semibold' : '' }}">
+                    Line Types
+                </a>
+                <a href="{{ route('employees.employment-types.index') }}"
+                   class="block px-4 py-2.5 text-sm text-gray-800 hover:bg-gray-100 {{ request()->routeIs('employees.employment-types.*') ? 'bg-gray-100 font-semibold' : '' }}">
+                    Employment Types
+                </a>
+                <div class="border-t border-gray-100 my-1"></div>
+                <div class="px-3 py-1.5 text-[10px] font-semibold text-gray-400 uppercase">Challenges</div>
+                <a href="{{ route('employees.badges.index') }}"
+                   class="block px-4 py-2.5 text-sm text-gray-800 hover:bg-gray-100 {{ request()->routeIs('employees.badges.*') ? 'bg-gray-100 font-semibold' : '' }}">
+                    Badges
+                </a>
+                <a href="{{ route('employees.challenges.index') }}"
+                   class="block px-4 py-2.5 text-sm text-gray-800 hover:bg-gray-100 {{ request()->routeIs('employees.challenges.*') ? 'bg-gray-100 font-semibold' : '' }}">
+                    Challenges
+                </a>
+                <a href="{{ route('employees.goals.index') }}"
+                   class="block px-4 py-2.5 text-sm text-gray-800 hover:bg-gray-100 {{ request()->routeIs('employees.goals.*') ? 'bg-gray-100 font-semibold' : '' }}">
+                    Goals History
+                </a>
+            </div>
+        </div>
+        @endcan
+    </div>
+    @endif
+
     @if(request()->routeIs('contacts.*'))
     <div class="flex min-w-0 flex-1 items-center h-full">
         <a href="{{ route('contacts.index') }}"
@@ -262,8 +353,12 @@
 
                         {{-- Company info --}}
                         <div class="flex items-center gap-2.5 flex-1 min-w-0">
-                            <div class="w-7 h-7 rounded-lg bg-purple-100 flex items-center justify-center text-xs font-bold text-purple-700 shrink-0">
-                                {{ strtoupper(substr($company->name, 0, 2)) }}
+                            <div class="w-7 h-7 rounded-lg overflow-hidden bg-[#714B67]/10 flex items-center justify-center text-xs font-bold text-[#714B67] shrink-0">
+                                @if($company->logo_url)
+                                    <img src="{{ $company->logo_url }}" alt="{{ $company->name }}" class="w-full h-full object-cover">
+                                @else
+                                    {{ strtoupper(substr($company->name, 0, 2)) }}
+                                @endif
                             </div>
                             <div class="min-w-0">
                                 <p class="text-sm font-medium text-gray-800 truncate">{{ $company->name }}</p>

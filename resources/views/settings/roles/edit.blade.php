@@ -11,7 +11,7 @@
             ['label' => $role->name],
         ]])
         <div class="ms-auto flex gap-2">
-            <a href="{{ route('settings.roles.index') }}"
+            <a href="{{ route('settings.roles.show', $role) }}"
                class="px-3 py-1.5 text-sm text-gray-600 bg-white border border-gray-300 rounded-md hover:bg-gray-50 transition-colors">{{ __('common.cancel') }}</a>
             <button form="role-form" type="submit"
                     class="px-4 py-1.5 text-sm font-medium text-white bg-[#714B67] rounded-md hover:bg-[#5c3d55] shadow-sm transition-colors">{{ __('common.save') }}</button>

@@ -126,6 +126,76 @@ return [
         'visible_to_workflow_user' => true,
     ],
 
+    'hr_employees' => [
+        'read' => 'employees.read',
+        'write' => 'employees.write',
+        'create_permission' => 'employees.create',
+        'route' => 'employees.index',
+        'create' => 'employees.create',
+        'color' => null,
+        'fields' => ['name', 'work_email'],
+    ],
+
+    'hr_departments' => [
+        'read' => 'employees.read',
+        'write' => 'employees.write',
+        'create_permission' => 'employees.create',
+        'route' => 'employees.departments.index',
+        'create' => 'employees.departments.create',
+        'color' => null,
+        'fields' => ['name'],
+    ],
+
+    'hr_jobs' => [
+        'read' => 'employees.read',
+        'write' => 'employees.write',
+        'create_permission' => 'employees.create',
+        'route' => 'employees.jobs.index',
+        'create' => 'employees.jobs.create',
+        'color' => null,
+        'fields' => ['name'],
+    ],
+
+    'hr_work_locations' => [
+        'read' => 'employees.read',
+        'write' => 'employees.write',
+        'create_permission' => 'employees.create',
+        'route' => 'employees.work-locations.index',
+        'create' => 'employees.work-locations.create',
+        'color' => null,
+        'fields' => ['name', 'address'],
+    ],
+
+    'hr_resource_calendars' => [
+        'read' => 'employees.read',
+        'write' => 'employees.write',
+        'create_permission' => 'employees.create',
+        'route' => 'employees.schedules.index',
+        'create' => 'employees.schedules.create',
+        'color' => null,
+        'fields' => ['name'],
+    ],
+
+    'hr_employee_categories' => [
+        'read' => 'employees.read',
+        'write' => 'employees.write',
+        'create_permission' => 'employees.create',
+        'route' => 'employees.categories.index',
+        'create' => 'employees.categories.create',
+        'color' => 'color',
+        'fields' => ['name'],
+    ],
+
+    'hr_departure_reasons' => [
+        'read' => 'employees.read',
+        'write' => 'employees.write',
+        'create_permission' => null,
+        'route' => null,
+        'create' => null,
+        'color' => null,
+        'fields' => ['name'],
+    ],
+
     'workflow_procedure_steps' => [
         'read' => 'workflow.config.read',
         'write' => 'workflow.config.write',

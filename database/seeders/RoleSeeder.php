@@ -35,6 +35,7 @@ class RoleSeeder extends Seeder
         // Assign read-only permissions to basic user
         $readPermissions = Permission::whereIn('key', [
             'contacts.read',
+            'employees.read',
             'workflow.tickets.read',
             'workflow.procedures.read',
         ])->pluck('id');

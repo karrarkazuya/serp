@@ -53,7 +53,7 @@
             </div>
 
             <div class="flex items-center rounded overflow-hidden bg-gray-200">
-                <span class="w-10 h-10 inline-flex items-center justify-center border border-purple-400 bg-purple-100 text-gray-900" title="List view">
+                <span class="w-10 h-10 inline-flex items-center justify-center border border-purple-400 bg-purple-100 text-gray-900" title="{{ __('common.list_view') }}">
                     <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
                         <path d="M4 5h12v2H4V5zm0 4h12v2H4V9zm0 4h12v2H4v-2z"/>
                     </svg>

@@ -27,6 +27,7 @@ class UpdateCompanyRequest extends FormRequest
             'tax_id'   => 'nullable|string|max:50',
             'currency' => 'nullable|string|max:10',
             'notes'    => 'nullable|string',
+            'logo'     => 'nullable|image|mimes:jpg,jpeg,png,webp,gif|max:2048',
         ];
     }
 }

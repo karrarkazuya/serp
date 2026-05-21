@@ -129,6 +129,7 @@ When building a new module, follow `docs/implement_new_module.md` using Contacts
 - [ ] Views: `<x-list>` + `<x-search>` on index, `<x-chatter>` on show, Odoo form style, `<x-relation-dropdown>` for relations
 - [ ] Navigation: update `resources/views/components/navbar.blade.php`
 - [ ] Register target tables in `config/relation_dropdowns.php` for any relation dropdown
+- [ ] make sure you added $sortable, $searchable, $chatterTracked, $fillable and make sure they are linked and used
 
 ---
 

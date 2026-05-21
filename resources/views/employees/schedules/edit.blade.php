@@ -1,0 +1,35 @@
+@extends('layouts.app')
+@section('title', 'Edit - ' . $schedule->name)
+
+@section('content')
+<div class="flex flex-col h-full bg-gray-50">
+    <div class="bg-white border-b border-gray-200 px-4 py-2 flex items-center gap-3 shrink-0">
+        <div class="flex flex-col leading-tight">
+            <a href="{{ route('employees.schedules.index') }}" class="text-xs text-purple-600 hover:text-purple-700">Working Schedules</a>
+            <div class="flex items-center gap-1">
+                <a href="{{ route('employees.schedules.show', $schedule) }}" class="text-sm font-semibold text-gray-800 hover:text-purple-700">{{ $schedule->name }}</a>
+                <span class="text-xs text-gray-400">/</span>
+                <span class="text-sm text-gray-500">Edit</span>
+            </div>
+        </div>
+
+        <div class="ms-auto flex items-center gap-2">
+            <a href="{{ route('employees.schedules.show', $schedule) }}" class="px-3 py-1.5 text-sm text-gray-600 bg-white border border-gray-300 rounded hover:bg-gray-50">Cancel</a>
+            <button form="schedule-form" type="submit" class="px-4 py-1.5 text-sm font-medium text-white bg-[#714B67] hover:bg-[#5c3d55] rounded shadow-sm">Save</button>
+        </div>
+    </div>
+
+    <div class="flex-1 overflow-y-auto">
+        <div class="bg-white mx-4 my-4 rounded-xl border border-gray-200 shadow-sm p-6">
+            @if ($errors->any())
+                <div class="mb-4 rounded-lg bg-red-50 border border-red-200 p-3 text-sm text-red-700">
+                    <ul class="list-disc list-inside space-y-1">
+                        @foreach ($errors->all() as $error)<li>{{ $error }}</li>@endforeach
+                    </ul>
+                </div>
+            @endif
+            @include('employees.schedules._form', ['schedule' => $schedule])
+        </div>
+    </div>
+</div>
+@endsection

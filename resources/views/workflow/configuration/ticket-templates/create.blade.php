@@ -49,6 +49,15 @@
                         relation="many2one"
                     />
 
+                    <x-relation-dropdown
+                        table="workflow_departments"
+                        field="name"
+                        name="default_department_id"
+                        label="Default Dept."
+                        :selected="old('default_department_id')"
+                        relation="many2one"
+                    />
+
                     <div class="flex items-center gap-4 py-2 border-b border-gray-100">
                         <label class="w-36 shrink-0 text-sm text-gray-500">SLA (hours)</label>
                         <input type="number" name="resolve_max_duration" value="{{ old('resolve_max_duration') }}" min="1"

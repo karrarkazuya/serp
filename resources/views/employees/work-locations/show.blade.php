@@ -1,0 +1,94 @@
+@extends('layouts.app')
+@section('title', $location->name)
+
+@section('content')
+<div class="flex flex-col h-full bg-gray-50">
+    <div class="bg-white border-b border-gray-200 px-4 py-2 flex items-center gap-3 shrink-0">
+        <div class="flex flex-col leading-tight">
+            <a href="{{ route('employees.work-locations.index') }}" class="text-xs text-purple-600 hover:text-purple-700">Work Locations</a>
+            <span class="text-sm font-semibold text-gray-800">{{ $location->name }}</span>
+        </div>
+
+        <div class="ms-auto flex items-center gap-2">
+            @can('update', $location)
+            <a href="{{ route('employees.work-locations.edit', $location) }}"
+               class="px-3 py-1.5 text-sm text-gray-600 bg-white border border-gray-300 rounded hover:bg-gray-50">Edit</a>
+            @endcan
+
+            @can('delete', $location)
+            <div x-data="{ confirming: false }">
+                <button type="button" x-show="!confirming" @click="confirming = true"
+                        class="px-3 py-1.5 text-sm text-red-600 bg-white border border-red-200 rounded hover:bg-red-50">Delete</button>
+                <div x-show="confirming" style="display:none" class="flex items-center gap-1.5">
+                    <span class="text-xs text-red-600">Are you sure?</span>
+                    <form method="POST" action="{{ route('employees.work-locations.delete', $location) }}">
+                        @csrf @method('DELETE')
+                        <button type="submit" class="px-2 py-1 text-xs bg-red-600 text-white rounded">Yes</button>
+                    </form>
+                    <button type="button" @click="confirming = false" class="px-2 py-1 text-xs text-gray-500 border border-gray-300 rounded">Cancel</button>
+                </div>
+            </div>
+            @endcan
+        </div>
+    </div>
+
+    <div class="flex-1 overflow-y-auto p-4 space-y-4">
+        <div class="bg-white rounded-xl border border-gray-200 shadow-sm p-6">
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-4">
+                <div>
+                    <p class="text-xs font-semibold text-gray-400 uppercase tracking-wide">Name</p>
+                    <p class="text-sm font-semibold text-gray-900 mt-0.5">{{ $location->name }}</p>
+                </div>
+                <div>
+                    <p class="text-xs font-semibold text-gray-400 uppercase tracking-wide">Company</p>
+                    <p class="text-sm text-gray-900 mt-0.5">{{ $location->company?->name ?? '—' }}</p>
+                </div>
+                <div class="sm:col-span-2">
+                    <p class="text-xs font-semibold text-gray-400 uppercase tracking-wide">Address</p>
+                    <p class="text-sm text-gray-900 mt-0.5">{{ $location->address ?? '—' }}</p>
+                </div>
+                @if($location->latitude || $location->longitude)
+                <div>
+                    <p class="text-xs font-semibold text-gray-400 uppercase tracking-wide">Coordinates</p>
+                    <p class="text-sm text-gray-900 mt-0.5">{{ $location->latitude }}, {{ $location->longitude }}</p>
+                </div>
+                @endif
+            </div>
+        </div>
+
+        @if($location->employees->isNotEmpty())
+        <div class="bg-white rounded-xl border border-gray-200 shadow-sm">
+            <div class="px-5 py-3 border-b border-gray-100">
+                <h3 class="text-sm font-semibold text-gray-700">Employees ({{ $location->employees->count() }})</h3>
+            </div>
+            <ul class="divide-y divide-gray-100">
+                @foreach($location->employees as $emp)
+                <li class="px-5 py-3 hover:bg-purple-50/30">
+                    <a href="{{ route('employees.show', $emp) }}" class="flex items-center gap-3">
+                        @if($emp->avatar_url)
+                            <img src="{{ $emp->avatar_url }}" alt="{{ $emp->name }}" class="w-8 h-8 rounded-full object-cover shrink-0">
+                        @else
+                            <div class="w-8 h-8 rounded-full bg-purple-100 flex items-center justify-center text-xs font-bold text-purple-700 shrink-0">{{ strtoupper(substr($emp->name, 0, 2)) }}</div>
+                        @endif
+                        <div>
+                            <p class="text-sm font-medium text-gray-900">{{ $emp->name }}</p>
+                            <p class="text-xs text-gray-400">{{ $emp->department?->name }}</p>
+                        </div>
+                    </a>
+                </li>
+                @endforeach
+            </ul>
+        </div>
+        @endif
+
+        <div class="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
+            <x-chatter
+                model-type="App\Models\Employees\WorkLocation"
+                :model-id="$location->id"
+                :can-comment="auth()->user()->can('comment', $location)"
+                :comment-url="route('employees.work-locations.comment', $location)"
+            />
+        </div>
+    </div>
+</div>
+@endsection

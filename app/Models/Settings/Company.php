@@ -102,6 +102,11 @@ class Company extends Model
         return $this->belongsTo(User::class, 'updated_by');
     }
 
+    public function getLogoUrlAttribute(): ?string
+    {
+        return $this->logo ? asset('storage/' . $this->logo) : null;
+    }
+
     public function scopeActive(Builder $query): Builder
     {
         return $query->where('active', true);

@@ -65,7 +65,7 @@
         </x-slot:columns>
 
         @foreach($roles as $role)
-        <tr class="hover:bg-[#714B67]/5 transition-colors cursor-pointer" onclick="window.location='{{ route('settings.roles.edit', $role) }}'">
+        <tr class="hover:bg-[#714B67]/5 transition-colors cursor-pointer" onclick="window.location='{{ route('settings.roles.show', $role) }}'">
             <td class="px-6 py-3">
                 <div class="text-sm font-medium text-gray-900">{{ $role->name }}</div>
                 @if($role->description)<div class="text-xs text-gray-500">{{ $role->description }}</div>@endif
@@ -84,13 +84,15 @@
             </td>
             <td class="px-4 py-3 text-end" onclick="event.stopPropagation()">
                 <div class="flex items-center justify-end gap-2">
+                    <a href="{{ route('settings.roles.show', $role) }}"
+                       class="text-xs text-gray-500 hover:text-[#714B67] transition-colors px-2 py-1 rounded hover:bg-[#714B67]/5" onclick="event.stopPropagation()">{{ __('common.view') }}</a>
                     @can('update', $role)
                     <a href="{{ route('settings.roles.edit', $role) }}"
-                       class="text-xs text-gray-500 hover:text-[#714B67] transition-colors px-2 py-1 rounded hover:bg-[#714B67]/5">{{ __('common.edit') }}</a>
+                       class="text-xs text-gray-500 hover:text-[#714B67] transition-colors px-2 py-1 rounded hover:bg-[#714B67]/5" onclick="event.stopPropagation()">{{ __('common.edit') }}</a>
                     @endcan
                     @can('delete', $role)
                     @if($role->key !== 'admin')
-                    <form method="POST" action="{{ route('settings.roles.delete', $role) }}"
+                    <form method="POST" action="{{ route('settings.roles.delete', $role) }}" onclick="event.stopPropagation()"
                           @submit.prevent="$dispatch('confirm-delete', { message: '{{ __('common.confirm_delete') }}', form: $el })">
                         @csrf @method('DELETE')
                         <button type="submit" class="text-xs text-red-500 hover:text-red-700 transition-colors px-2 py-1 rounded hover:bg-red-50">{{ __('common.delete') }}</button>

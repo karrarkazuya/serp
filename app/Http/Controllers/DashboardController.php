@@ -13,6 +13,15 @@ class DashboardController extends Controller
 
         $modules = collect([
             [
+                'key'         => 'employees',
+                'label'       => 'Employees',
+                'description' => 'Staff, departments & HR',
+                'route'       => 'employees.index',
+                'permission'  => 'employees.read',
+                'color'       => 'purple',
+                'icon'        => 'employees',
+            ],
+            [
                 'key'         => 'contacts',
                 'label'       => 'Contacts',
                 'description' => 'Customers, suppliers & partners',

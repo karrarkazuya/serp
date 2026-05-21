@@ -19,7 +19,7 @@
                 {{ __('common.cancel') }}
             </a>
             <button type="submit" form="company-form"
-                    class="px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white text-sm font-medium rounded-md transition-colors shadow-sm">
+                    class="px-4 py-2 bg-[#714B67] hover:bg-[#5c3d55] text-white text-sm font-medium rounded-md transition-colors shadow-sm">
                 {{ __('common.save') }}
             </button>
         </div>
@@ -27,7 +27,7 @@
 
     <div class="flex-1 overflow-y-auto p-6">
         <form id="company-form" method="POST" action="{{ route('settings.companies.update', $company) }}"
-              class="space-y-5">
+              enctype="multipart/form-data" class="space-y-5">
             @csrf @method('PUT')
             @include('settings.companies._form', ['company' => $company])
         </form>

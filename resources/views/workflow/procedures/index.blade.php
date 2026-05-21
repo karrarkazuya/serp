@@ -1,18 +1,18 @@
 @extends('layouts.app')
-@section('title', 'Procedures')
+@section('title', __('workflow.procedures_title'))
 
 @php
     $view = request('view', 'list');
     $procQuickFilters = [
-        ['label' => 'In Progress', 'params' => ['state' => 'pending'],   'url' => route('workflow.procedures.index', array_merge(request()->except('page'), ['state' => 'pending']))],
-        ['label' => 'Completed',   'params' => ['state' => 'completed'], 'url' => route('workflow.procedures.index', array_merge(request()->except('page'), ['state' => 'completed']))],
-        ['label' => 'Canceled',    'params' => ['state' => 'closed'],    'url' => route('workflow.procedures.index', array_merge(request()->except('page'), ['state' => 'closed']))],
-        ['label' => 'Active',      'params' => ['filter' => ''],         'url' => route('workflow.procedures.index', array_merge(request()->except('page', 'filter'), ['filter' => '']))],
-        ['label' => 'Archived',    'params' => ['filter' => 'archived'], 'url' => route('workflow.procedures.index', array_merge(request()->except('page'), ['filter' => 'archived']))],
-        ['label' => 'All',         'params' => ['filter' => 'all'],      'url' => route('workflow.procedures.index', array_merge(request()->except('page'), ['filter' => 'all']))],
+        ['label' => __('workflow.state_in_progress'), 'params' => ['state' => 'pending'],   'url' => route('workflow.procedures.index', array_merge(request()->except('page'), ['state' => 'pending']))],
+        ['label' => __('workflow.state_completed'),   'params' => ['state' => 'completed'], 'url' => route('workflow.procedures.index', array_merge(request()->except('page'), ['state' => 'completed']))],
+        ['label' => __('workflow.state_canceled'),    'params' => ['state' => 'closed'],    'url' => route('workflow.procedures.index', array_merge(request()->except('page'), ['state' => 'closed']))],
+        ['label' => __('common.active'),              'params' => ['filter' => ''],         'url' => route('workflow.procedures.index', array_merge(request()->except('page', 'filter'), ['filter' => '']))],
+        ['label' => __('common.archived'),            'params' => ['filter' => 'archived'], 'url' => route('workflow.procedures.index', array_merge(request()->except('page'), ['filter' => 'archived']))],
+        ['label' => __('common.all'),                 'params' => ['filter' => 'all'],      'url' => route('workflow.procedures.index', array_merge(request()->except('page'), ['filter' => 'all']))],
     ];
     $procGroups = [
-        ['label' => 'State', 'url' => route('workflow.procedures.index', array_merge(request()->except('page'), ['group_by' => 'state']))],
+        ['label' => __('common.status'), 'url' => route('workflow.procedures.index', array_merge(request()->except('page'), ['group_by' => 'state']))],
     ];
 @endphp
 
@@ -21,12 +21,12 @@
     <div class="flex flex-wrap items-center gap-2 sm:gap-3 px-3 sm:px-4 py-2 border-b border-gray-200 bg-white shrink-0">
         @can('create', \App\Models\Workflow\Procedure::class)
         <a href="{{ route('workflow.procedures.create') }}" class="px-3 sm:px-4 py-2 bg-[#714B67] hover:bg-[#5c3d55] text-white text-sm font-semibold rounded shadow-sm shrink-0">
-            New
+            {{ __('common.new') }}
         </a>
         @endcan
 
         <div class="flex items-center gap-1.5 min-w-0 shrink-0">
-            <span class="text-xl font-semibold text-gray-700">Procedures</span>
+            <span class="text-xl font-semibold text-gray-700">{{ __('workflow.procedures_title') }}</span>
         </div>
 
         <x-search
@@ -43,7 +43,7 @@
                     {{ $procedures->firstItem() }}-{{ $procedures->lastItem() }} / {{ $procedures->total() }}
                 </span>
             @else
-                <span class="text-sm font-semibold text-gray-400">0 records</span>
+                <span class="text-sm font-semibold text-gray-400">{{ __('workflow.zero_records') }}</span>
             @endif
 
             <div class="flex items-center gap-1">
@@ -62,14 +62,14 @@
             <div class="hidden sm:flex items-center rounded overflow-hidden bg-gray-200">
                 <a href="{{ route('workflow.procedures.index', array_merge(request()->except('view','page'), ['view' => 'kanban'])) }}"
                    class="w-10 h-10 inline-flex items-center justify-center border border-gray-300 {{ $view === 'kanban' ? 'bg-purple-100 text-gray-900 border-purple-400' : 'text-gray-600 hover:bg-gray-100' }}"
-                   title="Kanban view">
+                   title="{{ __('workflow.kanban_view_title') }}">
                     <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
                         <path d="M3 3h6v14H3V3zm8 0h6v6h-6V3zm0 8h6v6h-6v-6z"/>
                     </svg>
                 </a>
                 <a href="{{ route('workflow.procedures.index', array_merge(request()->except('view','page'), ['view' => 'list'])) }}"
                    class="w-10 h-10 inline-flex items-center justify-center border border-gray-300 {{ $view === 'list' ? 'bg-purple-100 text-gray-900 border-purple-400' : 'text-gray-600 hover:bg-gray-100' }}"
-                   title="List view">
+                   title="{{ __('workflow.list_view_title') }}">
                     <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
                         <path d="M4 5h12v2H4V5zm0 4h12v2H4V9zm0 4h12v2H4v-2z"/>
                     </svg>
@@ -82,7 +82,7 @@
     <div class="flex-1 overflow-y-auto p-3 sm:p-4">
         @if($procedures->isEmpty())
             <div class="py-24 text-center text-gray-400">
-                <p class="text-sm font-medium text-gray-500">No procedures found</p>
+                <p class="text-sm font-medium text-gray-500">{{ __('workflow.no_procedures_found_kanban') }}</p>
             </div>
         @else
             <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
@@ -98,7 +98,7 @@
                             <p class="text-xs text-gray-500 truncate mt-1">{{ $procedure->procedureTemplate->name }}</p>
                         @endif
                         @if(!$procedure->active)
-                            <span class="inline-block mt-1 text-[10px] font-semibold text-amber-600 uppercase">Archived</span>
+                            <span class="inline-block mt-1 text-[10px] font-semibold text-amber-600 uppercase">{{ __('common.archived') }}</span>
                         @endif
                     </div>
                 </a>
@@ -107,13 +107,13 @@
         @endif
     </div>
     @else
-    <x-list :paginator="$procedures" empty-text="No procedures found.">
+    <x-list :paginator="$procedures" :empty-text="__('workflow.no_procedures_found')">
         <x-slot:columns>
             <x-sortable-th column="id"         label="ID"        class="px-4 py-2" />
             <x-sortable-th column="name"       label="Name"      class="px-3 py-2" :default="true" />
             <x-sortable-th column="state"      label="State"     class="px-3 py-2" />
-            <th class="px-3 py-2 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">Template</th>
-            <th class="px-3 py-2 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">Created By</th>
+            <th class="px-3 py-2 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">{{ __('workflow.template_label') }}</th>
+            <th class="px-3 py-2 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">{{ __('workflow.created_by_label') }}</th>
             <x-sortable-th column="deadline"   label="Deadline"  class="px-3 py-2" />
             <x-sortable-th column="duration"   label="Duration"  class="px-3 py-2" />
             <x-sortable-th column="sla_passed" label="SLA Passed" class="px-3 py-2" />
@@ -127,10 +127,10 @@
             <td class="px-3 py-2 font-medium text-gray-900">
                 {{ $procedure->name }}
                 @if(!$procedure->active)
-                    <span class="ml-1.5 text-[10px] text-amber-600 font-semibold uppercase">Archived</span>
+                    <span class="ml-1.5 text-[10px] text-amber-600 font-semibold uppercase">{{ __('common.archived') }}</span>
                 @endif
                 @if($procedure->isOverdue())
-                    <span class="ml-1.5 text-[10px] text-red-600 font-semibold uppercase">Overdue</span>
+                    <span class="ml-1.5 text-[10px] text-red-600 font-semibold uppercase">{{ __('workflow.overdue_label') }}</span>
                 @endif
             </td>
             <td class="px-3 py-2">

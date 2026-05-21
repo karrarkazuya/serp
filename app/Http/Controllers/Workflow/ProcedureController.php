@@ -10,6 +10,7 @@ use App\Models\Workflow\ProcedureTemplate;
 use App\Models\Workflow\Ticket;
 use App\Models\Workflow\TicketPath;
 use App\Models\Workflow\WorkflowRecordInput;
+use App\Models\Workflow\WorkflowTemplateInputOption;
 use App\Models\Workflow\WorkflowUser;
 use App\Helpers\SearchFilters;
 use App\Helpers\SortsTable;
@@ -197,12 +198,24 @@ class ProcedureController extends Controller
                 $recordInput = WorkflowRecordInput::find((int) $recordInputId);
                 if (!$recordInput || $recordInput->record_id !== $ticket->id || $recordInput->record_type !== 'ticket') continue;
 
+                if ($recordInput->type === 'select') {
+                    $selectId = null;
+                    if ($raw !== null && $raw !== '') {
+                        $optionId = (int) $raw;
+                        $valid = WorkflowTemplateInputOption::where('id', $optionId)
+                            ->where('template_input_id', $recordInput->template_input_id)
+                            ->exists();
+                        $selectId = $valid ? $optionId : null;
+                    }
+                    $recordInput->update(['value_select_id' => $selectId]);
+                    continue;
+                }
+
                 $valueData = match ($recordInput->type) {
                     'int'      => ['value_int'      => $raw !== null && $raw !== '' ? (int) $raw : null],
                     'date'     => ['value_date'     => $raw ?: null],
                     'datetime' => ['value_datetime' => $raw ?: null],
                     'boolean'  => ['value_boolean'  => (bool) $raw],
-                    'select'   => ['value_select_id' => $raw !== null && $raw !== '' ? (int) $raw : null],
                     default    => ['value_char'     => $raw ?: null],
                 };
 

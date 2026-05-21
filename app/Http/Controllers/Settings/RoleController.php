@@ -7,6 +7,7 @@ use App\Http\Requests\Settings\StoreRoleRequest;
 use App\Http\Requests\Settings\UpdateRoleRequest;
 use App\Models\Security\Permission;
 use App\Models\Security\Role;
+use App\Services\Settings\RoleService;
 use App\Helpers\SearchFilters;
 use App\Helpers\SortsTable;
 use Illuminate\Http\Request;
@@ -14,6 +15,7 @@ use Illuminate\Support\Facades\DB;
 
 class RoleController extends Controller
 {
+    public function __construct(private readonly RoleService $roleService) {}
     public function read(Request $request)
     {
         $this->authorize('viewAny', Role::class);
@@ -40,22 +42,23 @@ class RoleController extends Controller
 
     public function store(StoreRoleRequest $request)
     {
-        DB::transaction(function () use ($request, &$role) {
-            $role = Role::create([
-                'name'        => $request->name,
-                'key'         => $request->key,
-                'description' => $request->description,
-                'active'      => $request->boolean('active', true),
-            ]);
-
-            if ($request->filled('permissions')) {
-                $role->permissions()->sync($request->permissions);
-            }
-        });
+        DB::transaction(fn () => $this->roleService->create(
+            $request->validated(),
+            $request->input('permissions', [])
+        ));
 
         return redirect()
             ->route('settings.roles.index')
             ->with('success', 'Role created successfully.');
+    }
+
+    public function show(Role $role)
+    {
+        $this->authorize('view', $role);
+
+        $role->load('permissions');
+
+        return view('settings.roles.show', compact('role'));
     }
 
     public function edit(Role $role)
@@ -71,21 +74,14 @@ class RoleController extends Controller
 
     public function write(UpdateRoleRequest $request, Role $role)
     {
-        DB::transaction(function () use ($request, $role) {
-            $role->update([
-                'name'        => $request->name ?? $role->name,
-                'key'         => $request->key ?? $role->key,
-                'description' => $request->description,
-                'active'      => $request->boolean('active', $role->active),
-            ]);
-
-            if ($request->has('permissions')) {
-                $role->permissions()->sync($request->permissions ?? []);
-            }
-        });
+        DB::transaction(fn () => $this->roleService->update(
+            $role,
+            $request->validated(),
+            $request->has('permissions') ? $request->input('permissions', []) : null
+        ));
 
         return redirect()
-            ->route('settings.roles.index')
+            ->route('settings.roles.show', $role)
             ->with('success', 'Role updated successfully.');
     }
 
@@ -93,11 +89,11 @@ class RoleController extends Controller
     {
         $this->authorize('delete', $role);
 
-        if (in_array($role->key, ['admin'])) {
+        if ($role->key === 'admin') {
             return back()->with('error', 'System roles cannot be deleted.');
         }
 
-        DB::transaction(fn () => $role->delete());
+        DB::transaction(fn () => $this->roleService->delete($role));
 
         return redirect()
             ->route('settings.roles.index')

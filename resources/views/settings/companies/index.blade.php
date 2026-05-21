@@ -72,8 +72,12 @@
         <tr class="hover:bg-[#714B67]/5 transition-colors cursor-pointer" onclick="window.location='{{ route('settings.companies.show', $company) }}'">
             <td class="px-6 py-3">
                 <div class="flex items-center gap-3">
-                    <div class="w-8 h-8 rounded-lg bg-[#714B67]/10 flex items-center justify-center text-xs font-bold text-[#714B67] shrink-0">
-                        {{ strtoupper(substr($company->name, 0, 2)) }}
+                    <div class="w-8 h-8 rounded-lg overflow-hidden bg-[#714B67]/10 flex items-center justify-center text-xs font-bold text-[#714B67] shrink-0">
+                        @if($company->logo_url)
+                            <img src="{{ $company->logo_url }}" alt="{{ $company->name }}" class="w-full h-full object-cover">
+                        @else
+                            {{ strtoupper(substr($company->name, 0, 2)) }}
+                        @endif
                     </div>
                     <div>
                         <a href="{{ route('settings.companies.show', $company) }}"

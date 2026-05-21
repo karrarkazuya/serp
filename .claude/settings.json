@@ -5,7 +5,40 @@
       "Bash(php -l /Users/karrar/Projects/web/serp/app/Services/Workflow/TicketService.php)",
       "Bash(php -r ' *)",
       "Bash(grep -n 'getRouteKeyName\\\\|protected $primaryKey\\\\|uuid' /Users/karrar/Projects/web/serp/app/Models/Chat/ChatMessageFile.php /Users/karrar/Projects/web/serp/app/Models/Chat/ChatRoom.php /Users/karrar/Projects/web/serp/app/Models/Contacts/Contact.php)",
-      "Bash(php /Users/karrar/Projects/web/serp/artisan make:migration add_flowchart_sub_positions_to_procedure_templates --table=workflow_procedure_templates)"
+      "Bash(php /Users/karrar/Projects/web/serp/artisan make:migration add_flowchart_sub_positions_to_procedure_templates --table=workflow_procedure_templates)",
+      "Bash(php -r \"require '/Users/karrar/Projects/web/serp/vendor/autoload.php'; echo 'OK';\")",
+      "Bash(grep \"function show\\\\|function edit\\\\|function write\\\\|function unlink\\\\|WorkLocation \\\\$\" /Users/karrar/Projects/web/serp/app/Http/Controllers/Employees/WorkLocationController.php)",
+      "Bash(grep \"function show\\\\|function edit\\\\|function write\\\\|function unlink\\\\|function archive\\\\|function unarchive\\\\|Department \\\\$\" /Users/karrar/Projects/web/serp/app/Http/Controllers/Employees/DepartmentController.php)",
+      "Bash(grep \"function show\\\\|function edit\\\\|function write\\\\|function unlink\\\\|Job \\\\$\" /Users/karrar/Projects/web/serp/app/Http/Controllers/Employees/JobController.php)",
+      "Bash(grep \"function show\\\\|function edit\\\\|function write\\\\|function unlink\\\\|Employee \\\\$\" /Users/karrar/Projects/web/serp/app/Http/Controllers/Employees/EmployeeController.php)",
+      "Bash(php -l /Users/karrar/Projects/web/serp/resources/views/employees/show.blade.php)",
+      "Bash(php -l /Users/karrar/Projects/web/serp/resources/views/employees/_form.blade.php)",
+      "Bash(php artisan *)",
+      "Read(//Users/karrar/Projects/web/serp/public/**)",
+      "Bash(grep -n 'label\\\\|name\\\\|$name' /Users/karrar/Projects/web/serp/resources/views/components/relation-dropdown.blade.php)",
+      "Bash(grep -n '@props\\\\|compact\\\\|$compact' /Users/karrar/Projects/web/serp/resources/views/components/relation-dropdown.blade.php)",
+      "Bash(xargs ls -1)",
+      "Bash(php -l /Users/karrar/Projects/web/serp/app/Http/Controllers/Employees/EmployeeController.php)",
+      "Bash(awk '/EmployeePolicy::view\\\\\\(\\\\\\), 1 passed/{found=1} found{print; if\\(/^\\\\[20[0-9]/ && NR>1\\){exit}}' /Users/karrar/Projects/web/serp/storage/logs/laravel.log)",
+      "Bash(php -l /Users/karrar/Projects/web/serp/app/Policies/Employees/EmployeePolicy.php)",
+      "Bash(php -l /Users/karrar/Projects/web/serp/app/Providers/AppServiceProvider.php)",
+      "Bash(php -l /Users/karrar/Projects/web/serp/routes/web.php)",
+      "Bash(grep -n 'public array $sortable\\\\|protected $table\\\\|protected $fillable' /Users/karrar/Projects/web/serp/app/Models/Employees/WorkLocation.php)",
+      "Bash(grep -n 'event\\\\|props\\\\|$event' /Users/karrar/Projects/web/serp/app/View/Components/RelationDropdown.php)",
+      "Bash(php -l /Users/karrar/Projects/web/serp/app/Http/Controllers/Settings/CompanyController.php)",
+      "Bash(php -l /Users/karrar/Projects/web/serp/app/Services/Company/CompanyService.php)",
+      "Bash(php -l /Users/karrar/Projects/web/serp/app/Models/Settings/Company.php)",
+      "Bash(php -l /Users/karrar/Projects/web/serp/app/Http/Requests/Settings/StoreCompanyRequest.php)",
+      "Bash(php -l /Users/karrar/Projects/web/serp/app/Http/Requests/Settings/UpdateCompanyRequest.php)",
+      "Bash(php -l /Users/karrar/Projects/web/serp/app/Http/Controllers/Settings/RoleController.php)",
+      "Bash(php -l /Users/karrar/Projects/web/serp/app/Http/Controllers/Settings/UserController.php)",
+      "Bash(php -l /Users/karrar/Projects/web/serp/app/Services/Settings/RoleService.php)",
+      "Bash(php -l /Users/karrar/Projects/web/serp/app/Services/Settings/UserService.php)",
+      "Bash(mkdir -p /Users/karrar/Projects/web/serp/storage/app/avatars/contacts && mv /Users/karrar/Projects/web/serp/storage/app/public/avatars/contacts/*.jpg /Users/karrar/Projects/web/serp/storage/app/avatars/contacts/ && echo \"Moved OK\" && ls /Users/karrar/Projects/web/serp/storage/app/avatars/contacts/)",
+      "Bash(xargs basename -a)"
+    ],
+    "additionalDirectories": [
+      "/Users/karrar/Projects/web/serp/storage/app/public/avatars/contacts"
     ]
   }
 }

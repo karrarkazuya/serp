@@ -9,7 +9,7 @@
     <div class="bg-white border-b border-gray-200 px-6 py-3 shrink-0 flex items-center justify-between gap-4">
         <div>
             <h1 class="text-sm font-semibold text-gray-900">{{ __('settings.general_settings') }}</h1>
-            <p class="text-xs text-gray-400 mt-0.5">Manage your system and company preferences</p>
+            <p class="text-xs text-gray-400 mt-0.5">{{ __('settings.general_settings_desc') }}</p>
         </div>
         <button form="settings-form" type="submit"
                 class="px-4 py-1.5 text-sm font-medium text-white bg-[#714B67] hover:bg-[#5c3d55] rounded-lg shadow-sm transition-colors">
@@ -86,13 +86,13 @@
             {{-- ── Localization ── --}}
             <div class="flex gap-0 border-b border-gray-200 bg-white mx-6 overflow-hidden">
                 <div class="w-72 shrink-0 px-6 py-6 bg-gray-50/60 border-r border-gray-100">
-                    <h2 class="text-sm font-semibold text-gray-800">Localization</h2>
-                    <p class="text-xs text-gray-500 mt-1.5 leading-relaxed">Language, timezone and regional formatting preferences.</p>
+                    <h2 class="text-sm font-semibold text-gray-800">{{ __('settings.localization') }}</h2>
+                    <p class="text-xs text-gray-500 mt-1.5 leading-relaxed">{{ __('settings.localization_desc') }}</p>
                 </div>
                 <div class="flex-1 px-8 py-6">
                     <div class="grid grid-cols-2 gap-4">
                         <div>
-                            <label class="block text-xs font-semibold text-gray-600 mb-1.5">Language</label>
+                            <label class="block text-xs font-semibold text-gray-600 mb-1.5">{{ __('settings.language') }}</label>
                             <select name="language"
                                     class="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm text-gray-900 bg-white focus:outline-none focus:ring-1 focus:ring-[#714B67] focus:border-[#714B67] transition-colors">
                                 <option value="en" {{ $val('language') === 'en' ? 'selected' : '' }}>English</option>
@@ -100,7 +100,7 @@
                             </select>
                         </div>
                         <div>
-                            <label class="block text-xs font-semibold text-gray-600 mb-1.5">Timezone</label>
+                            <label class="block text-xs font-semibold text-gray-600 mb-1.5">{{ __('settings.timezone') }}</label>
                             <select name="timezone"
                                     class="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm text-gray-900 bg-white focus:outline-none focus:ring-1 focus:ring-[#714B67] focus:border-[#714B67] transition-colors">
                                 @foreach(timezone_identifiers_list() as $tz)
@@ -115,15 +115,15 @@
             {{-- ── Security ── --}}
             <div class="flex gap-0 bg-white mx-6 rounded-b-xl overflow-hidden mb-6">
                 <div class="w-72 shrink-0 px-6 py-6 bg-gray-50/60 border-r border-gray-100">
-                    <h2 class="text-sm font-semibold text-gray-800">Security</h2>
-                    <p class="text-xs text-gray-500 mt-1.5 leading-relaxed">Session and access control configuration.</p>
+                    <h2 class="text-sm font-semibold text-gray-800">{{ __('settings.security') }}</h2>
+                    <p class="text-xs text-gray-500 mt-1.5 leading-relaxed">{{ __('settings.security_desc') }}</p>
                 </div>
                 <div class="flex-1 px-8 py-6">
                     <div class="space-y-4">
                         <div class="flex items-center justify-between py-2">
                             <div>
-                                <p class="text-sm font-medium text-gray-800">Require strong passwords</p>
-                                <p class="text-xs text-gray-500 mt-0.5">Enforce minimum 8 chars, mixed case and a number.</p>
+                                <p class="text-sm font-medium text-gray-800">{{ __('settings.require_strong_passwords') }}</p>
+                                <p class="text-xs text-gray-500 mt-0.5">{{ __('settings.require_strong_passwords_desc') }}</p>
                             </div>
                             <label class="relative inline-flex items-center cursor-pointer">
                                 <input type="checkbox" name="require_strong_passwords" value="1" class="sr-only peer"
@@ -135,7 +135,7 @@
                             </label>
                         </div>
                         <div class="border-t border-gray-100 pt-4">
-                            <label class="block text-xs font-semibold text-gray-600 mb-1.5">Session timeout (minutes)</label>
+                            <label class="block text-xs font-semibold text-gray-600 mb-1.5">{{ __('settings.session_timeout') }}</label>
                             <input type="number" name="session_timeout" value="{{ $val('session_timeout') ?: 120 }}" min="5" max="1440"
                                    class="w-32 px-3 py-2 border border-gray-200 rounded-lg text-sm text-gray-900 bg-white focus:outline-none focus:ring-1 focus:ring-[#714B67] focus:border-[#714B67] transition-colors">
                         </div>

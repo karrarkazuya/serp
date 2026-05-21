@@ -94,5 +94,20 @@ return [
     'all_assigned'            => 'All permissions are assigned',
     'no_permissions_assigned' => 'No permissions assigned yet',
     'no_contact_info'         => 'No contact information.',
-    'no_permissions'          => 'No permissions found.',
+    // Logo
+    'upload'      => 'Upload',
+    'logo_hint'   => 'JPG, PNG, WebP or GIF · max 2 MB',
+    'remove_logo' => 'Remove logo',
+
+    // Settings page sections
+    'general_settings_desc'         => 'Manage your system and company preferences.',
+    'localization'                  => 'Localization',
+    'localization_desc'             => 'Language, timezone and regional formatting preferences.',
+    'language'                      => 'Language',
+    'timezone'                      => 'Timezone',
+    'security'                      => 'Security',
+    'security_desc'                 => 'Session and access control configuration.',
+    'require_strong_passwords'      => 'Require strong passwords',
+    'require_strong_passwords_desc' => 'Enforce minimum 8 chars, mixed case and a number.',
+    'session_timeout'               => 'Session timeout (minutes)',
 ];

@@ -1,0 +1,97 @@
+@extends('layouts.app')
+@section('title', $employeeCategory->name)
+
+@section('content')
+<div class="flex flex-col h-full bg-gray-50">
+    <div class="bg-white border-b border-gray-200 px-4 py-2 flex items-center gap-3 shrink-0">
+        <div class="flex flex-col leading-tight">
+            <a href="{{ route('employees.categories.index') }}" class="text-xs text-purple-600 hover:text-purple-700">Employee Categories</a>
+            <span class="text-sm font-semibold text-gray-800">{{ $employeeCategory->name }}</span>
+        </div>
+
+        <div class="ms-auto flex items-center gap-2">
+            @can('update', \App\Models\Employees\Employee::class)
+            <a href="{{ route('employees.categories.edit', $employeeCategory) }}"
+               class="px-3 py-1.5 text-sm text-gray-600 bg-white border border-gray-300 rounded hover:bg-gray-50">Edit</a>
+            @endcan
+
+            @can('delete', \App\Models\Employees\Employee::class)
+            <div x-data="{ confirming: false }">
+                <button type="button" x-show="!confirming" @click="confirming = true"
+                        class="px-3 py-1.5 text-sm text-red-600 bg-white border border-red-200 rounded hover:bg-red-50">Delete</button>
+                <div x-show="confirming" style="display:none" class="flex items-center gap-1.5">
+                    <span class="text-xs text-red-600">Are you sure?</span>
+                    <form method="POST" action="{{ route('employees.categories.delete', $employeeCategory) }}">
+                        @csrf @method('DELETE')
+                        <button type="submit" class="px-2 py-1 text-xs bg-red-600 text-white rounded">Yes</button>
+                    </form>
+                    <button type="button" @click="confirming = false" class="px-2 py-1 text-xs text-gray-500 border border-gray-300 rounded">Cancel</button>
+                </div>
+            </div>
+            @endcan
+        </div>
+    </div>
+
+    <div class="flex-1 overflow-y-auto p-4 space-y-4">
+        <div class="bg-white rounded-xl border border-gray-200 shadow-sm p-6">
+            <div class="flex items-center gap-3 mb-6">
+                @if($employeeCategory->color)
+                    <span class="w-6 h-6 rounded-full" style="background-color: {{ $employeeCategory->color }}"></span>
+                @endif
+                <h2 class="text-lg font-semibold text-gray-900">{{ $employeeCategory->name }}</h2>
+            </div>
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-4">
+                <div>
+                    <p class="text-xs font-semibold text-gray-400 uppercase tracking-wide">Name</p>
+                    <p class="text-sm text-gray-900 mt-0.5">{{ $employeeCategory->name }}</p>
+                </div>
+                <div>
+                    <p class="text-xs font-semibold text-gray-400 uppercase tracking-wide">Color</p>
+                    <div class="flex items-center gap-2 mt-0.5">
+                        @if($employeeCategory->color)
+                            <span class="w-4 h-4 rounded" style="background-color: {{ $employeeCategory->color }}"></span>
+                            <span class="text-sm text-gray-900">{{ $employeeCategory->color }}</span>
+                        @else
+                            <span class="text-sm text-gray-400">—</span>
+                        @endif
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        @if($employeeCategory->employees->isNotEmpty())
+        <div class="bg-white rounded-xl border border-gray-200 shadow-sm">
+            <div class="px-5 py-3 border-b border-gray-100">
+                <h3 class="text-sm font-semibold text-gray-700">Employees ({{ $employeeCategory->employees->count() }})</h3>
+            </div>
+            <ul class="divide-y divide-gray-100">
+                @foreach($employeeCategory->employees as $emp)
+                <li class="px-5 py-3 hover:bg-purple-50/30">
+                    <a href="{{ route('employees.show', $emp) }}" class="flex items-center gap-3">
+                        @if($emp->avatar_url)
+                            <img src="{{ $emp->avatar_url }}" alt="{{ $emp->name }}" class="w-8 h-8 rounded-full object-cover shrink-0">
+                        @else
+                            <div class="w-8 h-8 rounded-full bg-purple-100 flex items-center justify-center text-xs font-bold text-purple-700 shrink-0">{{ strtoupper(substr($emp->name, 0, 2)) }}</div>
+                        @endif
+                        <div>
+                            <p class="text-sm font-medium text-gray-900">{{ $emp->name }}</p>
+                            <p class="text-xs text-gray-400">{{ $emp->job?->name ?? $emp->job_title }}</p>
+                        </div>
+                    </a>
+                </li>
+                @endforeach
+            </ul>
+        </div>
+        @endif
+
+        <div class="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
+            <x-chatter
+                model-type="App\Models\Employees\EmployeeCategory"
+                :model-id="$employeeCategory->id"
+                :can-comment="auth()->user()->can('update', \App\Models\Employees\Employee::class)"
+                :comment-url="route('employees.categories.comment', $employeeCategory)"
+            />
+        </div>
+    </div>
+</div>
+@endsection

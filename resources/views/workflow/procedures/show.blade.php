@@ -20,10 +20,10 @@
     <div class="bg-white border-b border-gray-200 px-5 py-2 flex items-center gap-3 shrink-0">
         <div class="flex items-center gap-2 shrink-0">
             @can('create', \App\Models\Workflow\Procedure::class)
-            <a href="{{ route('workflow.procedures.create') }}" class="px-3 py-1.5 bg-[#714B67] hover:bg-[#5c3d55] text-white text-sm font-medium rounded transition-colors">New</a>
+            <a href="{{ route('workflow.procedures.create') }}" class="px-3 py-1.5 bg-[#714B67] hover:bg-[#5c3d55] text-white text-sm font-medium rounded transition-colors">{{ __('common.new') }}</a>
             @endcan
             <div>
-                <a href="{{ route('workflow.procedures.index') }}" class="text-xs text-purple-600 hover:text-purple-700">Procedures</a>
+                <a href="{{ route('workflow.procedures.index') }}" class="text-xs text-purple-600 hover:text-purple-700">{{ __('workflow.procedures_title') }}</a>
                 <span class="text-sm font-semibold text-gray-800 block truncate max-w-xs">{{ $procedure->name }}</span>
             </div>
         </div>
@@ -34,12 +34,12 @@
             @if($procedure->active)
             <form method="POST" action="{{ route('workflow.procedures.archive', $procedure) }}">
                 @csrf @method('PATCH')
-                <button class="px-3 py-1.5 text-sm text-amber-700 border border-amber-200 rounded hover:bg-amber-50 transition-colors">Archive</button>
+                <button class="px-3 py-1.5 text-sm text-amber-700 border border-amber-200 rounded hover:bg-amber-50 transition-colors">{{ __('common.archive') }}</button>
             </form>
             @else
             <form method="POST" action="{{ route('workflow.procedures.unarchive', $procedure) }}">
                 @csrf @method('PATCH')
-                <button class="px-3 py-1.5 text-sm text-green-700 border border-green-200 rounded hover:bg-green-50 transition-colors">Restore</button>
+                <button class="px-3 py-1.5 text-sm text-green-700 border border-green-200 rounded hover:bg-green-50 transition-colors">{{ __('workflow.restore') }}</button>
             </form>
             @endif
             @endif
@@ -51,7 +51,7 @@
                 @csrf
                 <button class="px-3 py-1.5 text-sm text-green-700 border border-green-300 rounded hover:bg-green-50 flex items-center gap-1.5 transition-colors">
                     <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z"/></svg>
-                    Sharing On
+                    {{ __('workflow.sharing_on') }}
                 </button>
             </form>
             @else
@@ -59,7 +59,7 @@
                 @csrf
                 <button class="px-3 py-1.5 text-sm text-purple-700 border border-purple-200 rounded hover:bg-purple-50 flex items-center gap-1.5 transition-colors">
                     <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z"/></svg>
-                    Share
+                    {{ __('workflow.share') }}
                 </button>
             </form>
             @endif
@@ -86,7 +86,7 @@
             @if(!$procedure->active)
             <div class="flex items-center gap-2 text-sm text-amber-700 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2">
                 <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
-                This procedure is archived.
+                {{ __('workflow.procedure_archived') }}
             </div>
             @endif
             @if(session('success'))
@@ -128,7 +128,7 @@
                             @if($totalSteps > 0)
                             <div class="shrink-0 text-right">
                                 <div class="text-xl font-bold text-gray-900">{{ $completedSteps }}<span class="text-gray-300 font-normal text-base">/{{ $totalSteps }}</span></div>
-                                <div class="text-xs text-gray-400">steps done</div>
+                                <div class="text-xs text-gray-400">{{ __('workflow.steps_done') }}</div>
                             </div>
                             @endif
                         </div>
@@ -140,7 +140,7 @@
                                      style="width:{{ $progress }}%"></div>
                             </div>
                             <div class="flex items-center justify-between mt-1 text-xs text-gray-400">
-                                <span>{{ $completedSteps }} done{{ $pendingSteps > 0 ? ' · ' . $pendingSteps . ' in progress' : '' }}{{ $rejectedSteps > 0 ? ' · ' . $rejectedSteps . ' returned' : '' }}</span>
+                                <span>{{ $completedSteps }} {{ __('workflow.done_label') }}{{ $pendingSteps > 0 ? ' · ' . $pendingSteps . ' ' . __('workflow.in_progress') : '' }}{{ $rejectedSteps > 0 ? ' · ' . $rejectedSteps . ' ' . __('workflow.returned_label') : '' }}</span>
                                 <span>{{ $progress }}%</span>
                             </div>
                         </div>
@@ -151,33 +151,33 @@
                             <button @click="details=!details"
                                     class="flex items-center gap-1 text-xs text-gray-400 hover:text-gray-600 transition-colors">
                                 <svg class="w-3.5 h-3.5 transition-transform duration-200" :class="details ? 'rotate-90' : ''" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
-                                <span x-text="details ? 'Hide details' : 'Show details'"></span>
+                                <span x-text="details ? '{{ __('workflow.hide_details') }}' : '{{ __('workflow.show_details') }}'"></span>
                             </button>
                             <div x-show="details" x-transition:enter="transition ease-out duration-150" x-transition:enter-start="opacity-0 -translate-y-1" x-transition:enter-end="opacity-100 translate-y-0" style="display:none"
                                  class="mt-3 grid grid-cols-2 sm:grid-cols-3 gap-x-6 gap-y-3">
                                 @if($procedure->createdByUser)
                                 <div>
-                                    <p class="text-xs text-gray-400 mb-0.5">Created by</p>
+                                    <p class="text-xs text-gray-400 mb-0.5">{{ __('workflow.created_by_label') }}</p>
                                     <p class="text-sm font-medium text-gray-800">{{ $procedure->createdByUser->name }}</p>
                                 </div>
                                 @endif
                                 <div>
-                                    <p class="text-xs text-gray-400 mb-0.5">Created</p>
+                                    <p class="text-xs text-gray-400 mb-0.5">{{ __('workflow.created_label') }}</p>
                                     <p class="text-sm font-medium text-gray-800">{{ $procedure->created_at->format('M j, Y') }}</p>
                                 </div>
                                 <div>
-                                    <p class="text-xs text-gray-400 mb-0.5">Last updated</p>
+                                    <p class="text-xs text-gray-400 mb-0.5">{{ __('workflow.last_updated_label') }}</p>
                                     <p class="text-sm font-medium text-gray-800">{{ $procedure->updated_at->diffForHumans() }}</p>
                                 </div>
                                 @if($procedure->resolve_duration)
                                 <div>
-                                    <p class="text-xs text-gray-400 mb-0.5">Duration</p>
+                                    <p class="text-xs text-gray-400 mb-0.5">{{ __('workflow.duration_h_label') }}</p>
                                     <p class="text-sm font-medium text-gray-800">{{ $procedure->resolve_duration }}h</p>
                                 </div>
                                 @endif
                                 @if($procedure->procedureTemplate)
                                 <div>
-                                    <p class="text-xs text-gray-400 mb-0.5">Template</p>
+                                    <p class="text-xs text-gray-400 mb-0.5">{{ __('workflow.template_meta_label') }}</p>
                                     <p class="text-sm font-medium text-gray-800">{{ $procedure->procedureTemplate->name }}</p>
                                 </div>
                                 @endif
@@ -189,7 +189,7 @@
                     @if($procedure->sharedLink?->enabled)
                     @can('update', $procedure)
                     <div class="bg-white rounded-xl border border-green-200 shadow-sm p-4">
-                        <p class="text-xs font-semibold text-gray-600 mb-2">Share Link</p>
+                        <p class="text-xs font-semibold text-gray-600 mb-2">{{ __('workflow.share_link') }}</p>
                         <div x-data="{ copied: false }" class="flex items-center gap-2 mb-2">
                             <input type="text" readonly value="{{ $procedure->sharedLink->shareUrl() }}"
                                    class="flex-1 text-sm border border-gray-200 rounded-lg px-3 py-1.5 bg-gray-50 text-gray-600 select-all">
@@ -201,9 +201,9 @@
                         </div>
                         <form method="POST" action="{{ route('workflow.share.procedure.message', $procedure) }}">
                             @csrf @method('PATCH')
-                            <textarea name="message" rows="2" placeholder="Message for recipient (optional)"
+                            <textarea name="message" rows="2" placeholder="{{ __('workflow.message_for_recipient') }}"
                                       class="w-full text-sm border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-1 focus:ring-purple-400 resize-none mb-2">{{ $procedure->sharedLink->message }}</textarea>
-                            <button type="submit" class="px-3 py-1.5 text-sm bg-[#714B67] hover:bg-[#5c3d55] text-white rounded-lg transition-colors">Save Message</button>
+                            <button type="submit" class="px-3 py-1.5 text-sm bg-[#714B67] hover:bg-[#5c3d55] text-white rounded-lg transition-colors">{{ __('workflow.save_message') }}</button>
                         </form>
                     </div>
                     @endcan
@@ -225,7 +225,7 @@
                 <div class="w-1/4 shrink-0">
                     <div class="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden sticky top-4">
                         <div class="px-4 py-3 border-b border-gray-100 flex items-center justify-between">
-                            <span class="text-sm font-semibold text-gray-800">Steps</span>
+                            <span class="text-sm font-semibold text-gray-800">{{ __('workflow.steps_label') }}</span>
                             @if($totalSteps > 0)
                             <span class="text-xs text-gray-400">{{ $completedSteps }}/{{ $totalSteps }}</span>
                             @endif
@@ -233,7 +233,7 @@
 
                         @if($visibleTickets->isEmpty())
                         <div class="py-8 text-center">
-                            <p class="text-sm text-gray-400">No active steps</p>
+                            <p class="text-sm text-gray-400">{{ __('workflow.no_active_steps') }}</p>
                         </div>
                         @else
                         <div class="px-4 py-3">

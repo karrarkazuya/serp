@@ -50,7 +50,7 @@
     @endif
     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div>
-            <label class="block text-xs font-medium text-gray-600 mb-1">{{ __('settings.password') }} {{ !$user ? '<span class="text-red-500">*</span>' : '' }}</label>
+            <label class="block text-xs font-medium text-gray-600 mb-1">{{ __('settings.password') }} @if(!$user)<span class="text-red-500">*</span>@endif</label>
             <input type="password" name="password" {{ !$user ? 'required' : '' }}
                    class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-purple-500 {{ $errors->has('password') ? 'border-red-400' : '' }}">
             @error('password')<p class="mt-1 text-xs text-red-600">{{ $message }}</p>@enderror

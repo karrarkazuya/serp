@@ -53,6 +53,7 @@ return [
     'tag_created'     => 'Tag created.',
     'tag_updated'     => 'Tag updated.',
     'tag_deleted'     => 'Tag deleted.',
+    'click_upload'    => 'Click to upload',
     'fix_errors'      => 'Please fix the following errors:',
     'no_notes'        => 'No internal notes.',
     'tagged_contacts' => 'Tagged Contacts',

@@ -7,16 +7,15 @@ use App\Http\Requests\Settings\StoreUserRequest;
 use App\Http\Requests\Settings\UpdateUserRequest;
 use App\Models\Security\Role;
 use App\Models\User;
-use App\Services\Chatter\ChatterService;
+use App\Services\Settings\UserService;
 use App\Helpers\SearchFilters;
 use App\Helpers\SortsTable;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Hash;
 
 class UserController extends Controller
 {
-    public function __construct(private readonly ChatterService $chatterService) {}
+    public function __construct(private readonly UserService $userService) {}
 
     public function read(Request $request)
     {
@@ -50,20 +49,10 @@ class UserController extends Controller
 
     public function store(StoreUserRequest $request)
     {
-        DB::transaction(function () use ($request, &$user) {
-            $user = User::create([
-                'name'         => $request->name,
-                'email'        => $request->email,
-                'password'     => Hash::make($request->password),
-                'job_position' => $request->job_position,
-                'phone'        => $request->phone,
-                'active'       => $request->boolean('active', true),
-            ]);
-
-            if ($request->filled('roles')) {
-                $user->roles()->sync($request->roles);
-            }
-        });
+        DB::transaction(fn () => $this->userService->create(
+            $request->validated(),
+            $request->input('roles', [])
+        ));
 
         return redirect()
             ->route('settings.users.index')
@@ -80,28 +69,14 @@ class UserController extends Controller
 
     public function write(UpdateUserRequest $request, User $user)
     {
-        DB::transaction(function () use ($request, $user) {
-            $data = [
-                'name'         => $request->name ?? $user->name,
-                'email'        => $request->email ?? $user->email,
-                'job_position' => $request->job_position,
-                'phone'        => $request->phone,
-                'active'       => $request->boolean('active', $user->active),
-            ];
-
-            if ($request->filled('password')) {
-                $data['password'] = Hash::make($request->password);
-            }
-
-            $user->update($data);
-
-            if ($request->has('roles')) {
-                $user->roles()->sync($request->roles ?? []);
-            }
-        });
+        DB::transaction(fn () => $this->userService->update(
+            $user,
+            $request->validated(),
+            $request->has('roles') ? $request->input('roles', []) : null
+        ));
 
         return redirect()
-            ->route('settings.users.index')
+            ->route('settings.users.show', $user)
             ->with('success', 'User updated successfully.');
     }
 
@@ -109,11 +84,11 @@ class UserController extends Controller
     {
         $this->authorize('delete', $user);
 
-        if ($user->id === auth()->id()) {
+        if ($user->is(auth()->user())) {
             return back()->with('error', 'You cannot delete yourself.');
         }
 
-        DB::transaction(fn () => $user->delete());
+        DB::transaction(fn () => $this->userService->delete($user));
 
         return redirect()
             ->route('settings.users.index')

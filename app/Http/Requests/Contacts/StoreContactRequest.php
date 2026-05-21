@@ -35,7 +35,7 @@ class StoreContactRequest extends FormRequest
             'company_name' => 'nullable|string|max:255',
             'contact_type' => 'required|in:individual,company',
             'email'        => 'nullable|email|max:255',
-            'phone'        => 'nullable|string|max:50',
+            'phone'        => 'nullable|string|max:50|unique:contacts,phone',
             'mobile'       => 'nullable|string|max:50',
             'website'      => 'nullable|url|max:255',
             'street'       => 'nullable|string|max:255',
@@ -45,7 +45,7 @@ class StoreContactRequest extends FormRequest
             'zip'          => 'nullable|string|max:20',
             'tax_id'       => 'nullable|string|max:50',
             'job_position' => 'nullable|string|max:100',
-            'notes'        => 'nullable|string',
+            'notes'        => 'nullable|string|max:10000',
         ];
     }
 }

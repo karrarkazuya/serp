@@ -38,6 +38,12 @@ class PermissionSeeder extends Seeder
             ['name' => 'Read Settings',   'key' => 'settings.read',   'module' => 'settings',  'description' => 'View application settings.'],
             ['name' => 'Edit Settings',   'key' => 'settings.write',  'module' => 'settings',  'description' => 'Modify application settings.'],
 
+            // Employees
+            ['name' => 'Read Employees',   'key' => 'employees.read',   'module' => 'employees', 'description' => 'View employees, departments, jobs, and related records.'],
+            ['name' => 'Create Employees', 'key' => 'employees.create', 'module' => 'employees', 'description' => 'Create new employee records.'],
+            ['name' => 'Edit Employees',   'key' => 'employees.write',  'module' => 'employees', 'description' => 'Edit and archive employee records.'],
+            ['name' => 'Delete Employees', 'key' => 'employees.unlink', 'module' => 'employees', 'description' => 'Permanently delete employee records.'],
+
             // Workflow — Tickets
             ['name' => 'Read Tickets',           'key' => 'workflow.tickets.read',    'module' => 'workflow', 'description' => 'View tickets assigned or visible to the user.'],
             ['name' => 'Create Tickets',         'key' => 'workflow.tickets.create',  'module' => 'workflow', 'description' => 'Create new tickets from templates.'],
