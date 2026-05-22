@@ -1,8 +1,0 @@
-<!-- security/my_module_security.xml -->
-<odoo>
-    <record model="ir.module.category" id="ss_workflow.security_groups_category">
-        <field name="name">Spring Workflow</field>
-        <field name="description">Helps you handle the Tickets and procedures.</field>
-        <field name="sequence">10</field>
-    </record>
-</odoo>
