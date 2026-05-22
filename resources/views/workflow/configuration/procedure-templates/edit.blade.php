@@ -14,23 +14,25 @@
      @keydown.escape.window="if (showAddStep) { showAddStep = false; $event.preventDefault(); } else if (showStepEdit) { closeStepEdit(); $event.preventDefault(); }">
 
     {{-- ── Header ── --}}
-    <div class="bg-white border-b border-gray-200 px-4 py-2 flex items-center gap-3 shrink-0">
-        <div class="flex flex-col leading-tight">
+    <x-toolbar>
+        <x-slot:breadcrumb>
             <a href="{{ route('workflow.config.procedure-templates.show', $procedureTemplate) }}"
                class="text-xs text-purple-600 hover:text-purple-700">{{ $procedureTemplate->name }}</a>
             <span class="text-sm font-semibold text-gray-800">{{ __('common.edit') }}</span>
-        </div>
-        <div class="flex items-center gap-2">
-            <a href="{{ route('workflow.config.procedure-templates.show', $procedureTemplate) }}"
-               class="px-3 py-1.5 text-sm text-gray-600 bg-white border border-gray-300 rounded hover:bg-gray-50">
-                {{ __('workflow.discard') }}
-            </a>
-            <button form="template-form" type="submit"
-                    class="px-4 py-1.5 text-sm font-medium text-white bg-[#714B67] hover:bg-[#5c3d55] rounded shadow-sm">
-                {{ __('workflow.save_template') }}
-            </button>
-        </div>
+        </x-slot:breadcrumb>
+        <x-slot:actions>
+    <div class="flex items-center gap-2">
+        <a href="{{ route('workflow.config.procedure-templates.show', $procedureTemplate) }}"
+           class="px-3 py-1.5 text-sm text-gray-600 bg-white border border-gray-300 rounded hover:bg-gray-50">
+            {{ __('workflow.discard') }}
+        </a>
+        <button form="template-form" type="submit"
+                class="px-4 py-1.5 text-sm font-medium text-white bg-[#714B67] hover:bg-[#5c3d55] rounded shadow-sm">
+            {{ __('workflow.save_template') }}
+        </button>
     </div>
+        </x-slot:actions>
+    </x-toolbar>
 
     {{-- ── Body ── --}}
     <div class="flex flex-1 min-h-0">

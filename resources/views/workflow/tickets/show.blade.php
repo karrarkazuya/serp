@@ -24,13 +24,11 @@
      }"
      @fields-changed.window="dirty = true">
 
-    {{-- Top bar --}}
-    <div class="bg-white border-b border-gray-200 px-5 py-2 flex items-center gap-3 shrink-0">
-        @can('create', \App\Models\Workflow\Ticket::class)
-        <a href="{{ route('workflow.tickets.create') }}" class="shrink-0 px-3 py-1.5 bg-[#714B67] hover:bg-[#5c3d55] text-white text-sm font-medium rounded">{{ __('common.new') }}</a>
-        @endcan
-
-        <div class="shrink-0">
+    @can('create', \App\Models\Workflow\Ticket::class)
+        @php $newHref = route('workflow.tickets.create'); @endphp
+    @endcan
+    <x-toolbar :new-href="$newHref ?? null">
+        <x-slot:breadcrumb>
             <div class="flex items-center gap-1 text-xs text-purple-600">
                 <a href="{{ route('workflow.tickets.index') }}" class="hover:text-purple-700">{{ __('workflow.tickets_title') }}</a>
                 @if($ticket->procedure)
@@ -39,8 +37,8 @@
                 @endif
             </div>
             <span class="text-sm font-semibold text-gray-800 leading-tight block truncate max-w-xs">{{ $ticket->name }}</span>
-        </div>
-
+        </x-slot:breadcrumb>
+        <x-slot:actions>
         <div class="flex items-center gap-2 shrink-0">
             @can('update', $ticket)
             @if($ticket->state === 'pending')
@@ -142,7 +140,8 @@
             @endif
             @endcan
         </div>
-    </div>
+        </x-slot:actions>
+    </x-toolbar>
 
     <div class="flex-1 overflow-y-auto p-5">
 
@@ -886,12 +885,12 @@
                                     <div class="mt-1.5 flex flex-col gap-1.5">
                                         @foreach($msg->files as $f)
                                         @if($f->isImage())
-                                        <a href="{{ route('files.serve', $f->path) }}" target="_blank"
+                                        <a href="{{ route('files.serve', $f->uuid) }}" target="_blank"
                                            class="block rounded-lg overflow-hidden border border-gray-100 hover:border-[#714B67]/30 transition-colors w-fit">
-                                            <img src="{{ route('files.serve', $f->path) }}" alt="{{ $f->original_name }}" class="max-w-full max-h-40 object-cover block">
+                                            <img src="{{ route('files.serve', $f->uuid) }}" alt="{{ $f->original_name }}" class="max-w-full max-h-40 object-cover block">
                                         </a>
                                         @else
-                                        <a href="{{ route('files.serve', $f->path) }}"
+                                        <a href="{{ route('files.serve', $f->uuid) }}"
                                            class="inline-flex items-center gap-2 px-2.5 py-1.5 bg-gray-50 hover:bg-[#714B67]/5 border border-gray-200 hover:border-[#714B67]/30 rounded-lg transition-colors">
                                             <svg class="w-3.5 h-3.5 text-[#714B67] shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"/></svg>
                                             <span class="text-xs text-gray-700 truncate max-w-32">{{ $f->original_name }}</span>

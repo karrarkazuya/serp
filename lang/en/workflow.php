@@ -146,7 +146,7 @@ return [
     // ── Procedures ─────────────────────────────────────────────────────────
     'new_procedure'                 => 'New Procedure',
     'new_procedure_title'           => 'New Procedure',
-    'procedure_name_placeholder'    => 'Procedure name…',
+    'procedure_name_placeholder'    => 'Procedure title…',
     'give_procedure_name'           => 'Give this procedure a clear, descriptive name.',
     'template_required'             => 'Template',
     'template_defines_steps'        => 'The template defines the steps and fields for this procedure.',

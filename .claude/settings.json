@@ -58,7 +58,13 @@
       "Bash(xargs sed -i '' 's/ ml-auto / ms-auto /g; s/\"ml-auto /\\\\\"ms-auto /g; s/ ml-auto\"/  ms-auto\"/g; s/ ml-auto\t/ ms-auto\t/g')",
       "Bash(php -r \"echo json_encode\\(['', '07712372256'], JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_AMP | JSON_HEX_QUOT | JSON_UNESCAPED_UNICODE\\);\")",
       "Bash(grep -n 'prop\\\\|attribute\\\\|$label' /Users/karrar/Projects/web/serp/resources/views/components/sortable-th.blade.php)",
-      "Bash(python3 -)"
+      "Bash(python3 -)",
+      "Bash(php -l /Users/karrar/Projects/web/serp/app/View/Components/Toolbar.php)",
+      "Bash(grep -n '$f\\\\b\\\\|foreach.*attach\\\\|foreach.*file' /Users/karrar/Projects/web/serp/resources/views/chat/show.blade.php)",
+      "Bash(grep -n '$f->path\\\\|$f->uuid' /Users/karrar/Projects/web/serp/resources/views/chat/show.blade.php)",
+      "Bash(grep -n '$f->path\\\\|$f->uuid' /Users/karrar/Projects/web/serp/resources/views/workflow/tickets/show.blade.php)",
+      "Bash(sed -i '' 's/route\\('\\\\''files\\\\.serve'\\\\'', $f->path\\)/route\\('\\\\''files.serve'\\\\'', $f->uuid\\)/g' /Users/karrar/Projects/web/serp/resources/views/chat/show.blade.php)",
+      "Bash(sed -i '' 's/route\\('\\\\''files\\\\.serve'\\\\'', $f->path\\)/route\\('\\\\''files.serve'\\\\'', $f->uuid\\)/g' /Users/karrar/Projects/web/serp/resources/views/workflow/tickets/show.blade.php)"
     ],
     "additionalDirectories": [
       "/Users/karrar/Projects/web/serp/storage/app/public/avatars/contacts"

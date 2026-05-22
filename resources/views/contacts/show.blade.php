@@ -3,55 +3,42 @@
 
 @section('content')
 <div class="flex flex-col h-full bg-gray-50" x-data="{ compose: false }">
-    @php $isRtl = app()->getLocale() === 'ar'; @endphp
-    <div class="bg-white border-b border-gray-200 px-4 py-2 flex items-center gap-3 shrink-0">
-        @can('create', \App\Models\Contacts\Contact::class)
-        <a href="{{ route('contacts.create') }}" class="shrink-0 px-3 py-1.5 bg-[#714B67] hover:bg-[#5c3d55] text-white text-sm font-medium rounded">{{ __('common.new') }}</a>
-        @endcan
-
-        <div class="shrink-0 flex flex-col leading-tight">
+    @can('create', \App\Models\Contacts\Contact::class)
+        @php $newHref = route('contacts.create'); @endphp
+    @endcan
+    <x-toolbar
+        :new-href="$newHref ?? null"
+        :position="$recordPosition ?: null"
+        :total="$recordTotal ?? null"
+        :prev-href="$prevId ? route('contacts.show', $prevId) : null"
+        :next-href="$nextId ? route('contacts.show', $nextId) : null">
+        <x-slot:breadcrumb>
             <a href="{{ route('contacts.index') }}" class="text-xs text-purple-600 hover:text-purple-700">{{ __('contacts.title') }}</a>
             <span class="text-sm font-semibold text-gray-800">{{ $contact->name }}</span>
-        </div>
-
-        @can('update', $contact)
-        <a href="{{ route('contacts.edit', $contact) }}" class="shrink-0 px-3 py-1.5 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded hover:bg-gray-50">{{ __('common.edit') }}</a>
-        @if($contact->active)
-        <form method="POST" action="{{ route('contacts.archive', $contact) }}">
-            @csrf @method('PATCH')
-            <button class="px-3 py-1.5 text-sm text-amber-700 border border-amber-200 rounded hover:bg-amber-50">{{ __('common.archive') }}</button>
-        </form>
-        @else
-        <form method="POST" action="{{ route('contacts.unarchive', $contact) }}">
-            @csrf @method('PATCH')
-            <button class="px-3 py-1.5 text-sm text-green-700 border border-green-200 rounded hover:bg-green-50">{{ __('common.unarchive') }}</button>
-        </form>
-        @endif
-        @endcan
-
-        @can('delete', $contact)
-        <form method="POST" action="{{ route('contacts.delete', $contact) }}" @submit.prevent="$dispatch('confirm-delete', { message: '{{ __('common.confirm_delete') }}', form: $el })">
-            @csrf @method('DELETE')
-            <button class="px-3 py-1.5 text-sm text-red-700 border border-red-200 rounded hover:bg-red-50">{{ __('common.delete') }}</button>
-        </form>
-        @endcan
-
-        @if($recordPosition)
-        <div class="ms-auto shrink-0 flex items-center gap-1 text-sm text-gray-500">
-            <span class="text-xs whitespace-nowrap">{{ $recordPosition }} / {{ $recordTotal }}</span>
-            @if($prevId)
-                <a href="{{ route('contacts.show', $prevId) }}" class="p-1 hover:bg-gray-100 rounded">{{ $isRtl ? '›' : '‹' }}</a>
+        </x-slot:breadcrumb>
+        <x-slot:actions>
+            @can('update', $contact)
+            <a href="{{ route('contacts.edit', $contact) }}" class="shrink-0 px-3 py-1.5 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded hover:bg-gray-50">{{ __('common.edit') }}</a>
+            @if($contact->active)
+            <form method="POST" action="{{ route('contacts.archive', $contact) }}">
+                @csrf @method('PATCH')
+                <button class="px-3 py-1.5 text-sm text-amber-700 border border-amber-200 rounded hover:bg-amber-50">{{ __('common.archive') }}</button>
+            </form>
             @else
-                <span class="p-1 text-gray-300">{{ $isRtl ? '›' : '‹' }}</span>
+            <form method="POST" action="{{ route('contacts.unarchive', $contact) }}">
+                @csrf @method('PATCH')
+                <button class="px-3 py-1.5 text-sm text-green-700 border border-green-200 rounded hover:bg-green-50">{{ __('common.unarchive') }}</button>
+            </form>
             @endif
-            @if($nextId)
-                <a href="{{ route('contacts.show', $nextId) }}" class="p-1 hover:bg-gray-100 rounded">{{ $isRtl ? '‹' : '›' }}</a>
-            @else
-                <span class="p-1 text-gray-300">{{ $isRtl ? '‹' : '›' }}</span>
-            @endif
-        </div>
-        @endif
-    </div>
+            @endcan
+            @can('delete', $contact)
+            <form method="POST" action="{{ route('contacts.delete', $contact) }}" @submit.prevent="$dispatch('confirm-delete', { message: '{{ __('common.confirm_delete') }}', form: $el })">
+                @csrf @method('DELETE')
+                <button class="px-3 py-1.5 text-sm text-red-700 border border-red-200 rounded hover:bg-red-50">{{ __('common.delete') }}</button>
+            </form>
+            @endcan
+        </x-slot:actions>
+    </x-toolbar>
 
     <div class="flex-1 overflow-y-auto">
         <div class="bg-white mx-4 mt-4 rounded-xl border border-gray-200 shadow-sm">

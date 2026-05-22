@@ -332,13 +332,13 @@
                         <div class="mt-2 flex flex-wrap gap-2">
                             @foreach($msg->files as $f)
                             @if($f->isImage())
-                            <a href="{{ route('files.serve', $f->path) }}" target="_blank"
+                            <a href="{{ route('files.serve', $f->uuid) }}" target="_blank"
                                class="block rounded-xl overflow-hidden border border-gray-100 hover:border-[#714B67]/30 transition-colors shadow-sm">
-                                <img src="{{ route('files.serve', $f->path) }}" alt="{{ $f->original_name }}"
+                                <img src="{{ route('files.serve', $f->uuid) }}" alt="{{ $f->original_name }}"
                                      class="max-w-xs max-h-48 object-cover block">
                             </a>
                             @else
-                            <a href="{{ route('files.serve', $f->path) }}"
+                            <a href="{{ route('files.serve', $f->uuid) }}"
                                class="flex items-center gap-2.5 px-3 py-2 bg-gray-50 hover:bg-[#714B67]/5 border border-gray-200 hover:border-[#714B67]/30 rounded-xl transition-colors group/file max-w-xs">
                                 <div class="w-8 h-8 rounded-lg bg-[#714B67]/10 flex items-center justify-center shrink-0">
                                     <svg class="w-4 h-4 text-[#714B67]" fill="none" stroke="currentColor" viewBox="0 0 24 24">

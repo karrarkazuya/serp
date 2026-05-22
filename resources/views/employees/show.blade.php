@@ -26,55 +26,49 @@
 
 @section('content')
 <div class="flex flex-col h-full bg-gray-50">
-    {{-- Top bar --}}
-    @php $isRtl = app()->getLocale() === 'ar'; @endphp
-    <div class="bg-white border-b border-gray-200 px-4 py-2 flex items-center gap-3 shrink-0">
-        @can('create', \App\Models\Employees\Employee::class)
-        <a href="{{ route('employees.create') }}" class="shrink-0 px-3 py-1.5 bg-[#714B67] hover:bg-[#5c3d55] text-white text-sm font-medium rounded">{{ __('common.new') }}</a>
-        @endcan
-
-        <div class="shrink-0 flex flex-col leading-tight">
+    @can('create', \App\Models\Employees\Employee::class)
+        @php $newHref = route('employees.create'); @endphp
+    @endcan
+    <x-toolbar
+        :new-href="$newHref ?? null"
+        :position="$recordPosition ?: null"
+        :total="$recordTotal ?? null"
+        :prev-href="$prevId ? route('employees.show', $prevId) : null"
+        :next-href="$nextId ? route('employees.show', $nextId) : null">
+        <x-slot:breadcrumb>
             <a href="{{ route('employees.index') }}" class="text-xs text-purple-600 hover:text-purple-700">{{ __('employees.title') }}</a>
             <span class="text-sm font-semibold text-gray-800">{{ $employee->name }}</span>
-        </div>
-
-        @can('update', $employee)
-        <a href="{{ route('employees.edit', $employee) }}" class="shrink-0 px-3 py-1.5 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded hover:bg-gray-50">{{ __('common.edit') }}</a>
-        @if($employee->active)
-        <form method="POST" action="{{ route('employees.archive', $employee) }}">
-            @csrf @method('PATCH')
-            <button class="px-3 py-1.5 text-sm text-amber-700 border border-amber-200 rounded hover:bg-amber-50">{{ __('common.archive') }}</button>
-        </form>
-        @else
-        <form method="POST" action="{{ route('employees.unarchive', $employee) }}">
-            @csrf @method('PATCH')
-            <button class="px-3 py-1.5 text-sm text-green-700 border border-green-200 rounded hover:bg-green-50">{{ __('common.restore') }}</button>
-        </form>
-        @endif
-        @endcan
-
-        @can('delete', $employee)
-        <div x-data="{ confirming: false }" class="shrink-0">
-            <button type="button" x-show="!confirming" @click="confirming = true" class="px-3 py-1.5 text-sm text-red-700 border border-red-200 rounded hover:bg-red-50">{{ __('common.delete') }}</button>
-            <div x-show="confirming" style="display:none" class="flex items-center gap-1.5">
-                <span class="text-xs text-red-600">{{ __('common.are_you_sure') }}</span>
-                <form method="POST" action="{{ route('employees.delete', $employee) }}">
-                    @csrf @method('DELETE')
-                    <button class="px-2 py-1 text-xs bg-red-600 text-white rounded">{{ __('common.yes') }}</button>
-                </form>
-                <button type="button" @click="confirming = false" class="px-2 py-1 text-xs text-gray-500 border border-gray-200 rounded">{{ __('common.cancel') }}</button>
+        </x-slot:breadcrumb>
+        <x-slot:actions>
+            @can('update', $employee)
+            <a href="{{ route('employees.edit', $employee) }}" class="shrink-0 px-3 py-1.5 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded hover:bg-gray-50">{{ __('common.edit') }}</a>
+            @if($employee->active)
+            <form method="POST" action="{{ route('employees.archive', $employee) }}">
+                @csrf @method('PATCH')
+                <button class="px-3 py-1.5 text-sm text-amber-700 border border-amber-200 rounded hover:bg-amber-50">{{ __('common.archive') }}</button>
+            </form>
+            @else
+            <form method="POST" action="{{ route('employees.unarchive', $employee) }}">
+                @csrf @method('PATCH')
+                <button class="px-3 py-1.5 text-sm text-green-700 border border-green-200 rounded hover:bg-green-50">{{ __('common.restore') }}</button>
+            </form>
+            @endif
+            @endcan
+            @can('delete', $employee)
+            <div x-data="{ confirming: false }" class="shrink-0">
+                <button type="button" x-show="!confirming" @click="confirming = true" class="px-3 py-1.5 text-sm text-red-700 border border-red-200 rounded hover:bg-red-50">{{ __('common.delete') }}</button>
+                <div x-show="confirming" style="display:none" class="flex items-center gap-1.5">
+                    <span class="text-xs text-red-600">{{ __('common.are_you_sure') }}</span>
+                    <form method="POST" action="{{ route('employees.delete', $employee) }}">
+                        @csrf @method('DELETE')
+                        <button class="px-2 py-1 text-xs bg-red-600 text-white rounded">{{ __('common.yes') }}</button>
+                    </form>
+                    <button type="button" @click="confirming = false" class="px-2 py-1 text-xs text-gray-500 border border-gray-200 rounded">{{ __('common.cancel') }}</button>
+                </div>
             </div>
-        </div>
-        @endcan
-
-        @if($recordPosition)
-        <div class="ms-auto shrink-0 flex items-center gap-1 text-sm text-gray-500">
-            <span class="text-xs whitespace-nowrap">{{ $recordPosition }} / {{ $recordTotal }}</span>
-            @if($prevId)<a href="{{ route('employees.show', $prevId) }}" class="p-1 hover:bg-gray-100 rounded">{{ $isRtl ? '›' : '‹' }}</a>@else<span class="p-1 text-gray-300">{{ $isRtl ? '›' : '‹' }}</span>@endif
-            @if($nextId)<a href="{{ route('employees.show', $nextId) }}" class="p-1 hover:bg-gray-100 rounded">{{ $isRtl ? '‹' : '›' }}</a>@else<span class="p-1 text-gray-300">{{ $isRtl ? '‹' : '›' }}</span>@endif
-        </div>
-        @endif
-    </div>
+            @endcan
+        </x-slot:actions>
+    </x-toolbar>
 
     <div class="flex-1 overflow-y-auto">
         @if(session('success'))

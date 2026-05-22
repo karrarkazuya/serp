@@ -5,21 +5,23 @@
 <div class="flex flex-col h-full bg-gray-50" x-data="{ tab: 'flowchart' }">
 
     {{-- Header --}}
-    <div class="bg-white border-b border-gray-200 px-4 py-2 flex items-center gap-3 shrink-0">
-        <div class="flex flex-col leading-tight">
+    <x-toolbar>
+        <x-slot:breadcrumb>
             <a href="{{ route('workflow.config.procedure-templates.index') }}" class="text-xs text-purple-600 hover:text-purple-700">{{ __('workflow.procedure_templates_title') }}</a>
             <span class="text-sm font-semibold text-gray-800">{{ $procedureTemplate->name }}</span>
-        </div>
-        <div class="flex items-center gap-2">
-            @can('update', $procedureTemplate)
-            <a href="{{ route('workflow.config.procedure-templates.edit', $procedureTemplate) }}" class="px-3 py-1.5 text-sm border border-gray-300 rounded hover:bg-gray-50">{{ __('common.edit') }}</a>
-            @endcan
-            @can('create', \App\Models\Workflow\Procedure::class)
-            <a href="{{ route('workflow.procedures.create', ['template_id' => $procedureTemplate->id]) }}"
-               class="px-3 py-1.5 text-sm bg-[#714B67] text-white rounded hover:bg-[#5c3d55]">{{ __('workflow.start_procedure') }}</a>
-            @endcan
-        </div>
+        </x-slot:breadcrumb>
+        <x-slot:actions>
+    <div class="flex items-center gap-2">
+        @can('update', $procedureTemplate)
+        <a href="{{ route('workflow.config.procedure-templates.edit', $procedureTemplate) }}" class="px-3 py-1.5 text-sm border border-gray-300 rounded hover:bg-gray-50">{{ __('common.edit') }}</a>
+        @endcan
+        @can('create', \App\Models\Workflow\Procedure::class)
+        <a href="{{ route('workflow.procedures.create', ['template_id' => $procedureTemplate->id]) }}"
+           class="px-3 py-1.5 text-sm bg-[#714B67] text-white rounded hover:bg-[#5c3d55]">{{ __('workflow.start_procedure') }}</a>
+        @endcan
     </div>
+        </x-slot:actions>
+    </x-toolbar>
 
     @if(session('success'))
     <div class="mx-4 mt-3 px-4 py-2 bg-green-50 border border-green-200 text-green-700 text-sm rounded-lg shrink-0">{{ session('success') }}</div>

@@ -31,6 +31,31 @@ Register every new model with `AuditableObserver` in `AppServiceProvider`.
 
 Violating any of these is a bug, not a style issue.
 
+### 0. Page toolbars — `<x-toolbar>` only
+
+Every show, create, and edit page must use `<x-toolbar>` for the top action bar. Never hand-build the `<div class="bg-white border-b border-gray-200 px-4 py-2 flex items-center gap-3 shrink-0">` wrapper manually.
+
+```blade
+<x-toolbar
+    :new-href="$newHref ?? null"         {{-- optional New button --}}
+    :position="$recordPosition ?: null"  {{-- optional record position --}}
+    :total="$recordTotal ?? null"        {{-- optional total for pagination --}}
+    :prev-href="$prevId ? route('...', $prevId) : null"
+    :next-href="$nextId ? route('...', $nextId) : null">
+    <x-slot:breadcrumb>
+        <a href="{{ route('...') }}" class="text-xs text-purple-600 hover:text-purple-700">Section</a>
+        <span class="text-sm font-semibold text-gray-800">Record name</span>
+    </x-slot:breadcrumb>
+    <x-slot:actions>
+        <div class="flex items-center gap-2">
+            {{-- cancel/save for create/edit; edit/archive/delete for show --}}
+        </div>
+    </x-slot:actions>
+</x-toolbar>
+```
+
+The component handles: outer wrapper, breadcrumb div, RTL pagination arrows, `ms-auto` push on the pagination block. See `docs/components/toolbar.md` for all usage patterns.
+
 ### 1. List Views — `<x-list>` and `<x-search>` only
 
 Every index/list view must use `<x-list>` for the table and `<x-search>` for filters. Never hand-build a table or custom search form. Use `@foreach` inside `<x-list>`, not `@forelse` — the empty state is handled by the component.

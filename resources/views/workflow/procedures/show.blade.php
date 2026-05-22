@@ -16,56 +16,53 @@
 
 <div class="flex flex-col h-full bg-gray-50">
 
-    {{-- Top bar --}}
-    <div class="bg-white border-b border-gray-200 px-5 py-2 flex items-center gap-3 shrink-0">
-        <div class="flex items-center gap-2 shrink-0">
-            @can('create', \App\Models\Workflow\Procedure::class)
-            <a href="{{ route('workflow.procedures.create') }}" class="px-3 py-1.5 bg-[#714B67] hover:bg-[#5c3d55] text-white text-sm font-medium rounded transition-colors">{{ __('common.new') }}</a>
-            @endcan
-            <div>
-                <a href="{{ route('workflow.procedures.index') }}" class="text-xs text-purple-600 hover:text-purple-700">{{ __('workflow.procedures_title') }}</a>
-                <span class="text-sm font-semibold text-gray-800 block truncate max-w-xs">{{ $procedure->name }}</span>
+    @can('create', \App\Models\Workflow\Procedure::class)
+        @php $newHref = route('workflow.procedures.create'); @endphp
+    @endcan
+    <x-toolbar :new-href="$newHref ?? null">
+        <x-slot:breadcrumb>
+            <a href="{{ route('workflow.procedures.index') }}" class="text-xs text-purple-600 hover:text-purple-700">{{ __('workflow.procedures_title') }}</a>
+            <span class="text-sm font-semibold text-gray-800 truncate max-w-xs">{{ $procedure->name }}</span>
+        </x-slot:breadcrumb>
+        <x-slot:actions>
+            <div class="flex items-center gap-2 shrink-0">
+                @can('update', $procedure)
+                @if($procedure->state !== 'pending')
+                @if($procedure->active)
+                <form method="POST" action="{{ route('workflow.procedures.archive', $procedure) }}">
+                    @csrf @method('PATCH')
+                    <button class="px-3 py-1.5 text-sm text-amber-700 border border-amber-200 rounded hover:bg-amber-50 transition-colors">{{ __('common.archive') }}</button>
+                </form>
+                @else
+                <form method="POST" action="{{ route('workflow.procedures.unarchive', $procedure) }}">
+                    @csrf @method('PATCH')
+                    <button class="px-3 py-1.5 text-sm text-green-700 border border-green-200 rounded hover:bg-green-50 transition-colors">{{ __('workflow.restore') }}</button>
+                </form>
+                @endif
+                @endif
+                @endcan
+                @can('update', $procedure)
+                @if($procedure->sharedLink?->enabled)
+                <form method="POST" action="{{ route('workflow.share.procedure.toggle', $procedure) }}">
+                    @csrf
+                    <button class="px-3 py-1.5 text-sm text-green-700 border border-green-300 rounded hover:bg-green-50 flex items-center gap-1.5 transition-colors">
+                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z"/></svg>
+                        {{ __('workflow.sharing_on') }}
+                    </button>
+                </form>
+                @else
+                <form method="POST" action="{{ route('workflow.share.procedure.toggle', $procedure) }}">
+                    @csrf
+                    <button class="px-3 py-1.5 text-sm text-purple-700 border border-purple-200 rounded hover:bg-purple-50 flex items-center gap-1.5 transition-colors">
+                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z"/></svg>
+                        {{ __('workflow.share') }}
+                    </button>
+                </form>
+                @endif
+                @endcan
             </div>
-        </div>
-
-        <div class="flex items-center gap-2 shrink-0">
-            @can('update', $procedure)
-            @if($procedure->state !== 'pending')
-            @if($procedure->active)
-            <form method="POST" action="{{ route('workflow.procedures.archive', $procedure) }}">
-                @csrf @method('PATCH')
-                <button class="px-3 py-1.5 text-sm text-amber-700 border border-amber-200 rounded hover:bg-amber-50 transition-colors">{{ __('common.archive') }}</button>
-            </form>
-            @else
-            <form method="POST" action="{{ route('workflow.procedures.unarchive', $procedure) }}">
-                @csrf @method('PATCH')
-                <button class="px-3 py-1.5 text-sm text-green-700 border border-green-200 rounded hover:bg-green-50 transition-colors">{{ __('workflow.restore') }}</button>
-            </form>
-            @endif
-            @endif
-            @endcan
-
-            @can('update', $procedure)
-            @if($procedure->sharedLink?->enabled)
-            <form method="POST" action="{{ route('workflow.share.procedure.toggle', $procedure) }}">
-                @csrf
-                <button class="px-3 py-1.5 text-sm text-green-700 border border-green-300 rounded hover:bg-green-50 flex items-center gap-1.5 transition-colors">
-                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z"/></svg>
-                    {{ __('workflow.sharing_on') }}
-                </button>
-            </form>
-            @else
-            <form method="POST" action="{{ route('workflow.share.procedure.toggle', $procedure) }}">
-                @csrf
-                <button class="px-3 py-1.5 text-sm text-purple-700 border border-purple-200 rounded hover:bg-purple-50 flex items-center gap-1.5 transition-colors">
-                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z"/></svg>
-                    {{ __('workflow.share') }}
-                </button>
-            </form>
-            @endif
-            @endcan
-        </div>
-    </div>
+        </x-slot:actions>
+    </x-toolbar>
 
     <div class="flex-1 overflow-y-auto">
         @php

@@ -3,50 +3,12 @@
 
 @section('content')
 <div class="flex flex-col h-full bg-gray-50">
-    <div class="bg-white border-b border-gray-200 px-4 py-2 flex items-center gap-3 shrink-0">
-        <div class="flex items-center gap-2 shrink-0">
-            @if(auth()->user()->hasPermission('contacts.write'))
-            <a href="{{ route('contacts.tags.create') }}" class="px-3 py-1.5 bg-[#714B67] hover:bg-[#5c3d55] text-white text-sm font-medium rounded">{{ __('common.new') }}</a>
-            @endif
-            <div class="flex flex-col leading-tight">
+    <x-toolbar>
+        <x-slot:breadcrumb>
                 <a href="{{ route('contacts.tags.index') }}" class="text-xs text-purple-600 hover:text-purple-700">{{ __('contacts.tags_title') }}</a>
                 <span class="text-sm font-semibold text-gray-800">{{ $tag->name }}</span>
-            </div>
-        </div>
-
-        <div class="flex items-center gap-3 shrink-0">
-            @if(auth()->user()->hasPermission('contacts.write'))
-            <a href="{{ route('contacts.tags.edit', $tag) }}"
-               class="px-3 py-1.5 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded hover:bg-gray-50">
-                {{ __('common.edit') }}
-            </a>
-            @endif
-
-            @if(auth()->user()->hasPermission('contacts.unlink') && $tag->contacts_count === 0)
-            <form method="POST" action="{{ route('contacts.tags.delete', $tag) }}" @submit.prevent="$dispatch('confirm-delete', { message: '{{ __('common.confirm_delete') }}', form: $el })">
-                @csrf
-                @method('DELETE')
-                <button class="px-3 py-1.5 text-sm text-red-700 border border-red-200 rounded hover:bg-red-50">{{ __('common.delete') }}</button>
-            </form>
-            @endif
-
-            @if($recordPosition)
-            <div class="flex items-center gap-1 text-sm text-gray-500">
-                <span class="text-xs whitespace-nowrap">{{ $recordPosition }} / {{ $recordTotal }}</span>
-                @if($prevId)
-                    <a href="{{ route('contacts.tags.show', $prevId) }}" class="p-1 hover:bg-gray-100 rounded">‹</a>
-                @else
-                    <span class="p-1 text-gray-300">‹</span>
-                @endif
-                @if($nextId)
-                    <a href="{{ route('contacts.tags.show', $nextId) }}" class="p-1 hover:bg-gray-100 rounded">›</a>
-                @else
-                    <span class="p-1 text-gray-300">›</span>
-                @endif
-            </div>
-            @endif
-        </div>
-    </div>
+        </x-slot:breadcrumb>
+    </x-toolbar>
 
     <div class="flex-1 overflow-y-auto">
         <div class="bg-white mx-4 mt-4 rounded-xl border border-gray-200 shadow-sm">

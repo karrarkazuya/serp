@@ -3,9 +3,11 @@
 
 @section('content')
 <div class="flex flex-col h-full bg-gray-50">
-    <div class="bg-white border-b border-gray-200 px-4 py-2 flex items-center gap-3 shrink-0">
-        <span class="text-xl font-semibold text-gray-700">{{ __('workflow.settings_title') }}</span>
-    </div>
+    <x-toolbar>
+        <x-slot:breadcrumb>
+            <span class="text-xl font-semibold text-gray-700">{{ __('workflow.settings_title') }}</span>
+        </x-slot:breadcrumb>
+    </x-toolbar>
 
     <div class="flex-1 overflow-y-auto p-4">
         <div class="bg-white rounded-xl border border-gray-200 shadow-sm p-6">

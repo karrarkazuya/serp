@@ -3,12 +3,12 @@
 
 @section('content')
 <div class="flex flex-col h-full bg-gray-50">
-    <div class="bg-white border-b border-gray-200 px-4 py-2 flex items-center gap-3 shrink-0">
-        <div class="flex flex-col leading-tight">
+    <x-toolbar>
+        <x-slot:breadcrumb>
             <a href="{{ route('workflow.reports.index') }}" class="text-xs text-purple-600 hover:text-purple-700">{{ __('workflow.reports_title') }}</a>
             <span class="text-sm font-semibold text-gray-800">{{ $reportTitle }}</span>
-        </div>
-    </div>
+        </x-slot:breadcrumb>
+    </x-toolbar>
 
     <div class="flex-1 overflow-y-auto p-4">
         <div class="bg-white rounded-xl border border-gray-200 shadow-sm p-6">

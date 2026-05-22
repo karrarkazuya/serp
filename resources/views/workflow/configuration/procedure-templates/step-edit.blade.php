@@ -20,8 +20,8 @@
 
 @section('content')
 <div class="flex flex-col h-full bg-gray-50">
-    <div class="bg-white border-b border-gray-200 px-4 py-2 flex items-center gap-3 shrink-0">
-        <div class="flex flex-col leading-tight">
+    <x-toolbar>
+        <x-slot:breadcrumb>
             @unless(request()->boolean('frame'))
             <div class="flex items-center gap-1 text-xs text-gray-400">
                 <a href="{{ route('workflow.config.procedure-templates.index') }}" class="hover:text-purple-600">{{ __('workflow.procedure_templates_title') }}</a>
@@ -30,14 +30,16 @@
             </div>
             @endunless
             <span class="text-sm font-semibold text-gray-800">{{ $step->name }}</span>
-        </div>
-        <div class="flex items-center gap-2">
-            <a data-discard href="{{ route('workflow.config.procedure-templates.edit', $procedureTemplate) }}"
-               class="px-3 py-1.5 text-sm text-gray-600 bg-white border border-gray-300 rounded hover:bg-gray-50">{{ __('workflow.discard') }}</a>
-            <button form="step-form" type="submit"
-                    class="px-4 py-1.5 text-sm font-medium text-white bg-[#714B67] hover:bg-[#5c3d55] rounded shadow-sm">{{ __('common.save') }}</button>
-        </div>
+        </x-slot:breadcrumb>
+        <x-slot:actions>
+    <div class="flex items-center gap-2">
+        <a data-discard href="{{ route('workflow.config.procedure-templates.edit', $procedureTemplate) }}"
+           class="px-3 py-1.5 text-sm text-gray-600 bg-white border border-gray-300 rounded hover:bg-gray-50">{{ __('workflow.discard') }}</a>
+        <button form="step-form" type="submit"
+                class="px-4 py-1.5 text-sm font-medium text-white bg-[#714B67] hover:bg-[#5c3d55] rounded shadow-sm">{{ __('common.save') }}</button>
     </div>
+        </x-slot:actions>
+    </x-toolbar>
 
     <div class="flex-1 overflow-y-auto">
         <div class="bg-white mx-4 my-4 rounded-xl border border-gray-200 shadow-sm">

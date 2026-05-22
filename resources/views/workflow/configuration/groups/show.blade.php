@@ -3,17 +3,19 @@
 
 @section('content')
 <div class="flex flex-col h-full bg-gray-50">
-    <div class="bg-white border-b border-gray-200 px-4 py-2 flex items-center gap-3 shrink-0">
-        <div class="flex flex-col leading-tight">
+    <x-toolbar>
+        <x-slot:breadcrumb>
             <a href="{{ route('workflow.config.groups.index') }}" class="text-xs text-purple-600 hover:text-purple-700">{{ __('workflow.groups_title') }}</a>
             <span class="text-sm font-semibold text-gray-800">{{ $group->name }}</span>
-        </div>
-        <div class="flex items-center gap-2">
-            @can('update', $group)
-            <a href="{{ route('workflow.config.groups.edit', $group) }}" class="px-3 py-1.5 text-sm border border-gray-300 rounded hover:bg-gray-50">{{ __('common.edit') }}</a>
-            @endcan
-        </div>
+        </x-slot:breadcrumb>
+        <x-slot:actions>
+    <div class="flex items-center gap-2">
+        @can('update', $group)
+        <a href="{{ route('workflow.config.groups.edit', $group) }}" class="px-3 py-1.5 text-sm border border-gray-300 rounded hover:bg-gray-50">{{ __('common.edit') }}</a>
+        @endcan
     </div>
+        </x-slot:actions>
+    </x-toolbar>
 
     <div class="flex-1 overflow-y-auto">
         @if(session('success'))

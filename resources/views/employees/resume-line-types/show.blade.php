@@ -3,46 +3,47 @@
 
 @section('content')
 <div class="flex flex-col h-full bg-gray-50">
-    <div class="bg-white border-b border-gray-200 px-4 py-2 flex items-center gap-3 shrink-0">
-        <div class="flex flex-col leading-tight">
+    <x-toolbar>
+        <x-slot:breadcrumb>
             <a href="{{ route('employees.resume-line-types.index') }}" class="text-xs text-purple-600 hover:text-purple-700">{{ __('employees.resume_line_types_title') }}</a>
             <span class="text-sm font-semibold text-gray-800">{{ $resumeLineType->name }}</span>
-        </div>
+        </x-slot:breadcrumb>
+        <x-slot:actions>
+    <div class="flex items-center gap-2">
+        @can('update', $resumeLineType)
+        <a href="{{ route('employees.resume-line-types.edit', $resumeLineType) }}"
+           class="px-3 py-1.5 text-sm text-gray-600 bg-white border border-gray-300 rounded hover:bg-gray-50">{{ __('common.edit') }}</a>
 
-        <div class="flex items-center gap-2">
-            @can('update', $resumeLineType)
-            <a href="{{ route('employees.resume-line-types.edit', $resumeLineType) }}"
-               class="px-3 py-1.5 text-sm text-gray-600 bg-white border border-gray-300 rounded hover:bg-gray-50">{{ __('common.edit') }}</a>
+        @if($resumeLineType->active)
+        <form method="POST" action="{{ route('employees.resume-line-types.archive', $resumeLineType) }}">
+            @csrf @method('PATCH')
+            <button type="submit" class="px-3 py-1.5 text-sm text-gray-600 bg-white border border-gray-300 rounded hover:bg-gray-50">{{ __('common.archive') }}</button>
+        </form>
+        @else
+        <form method="POST" action="{{ route('employees.resume-line-types.unarchive', $resumeLineType) }}">
+            @csrf @method('PATCH')
+            <button type="submit" class="px-3 py-1.5 text-sm text-gray-600 bg-white border border-gray-300 rounded hover:bg-gray-50">{{ __('common.unarchive') }}</button>
+        </form>
+        @endif
+        @endcan
 
-            @if($resumeLineType->active)
-            <form method="POST" action="{{ route('employees.resume-line-types.archive', $resumeLineType) }}">
-                @csrf @method('PATCH')
-                <button type="submit" class="px-3 py-1.5 text-sm text-gray-600 bg-white border border-gray-300 rounded hover:bg-gray-50">{{ __('common.archive') }}</button>
-            </form>
-            @else
-            <form method="POST" action="{{ route('employees.resume-line-types.unarchive', $resumeLineType) }}">
-                @csrf @method('PATCH')
-                <button type="submit" class="px-3 py-1.5 text-sm text-gray-600 bg-white border border-gray-300 rounded hover:bg-gray-50">{{ __('common.unarchive') }}</button>
-            </form>
-            @endif
-            @endcan
-
-            @can('delete', $resumeLineType)
-            <div x-data="{ confirming: false }">
-                <button type="button" x-show="!confirming" @click="confirming = true"
-                        class="px-3 py-1.5 text-sm text-red-600 bg-white border border-red-200 rounded hover:bg-red-50">{{ __('common.delete') }}</button>
-                <div x-show="confirming" style="display:none" class="flex items-center gap-1.5">
-                    <span class="text-xs text-red-600">{{ __('common.are_you_sure') }}</span>
-                    <form method="POST" action="{{ route('employees.resume-line-types.delete', $resumeLineType) }}">
-                        @csrf @method('DELETE')
-                        <button type="submit" class="px-2 py-1 text-xs bg-red-600 text-white rounded">{{ __('common.yes') }}</button>
-                    </form>
-                    <button type="button" @click="confirming = false" class="px-2 py-1 text-xs text-gray-500 border border-gray-300 rounded">{{ __('common.cancel') }}</button>
-                </div>
+        @can('delete', $resumeLineType)
+        <div x-data="{ confirming: false }">
+            <button type="button" x-show="!confirming" @click="confirming = true"
+                    class="px-3 py-1.5 text-sm text-red-600 bg-white border border-red-200 rounded hover:bg-red-50">{{ __('common.delete') }}</button>
+            <div x-show="confirming" style="display:none" class="flex items-center gap-1.5">
+                <span class="text-xs text-red-600">{{ __('common.are_you_sure') }}</span>
+                <form method="POST" action="{{ route('employees.resume-line-types.delete', $resumeLineType) }}">
+                    @csrf @method('DELETE')
+                    <button type="submit" class="px-2 py-1 text-xs bg-red-600 text-white rounded">{{ __('common.yes') }}</button>
+                </form>
+                <button type="button" @click="confirming = false" class="px-2 py-1 text-xs text-gray-500 border border-gray-300 rounded">{{ __('common.cancel') }}</button>
             </div>
-            @endcan
         </div>
+        @endcan
     </div>
+        </x-slot:actions>
+    </x-toolbar>
 
     <div class="flex-1 overflow-y-auto p-4 space-y-4">
         @if(session('success'))

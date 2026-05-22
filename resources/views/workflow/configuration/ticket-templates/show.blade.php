@@ -3,21 +3,23 @@
 
 @section('content')
 <div class="flex flex-col h-full bg-gray-50">
-    <div class="bg-white border-b border-gray-200 px-4 py-2 flex items-center gap-3 shrink-0">
-        <div class="flex flex-col leading-tight">
+    <x-toolbar>
+        <x-slot:breadcrumb>
             <a href="{{ route('workflow.config.ticket-templates.index') }}" class="text-xs text-purple-600 hover:text-purple-700">{{ __('workflow.ticket_templates_title') }}</a>
             <span class="text-sm font-semibold text-gray-800">{{ $ticketTemplate->name }}</span>
-        </div>
-        <div class="flex items-center gap-2">
-            @can('update', $ticketTemplate)
-            <a href="{{ route('workflow.config.ticket-templates.edit', $ticketTemplate) }}" class="px-3 py-1.5 text-sm border border-gray-300 rounded hover:bg-gray-50">{{ __('common.edit') }}</a>
-            @endcan
-            @can('create', \App\Models\Workflow\Ticket::class)
-            <a href="{{ route('workflow.tickets.create', ['template_id' => $ticketTemplate->id]) }}"
-               class="px-3 py-1.5 text-sm bg-[#714B67] text-white rounded hover:bg-[#5c3d55]">{{ __('workflow.create_ticket_btn') }}</a>
-            @endcan
-        </div>
+        </x-slot:breadcrumb>
+        <x-slot:actions>
+    <div class="flex items-center gap-2">
+        @can('update', $ticketTemplate)
+        <a href="{{ route('workflow.config.ticket-templates.edit', $ticketTemplate) }}" class="px-3 py-1.5 text-sm border border-gray-300 rounded hover:bg-gray-50">{{ __('common.edit') }}</a>
+        @endcan
+        @can('create', \App\Models\Workflow\Ticket::class)
+        <a href="{{ route('workflow.tickets.create', ['template_id' => $ticketTemplate->id]) }}"
+           class="px-3 py-1.5 text-sm bg-[#714B67] text-white rounded hover:bg-[#5c3d55]">{{ __('workflow.create_ticket_btn') }}</a>
+        @endcan
     </div>
+        </x-slot:actions>
+    </x-toolbar>
 
     <div class="flex-1 overflow-y-auto">
         @if(session('success'))

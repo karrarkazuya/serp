@@ -146,7 +146,7 @@ return [
     // ── Procedures ─────────────────────────────────────────────────────────
     'new_procedure'                 => 'إجراء جديد',
     'new_procedure_title'           => 'إجراء جديد',
-    'procedure_name_placeholder'    => 'اسم الإجراء…',
+    'procedure_name_placeholder'    => 'عنوان الإجراء…',
     'give_procedure_name'           => 'أعطِ هذا الإجراء اسماً واضحاً ووصفياً.',
     'template_required'             => 'النموذج',
     'template_defines_steps'        => 'يحدد النموذج الخطوات والحقول لهذا الإجراء.',
