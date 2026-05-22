@@ -51,7 +51,7 @@ class ChatController extends Controller
         $grouped  = $this->groupMessages($messages);
 
         // Mark as read for all room types
-        $room->members()->updateExistingPivot($auth->id, ['last_read_at' => now()]);
+        DB::transaction(fn () => $room->members()->updateExistingPivot($auth->id, ['last_read_at' => now()]));
         $unreadCounts[$room->id] = 0;
 
         $room->load('members');
@@ -74,33 +74,35 @@ class ChatController extends Controller
 
         abort_if(empty($body) && empty(array_filter($files)), 422);
 
-        $message = ChatMessage::create([
-            'room_id' => $room->id,
-            'user_id' => $auth->id,
-            'body'    => $body ?: null,
-        ]);
-
-        foreach ($files as $file) {
-            if (!$file || !in_array($file->getMimeType(), self::ALLOWED_MIMES)) {
-                continue;
-            }
-            $fileRecord = $this->fileService->store($file, "chat/{$room->id}", null, $room, $message);
-            ChatMessageFile::create([
-                'message_id'    => $message->id,
-                'disk'          => $fileRecord->disk,
-                'path'          => $fileRecord->uuid,
-                'original_name' => $fileRecord->original_name,
-                'mime_type'     => $fileRecord->mime_type,
-                'size'          => $fileRecord->size,
+        DB::transaction(function () use ($room, $auth, $body, $files) {
+            $message = ChatMessage::create([
+                'room_id' => $room->id,
+                'user_id' => $auth->id,
+                'body'    => $body ?: null,
             ]);
-        }
 
-        // Notify all other members
-        $preview = Str::limit($body ?: '📎 Sent a file', 80);
-        $url     = route('chat.show', $room);
-        foreach ($room->members()->where('user_id', '!=', $auth->id)->get() as $member) {
-            $member->notify($auth->name, $preview, $url);
-        }
+            foreach ($files as $file) {
+                if (!$file || !in_array($file->getMimeType(), self::ALLOWED_MIMES)) {
+                    continue;
+                }
+                $fileRecord = $this->fileService->store($file, "chat/{$room->id}", null, $room, $message);
+                ChatMessageFile::create([
+                    'message_id'    => $message->id,
+                    'disk'          => $fileRecord->disk,
+                    'path'          => $fileRecord->uuid,
+                    'original_name' => $fileRecord->original_name,
+                    'mime_type'     => $fileRecord->mime_type,
+                    'size'          => $fileRecord->size,
+                ]);
+            }
+
+            // Notify all other members
+            $preview = Str::limit($body ?: '📎 Sent a file', 80);
+            $url     = route('chat.show', $room);
+            foreach ($room->members()->where('user_id', '!=', $auth->id)->get() as $member) {
+                $member->notify($auth->name, $preview, $url);
+            }
+        });
 
         return redirect()->route('chat.show', $room)->with('scrollToBottom', true);
     }
@@ -172,7 +174,7 @@ class ChatController extends Controller
         abort_unless($user->active, 422, 'User is not active.');
 
         if (!$room->members()->where('user_id', $user->id)->exists()) {
-            $room->members()->attach($user->id);
+            DB::transaction(fn () => $room->members()->attach($user->id));
         }
 
         return redirect()->route('chat.show', $room);
@@ -189,7 +191,7 @@ class ChatController extends Controller
         abort_unless($isSelf || $isCreator, 403);
         abort_unless($room->members()->where('user_id', $auth->id)->exists(), 403);
 
-        $room->members()->detach($user->id);
+        DB::transaction(fn () => $room->members()->detach($user->id));
 
         if ($isSelf) {
             return redirect()->route('chat.index')->with('success', "You left #{$room->name}.");

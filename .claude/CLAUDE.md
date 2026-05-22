@@ -109,9 +109,23 @@ Route::post('/{foo}/comment', [FooController::class, 'addComment']) ->middleware
 Permission key format: `module.read`, `module.create`, `module.write`, `module.unlink`.
 For nested sub-modules: `workflow.tickets.read`, `workflow.tickets.write`, etc.
 
-### 7. All state-changing operations — `DB::transaction` in the controller
+### 7. Every DB create or edit — `DB::transaction` in the controller
 
-Every controller method that writes to the database must wrap in `DB::transaction`. This includes store, write, archive, unarchive, unlink, addComment, and any custom mutation. A single-call transaction still provides atomicity and rollback.
+Every controller method that performs **any** database create or edit must wrap in `DB::transaction` — not only multi-step state changes. This covers every insert, update, and delete: single-row creates, single-row updates, toggles, pivots, increments, one-line writes, plus store, write, archive, unarchive, unlink, addComment, and any custom mutation. A single-call transaction still provides atomicity and rollback, and it keeps the rule mechanical: if the method writes to the DB at all, it is wrapped. No exceptions for "small" or "single-line" edits.
+
+**Transaction scope — wrap the whole sequence, not each call.** If a controller method calls multiple services, or writes across multiple aggregates/tables, the transaction must wrap the entire sequence in a single `DB::transaction` block — not one transaction per service call. Nested or back-to-back `DB::transaction` calls inside the same method are a bug: they fragment the atomicity boundary and allow partial writes to commit when a later step fails. One method = one transaction covering all writes.
+
+```php
+// ✅ Correct — one transaction wraps both writes
+DB::transaction(function () use ($data) {
+    $order = $this->orderService->create($data);
+    $this->inventoryService->reserve($order);
+});
+
+// ❌ Wrong — two independent transactions; if reserve() fails, the order is already committed
+$order = DB::transaction(fn () => $this->orderService->create($data));
+DB::transaction(fn () => $this->inventoryService->reserve($order));
+```
 
 ```php
 $record = DB::transaction(fn () => $this->fooService->create($data));

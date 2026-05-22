@@ -64,7 +64,8 @@
       "Bash(grep -n '$f->path\\\\|$f->uuid' /Users/karrar/Projects/web/serp/resources/views/chat/show.blade.php)",
       "Bash(grep -n '$f->path\\\\|$f->uuid' /Users/karrar/Projects/web/serp/resources/views/workflow/tickets/show.blade.php)",
       "Bash(sed -i '' 's/route\\('\\\\''files\\\\.serve'\\\\'', $f->path\\)/route\\('\\\\''files.serve'\\\\'', $f->uuid\\)/g' /Users/karrar/Projects/web/serp/resources/views/chat/show.blade.php)",
-      "Bash(sed -i '' 's/route\\('\\\\''files\\\\.serve'\\\\'', $f->path\\)/route\\('\\\\''files.serve'\\\\'', $f->uuid\\)/g' /Users/karrar/Projects/web/serp/resources/views/workflow/tickets/show.blade.php)"
+      "Bash(sed -i '' 's/route\\('\\\\''files\\\\.serve'\\\\'', $f->path\\)/route\\('\\\\''files.serve'\\\\'', $f->uuid\\)/g' /Users/karrar/Projects/web/serp/resources/views/workflow/tickets/show.blade.php)",
+      "Bash(awk -F: '{print $1}')"
     ],
     "additionalDirectories": [
       "/Users/karrar/Projects/web/serp/storage/app/public/avatars/contacts"

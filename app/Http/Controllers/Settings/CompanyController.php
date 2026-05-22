@@ -159,7 +159,7 @@ class CompanyController extends Controller
         $this->authorize('comment', $company);
 
         $request->validate(['body' => 'required|string|max:5000']);
-        $company->logComment($request->body);
+        DB::transaction(fn () => $company->logComment($request->body));
 
         return back()->with('success', 'Comment added.');
     }

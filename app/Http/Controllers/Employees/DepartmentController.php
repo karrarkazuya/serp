@@ -153,7 +153,7 @@ class DepartmentController extends Controller
     {
         $this->authorize('comment', $department);
         $request->validate(['body' => 'required|string|max:5000']);
-        $department->logComment($request->body);
+        DB::transaction(fn () => $department->logComment($request->body));
 
         return back()->with('success', 'Comment added.');
     }

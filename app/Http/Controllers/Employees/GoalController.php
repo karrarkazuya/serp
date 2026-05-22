@@ -116,7 +116,7 @@ class GoalController extends Controller
     {
         $this->authorize('comment', $goal);
         $request->validate(['body' => 'required|string|max:5000']);
-        $goal->logComment($request->body);
+        DB::transaction(fn () => $goal->logComment($request->body));
         return back()->with('success', 'Comment added.');
     }
 }

@@ -40,11 +40,10 @@ class ContractController extends Controller
                 $data['image'] = $fileRecord->uuid;
             }
             $contract = Contract::create($data);
+            $fileRecord?->update(['source_type' => $contract->getTable(), 'source_id' => $contract->id]);
             $this->chatterService->log($employee, "Contract created: {$contract->name}", 'log');
             return $contract;
         });
-
-        $fileRecord?->update(['source_type' => $contract->getTable(), 'source_id' => $contract->id]);
 
         return redirect()->route('employees.show', $employee)->with('success', 'Contract created.');
     }

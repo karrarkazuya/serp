@@ -103,7 +103,7 @@ class EmployeeCategoryController extends Controller
     {
         $this->authorize('update', \App\Models\Employees\Employee::class);
         $request->validate(['body' => 'required|string|max:5000']);
-        $employeeCategory->logComment($request->body);
+        DB::transaction(fn () => $employeeCategory->logComment($request->body));
         return back()->with('success', 'Comment added.');
     }
 }

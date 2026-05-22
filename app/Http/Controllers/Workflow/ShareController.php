@@ -8,6 +8,7 @@ use App\Models\Workflow\Ticket;
 use App\Models\Workflow\WorkflowSharedLink;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 
 class ShareController extends Controller
 {
@@ -17,7 +18,7 @@ class ShareController extends Controller
     {
         $this->authorize('update', $ticket);
         $link = WorkflowSharedLink::forModel($ticket);
-        $link->update(['enabled' => !$link->enabled]);
+        DB::transaction(fn () => $link->update(['enabled' => !$link->enabled]));
 
         return back()->with('success', $link->enabled ? 'Sharing enabled.' : 'Sharing disabled.');
     }
@@ -27,7 +28,7 @@ class ShareController extends Controller
         $this->authorize('update', $ticket);
         $request->validate(['message' => 'nullable|string|max:2000']);
 
-        WorkflowSharedLink::forModel($ticket)->update(['message' => $request->message]);
+        DB::transaction(fn () => WorkflowSharedLink::forModel($ticket)->update(['message' => $request->message]));
 
         return back()->with('success', 'Share message saved.');
     }
@@ -38,7 +39,7 @@ class ShareController extends Controller
     {
         $this->authorize('update', $procedure);
         $link = WorkflowSharedLink::forModel($procedure);
-        $link->update(['enabled' => !$link->enabled]);
+        DB::transaction(fn () => $link->update(['enabled' => !$link->enabled]));
 
         return back()->with('success', $link->enabled ? 'Sharing enabled.' : 'Sharing disabled.');
     }
@@ -48,7 +49,7 @@ class ShareController extends Controller
         $this->authorize('update', $procedure);
         $request->validate(['message' => 'nullable|string|max:2000']);
 
-        WorkflowSharedLink::forModel($procedure)->update(['message' => $request->message]);
+        DB::transaction(fn () => WorkflowSharedLink::forModel($procedure)->update(['message' => $request->message]));
 
         return back()->with('success', 'Share message saved.');
     }

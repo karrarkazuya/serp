@@ -116,7 +116,7 @@ class ChallengeController extends Controller
     {
         $this->authorize('comment', $challenge);
         $request->validate(['body' => 'required|string|max:5000']);
-        $challenge->logComment($request->body);
+        DB::transaction(fn () => $challenge->logComment($request->body));
         return back()->with('success', 'Comment added.');
     }
 }

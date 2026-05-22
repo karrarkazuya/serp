@@ -114,7 +114,7 @@ class EmploymentTypeController extends Controller
     {
         $this->authorize('comment', $employmentType);
         $request->validate(['body' => 'required|string|max:5000']);
-        $employmentType->logComment($request->body);
+        DB::transaction(fn () => $employmentType->logComment($request->body));
         return back()->with('success', 'Comment added.');
     }
 }

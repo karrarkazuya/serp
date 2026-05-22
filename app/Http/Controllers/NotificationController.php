@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Notification;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Support\Facades\DB;
 
 class NotificationController extends Controller
 {
@@ -22,13 +23,13 @@ class NotificationController extends Controller
     public function markSeen(Notification $notification): JsonResponse
     {
         abort_unless($notification->user_id === auth()->id(), 403);
-        $notification->markSeen();
+        DB::transaction(fn () => $notification->markSeen());
         return response()->json(['ok' => true]);
     }
 
     public function markAllSeen(): JsonResponse
     {
-        auth()->user()->notifications()->whereNull('seen_at')->update(['seen_at' => now()]);
+        DB::transaction(fn () => auth()->user()->notifications()->whereNull('seen_at')->update(['seen_at' => now()]));
         return response()->json(['ok' => true]);
     }
 }

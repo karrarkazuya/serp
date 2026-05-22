@@ -105,11 +105,12 @@ class ContactController extends Controller
         }
 
         try {
-            $contact = DB::transaction(function () use ($data, $tagIds, $relatedContactIds, $phones) {
+            $contact = DB::transaction(function () use ($data, $tagIds, $relatedContactIds, $phones, $fileRecord) {
                 $contact = $this->contactService->create($data);
                 $contact->tags()->sync($tagIds);
                 $this->syncRelatedContacts($contact, $relatedContactIds);
                 $this->syncPhones($contact, $phones);
+                $fileRecord?->update(['source_type' => $contact->getTable(), 'source_id' => $contact->id]);
 
                 return $contact;
             });
@@ -119,8 +120,6 @@ class ContactController extends Controller
             }
             throw $e;
         }
-
-        $fileRecord?->update(['source_type' => $contact->getTable(), 'source_id' => $contact->id]);
 
         return redirect()
             ->route('contacts.show', $contact)

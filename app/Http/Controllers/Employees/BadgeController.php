@@ -116,7 +116,7 @@ class BadgeController extends Controller
     {
         $this->authorize('comment', $badge);
         $request->validate(['body' => 'required|string|max:5000']);
-        $badge->logComment($request->body);
+        DB::transaction(fn () => $badge->logComment($request->body));
         return back()->with('success', 'Comment added.');
     }
 }

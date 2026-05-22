@@ -161,7 +161,7 @@ class SkillTypeController extends Controller
     {
         $this->authorize('comment', $skillType);
         $request->validate(['body' => 'required|string|max:5000']);
-        $skillType->logComment($request->body);
+        DB::transaction(fn () => $skillType->logComment($request->body));
         return back()->with('success', 'Comment added.');
     }
 }

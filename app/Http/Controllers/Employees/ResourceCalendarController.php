@@ -218,7 +218,7 @@ class ResourceCalendarController extends Controller
         abort_unless(empty($activeCompanyIds) || in_array($schedule->company_id, $activeCompanyIds), 403);
 
         $request->validate(['body' => 'required|string|max:5000']);
-        $schedule->logComment($request->body);
+        DB::transaction(fn () => $schedule->logComment($request->body));
 
         return back()->with('success', 'Comment added.');
     }

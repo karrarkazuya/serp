@@ -139,7 +139,7 @@ class JobController extends Controller
         abort_unless(empty($activeCompanyIds) || in_array($job->company_id, $activeCompanyIds), 403);
 
         $request->validate(['body' => 'required|string|max:5000']);
-        $job->logComment($request->body);
+        DB::transaction(fn () => $job->logComment($request->body));
 
         return back()->with('success', 'Comment added.');
     }

@@ -316,7 +316,7 @@ class EmployeeController extends Controller
     {
         $this->authorize('comment', $employee);
         $request->validate(['body' => 'required|string|max:5000']);
-        $employee->logComment($request->body);
+        DB::transaction(fn () => $employee->logComment($request->body));
 
         return back()->with('success', 'Comment added.');
     }

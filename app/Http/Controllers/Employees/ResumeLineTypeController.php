@@ -114,7 +114,7 @@ class ResumeLineTypeController extends Controller
     {
         $this->authorize('comment', $resumeLineType);
         $request->validate(['body' => 'required|string|max:5000']);
-        $resumeLineType->logComment($request->body);
+        DB::transaction(fn () => $resumeLineType->logComment($request->body));
         return back()->with('success', 'Comment added.');
     }
 }

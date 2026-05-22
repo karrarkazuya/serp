@@ -784,23 +784,25 @@ class TicketController extends Controller
         $files = $request->file('files', []);
         abort_if(empty($body) && empty(array_filter($files)), 422);
 
-        $message = $ticket->chatRoom->messages()->create([
-            'user_id' => \Illuminate\Support\Facades\Auth::id(),
-            'body'    => $body ?: null,
-        ]);
-
-        foreach ($files as $file) {
-            if (!$file || !in_array($file->getMimeType(), self::CHAT_ALLOWED_MIMES)) continue;
-            $fileRecord = $this->fileService->store($file, "chat/{$ticket->chatRoom->id}", 'workflow.tickets.read', $ticket, $message);
-            ChatMessageFile::create([
-                'message_id'    => $message->id,
-                'disk'          => $fileRecord->disk,
-                'path'          => $fileRecord->uuid,
-                'original_name' => $fileRecord->original_name,
-                'mime_type'     => $fileRecord->mime_type,
-                'size'          => $fileRecord->size,
+        DB::transaction(function () use ($ticket, $body, $files) {
+            $message = $ticket->chatRoom->messages()->create([
+                'user_id' => \Illuminate\Support\Facades\Auth::id(),
+                'body'    => $body ?: null,
             ]);
-        }
+
+            foreach ($files as $file) {
+                if (!$file || !in_array($file->getMimeType(), self::CHAT_ALLOWED_MIMES)) continue;
+                $fileRecord = $this->fileService->store($file, "chat/{$ticket->chatRoom->id}", 'workflow.tickets.read', $ticket, $message);
+                ChatMessageFile::create([
+                    'message_id'    => $message->id,
+                    'disk'          => $fileRecord->disk,
+                    'path'          => $fileRecord->uuid,
+                    'original_name' => $fileRecord->original_name,
+                    'mime_type'     => $fileRecord->mime_type,
+                    'size'          => $fileRecord->size,
+                ]);
+            }
+        });
 
         return back();
     }

@@ -114,7 +114,7 @@ class DepartureReasonController extends Controller
     {
         $this->authorize('comment', $departureReason);
         $request->validate(['body' => 'required|string|max:5000']);
-        $departureReason->logComment($request->body);
+        DB::transaction(fn () => $departureReason->logComment($request->body));
         return back()->with('success', 'Comment added.');
     }
 }
