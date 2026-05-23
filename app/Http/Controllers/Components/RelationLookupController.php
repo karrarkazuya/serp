@@ -74,6 +74,12 @@ class RelationLookupController extends Controller
             $query->where("{$table}.active", true);
         }
 
+        if (!empty($config['where'])) {
+            foreach ($config['where'] as [$column, $operator, $value]) {
+                $query->where("{$table}.{$column}", $operator, $value);
+            }
+        }
+
         if (!empty($exclude)) {
             $query->whereNotIn($valueColumn, $exclude);
         }

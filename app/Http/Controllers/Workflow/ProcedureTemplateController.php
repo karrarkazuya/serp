@@ -240,14 +240,13 @@ class ProcedureTemplateController extends Controller
         $this->authorize('update', $procedureTemplate);
         abort_if($step->procedure_template_id !== $procedureTemplate->id, 404);
         $step->load(['inputs.options', 'nextSteps', 'defaultDepartment', 'pathChoices', 'subProcedures']);
-        $departments          = Department::where('active', true)->orderBy('name')->get();
         $siblings             = $procedureTemplate->steps()->where('id', '!=', $step->id)->orderBy('id')->get();
         $availableSubProcs    = \App\Models\Workflow\ProcedureTemplate::where('enabled', true)
-            ->where('id', '!=', $procedureTemplate->id) // prevent self-reference
+            ->where('id', '!=', $procedureTemplate->id)
             ->orderBy('name')->get();
 
         return view('workflow.configuration.procedure-templates.step-edit',
-            compact('procedureTemplate', 'step', 'departments', 'siblings', 'availableSubProcs'));
+            compact('procedureTemplate', 'step', 'siblings', 'availableSubProcs'));
     }
 
     public function updateStep(Request $request, ProcedureTemplate $procedureTemplate, ProcedureStep $step)

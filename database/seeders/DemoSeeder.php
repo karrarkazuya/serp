@@ -2,6 +2,9 @@
 
 namespace Database\Seeders;
 
+use App\Models\Accounting\Account;
+use App\Models\Accounting\AccountJournal;
+use App\Models\Accounting\AccountMove;
 use App\Models\Contacts\Contact;
 use App\Models\Contacts\Tag;
 use App\Models\Employees\Contract;
@@ -16,6 +19,12 @@ use App\Models\Employees\Skill;
 use App\Models\Employees\SkillLevel;
 use App\Models\Employees\SkillType;
 use App\Models\Employees\WorkLocation;
+use App\Models\Inventory\Location;
+use App\Models\Inventory\OperationType;
+use App\Models\Inventory\Product;
+use App\Models\Inventory\ProductCategory;
+use App\Models\Inventory\Uom;
+use App\Models\Inventory\Warehouse;
 use App\Models\Settings\Company;
 use App\Models\User;
 use App\Models\Workflow\Group;
@@ -25,9 +34,15 @@ use App\Models\Workflow\ProcedureTemplate;
 use App\Models\Workflow\TicketTemplate;
 use App\Models\Workflow\WorkflowTemplateInput;
 use App\Models\Workflow\WorkflowUser;
+use App\Services\Accounting\AccountingService;
+use App\Services\Inventory\PickingService;
+use App\Services\Inventory\ProductService as InventoryProductService;
+use App\Services\Inventory\ScrapService;
+use App\Services\Inventory\WarehouseService;
 use Faker\Factory as Faker;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\Auth;
 
 class DemoSeeder extends Seeder
 {
@@ -38,6 +53,8 @@ class DemoSeeder extends Seeder
         $this->seedContacts();
         $this->seedWorkflow();
         $this->seedEmployees();
+        $this->seedAccounting();
+        $this->seedInventory();
     }
 
     // ── Companies ─────────────────────────────────────────────────────────────
@@ -677,5 +694,473 @@ class DemoSeeder extends Seeder
                 ['skill_type_id' => $type?->id, 'skill_level_id' => $level?->id]
             );
         }
+    }
+
+    // ── Accounting ────────────────────────────────────────────────────────────
+
+    /**
+     * Install the standard chart + journals into every demo company,
+     * then post a realistic Q1 bookkeeping scenario on Acme Holdings.
+     */
+    private function seedAccounting(): void
+    {
+        $admin = User::where('email', 'admin@example.com')->first();
+        if (!$admin) return;
+
+        Auth::login($admin);
+        try {
+            $core = new CoreSeeder();
+            foreach (Company::all() as $company) {
+                $core->installAccountingForCompany($company);
+            }
+
+            $acme = Company::where('name', 'Acme Holdings')->first();
+            if (!$acme) return;
+
+            // Skip if Acme already has demo entries (idempotent re-runs)
+            if (AccountMove::where('company_id', $acme->id)->exists()) return;
+
+            $this->postDemoEntriesFor($acme);
+        } finally {
+            Auth::logout();
+        }
+    }
+
+    /**
+     * Posts ~10 entries that cover sales, purchases, payments, and a quarter-end
+     * adjustment, plus one draft entry so both states are visible in the UI.
+     * Trial balance is verified to be exactly zero before printing the summary.
+     */
+    private function postDemoEntriesFor(Company $company): void
+    {
+        $svc = app(AccountingService::class);
+
+        $accounts = Account::where('company_id', $company->id)->get()->keyBy('code');
+        $journals = AccountJournal::where('company_id', $company->id)->get()->keyBy('code');
+
+        // Pick the first customer-style contact as the partner on credit-sale entries.
+        $partner = Contact::where('company_id', $company->id)
+            ->where('contact_type', 'company')
+            ->orderBy('id')
+            ->first();
+        $partnerId = $partner?->id;
+
+        // Iraqi UAS code reference:
+        //   1811 صندوق المركز         | 183 نقدية لدى المصارف   | 2313 مخصص اندثار آلات
+        //   1614 مدينون قطاع خاص      | 2614 مجهزون قطاع خاص    | 372 اندثار آلات ومعدات
+        //   1371 مخزون البضائع للبيع   | 321 الخامات والمواد     | 324 مواد التعبئة
+        //   4211 صافي مبيعات بضائع    | 4221 تغير مخزون بضائع   | 3352 استئجار مباني
+        //   3111 رواتب                | 3366 خدمات مصرفية       | 211 رأس المال المدفوع
+        $entries = [
+            // 1. مساهمة رأس المال — Owner contribution to bootstrap the bank account
+            [
+                'journal'   => 'BANK',
+                'date'      => '2026-01-02',
+                'ref'       => 'OPEN-2026',
+                'narration' => 'مساهمة افتتاحية في رأس المال من المالك. | Opening capital contribution.',
+                'lines' => [
+                    ['code' => '183', 'name' => 'إيداع رأس المال (Capital deposit)',          'debit' => 50_000, 'credit' => 0],
+                    ['code' => '211', 'name' => 'إيداع رأس المال (Capital deposit)',          'debit' => 0,      'credit' => 50_000],
+                ],
+            ],
+            // 2. شراء بضاعة افتتاحية — Initial inventory stock (paid from bank)
+            [
+                'journal' => 'BANK', 'date' => '2026-01-05',
+                'lines' => [
+                    ['code' => '1371', 'name' => 'شراء بضاعة افتتاحية (Initial goods)',        'debit' => 15_000, 'credit' => 0],
+                    ['code' => '183',  'name' => 'شراء بضاعة افتتاحية (Initial goods)',        'debit' => 0,      'credit' => 15_000],
+                ],
+            ],
+            // 3. بيع نقدي — Cash sale to walk-in customer
+            [
+                'journal' => 'INV', 'date' => '2026-01-15',
+                'lines' => [
+                    ['code' => '1811', 'name' => 'بيع نقدي (Cash sale)',                       'debit' => 1_200,  'credit' => 0],
+                    ['code' => '4211', 'name' => 'بيع نقدي (Cash sale)',                       'debit' => 0,      'credit' => 1_200],
+                ],
+            ],
+            // 4. بيع آجل — Credit sale to private-sector customer (linked partner)
+            [
+                'journal' => 'INV', 'date' => '2026-01-20', 'partner_id' => $partnerId,
+                'ref' => 'SO-1042',
+                'lines' => [
+                    ['code' => '1614', 'name' => 'فاتورة SO-1042 (Invoice)',                   'debit' => 12_000, 'credit' => 0, 'partner_id' => $partnerId],
+                    ['code' => '4211', 'name' => 'فاتورة SO-1042 (Invoice)',                   'debit' => 0,      'credit' => 12_000, 'partner_id' => $partnerId],
+                ],
+            ],
+            // 5. تغير مخزون البضاعة — Inventory change for the credit sale
+            //    UAS treatment: Dr 4221 (change in goods inventory — a revenue contra),
+            //                   Cr 1371 (reduce goods inventory asset).
+            [
+                'journal' => 'MISC', 'date' => '2026-01-20',
+                'narration' => 'إثبات تغير مخزون البضاعة لفاتورة SO-1042.',
+                'lines' => [
+                    ['code' => '4221', 'name' => 'تغير مخزون بضائع SO-1042 (Inventory change)','debit' => 7_200,  'credit' => 0],
+                    ['code' => '1371', 'name' => 'تغير مخزون بضائع SO-1042 (Inventory change)','debit' => 0,      'credit' => 7_200],
+                ],
+            ],
+            // 6. فاتورة مجهز — Vendor bill: raw materials + packaging (3-line entry)
+            [
+                'journal' => 'BILL', 'date' => '2026-01-25',
+                'ref' => 'BILL-MAT-001',
+                'lines' => [
+                    ['code' => '321',  'name' => 'خامات (Raw materials)',                      'debit' => 150,    'credit' => 0],
+                    ['code' => '324',  'name' => 'مواد تعبئة (Packaging materials)',           'debit' => 50,     'credit' => 0],
+                    ['code' => '2614', 'name' => 'فاتورة BILL-MAT-001',                        'debit' => 0,      'credit' => 200],
+                ],
+            ],
+            // 7. تسديد المجهز — Pay the supplier
+            [
+                'journal' => 'BANK', 'date' => '2026-01-30',
+                'ref' => 'PAY-BILL-MAT-001',
+                'lines' => [
+                    ['code' => '2614', 'name' => 'تسديد BILL-MAT-001 (Pay supplier)',          'debit' => 200,    'credit' => 0],
+                    ['code' => '183',  'name' => 'تسديد BILL-MAT-001 (Pay supplier)',          'debit' => 0,      'credit' => 200],
+                ],
+            ],
+            // 8. إيجار شباط — February building rent
+            [
+                'journal' => 'BANK', 'date' => '2026-02-01',
+                'lines' => [
+                    ['code' => '3352', 'name' => 'إيجار شهر شباط (February rent)',             'debit' => 2_500,  'credit' => 0],
+                    ['code' => '183',  'name' => 'إيجار شهر شباط (February rent)',             'debit' => 0,      'credit' => 2_500],
+                ],
+            ],
+            // 9. تحصيل من زبون — Customer pays the SO-1042 invoice
+            [
+                'journal' => 'BANK', 'date' => '2026-02-15', 'partner_id' => $partnerId,
+                'ref' => 'RCPT-SO-1042',
+                'lines' => [
+                    ['code' => '183',  'name' => 'تحصيل SO-1042 (Customer receipt)',           'debit' => 12_000, 'credit' => 0, 'partner_id' => $partnerId],
+                    ['code' => '1614', 'name' => 'تحصيل SO-1042 (Customer receipt)',           'debit' => 0,      'credit' => 12_000, 'partner_id' => $partnerId],
+                ],
+            ],
+            // 10. تسويات نهاية الفصل — Q1 month-end: machinery depreciation + bank fees (4 lines)
+            [
+                'journal' => 'MISC', 'date' => '2026-02-28',
+                'narration' => 'تسويات نهاية الربع الأول: قسط اندثار + رسوم مصرفية.',
+                'lines' => [
+                    ['code' => '372',  'name' => 'اندثار الربع الأول (Q1 depreciation)',        'debit' => 500,    'credit' => 0],
+                    ['code' => '3366', 'name' => 'رسوم مصرفية (Bank service charges)',         'debit' => 25,     'credit' => 0],
+                    ['code' => '2313', 'name' => 'مخصص اندثار آلات الربع الأول',                'debit' => 0,      'credit' => 500],
+                    ['code' => '183',  'name' => 'رسوم مصرفية (Bank service charges)',         'debit' => 0,      'credit' => 25],
+                ],
+            ],
+        ];
+
+        // Post all of the above
+        $postedCount = 0;
+        foreach ($entries as $entry) {
+            $move = $svc->createMove(
+                [
+                    'company_id' => $company->id,
+                    'journal_id' => $journals[$entry['journal']]->id,
+                    'partner_id' => $entry['partner_id'] ?? null,
+                    'date'       => $entry['date'],
+                    'ref'        => $entry['ref'] ?? null,
+                    'move_type'  => 'entry',
+                    'currency'   => $company->currency ?: 'USD',
+                    'narration'  => $entry['narration'] ?? null,
+                ],
+                array_map(fn ($line) => [
+                    'account_id' => $accounts[$line['code']]->id,
+                    'partner_id' => $line['partner_id'] ?? null,
+                    'name'       => $line['name'],
+                    'debit'      => $line['debit'],
+                    'credit'     => $line['credit'],
+                ], $entry['lines'])
+            );
+            $svc->postMove($move);
+            $postedCount++;
+        }
+
+        // 11. قيد مسودة (DRAFT) — رواتب آذار قيد الموافقة | March payroll pending approval
+        $svc->createMove(
+            [
+                'company_id' => $company->id,
+                'journal_id' => $journals['BANK']->id,
+                'date'       => '2026-03-01',
+                'ref'        => 'PAYROLL-MAR (DRAFT)',
+                'move_type'  => 'entry',
+                'currency'   => $company->currency ?: 'USD',
+                'narration'  => 'رواتب شهر آذار — بانتظار الموافقة قبل الترحيل.',
+            ],
+            [
+                ['account_id' => $accounts['3111']->id, 'name' => 'رواتب آذار (March salaries)', 'debit' => 8_000, 'credit' => 0],
+                ['account_id' => $accounts['183']->id,  'name' => 'رواتب آذار (March salaries)', 'debit' => 0,     'credit' => 8_000],
+            ]
+        );
+
+        // Sanity check — trial balance must be exactly zero across the company's CoA.
+        $trial = 0.0;
+        foreach ($accounts as $account) {
+            $trial += $svc->getAccountBalance($account);
+        }
+        $trial = round($trial, 2);
+
+        $this->command?->info(sprintf(
+            'Accounting seeded — %s: %d posted entries, 1 draft, trial balance %.2f.',
+            $company->name,
+            $postedCount,
+            $trial
+        ));
+    }
+
+    // ── Inventory ─────────────────────────────────────────────────────────────
+
+    private function seedInventory(): void
+    {
+        $admin = User::where('email', 'admin@example.com')->first();
+        if (!$admin) return;
+
+        Auth::login($admin);
+        try {
+            $this->seedInventoryData();
+        } finally {
+            Auth::logout();
+        }
+    }
+
+    private function seedInventoryData(): void
+    {
+        $warehouseSvc = app(WarehouseService::class);
+        $productSvc   = app(InventoryProductService::class);
+        $pickingSvc   = app(PickingService::class);
+        $scrapSvc     = app(ScrapService::class);
+
+        $acme      = Company::where('name', 'Acme Holdings')->first();
+        $techStart = Company::where('name', 'TechStart Europe')->first();
+        $gulf      = Company::where('name', 'Gulf Operations LLC')->first();
+
+        $units = Uom::where('name', 'Units')->first();
+        $kg    = Uom::where('name', 'kg')->first() ?? $units;
+
+        $supplierLoc = Location::where('usage', 'supplier')->whereNull('company_id')->first();
+        $customerLoc = Location::where('usage', 'customer')->whereNull('company_id')->first();
+        $scrapLoc    = Location::where('scrap_location', true)->whereNull('company_id')->first();
+
+        // ── Acme Holdings ─────────────────────────────────────────────────
+        if ($acme && $units) {
+            // Skip if already seeded
+            if (Product::where('company_id', $acme->id)->exists()) {
+                $this->command?->info('Inventory already seeded for Acme Holdings — skipping.');
+            } else {
+                $this->seedAcmeInventory($acme, $warehouseSvc, $productSvc, $pickingSvc, $scrapSvc, $units, $kg, $supplierLoc, $customerLoc, $scrapLoc);
+            }
+        }
+
+        // ── TechStart Europe ──────────────────────────────────────────────
+        if ($techStart && $units) {
+            if (!Product::where('company_id', $techStart->id)->exists()) {
+                $this->seedTechStartInventory($techStart, $warehouseSvc, $productSvc, $pickingSvc, $units, $supplierLoc, $customerLoc);
+            }
+        }
+
+        // ── Gulf Operations LLC ───────────────────────────────────────────
+        if ($gulf && $units) {
+            if (!Product::where('company_id', $gulf->id)->exists()) {
+                $this->seedGulfInventory($gulf, $warehouseSvc, $productSvc, $pickingSvc, $units, $supplierLoc);
+            }
+        }
+    }
+
+    private function seedAcmeInventory(
+        Company $company,
+        WarehouseService $warehouseSvc,
+        InventoryProductService $productSvc,
+        PickingService $pickingSvc,
+        ScrapService $scrapSvc,
+        Uom $units,
+        Uom $kg,
+        ?Location $supplierLoc,
+        ?Location $customerLoc,
+        ?Location $scrapLoc,
+    ): void {
+        // Warehouse
+        $warehouse = Warehouse::where('company_id', $company->id)->first()
+            ?? $warehouseSvc->create(['company_id' => $company->id, 'name' => 'Acme Main Warehouse', 'short_name' => 'AMW', 'active' => true]);
+
+        $stockLoc = $warehouse->stockLocation;
+
+        // Product categories (global — no company_id)
+        $catElec = ProductCategory::firstOrCreate(['name' => 'Electronics'],    ['active' => true]);
+        $catOff  = ProductCategory::firstOrCreate(['name' => 'Office Supplies'], ['active' => true]);
+        $catSvc  = ProductCategory::firstOrCreate(['name' => 'Services'],        ['active' => true]);
+
+        // Products — storable, consumable, service; tracking: none / lot / serial
+        $laptop = $productSvc->create(['company_id' => $company->id, 'category_id' => $catElec->id, 'uom_id' => $units->id, 'uom_po_id' => $units->id, 'name' => 'Dell Laptop 15"',       'internal_reference' => 'EL-001', 'product_type' => 'storable',   'tracking' => 'serial', 'cost' => 750.00,  'sale_price' => 1100.00, 'active' => true]);
+        $monitor = $productSvc->create(['company_id' => $company->id, 'category_id' => $catElec->id, 'uom_id' => $units->id, 'uom_po_id' => $units->id, 'name' => '27" 4K Monitor',         'internal_reference' => 'EL-002', 'product_type' => 'storable',   'tracking' => 'none',   'cost' => 320.00,  'sale_price' => 480.00,  'active' => true]);
+        $keyboard = $productSvc->create(['company_id' => $company->id, 'category_id' => $catElec->id, 'uom_id' => $units->id, 'uom_po_id' => $units->id, 'name' => 'Mechanical Keyboard',   'internal_reference' => 'EL-003', 'product_type' => 'storable',   'tracking' => 'none',   'cost' => 45.00,   'sale_price' => 89.00,   'active' => true]);
+        $mouse = $productSvc->create(['company_id' => $company->id, 'category_id' => $catElec->id, 'uom_id' => $units->id, 'uom_po_id' => $units->id, 'name' => 'Wireless Mouse',           'internal_reference' => 'EL-004', 'product_type' => 'storable',   'tracking' => 'lot',    'cost' => 18.00,   'sale_price' => 35.00,   'active' => true]);
+        $paper = $productSvc->create(['company_id' => $company->id, 'category_id' => $catOff->id,  'uom_id' => $units->id, 'uom_po_id' => $units->id, 'name' => 'A4 Copy Paper (500 sh)',   'internal_reference' => 'OF-001', 'product_type' => 'consumable', 'tracking' => 'none',   'cost' => 4.50,    'sale_price' => 8.00,    'active' => true]);
+        $toner = $productSvc->create(['company_id' => $company->id, 'category_id' => $catOff->id,  'uom_id' => $units->id, 'uom_po_id' => $units->id, 'name' => 'Laser Toner Cartridge',    'internal_reference' => 'OF-002', 'product_type' => 'consumable', 'tracking' => 'lot',    'cost' => 28.00,   'sale_price' => 55.00,   'active' => true]);
+        $productSvc->create(['company_id' => $company->id, 'category_id' => $catSvc->id,  'uom_id' => $units->id, 'uom_po_id' => $units->id, 'name' => 'IT Consulting (per hour)',          'internal_reference' => 'SV-001', 'product_type' => 'service',    'tracking' => 'none',   'cost' => 50.00,   'sale_price' => 120.00,  'active' => true]);
+
+        $receiptOp  = OperationType::where('company_id', $company->id)->where('code', 'incoming')->first();
+        $deliveryOp = OperationType::where('company_id', $company->id)->where('code', 'outgoing')->first();
+
+        if (!$receiptOp || !$stockLoc || !$supplierLoc) {
+            $this->command?->warn('Acme: missing operation type or location, skipping transfers.');
+            return;
+        }
+
+        // Receipt 1 — laptops, monitors, keyboards (validated → stock in)
+        $r1 = $pickingSvc->create([
+            'company_id' => $company->id, 'operation_type_id' => $receiptOp->id,
+            'location_src_id' => $supplierLoc->id, 'location_dest_id' => $stockLoc->id,
+            'origin' => 'PO/2026/001', 'scheduled_date' => now()->subDays(60), 'active' => true,
+        ], [
+            ['product_id' => $laptop->id,   'uom_id' => $units->id, 'product_qty' => 10,  'name' => $laptop->name],
+            ['product_id' => $monitor->id,  'uom_id' => $units->id, 'product_qty' => 15,  'name' => $monitor->name],
+            ['product_id' => $keyboard->id, 'uom_id' => $units->id, 'product_qty' => 30,  'name' => $keyboard->name],
+        ]);
+        $pickingSvc->confirm($r1);
+        $pickingSvc->validate($r1->fresh());
+
+        // Receipt 2 — mice, paper, toner (validated → stock in)
+        $r2 = $pickingSvc->create([
+            'company_id' => $company->id, 'operation_type_id' => $receiptOp->id,
+            'location_src_id' => $supplierLoc->id, 'location_dest_id' => $stockLoc->id,
+            'origin' => 'PO/2026/002', 'scheduled_date' => now()->subDays(45), 'active' => true,
+        ], [
+            ['product_id' => $mouse->id,  'uom_id' => $units->id, 'product_qty' => 50,  'name' => $mouse->name],
+            ['product_id' => $paper->id,  'uom_id' => $units->id, 'product_qty' => 200, 'name' => $paper->name],
+            ['product_id' => $toner->id,  'uom_id' => $units->id, 'product_qty' => 20,  'name' => $toner->name],
+        ]);
+        $pickingSvc->confirm($r2);
+        $pickingSvc->validate($r2->fresh());
+
+        if ($deliveryOp && $customerLoc) {
+            // Delivery 1 — monitors + keyboards to customer (validated → stock out)
+            $d1 = $pickingSvc->create([
+                'company_id' => $company->id, 'operation_type_id' => $deliveryOp->id,
+                'location_src_id' => $stockLoc->id, 'location_dest_id' => $customerLoc->id,
+                'origin' => 'SO/2026/015', 'scheduled_date' => now()->subDays(30), 'active' => true,
+            ], [
+                ['product_id' => $monitor->id,  'uom_id' => $units->id, 'product_qty' => 5,  'name' => $monitor->name],
+                ['product_id' => $keyboard->id, 'uom_id' => $units->id, 'product_qty' => 10, 'name' => $keyboard->name],
+            ]);
+            $pickingSvc->confirm($d1);
+            $pickingSvc->checkAvailability($d1->fresh());
+            $pickingSvc->validate($d1->fresh());
+
+            // Delivery 2 — mice pending (confirmed, not validated)
+            $d2 = $pickingSvc->create([
+                'company_id' => $company->id, 'operation_type_id' => $deliveryOp->id,
+                'location_src_id' => $stockLoc->id, 'location_dest_id' => $customerLoc->id,
+                'origin' => 'SO/2026/021', 'scheduled_date' => now()->addDays(3), 'active' => true,
+            ], [
+                ['product_id' => $mouse->id, 'uom_id' => $units->id, 'product_qty' => 15, 'name' => $mouse->name],
+            ]);
+            $pickingSvc->confirm($d2);
+            $pickingSvc->checkAvailability($d2->fresh());
+        }
+
+        // Scrap — 2 defective keyboards written off
+        if ($scrapLoc) {
+            $scrap = $scrapSvc->create([
+                'company_id' => $company->id, 'product_id' => $keyboard->id,
+                'uom_id' => $units->id, 'location_id' => $stockLoc->id,
+                'scrap_location_id' => $scrapLoc->id, 'scrap_qty' => 2,
+            ]);
+            $scrapSvc->validate($scrap);
+        }
+
+        $this->command?->info("Inventory seeded for {$company->name}: 7 products, 2 receipts, 2 deliveries, 1 scrap.");
+    }
+
+    private function seedTechStartInventory(
+        Company $company,
+        WarehouseService $warehouseSvc,
+        InventoryProductService $productSvc,
+        PickingService $pickingSvc,
+        Uom $units,
+        ?Location $supplierLoc,
+        ?Location $customerLoc,
+    ): void {
+        $warehouse = Warehouse::where('company_id', $company->id)->first()
+            ?? $warehouseSvc->create(['company_id' => $company->id, 'name' => 'TechStart Warehouse', 'short_name' => 'TSE', 'active' => true]);
+
+        $stockLoc = $warehouse->stockLocation;
+
+        $catHW = ProductCategory::firstOrCreate(['name' => 'Hardware'],  ['active' => true]);
+        $catSW = ProductCategory::firstOrCreate(['name' => 'Licensing'], ['active' => true]);
+
+        $router = $productSvc->create(['company_id' => $company->id, 'category_id' => $catHW->id, 'uom_id' => $units->id, 'uom_po_id' => $units->id, 'name' => 'Enterprise Router',       'internal_reference' => 'HW-001', 'product_type' => 'storable',   'tracking' => 'serial', 'cost' => 200.00, 'sale_price' => 380.00, 'active' => true]);
+        $switch = $productSvc->create(['company_id' => $company->id, 'category_id' => $catHW->id, 'uom_id' => $units->id, 'uom_po_id' => $units->id, 'name' => '24-Port Network Switch', 'internal_reference' => 'HW-002', 'product_type' => 'storable',   'tracking' => 'none',   'cost' => 150.00, 'sale_price' => 275.00, 'active' => true]);
+        $ups    = $productSvc->create(['company_id' => $company->id, 'category_id' => $catHW->id, 'uom_id' => $units->id, 'uom_po_id' => $units->id, 'name' => 'UPS 1500VA',              'internal_reference' => 'HW-003', 'product_type' => 'storable',   'tracking' => 'serial', 'cost' => 95.00,  'sale_price' => 175.00, 'active' => true]);
+        $productSvc->create(['company_id' => $company->id, 'category_id' => $catSW->id, 'uom_id' => $units->id, 'uom_po_id' => $units->id, 'name' => 'Annual Software License',          'internal_reference' => 'SW-001', 'product_type' => 'service',    'tracking' => 'none',   'cost' => 80.00,  'sale_price' => 150.00, 'active' => true]);
+
+        $receiptOp  = OperationType::where('company_id', $company->id)->where('code', 'incoming')->first();
+        $deliveryOp = OperationType::where('company_id', $company->id)->where('code', 'outgoing')->first();
+
+        if (!$receiptOp || !$stockLoc || !$supplierLoc) return;
+
+        $r1 = $pickingSvc->create([
+            'company_id' => $company->id, 'operation_type_id' => $receiptOp->id,
+            'location_src_id' => $supplierLoc->id, 'location_dest_id' => $stockLoc->id,
+            'origin' => 'PO/TSE/001', 'scheduled_date' => now()->subDays(20), 'active' => true,
+        ], [
+            ['product_id' => $router->id, 'uom_id' => $units->id, 'product_qty' => 20, 'name' => $router->name],
+            ['product_id' => $switch->id, 'uom_id' => $units->id, 'product_qty' => 15, 'name' => $switch->name],
+            ['product_id' => $ups->id,    'uom_id' => $units->id, 'product_qty' => 10, 'name' => $ups->name],
+        ]);
+        $pickingSvc->confirm($r1);
+        $pickingSvc->validate($r1->fresh());
+
+        if ($deliveryOp && $customerLoc) {
+            $d1 = $pickingSvc->create([
+                'company_id' => $company->id, 'operation_type_id' => $deliveryOp->id,
+                'location_src_id' => $stockLoc->id, 'location_dest_id' => $customerLoc->id,
+                'origin' => 'SO/TSE/008', 'scheduled_date' => now()->subDays(7), 'active' => true,
+            ], [
+                ['product_id' => $switch->id, 'uom_id' => $units->id, 'product_qty' => 5, 'name' => $switch->name],
+            ]);
+            $pickingSvc->confirm($d1);
+            $pickingSvc->checkAvailability($d1->fresh());
+            $pickingSvc->validate($d1->fresh());
+        }
+
+        $this->command?->info("Inventory seeded for {$company->name}: 4 products, 1 receipt, 1 delivery.");
+    }
+
+    private function seedGulfInventory(
+        Company $company,
+        WarehouseService $warehouseSvc,
+        InventoryProductService $productSvc,
+        PickingService $pickingSvc,
+        Uom $units,
+        ?Location $supplierLoc,
+    ): void {
+        $warehouse = Warehouse::where('company_id', $company->id)->first()
+            ?? $warehouseSvc->create(['company_id' => $company->id, 'name' => 'Gulf Main Depot', 'short_name' => 'GLD', 'active' => true]);
+
+        $stockLoc = $warehouse->stockLocation;
+
+        $catSafety = ProductCategory::firstOrCreate(['name' => 'Safety Equipment'],  ['active' => true]);
+        $catTools  = ProductCategory::firstOrCreate(['name' => 'Tools & Equipment'], ['active' => true]);
+
+        $helmet  = $productSvc->create(['company_id' => $company->id, 'category_id' => $catSafety->id, 'uom_id' => $units->id, 'uom_po_id' => $units->id, 'name' => 'Hard Hat (Type II)',   'internal_reference' => 'SF-001', 'product_type' => 'storable', 'tracking' => 'none', 'cost' => 12.00, 'sale_price' => 25.00, 'active' => true]);
+        $vest    = $productSvc->create(['company_id' => $company->id, 'category_id' => $catSafety->id, 'uom_id' => $units->id, 'uom_po_id' => $units->id, 'name' => 'Hi-Vis Safety Vest',  'internal_reference' => 'SF-002', 'product_type' => 'storable', 'tracking' => 'none', 'cost' => 8.00,  'sale_price' => 18.00, 'active' => true]);
+        $gloves  = $productSvc->create(['company_id' => $company->id, 'category_id' => $catSafety->id, 'uom_id' => $units->id, 'uom_po_id' => $units->id, 'name' => 'Safety Gloves (pair)', 'internal_reference' => 'SF-003', 'product_type' => 'consumable', 'tracking' => 'none', 'cost' => 3.50, 'sale_price' => 7.00,  'active' => true]);
+        $productSvc->create(['company_id' => $company->id, 'category_id' => $catTools->id,  'uom_id' => $units->id, 'uom_po_id' => $units->id, 'name' => 'Industrial Drill Set',            'internal_reference' => 'TL-001', 'product_type' => 'storable', 'tracking' => 'serial', 'cost' => 180.00, 'sale_price' => 320.00, 'active' => true]);
+
+        $receiptOp = OperationType::where('company_id', $company->id)->where('code', 'incoming')->first();
+
+        if (!$receiptOp || !$stockLoc || !$supplierLoc) return;
+
+        $r1 = $pickingSvc->create([
+            'company_id' => $company->id, 'operation_type_id' => $receiptOp->id,
+            'location_src_id' => $supplierLoc->id, 'location_dest_id' => $stockLoc->id,
+            'origin' => 'PO/GULF/001', 'scheduled_date' => now()->subDays(15), 'active' => true,
+        ], [
+            ['product_id' => $helmet->id, 'uom_id' => $units->id, 'product_qty' => 100, 'name' => $helmet->name],
+            ['product_id' => $vest->id,   'uom_id' => $units->id, 'product_qty' => 80,  'name' => $vest->name],
+            ['product_id' => $gloves->id, 'uom_id' => $units->id, 'product_qty' => 200, 'name' => $gloves->name],
+        ]);
+        $pickingSvc->confirm($r1);
+        $pickingSvc->validate($r1->fresh());
+
+        $this->command?->info("Inventory seeded for {$company->name}: 4 products, 1 receipt.");
     }
 }

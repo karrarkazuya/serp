@@ -79,12 +79,16 @@ class Company extends Model
         'logo',
         'notes',
         'active',
+        'accounting_period_lock_date',
+        'accounting_fiscal_year_lock_date',
         'created_by',
         'updated_by',
     ];
 
     protected $casts = [
-        'active' => 'boolean',
+        'active'                            => 'boolean',
+        'accounting_period_lock_date'       => 'date',
+        'accounting_fiscal_year_lock_date'  => 'date',
     ];
 
     public function users(): BelongsToMany

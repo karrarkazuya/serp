@@ -488,6 +488,418 @@ Route::middleware('auth')->group(function () {
 
     /*
     |--------------------------------------------------------------------------
+    | Accounting module (Unified Accounting System)
+    |--------------------------------------------------------------------------
+    */
+    Route::prefix('accounting')->name('accounting.')->group(function () {
+
+        // Dashboard / overview
+        Route::get('/', [\App\Http\Controllers\Accounting\AccountingDashboardController::class, 'index'])
+            ->middleware('permission:accounting.read')->name('dashboard');
+
+        // Chart of Accounts
+        Route::prefix('accounts')->name('accounts.')->group(function () {
+            Route::get('/',              [\App\Http\Controllers\Accounting\AccountController::class, 'read'])     ->middleware('permission:accounting.read')   ->name('index');
+            Route::get('/create',        [\App\Http\Controllers\Accounting\AccountController::class, 'create'])   ->middleware('permission:accounting.create') ->name('create');
+            Route::post('/',             [\App\Http\Controllers\Accounting\AccountController::class, 'store'])    ->middleware('permission:accounting.create') ->name('store');
+            Route::get('/{account}',           [\App\Http\Controllers\Accounting\AccountController::class, 'show'])      ->middleware('permission:accounting.read')   ->name('show');
+            Route::get('/{account}/edit',      [\App\Http\Controllers\Accounting\AccountController::class, 'edit'])      ->middleware('permission:accounting.write')  ->name('edit');
+            Route::put('/{account}',           [\App\Http\Controllers\Accounting\AccountController::class, 'write'])     ->middleware('permission:accounting.write')  ->name('update');
+            Route::patch('/{account}/archive', [\App\Http\Controllers\Accounting\AccountController::class, 'archive'])   ->middleware('permission:accounting.write')  ->name('archive');
+            Route::patch('/{account}/unarchive', [\App\Http\Controllers\Accounting\AccountController::class, 'unarchive'])->middleware('permission:accounting.write') ->name('unarchive');
+            Route::delete('/{account}',        [\App\Http\Controllers\Accounting\AccountController::class, 'unlink'])    ->middleware('permission:accounting.unlink') ->name('delete');
+            Route::post('/{account}/comment',  [\App\Http\Controllers\Accounting\AccountController::class, 'addComment'])->middleware('permission:accounting.write')  ->name('comment');
+        });
+
+        // Journals
+        Route::prefix('journals')->name('journals.')->group(function () {
+            Route::get('/',              [\App\Http\Controllers\Accounting\AccountJournalController::class, 'read'])     ->middleware('permission:accounting.read')   ->name('index');
+            Route::get('/create',        [\App\Http\Controllers\Accounting\AccountJournalController::class, 'create'])   ->middleware('permission:accounting.create') ->name('create');
+            Route::post('/',             [\App\Http\Controllers\Accounting\AccountJournalController::class, 'store'])    ->middleware('permission:accounting.create') ->name('store');
+            Route::get('/{journal}',           [\App\Http\Controllers\Accounting\AccountJournalController::class, 'show'])      ->middleware('permission:accounting.read')   ->name('show');
+            Route::get('/{journal}/edit',      [\App\Http\Controllers\Accounting\AccountJournalController::class, 'edit'])      ->middleware('permission:accounting.write')  ->name('edit');
+            Route::put('/{journal}',           [\App\Http\Controllers\Accounting\AccountJournalController::class, 'write'])     ->middleware('permission:accounting.write')  ->name('update');
+            Route::patch('/{journal}/archive', [\App\Http\Controllers\Accounting\AccountJournalController::class, 'archive'])   ->middleware('permission:accounting.write')  ->name('archive');
+            Route::patch('/{journal}/unarchive', [\App\Http\Controllers\Accounting\AccountJournalController::class, 'unarchive'])->middleware('permission:accounting.write') ->name('unarchive');
+            Route::delete('/{journal}',        [\App\Http\Controllers\Accounting\AccountJournalController::class, 'unlink'])    ->middleware('permission:accounting.unlink') ->name('delete');
+            Route::post('/{journal}/comment',  [\App\Http\Controllers\Accounting\AccountJournalController::class, 'addComment'])->middleware('permission:accounting.write')  ->name('comment');
+        });
+
+        // Customer Invoices
+        Route::prefix('invoices')->name('invoices.')->group(function () {
+            Route::get('/',                  [\App\Http\Controllers\Accounting\AccountDocumentController::class, 'invoices'])      ->middleware('permission:accounting.read')   ->name('index');
+            Route::get('/create',            [\App\Http\Controllers\Accounting\AccountDocumentController::class, 'createInvoice']) ->middleware('permission:accounting.create') ->name('create');
+            Route::post('/',                 [\App\Http\Controllers\Accounting\AccountDocumentController::class, 'storeInvoice'])  ->middleware('permission:accounting.create') ->name('store');
+            Route::get('/{invoice}',         [\App\Http\Controllers\Accounting\AccountDocumentController::class, 'showInvoice'])   ->middleware('permission:accounting.read')   ->name('show');
+            Route::get('/{invoice}/edit',    [\App\Http\Controllers\Accounting\AccountDocumentController::class, 'editInvoice'])   ->middleware('permission:accounting.write')  ->name('edit');
+            Route::put('/{invoice}',         [\App\Http\Controllers\Accounting\AccountDocumentController::class, 'updateInvoice']) ->middleware('permission:accounting.write')  ->name('update');
+            Route::patch('/{invoice}/post',  [\App\Http\Controllers\Accounting\AccountDocumentController::class, 'postInvoice'])   ->middleware('permission:accounting.post')   ->name('post');
+            Route::patch('/{invoice}/pay',   [\App\Http\Controllers\Accounting\AccountDocumentController::class, 'payInvoice'])    ->middleware('permission:accounting.post')   ->name('pay');
+            Route::post('/{invoice}/credit-note', [\App\Http\Controllers\Accounting\AccountDocumentController::class, 'creditInvoice'])->middleware('permission:accounting.post')->name('credit-note');
+            Route::get('/{invoice}/print',   [\App\Http\Controllers\Accounting\AccountDocumentController::class, 'printInvoice'])  ->middleware('permission:accounting.read')   ->name('print');
+            Route::patch('/{invoice}/draft', [\App\Http\Controllers\Accounting\AccountDocumentController::class, 'resetInvoice'])  ->middleware('permission:accounting.post')   ->name('reset-draft');
+            Route::patch('/{invoice}/cancel', [\App\Http\Controllers\Accounting\AccountDocumentController::class, 'cancelInvoice'])->middleware('permission:accounting.post')   ->name('cancel');
+            Route::delete('/{invoice}',      [\App\Http\Controllers\Accounting\AccountDocumentController::class, 'deleteInvoice']) ->middleware('permission:accounting.unlink') ->name('delete');
+            Route::post('/{invoice}/comment', [\App\Http\Controllers\Accounting\AccountDocumentController::class, 'commentInvoice'])->middleware('permission:accounting.write')  ->name('comment');
+        });
+
+        // Customer Credit Notes
+        Route::prefix('credit-notes')->name('credit-notes.')->group(function () {
+            Route::get('/', [\App\Http\Controllers\Accounting\AccountDocumentController::class, 'creditNotes'])->middleware('permission:accounting.read')->name('index');
+            Route::get('/{creditNote}', [\App\Http\Controllers\Accounting\AccountDocumentController::class, 'showCreditNote'])->middleware('permission:accounting.read')->name('show');
+            Route::patch('/{creditNote}/post', [\App\Http\Controllers\Accounting\AccountDocumentController::class, 'postCreditNote'])->middleware('permission:accounting.post')->name('post');
+            Route::patch('/{creditNote}/pay', [\App\Http\Controllers\Accounting\AccountDocumentController::class, 'payCreditNote'])->middleware('permission:accounting.post')->name('pay');
+            Route::get('/{creditNote}/print', [\App\Http\Controllers\Accounting\AccountDocumentController::class, 'printCreditNote'])->middleware('permission:accounting.read')->name('print');
+            Route::patch('/{creditNote}/draft', [\App\Http\Controllers\Accounting\AccountDocumentController::class, 'resetCreditNote'])->middleware('permission:accounting.post')->name('reset-draft');
+            Route::patch('/{creditNote}/cancel', [\App\Http\Controllers\Accounting\AccountDocumentController::class, 'cancelCreditNote'])->middleware('permission:accounting.post')->name('cancel');
+            Route::delete('/{creditNote}', [\App\Http\Controllers\Accounting\AccountDocumentController::class, 'deleteCreditNote'])->middleware('permission:accounting.unlink')->name('delete');
+            Route::post('/{creditNote}/comment', [\App\Http\Controllers\Accounting\AccountDocumentController::class, 'commentCreditNote'])->middleware('permission:accounting.write')->name('comment');
+        });
+
+        // Vendor Bills
+        Route::prefix('bills')->name('bills.')->group(function () {
+            Route::get('/',               [\App\Http\Controllers\Accounting\AccountDocumentController::class, 'bills'])      ->middleware('permission:accounting.read')   ->name('index');
+            Route::get('/create',         [\App\Http\Controllers\Accounting\AccountDocumentController::class, 'createBill']) ->middleware('permission:accounting.create') ->name('create');
+            Route::post('/',              [\App\Http\Controllers\Accounting\AccountDocumentController::class, 'storeBill'])  ->middleware('permission:accounting.create') ->name('store');
+            Route::get('/{bill}',         [\App\Http\Controllers\Accounting\AccountDocumentController::class, 'showBill'])   ->middleware('permission:accounting.read')   ->name('show');
+            Route::get('/{bill}/edit',    [\App\Http\Controllers\Accounting\AccountDocumentController::class, 'editBill'])   ->middleware('permission:accounting.write')  ->name('edit');
+            Route::put('/{bill}',         [\App\Http\Controllers\Accounting\AccountDocumentController::class, 'updateBill']) ->middleware('permission:accounting.write')  ->name('update');
+            Route::patch('/{bill}/post',  [\App\Http\Controllers\Accounting\AccountDocumentController::class, 'postBill'])   ->middleware('permission:accounting.post')   ->name('post');
+            Route::patch('/{bill}/pay',   [\App\Http\Controllers\Accounting\AccountDocumentController::class, 'payBill'])    ->middleware('permission:accounting.post')   ->name('pay');
+            Route::post('/{bill}/credit-note', [\App\Http\Controllers\Accounting\AccountDocumentController::class, 'creditBill'])->middleware('permission:accounting.post')->name('credit-note');
+            Route::get('/{bill}/print',   [\App\Http\Controllers\Accounting\AccountDocumentController::class, 'printBill'])  ->middleware('permission:accounting.read')   ->name('print');
+            Route::patch('/{bill}/draft', [\App\Http\Controllers\Accounting\AccountDocumentController::class, 'resetBill'])  ->middleware('permission:accounting.post')   ->name('reset-draft');
+            Route::patch('/{bill}/cancel', [\App\Http\Controllers\Accounting\AccountDocumentController::class, 'cancelBill'])->middleware('permission:accounting.post')   ->name('cancel');
+            Route::delete('/{bill}',      [\App\Http\Controllers\Accounting\AccountDocumentController::class, 'deleteBill']) ->middleware('permission:accounting.unlink') ->name('delete');
+            Route::post('/{bill}/comment', [\App\Http\Controllers\Accounting\AccountDocumentController::class, 'commentBill'])->middleware('permission:accounting.write')  ->name('comment');
+        });
+
+        // Vendor Refunds
+        Route::prefix('refunds')->name('refunds.')->group(function () {
+            Route::get('/', [\App\Http\Controllers\Accounting\AccountDocumentController::class, 'refunds'])->middleware('permission:accounting.read')->name('index');
+            Route::get('/{refund}', [\App\Http\Controllers\Accounting\AccountDocumentController::class, 'showRefund'])->middleware('permission:accounting.read')->name('show');
+            Route::patch('/{refund}/post', [\App\Http\Controllers\Accounting\AccountDocumentController::class, 'postRefund'])->middleware('permission:accounting.post')->name('post');
+            Route::patch('/{refund}/pay', [\App\Http\Controllers\Accounting\AccountDocumentController::class, 'payRefund'])->middleware('permission:accounting.post')->name('pay');
+            Route::get('/{refund}/print', [\App\Http\Controllers\Accounting\AccountDocumentController::class, 'printRefund'])->middleware('permission:accounting.read')->name('print');
+            Route::patch('/{refund}/draft', [\App\Http\Controllers\Accounting\AccountDocumentController::class, 'resetRefund'])->middleware('permission:accounting.post')->name('reset-draft');
+            Route::patch('/{refund}/cancel', [\App\Http\Controllers\Accounting\AccountDocumentController::class, 'cancelRefund'])->middleware('permission:accounting.post')->name('cancel');
+            Route::delete('/{refund}', [\App\Http\Controllers\Accounting\AccountDocumentController::class, 'deleteRefund'])->middleware('permission:accounting.unlink')->name('delete');
+            Route::post('/{refund}/comment', [\App\Http\Controllers\Accounting\AccountDocumentController::class, 'commentRefund'])->middleware('permission:accounting.write')->name('comment');
+        });
+
+        // Payments
+        Route::prefix('payments')->name('payments.')->group(function () {
+            Route::get('/', [\App\Http\Controllers\Accounting\AccountPaymentController::class, 'read'])->middleware('permission:accounting.read')->name('index');
+            Route::get('/{payment}', [\App\Http\Controllers\Accounting\AccountPaymentController::class, 'show'])->middleware('permission:accounting.read')->name('show');
+        });
+
+        // Journal Entries (manual moves in Phase 1)
+        Route::prefix('moves')->name('moves.')->group(function () {
+            Route::get('/',              [\App\Http\Controllers\Accounting\AccountMoveController::class, 'read'])     ->middleware('permission:accounting.read')   ->name('index');
+            Route::get('/create',        [\App\Http\Controllers\Accounting\AccountMoveController::class, 'create'])   ->middleware('permission:accounting.create') ->name('create');
+            Route::post('/',             [\App\Http\Controllers\Accounting\AccountMoveController::class, 'store'])    ->middleware('permission:accounting.create') ->name('store');
+            Route::get('/{move}',              [\App\Http\Controllers\Accounting\AccountMoveController::class, 'show'])         ->middleware('permission:accounting.read')   ->name('show');
+            Route::get('/{move}/edit',         [\App\Http\Controllers\Accounting\AccountMoveController::class, 'edit'])         ->middleware('permission:accounting.write')  ->name('edit');
+            Route::put('/{move}',              [\App\Http\Controllers\Accounting\AccountMoveController::class, 'write'])        ->middleware('permission:accounting.write')  ->name('update');
+            Route::patch('/{move}/post',       [\App\Http\Controllers\Accounting\AccountMoveController::class, 'post'])         ->middleware('permission:accounting.post')   ->name('post');
+            Route::patch('/{move}/draft',      [\App\Http\Controllers\Accounting\AccountMoveController::class, 'resetToDraft']) ->middleware('permission:accounting.post')   ->name('reset-draft');
+            Route::patch('/{move}/cancel',     [\App\Http\Controllers\Accounting\AccountMoveController::class, 'cancel'])       ->middleware('permission:accounting.post')   ->name('cancel');
+            Route::post('/{move}/reverse',     [\App\Http\Controllers\Accounting\AccountMoveController::class, 'reverse'])      ->middleware('permission:accounting.post')   ->name('reverse');
+            Route::delete('/{move}',           [\App\Http\Controllers\Accounting\AccountMoveController::class, 'unlink'])       ->middleware('permission:accounting.unlink') ->name('delete');
+            Route::post('/{move}/comment',     [\App\Http\Controllers\Accounting\AccountMoveController::class, 'addComment'])   ->middleware('permission:accounting.write')  ->name('comment');
+        });
+
+        // Journal Items (move lines)
+        Route::prefix('items')->name('items.')->group(function () {
+            Route::get('/', [\App\Http\Controllers\Accounting\AccountMoveLineController::class, 'read'])
+                ->middleware('permission:accounting.read')->name('index');
+        });
+
+        // Taxes
+        Route::prefix('taxes')->name('taxes.')->group(function () {
+            Route::get('/',                [\App\Http\Controllers\Accounting\AccountTaxController::class, 'read'])      ->middleware('permission:accounting.read')   ->name('index');
+            Route::get('/create',          [\App\Http\Controllers\Accounting\AccountTaxController::class, 'create'])    ->middleware('permission:accounting.create') ->name('create');
+            Route::post('/',               [\App\Http\Controllers\Accounting\AccountTaxController::class, 'store'])     ->middleware('permission:accounting.create') ->name('store');
+            Route::get('/{tax}',           [\App\Http\Controllers\Accounting\AccountTaxController::class, 'show'])      ->middleware('permission:accounting.read')   ->name('show');
+            Route::get('/{tax}/edit',      [\App\Http\Controllers\Accounting\AccountTaxController::class, 'edit'])      ->middleware('permission:accounting.write')  ->name('edit');
+            Route::put('/{tax}',           [\App\Http\Controllers\Accounting\AccountTaxController::class, 'write'])     ->middleware('permission:accounting.write')  ->name('update');
+            Route::patch('/{tax}/archive', [\App\Http\Controllers\Accounting\AccountTaxController::class, 'archive'])   ->middleware('permission:accounting.write')  ->name('archive');
+            Route::patch('/{tax}/unarchive',[\App\Http\Controllers\Accounting\AccountTaxController::class, 'unarchive'])->middleware('permission:accounting.write')  ->name('unarchive');
+            Route::delete('/{tax}',        [\App\Http\Controllers\Accounting\AccountTaxController::class, 'unlink'])    ->middleware('permission:accounting.unlink') ->name('delete');
+        });
+
+        // Exchange Rates (multi-currency)
+        Route::prefix('currencies')->name('currencies.')->group(function () {
+            Route::get('/',                        [\App\Http\Controllers\Accounting\CurrencyRateController::class, 'read'])   ->middleware('permission:accounting.read')  ->name('index');
+            Route::get('/create',                  [\App\Http\Controllers\Accounting\CurrencyRateController::class, 'create']) ->middleware('permission:accounting.write') ->name('create');
+            Route::post('/',                       [\App\Http\Controllers\Accounting\CurrencyRateController::class, 'store'])  ->middleware('permission:accounting.write') ->name('store');
+            Route::get('/{currencyRate}',           [\App\Http\Controllers\Accounting\CurrencyRateController::class, 'show'])  ->middleware('permission:accounting.read')  ->name('show');
+            Route::get('/{currencyRate}/edit',      [\App\Http\Controllers\Accounting\CurrencyRateController::class, 'edit'])  ->middleware('permission:accounting.write') ->name('edit');
+            Route::put('/{currencyRate}',           [\App\Http\Controllers\Accounting\CurrencyRateController::class, 'write']) ->middleware('permission:accounting.write') ->name('update');
+            Route::delete('/{currencyRate}',        [\App\Http\Controllers\Accounting\CurrencyRateController::class, 'unlink'])->middleware('permission:accounting.write') ->name('delete');
+        });
+
+        // Payment Terms
+        Route::prefix('payment-terms')->name('payment-terms.')->group(function () {
+            Route::get('/',                       [\App\Http\Controllers\Accounting\AccountingPaymentTermController::class, 'read'])      ->middleware('permission:accounting.read')   ->name('index');
+            Route::get('/create',                 [\App\Http\Controllers\Accounting\AccountingPaymentTermController::class, 'create'])    ->middleware('permission:accounting.create') ->name('create');
+            Route::post('/',                      [\App\Http\Controllers\Accounting\AccountingPaymentTermController::class, 'store'])     ->middleware('permission:accounting.create') ->name('store');
+            Route::get('/{paymentTerm}',          [\App\Http\Controllers\Accounting\AccountingPaymentTermController::class, 'show'])      ->middleware('permission:accounting.read')   ->name('show');
+            Route::get('/{paymentTerm}/edit',     [\App\Http\Controllers\Accounting\AccountingPaymentTermController::class, 'edit'])      ->middleware('permission:accounting.write')  ->name('edit');
+            Route::put('/{paymentTerm}',          [\App\Http\Controllers\Accounting\AccountingPaymentTermController::class, 'write'])     ->middleware('permission:accounting.write')  ->name('update');
+            Route::patch('/{paymentTerm}/archive',   [\App\Http\Controllers\Accounting\AccountingPaymentTermController::class, 'archive'])   ->middleware('permission:accounting.write')  ->name('archive');
+            Route::patch('/{paymentTerm}/unarchive', [\App\Http\Controllers\Accounting\AccountingPaymentTermController::class, 'unarchive']) ->middleware('permission:accounting.write')  ->name('unarchive');
+            Route::delete('/{paymentTerm}',       [\App\Http\Controllers\Accounting\AccountingPaymentTermController::class, 'unlink'])    ->middleware('permission:accounting.unlink') ->name('delete');
+        });
+
+        // Incoterms
+        Route::prefix('incoterms')->name('incoterms.')->group(function () {
+            Route::get('/',                  [\App\Http\Controllers\Accounting\AccountingIncotermController::class, 'read'])    ->middleware('permission:accounting.read')   ->name('index');
+            Route::get('/create',            [\App\Http\Controllers\Accounting\AccountingIncotermController::class, 'create'])  ->middleware('permission:accounting.create') ->name('create');
+            Route::post('/',                 [\App\Http\Controllers\Accounting\AccountingIncotermController::class, 'store'])   ->middleware('permission:accounting.create') ->name('store');
+            Route::get('/{incoterm}',        [\App\Http\Controllers\Accounting\AccountingIncotermController::class, 'show'])    ->middleware('permission:accounting.read')   ->name('show');
+            Route::get('/{incoterm}/edit',   [\App\Http\Controllers\Accounting\AccountingIncotermController::class, 'edit'])    ->middleware('permission:accounting.write')  ->name('edit');
+            Route::put('/{incoterm}',        [\App\Http\Controllers\Accounting\AccountingIncotermController::class, 'write'])   ->middleware('permission:accounting.write')  ->name('update');
+            Route::delete('/{incoterm}',     [\App\Http\Controllers\Accounting\AccountingIncotermController::class, 'unlink'])  ->middleware('permission:accounting.unlink') ->name('delete');
+        });
+
+        // Tax Groups
+        Route::prefix('tax-groups')->name('tax-groups.')->group(function () {
+            Route::get('/',              [\App\Http\Controllers\Accounting\AccountingTaxGroupController::class, 'read'])    ->middleware('permission:accounting.read')   ->name('index');
+            Route::get('/create',        [\App\Http\Controllers\Accounting\AccountingTaxGroupController::class, 'create'])  ->middleware('permission:accounting.create') ->name('create');
+            Route::post('/',             [\App\Http\Controllers\Accounting\AccountingTaxGroupController::class, 'store'])   ->middleware('permission:accounting.create') ->name('store');
+            Route::get('/{taxGroup}',        [\App\Http\Controllers\Accounting\AccountingTaxGroupController::class, 'show'])    ->middleware('permission:accounting.read')   ->name('show');
+            Route::get('/{taxGroup}/edit',   [\App\Http\Controllers\Accounting\AccountingTaxGroupController::class, 'edit'])    ->middleware('permission:accounting.write')  ->name('edit');
+            Route::put('/{taxGroup}',        [\App\Http\Controllers\Accounting\AccountingTaxGroupController::class, 'write'])   ->middleware('permission:accounting.write')  ->name('update');
+            Route::delete('/{taxGroup}',     [\App\Http\Controllers\Accounting\AccountingTaxGroupController::class, 'unlink'])  ->middleware('permission:accounting.unlink') ->name('delete');
+        });
+
+        // Account Groups
+        Route::prefix('account-groups')->name('account-groups.')->group(function () {
+            Route::get('/',                   [\App\Http\Controllers\Accounting\AccountingAccountGroupController::class, 'read'])    ->middleware('permission:accounting.read')   ->name('index');
+            Route::get('/create',             [\App\Http\Controllers\Accounting\AccountingAccountGroupController::class, 'create'])  ->middleware('permission:accounting.create') ->name('create');
+            Route::post('/',                  [\App\Http\Controllers\Accounting\AccountingAccountGroupController::class, 'store'])   ->middleware('permission:accounting.create') ->name('store');
+            Route::get('/{accountGroup}',        [\App\Http\Controllers\Accounting\AccountingAccountGroupController::class, 'show'])    ->middleware('permission:accounting.read')   ->name('show');
+            Route::get('/{accountGroup}/edit',   [\App\Http\Controllers\Accounting\AccountingAccountGroupController::class, 'edit'])    ->middleware('permission:accounting.write')  ->name('edit');
+            Route::put('/{accountGroup}',        [\App\Http\Controllers\Accounting\AccountingAccountGroupController::class, 'write'])   ->middleware('permission:accounting.write')  ->name('update');
+            Route::delete('/{accountGroup}',     [\App\Http\Controllers\Accounting\AccountingAccountGroupController::class, 'unlink'])  ->middleware('permission:accounting.unlink') ->name('delete');
+        });
+
+        // Reports
+        Route::prefix('reports')->name('reports.')->group(function () {
+            Route::get('/general-ledger',    [\App\Http\Controllers\Accounting\AccountingReportController::class, 'generalLedger'])    ->middleware('permission:accounting.read')->name('general-ledger');
+            Route::get('/trial-balance',     [\App\Http\Controllers\Accounting\AccountingReportController::class, 'trialBalance'])     ->middleware('permission:accounting.read')->name('trial-balance');
+            Route::get('/profit-and-loss',   [\App\Http\Controllers\Accounting\AccountingReportController::class, 'profitAndLoss'])    ->middleware('permission:accounting.read')->name('profit-and-loss');
+            Route::get('/balance-sheet',     [\App\Http\Controllers\Accounting\AccountingReportController::class, 'balanceSheet'])     ->middleware('permission:accounting.read')->name('balance-sheet');
+            Route::get('/cash-flow',         [\App\Http\Controllers\Accounting\AccountingReportController::class, 'cashFlow'])         ->middleware('permission:accounting.read')->name('cash-flow');
+            Route::get('/tax-report',        [\App\Http\Controllers\Accounting\AccountingReportController::class, 'taxReport'])        ->middleware('permission:accounting.read')->name('tax-report');
+            Route::get('/partner-ledger',    [\App\Http\Controllers\Accounting\AccountingReportController::class, 'partnerLedger'])    ->middleware('permission:accounting.read')->name('partner-ledger');
+            Route::get('/aged-receivable',   [\App\Http\Controllers\Accounting\AccountingReportController::class, 'agedReceivable'])   ->middleware('permission:accounting.read')->name('aged-receivable');
+            Route::get('/aged-payable',      [\App\Http\Controllers\Accounting\AccountingReportController::class, 'agedPayable'])      ->middleware('permission:accounting.read')->name('aged-payable');
+            Route::get('/journal-audit',     [\App\Http\Controllers\Accounting\AccountingReportController::class, 'journalAudit'])     ->middleware('permission:accounting.read')->name('journal-audit');
+            Route::get('/bank-reconciliation',[\App\Http\Controllers\Accounting\AccountingReportController::class, 'bankReconciliation'])->middleware('permission:accounting.read')->name('bank-reconciliation');
+            Route::get('/executive-summary', [\App\Http\Controllers\Accounting\AccountingReportController::class, 'executiveSummary'])  ->middleware('permission:accounting.read')->name('executive-summary');
+        });
+
+        // Accounting Settings (lock dates)
+        Route::get('/settings',                [\App\Http\Controllers\Accounting\AccountingSettingsController::class, 'read'])
+            ->middleware('permission:accounting.read')->name('settings');
+        Route::put('/settings/{company}',      [\App\Http\Controllers\Accounting\AccountingSettingsController::class, 'write'])
+            ->middleware('permission:accounting.lock')->name('settings.update');
+
+        // Audit log
+        Route::get('/audit', [\App\Http\Controllers\Accounting\AccountingAuditController::class, 'read'])
+            ->middleware('permission:accounting.read')->name('audit');
+    });
+
+    /*
+    |--------------------------------------------------------------------------
+    | Inventory module
+    |--------------------------------------------------------------------------
+    */
+    Route::prefix('inventory')->name('inventory.')->group(function () {
+
+        // Dashboard
+        Route::get('/', [\App\Http\Controllers\Inventory\InventoryDashboardController::class, 'index'])
+            ->middleware('permission:inventory.read')->name('dashboard');
+
+        // Products
+        Route::prefix('products')->name('products.')->group(function () {
+            Route::get('/',                    [\App\Http\Controllers\Inventory\ProductController::class, 'read'])       ->middleware('permission:inventory.read')   ->name('index');
+            Route::get('/create',              [\App\Http\Controllers\Inventory\ProductController::class, 'create'])     ->middleware('permission:inventory.create') ->name('create');
+            Route::post('/',                   [\App\Http\Controllers\Inventory\ProductController::class, 'store'])      ->middleware('permission:inventory.create') ->name('store');
+            Route::get('/{product}',           [\App\Http\Controllers\Inventory\ProductController::class, 'show'])       ->middleware('permission:inventory.read')   ->name('show');
+            Route::get('/{product}/edit',      [\App\Http\Controllers\Inventory\ProductController::class, 'edit'])       ->middleware('permission:inventory.write')  ->name('edit');
+            Route::put('/{product}',           [\App\Http\Controllers\Inventory\ProductController::class, 'write'])      ->middleware('permission:inventory.write')  ->name('update');
+            Route::patch('/{product}/archive', [\App\Http\Controllers\Inventory\ProductController::class, 'archive'])   ->middleware('permission:inventory.write')  ->name('archive');
+            Route::patch('/{product}/unarchive',[\App\Http\Controllers\Inventory\ProductController::class, 'unarchive'])->middleware('permission:inventory.write')  ->name('unarchive');
+            Route::delete('/{product}',        [\App\Http\Controllers\Inventory\ProductController::class, 'unlink'])    ->middleware('permission:inventory.unlink') ->name('delete');
+            Route::post('/{product}/comment',  [\App\Http\Controllers\Inventory\ProductController::class, 'addComment'])->middleware('permission:inventory.write')  ->name('comment');
+        });
+
+        // Transfers (Pickings)
+        Route::prefix('transfers')->name('transfers.')->group(function () {
+            Route::get('/',                          [\App\Http\Controllers\Inventory\PickingController::class, 'read'])             ->middleware('permission:inventory.read')   ->name('index');
+            Route::get('/create',                    [\App\Http\Controllers\Inventory\PickingController::class, 'create'])           ->middleware('permission:inventory.create') ->name('create');
+            Route::post('/',                         [\App\Http\Controllers\Inventory\PickingController::class, 'store'])            ->middleware('permission:inventory.create') ->name('store');
+            Route::get('/{picking}',                 [\App\Http\Controllers\Inventory\PickingController::class, 'show'])             ->middleware('permission:inventory.read')   ->name('show');
+            Route::get('/{picking}/edit',            [\App\Http\Controllers\Inventory\PickingController::class, 'edit'])             ->middleware('permission:inventory.write')  ->name('edit');
+            Route::put('/{picking}',                 [\App\Http\Controllers\Inventory\PickingController::class, 'write'])            ->middleware('permission:inventory.write')  ->name('update');
+            Route::post('/{picking}/confirm',        [\App\Http\Controllers\Inventory\PickingController::class, 'confirm'])          ->middleware('permission:inventory.write')  ->name('confirm');
+            Route::post('/{picking}/check-availability', [\App\Http\Controllers\Inventory\PickingController::class, 'checkAvailability'])->middleware('permission:inventory.write')->name('check-availability');
+            Route::post('/{picking}/validate',       [\App\Http\Controllers\Inventory\PickingController::class, 'validate'])         ->middleware('permission:inventory.write')  ->name('validate');
+            Route::post('/{picking}/cancel',         [\App\Http\Controllers\Inventory\PickingController::class, 'cancel'])           ->middleware('permission:inventory.write')  ->name('cancel');
+            Route::post('/{picking}/return',         [\App\Http\Controllers\Inventory\PickingController::class, 'returnPicking'])    ->middleware('permission:inventory.write')  ->name('return');
+            Route::delete('/{picking}',              [\App\Http\Controllers\Inventory\PickingController::class, 'unlink'])           ->middleware('permission:inventory.unlink') ->name('delete');
+            Route::post('/{picking}/comment',        [\App\Http\Controllers\Inventory\PickingController::class, 'addComment'])       ->middleware('permission:inventory.write')  ->name('comment');
+        });
+
+        // Lots / Serial Numbers
+        Route::prefix('lots')->name('lots.')->group(function () {
+            Route::get('/',               [\App\Http\Controllers\Inventory\LotController::class, 'read'])       ->middleware('permission:inventory.read')   ->name('index');
+            Route::get('/create',         [\App\Http\Controllers\Inventory\LotController::class, 'create'])     ->middleware('permission:inventory.create') ->name('create');
+            Route::post('/',              [\App\Http\Controllers\Inventory\LotController::class, 'store'])      ->middleware('permission:inventory.create') ->name('store');
+            Route::get('/{lot}',          [\App\Http\Controllers\Inventory\LotController::class, 'show'])       ->middleware('permission:inventory.read')   ->name('show');
+            Route::get('/{lot}/edit',     [\App\Http\Controllers\Inventory\LotController::class, 'edit'])       ->middleware('permission:inventory.write')  ->name('edit');
+            Route::put('/{lot}',          [\App\Http\Controllers\Inventory\LotController::class, 'write'])      ->middleware('permission:inventory.write')  ->name('update');
+            Route::delete('/{lot}',       [\App\Http\Controllers\Inventory\LotController::class, 'unlink'])     ->middleware('permission:inventory.unlink') ->name('delete');
+            Route::post('/{lot}/comment', [\App\Http\Controllers\Inventory\LotController::class, 'addComment']) ->middleware('permission:inventory.write')  ->name('comment');
+        });
+
+        // Scrap
+        Route::prefix('scrap')->name('scrap.')->group(function () {
+            Route::get('/',                    [\App\Http\Controllers\Inventory\ScrapOrderController::class, 'read'])         ->middleware('permission:inventory.read')   ->name('index');
+            Route::get('/create',              [\App\Http\Controllers\Inventory\ScrapOrderController::class, 'create'])       ->middleware('permission:inventory.write')  ->name('create');
+            Route::post('/',                   [\App\Http\Controllers\Inventory\ScrapOrderController::class, 'store'])        ->middleware('permission:inventory.write')  ->name('store');
+            Route::get('/{scrapOrder}',        [\App\Http\Controllers\Inventory\ScrapOrderController::class, 'show'])         ->middleware('permission:inventory.read')   ->name('show');
+            Route::post('/{scrapOrder}/validate', [\App\Http\Controllers\Inventory\ScrapOrderController::class, 'validateScrap'])->middleware('permission:inventory.write')->name('validate');
+            Route::delete('/{scrapOrder}',     [\App\Http\Controllers\Inventory\ScrapOrderController::class, 'unlink'])       ->middleware('permission:inventory.unlink') ->name('delete');
+            Route::post('/{scrapOrder}/comment', [\App\Http\Controllers\Inventory\ScrapOrderController::class, 'addComment']) ->middleware('permission:inventory.write')  ->name('comment');
+        });
+
+        // Replenishment (Reorder Rules)
+        Route::prefix('replenishment')->name('replenishment.')->group(function () {
+            Route::get('/',               [\App\Http\Controllers\Inventory\ReorderRuleController::class, 'read'])        ->middleware('permission:inventory.read')   ->name('index');
+            Route::get('/create',         [\App\Http\Controllers\Inventory\ReorderRuleController::class, 'create'])      ->middleware('permission:inventory.write')  ->name('create');
+            Route::post('/',              [\App\Http\Controllers\Inventory\ReorderRuleController::class, 'store'])       ->middleware('permission:inventory.write')  ->name('store');
+            Route::put('/{reorderRule}',         [\App\Http\Controllers\Inventory\ReorderRuleController::class, 'write'])       ->middleware('permission:inventory.write')  ->name('update');
+            Route::post('/{reorderRule}/replenish', [\App\Http\Controllers\Inventory\ReorderRuleController::class, 'replenish'])->middleware('permission:inventory.write')  ->name('replenish');
+            Route::delete('/{reorderRule}',      [\App\Http\Controllers\Inventory\ReorderRuleController::class, 'unlink'])      ->middleware('permission:inventory.unlink') ->name('delete');
+        });
+
+        // Physical Inventory (Adjustments)
+        Route::prefix('adjustments')->name('adjustments.')->group(function () {
+            Route::get('/',                             [\App\Http\Controllers\Inventory\InventoryAdjustmentController::class, 'read'])             ->middleware('permission:inventory.read')  ->name('index');
+            Route::get('/create',                       [\App\Http\Controllers\Inventory\InventoryAdjustmentController::class, 'create'])           ->middleware('permission:inventory.write') ->name('create');
+            Route::post('/',                            [\App\Http\Controllers\Inventory\InventoryAdjustmentController::class, 'store'])            ->middleware('permission:inventory.write') ->name('store');
+            Route::get('/{inventoryAdjustment}',        [\App\Http\Controllers\Inventory\InventoryAdjustmentController::class, 'show'])             ->middleware('permission:inventory.read')  ->name('show');
+            Route::post('/{inventoryAdjustment}/start', [\App\Http\Controllers\Inventory\InventoryAdjustmentController::class, 'startCount'])       ->middleware('permission:inventory.write') ->name('start');
+            Route::post('/{inventoryAdjustment}/lines/{line}', [\App\Http\Controllers\Inventory\InventoryAdjustmentController::class, 'updateLine'])->middleware('permission:inventory.write') ->name('update-line');
+            Route::post('/{inventoryAdjustment}/validate', [\App\Http\Controllers\Inventory\InventoryAdjustmentController::class, 'validateAdjustment'])->middleware('permission:inventory.write')->name('validate');
+            Route::delete('/{inventoryAdjustment}',     [\App\Http\Controllers\Inventory\InventoryAdjustmentController::class, 'unlink'])           ->middleware('permission:inventory.unlink')->name('delete');
+            Route::post('/{inventoryAdjustment}/comment', [\App\Http\Controllers\Inventory\InventoryAdjustmentController::class, 'addComment'])     ->middleware('permission:inventory.write') ->name('comment');
+        });
+
+        // Reports
+        Route::prefix('reports')->name('reports.')->group(function () {
+            Route::get('/stock', [\App\Http\Controllers\Inventory\QuantController::class, 'read'])->middleware('permission:inventory.read')->name('stock');
+        });
+
+        // Configuration
+        Route::prefix('configuration')->name('config.')->group(function () {
+
+            // Product Categories
+            Route::prefix('product-categories')->name('product-categories.')->group(function () {
+                Route::get('/',                      [\App\Http\Controllers\Inventory\Configuration\ProductCategoryController::class, 'read'])       ->middleware('permission:inventory.read')   ->name('index');
+                Route::get('/create',                [\App\Http\Controllers\Inventory\Configuration\ProductCategoryController::class, 'create'])     ->middleware('permission:inventory.config') ->name('create');
+                Route::post('/',                     [\App\Http\Controllers\Inventory\Configuration\ProductCategoryController::class, 'store'])      ->middleware('permission:inventory.config') ->name('store');
+                Route::get('/{productCategory}',     [\App\Http\Controllers\Inventory\Configuration\ProductCategoryController::class, 'show'])       ->middleware('permission:inventory.read')   ->name('show');
+                Route::get('/{productCategory}/edit',[\App\Http\Controllers\Inventory\Configuration\ProductCategoryController::class, 'edit'])       ->middleware('permission:inventory.config') ->name('edit');
+                Route::put('/{productCategory}',     [\App\Http\Controllers\Inventory\Configuration\ProductCategoryController::class, 'write'])      ->middleware('permission:inventory.config') ->name('update');
+                Route::delete('/{productCategory}',  [\App\Http\Controllers\Inventory\Configuration\ProductCategoryController::class, 'unlink'])     ->middleware('permission:inventory.config') ->name('delete');
+            });
+
+            // Units of Measure
+            Route::prefix('uoms')->name('uoms.')->group(function () {
+                Route::get('/',          [\App\Http\Controllers\Inventory\Configuration\UomController::class, 'read'])   ->middleware('permission:inventory.read')   ->name('index');
+                Route::get('/create',    [\App\Http\Controllers\Inventory\Configuration\UomController::class, 'create']) ->middleware('permission:inventory.config') ->name('create');
+                Route::post('/',         [\App\Http\Controllers\Inventory\Configuration\UomController::class, 'store'])  ->middleware('permission:inventory.config') ->name('store');
+                Route::get('/{uom}',     [\App\Http\Controllers\Inventory\Configuration\UomController::class, 'show'])   ->middleware('permission:inventory.read')   ->name('show');
+                Route::get('/{uom}/edit',[\App\Http\Controllers\Inventory\Configuration\UomController::class, 'edit'])   ->middleware('permission:inventory.config') ->name('edit');
+                Route::put('/{uom}',     [\App\Http\Controllers\Inventory\Configuration\UomController::class, 'write'])  ->middleware('permission:inventory.config') ->name('update');
+                Route::delete('/{uom}',  [\App\Http\Controllers\Inventory\Configuration\UomController::class, 'unlink']) ->middleware('permission:inventory.config') ->name('delete');
+            });
+
+            // Warehouses
+            Route::prefix('warehouses')->name('warehouses.')->group(function () {
+                Route::get('/',                       [\App\Http\Controllers\Inventory\Configuration\WarehouseController::class, 'read'])       ->middleware('permission:inventory.config') ->name('index');
+                Route::get('/create',                 [\App\Http\Controllers\Inventory\Configuration\WarehouseController::class, 'create'])     ->middleware('permission:inventory.config') ->name('create');
+                Route::post('/',                      [\App\Http\Controllers\Inventory\Configuration\WarehouseController::class, 'store'])      ->middleware('permission:inventory.config') ->name('store');
+                Route::get('/{warehouse}',            [\App\Http\Controllers\Inventory\Configuration\WarehouseController::class, 'show'])       ->middleware('permission:inventory.config') ->name('show');
+                Route::get('/{warehouse}/edit',       [\App\Http\Controllers\Inventory\Configuration\WarehouseController::class, 'edit'])       ->middleware('permission:inventory.config') ->name('edit');
+                Route::put('/{warehouse}',            [\App\Http\Controllers\Inventory\Configuration\WarehouseController::class, 'write'])      ->middleware('permission:inventory.config') ->name('update');
+                Route::patch('/{warehouse}/archive',  [\App\Http\Controllers\Inventory\Configuration\WarehouseController::class, 'archive'])    ->middleware('permission:inventory.config') ->name('archive');
+                Route::patch('/{warehouse}/unarchive',[\App\Http\Controllers\Inventory\Configuration\WarehouseController::class, 'unarchive'])  ->middleware('permission:inventory.config') ->name('unarchive');
+                Route::delete('/{warehouse}',         [\App\Http\Controllers\Inventory\Configuration\WarehouseController::class, 'unlink'])     ->middleware('permission:inventory.config') ->name('delete');
+                Route::post('/{warehouse}/comment',   [\App\Http\Controllers\Inventory\Configuration\WarehouseController::class, 'addComment']) ->middleware('permission:inventory.config') ->name('comment');
+            });
+
+            // Locations
+            Route::prefix('locations')->name('locations.')->group(function () {
+                Route::get('/',                      [\App\Http\Controllers\Inventory\Configuration\LocationController::class, 'read'])       ->middleware('permission:inventory.read')   ->name('index');
+                Route::get('/create',                [\App\Http\Controllers\Inventory\Configuration\LocationController::class, 'create'])     ->middleware('permission:inventory.config') ->name('create');
+                Route::post('/',                     [\App\Http\Controllers\Inventory\Configuration\LocationController::class, 'store'])      ->middleware('permission:inventory.config') ->name('store');
+                Route::get('/{location}',            [\App\Http\Controllers\Inventory\Configuration\LocationController::class, 'show'])       ->middleware('permission:inventory.read')   ->name('show');
+                Route::get('/{location}/edit',       [\App\Http\Controllers\Inventory\Configuration\LocationController::class, 'edit'])       ->middleware('permission:inventory.config') ->name('edit');
+                Route::put('/{location}',            [\App\Http\Controllers\Inventory\Configuration\LocationController::class, 'write'])      ->middleware('permission:inventory.config') ->name('update');
+                Route::patch('/{location}/archive',  [\App\Http\Controllers\Inventory\Configuration\LocationController::class, 'archive'])    ->middleware('permission:inventory.config') ->name('archive');
+                Route::patch('/{location}/unarchive',[\App\Http\Controllers\Inventory\Configuration\LocationController::class, 'unarchive'])  ->middleware('permission:inventory.config') ->name('unarchive');
+                Route::delete('/{location}',         [\App\Http\Controllers\Inventory\Configuration\LocationController::class, 'unlink'])     ->middleware('permission:inventory.config') ->name('delete');
+                Route::post('/{location}/comment',   [\App\Http\Controllers\Inventory\Configuration\LocationController::class, 'addComment']) ->middleware('permission:inventory.config') ->name('comment');
+            });
+
+            // Operation Types
+            Route::prefix('operation-types')->name('operation-types.')->group(function () {
+                Route::get('/',                          [\App\Http\Controllers\Inventory\Configuration\OperationTypeController::class, 'read'])       ->middleware('permission:inventory.config') ->name('index');
+                Route::get('/create',                    [\App\Http\Controllers\Inventory\Configuration\OperationTypeController::class, 'create'])     ->middleware('permission:inventory.config') ->name('create');
+                Route::post('/',                         [\App\Http\Controllers\Inventory\Configuration\OperationTypeController::class, 'store'])      ->middleware('permission:inventory.config') ->name('store');
+                Route::get('/{operationType}',           [\App\Http\Controllers\Inventory\Configuration\OperationTypeController::class, 'show'])       ->middleware('permission:inventory.config') ->name('show');
+                Route::get('/{operationType}/edit',      [\App\Http\Controllers\Inventory\Configuration\OperationTypeController::class, 'edit'])       ->middleware('permission:inventory.config') ->name('edit');
+                Route::put('/{operationType}',           [\App\Http\Controllers\Inventory\Configuration\OperationTypeController::class, 'write'])      ->middleware('permission:inventory.config') ->name('update');
+                Route::patch('/{operationType}/archive', [\App\Http\Controllers\Inventory\Configuration\OperationTypeController::class, 'archive'])    ->middleware('permission:inventory.config') ->name('archive');
+                Route::patch('/{operationType}/unarchive',[\App\Http\Controllers\Inventory\Configuration\OperationTypeController::class, 'unarchive']) ->middleware('permission:inventory.config') ->name('unarchive');
+                Route::delete('/{operationType}',        [\App\Http\Controllers\Inventory\Configuration\OperationTypeController::class, 'unlink'])     ->middleware('permission:inventory.config') ->name('delete');
+            });
+
+            // Routes
+            Route::prefix('routes')->name('routes.')->group(function () {
+                Route::get('/',                 [\App\Http\Controllers\Inventory\Configuration\RouteController::class, 'read'])       ->middleware('permission:inventory.config') ->name('index');
+                Route::get('/create',           [\App\Http\Controllers\Inventory\Configuration\RouteController::class, 'create'])     ->middleware('permission:inventory.config') ->name('create');
+                Route::post('/',                [\App\Http\Controllers\Inventory\Configuration\RouteController::class, 'store'])      ->middleware('permission:inventory.config') ->name('store');
+                Route::get('/{route}',          [\App\Http\Controllers\Inventory\Configuration\RouteController::class, 'show'])       ->middleware('permission:inventory.config') ->name('show');
+                Route::get('/{route}/edit',     [\App\Http\Controllers\Inventory\Configuration\RouteController::class, 'edit'])       ->middleware('permission:inventory.config') ->name('edit');
+                Route::put('/{route}',          [\App\Http\Controllers\Inventory\Configuration\RouteController::class, 'write'])      ->middleware('permission:inventory.config') ->name('update');
+                Route::patch('/{route}/archive',[\App\Http\Controllers\Inventory\Configuration\RouteController::class, 'archive'])    ->middleware('permission:inventory.config') ->name('archive');
+                Route::patch('/{route}/unarchive',[\App\Http\Controllers\Inventory\Configuration\RouteController::class, 'unarchive'])->middleware('permission:inventory.config')->name('unarchive');
+                Route::delete('/{route}',       [\App\Http\Controllers\Inventory\Configuration\RouteController::class, 'unlink'])     ->middleware('permission:inventory.config') ->name('delete');
+            });
+
+            // Putaway Rules
+            Route::prefix('putaway-rules')->name('putaway-rules.')->group(function () {
+                Route::get('/',               [\App\Http\Controllers\Inventory\Configuration\PutawayRuleController::class, 'read'])   ->middleware('permission:inventory.config') ->name('index');
+                Route::get('/create',         [\App\Http\Controllers\Inventory\Configuration\PutawayRuleController::class, 'create']) ->middleware('permission:inventory.config') ->name('create');
+                Route::post('/',              [\App\Http\Controllers\Inventory\Configuration\PutawayRuleController::class, 'store'])  ->middleware('permission:inventory.config') ->name('store');
+                Route::get('/{putawayRule}/edit', [\App\Http\Controllers\Inventory\Configuration\PutawayRuleController::class, 'edit'])->middleware('permission:inventory.config')->name('edit');
+                Route::put('/{putawayRule}',  [\App\Http\Controllers\Inventory\Configuration\PutawayRuleController::class, 'write'])  ->middleware('permission:inventory.config') ->name('update');
+                Route::delete('/{putawayRule}',[\App\Http\Controllers\Inventory\Configuration\PutawayRuleController::class, 'unlink'])->middleware('permission:inventory.config') ->name('delete');
+            });
+
+        });
+
+    });
+
+    /*
+    |--------------------------------------------------------------------------
     | Settings module
     |--------------------------------------------------------------------------
     */

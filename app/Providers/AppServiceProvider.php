@@ -2,6 +2,39 @@
 
 namespace App\Providers;
 
+use App\Models\Accounting\Account;
+use App\Models\Accounting\AccountingAccountGroup;
+use App\Models\Accounting\AccountingIncoterm;
+use App\Models\Accounting\AccountingPaymentTerm;
+use App\Models\Accounting\AccountingPaymentTermLine;
+use App\Models\Accounting\AccountingTaxGroup;
+use App\Models\Accounting\AccountJournal;
+use App\Models\Inventory\InventoryAdjustment;
+use App\Models\Inventory\InventoryAdjustmentLine;
+use App\Models\Inventory\Location;
+use App\Models\Inventory\Lot;
+use App\Models\Inventory\Move;
+use App\Models\Inventory\MoveLine;
+use App\Models\Inventory\OperationType;
+use App\Models\Inventory\Picking;
+use App\Models\Inventory\Product;
+use App\Models\Inventory\ProductCategory;
+use App\Models\Inventory\ProductSupplier;
+use App\Models\Inventory\PutawayRule;
+use App\Models\Inventory\Quant;
+use App\Models\Inventory\ReorderRule;
+use App\Models\Inventory\Route;
+use App\Models\Inventory\RouteRule;
+use App\Models\Inventory\ScrapOrder;
+use App\Models\Inventory\Uom;
+use App\Models\Inventory\UomCategory;
+use App\Models\Inventory\Warehouse;
+use App\Models\Accounting\AccountMove;
+use App\Models\Accounting\AccountMoveLine;
+use App\Models\Accounting\AccountPartialReconcile;
+use App\Models\Accounting\AccountPayment;
+use App\Models\Accounting\AccountTax;
+use App\Models\Accounting\CurrencyRate;
 use App\Models\Chat\ChatRoom;
 use App\Models\Contacts\Contact;
 use App\Models\Employees\Contract;
@@ -44,7 +77,31 @@ use App\Models\File;
 use App\Models\Workflow\WorkflowRecordInput;
 use App\Models\Workflow\WorkflowUser;
 use App\Observers\AuditableObserver;
+use App\Observers\CompanyAccountingObserver;
+use App\Services\Accounting\AccountingService;
 use App\Services\FileService;
+use App\Policies\Accounting\AccountingAccountGroupPolicy;
+use App\Policies\Accounting\AccountingIncotermPolicy;
+use App\Policies\Accounting\AccountingPaymentTermPolicy;
+use App\Policies\Accounting\AccountingTaxGroupPolicy;
+use App\Policies\Accounting\AccountJournalPolicy;
+use App\Policies\Accounting\AccountMovePolicy;
+use App\Policies\Accounting\AccountPolicy;
+use App\Policies\Accounting\AccountTaxPolicy;
+use App\Policies\Accounting\CurrencyRatePolicy;
+use App\Policies\Inventory\InventoryAdjustmentPolicy;
+use App\Policies\Inventory\LocationPolicy;
+use App\Policies\Inventory\LotPolicy;
+use App\Policies\Inventory\OperationTypePolicy;
+use App\Policies\Inventory\PickingPolicy;
+use App\Policies\Inventory\ProductCategoryPolicy;
+use App\Policies\Inventory\ProductPolicy;
+use App\Policies\Inventory\PutawayRulePolicy;
+use App\Policies\Inventory\ReorderRulePolicy;
+use App\Policies\Inventory\RoutePolicy;
+use App\Policies\Inventory\ScrapOrderPolicy;
+use App\Policies\Inventory\UomPolicy;
+use App\Policies\Inventory\WarehousePolicy;
 use App\Policies\Chat\ChatRoomPolicy;
 use App\Policies\CompanyPolicy;
 use App\Policies\ContactPolicy;
@@ -78,6 +135,11 @@ use App\Services\Contacts\ContactService;
 use App\Services\Employees\DepartmentService as EmployeeDepartmentService;
 use App\Services\Employees\EmployeeService;
 use App\Services\Employees\JobService;
+use App\Services\Inventory\AdjustmentService;
+use App\Services\Inventory\PickingService;
+use App\Services\Inventory\ProductService;
+use App\Services\Inventory\ScrapService;
+use App\Services\Inventory\WarehouseService;
 use App\Services\Workflow\ProcedureService;
 use App\Services\Workflow\TicketService;
 use App\Services\Workflow\WorkflowConfigService;
@@ -101,6 +163,12 @@ class AppServiceProvider extends ServiceProvider
         $this->app->singleton(ProcedureService::class);
         $this->app->singleton(WorkflowConfigService::class);
         $this->app->singleton(FileService::class);
+        $this->app->singleton(AccountingService::class);
+        $this->app->singleton(ProductService::class);
+        $this->app->singleton(WarehouseService::class);
+        $this->app->singleton(PickingService::class);
+        $this->app->singleton(ScrapService::class);
+        $this->app->singleton(AdjustmentService::class);
     }
 
     public function boot(): void
@@ -133,6 +201,29 @@ class AppServiceProvider extends ServiceProvider
         Gate::policy(Ticket::class, TicketPolicy::class);
         Gate::policy(ProcedureTemplate::class, ProcedureTemplatePolicy::class);
         Gate::policy(Procedure::class, ProcedurePolicy::class);
+        Gate::policy(Account::class, AccountPolicy::class);
+        Gate::policy(AccountJournal::class, AccountJournalPolicy::class);
+        Gate::policy(AccountMove::class, AccountMovePolicy::class);
+        Gate::policy(AccountTax::class, AccountTaxPolicy::class);
+        Gate::policy(CurrencyRate::class, CurrencyRatePolicy::class);
+        Gate::policy(AccountingPaymentTerm::class, AccountingPaymentTermPolicy::class);
+        Gate::policy(AccountingIncoterm::class, AccountingIncotermPolicy::class);
+        Gate::policy(AccountingTaxGroup::class, AccountingTaxGroupPolicy::class);
+        Gate::policy(AccountingAccountGroup::class, AccountingAccountGroupPolicy::class);
+        // Inventory
+        Gate::policy(Product::class, ProductPolicy::class);
+        Gate::policy(ProductCategory::class, ProductCategoryPolicy::class);
+        Gate::policy(Picking::class, PickingPolicy::class);
+        Gate::policy(Lot::class, LotPolicy::class);
+        Gate::policy(ScrapOrder::class, ScrapOrderPolicy::class);
+        Gate::policy(ReorderRule::class, ReorderRulePolicy::class);
+        Gate::policy(InventoryAdjustment::class, InventoryAdjustmentPolicy::class);
+        Gate::policy(Location::class, LocationPolicy::class);
+        Gate::policy(Warehouse::class, WarehousePolicy::class);
+        Gate::policy(OperationType::class, OperationTypePolicy::class);
+        Gate::policy(Route::class, RoutePolicy::class);
+        Gate::policy(PutawayRule::class, PutawayRulePolicy::class);
+        Gate::policy(Uom::class, UomPolicy::class);
 
         foreach ([
             Notification::class,
@@ -178,9 +269,47 @@ class AppServiceProvider extends ServiceProvider
             Badge::class,
             Challenge::class,
             Goal::class,
+            // Inventory module
+            Product::class,
+            ProductCategory::class,
+            ProductSupplier::class,
+            Warehouse::class,
+            Location::class,
+            OperationType::class,
+            Route::class,
+            RouteRule::class,
+            PutawayRule::class,
+            Picking::class,
+            Move::class,
+            MoveLine::class,
+            Lot::class,
+            Quant::class,
+            ScrapOrder::class,
+            ReorderRule::class,
+            InventoryAdjustment::class,
+            InventoryAdjustmentLine::class,
+            Uom::class,
+            UomCategory::class,
+            // Accounting module
+            Account::class,
+            AccountJournal::class,
+            AccountMove::class,
+            AccountMoveLine::class,
+            AccountPayment::class,
+            AccountPartialReconcile::class,
+            AccountTax::class,
+            CurrencyRate::class,
+            AccountingPaymentTerm::class,
+            AccountingPaymentTermLine::class,
+            AccountingIncoterm::class,
+            AccountingTaxGroup::class,
+            AccountingAccountGroup::class,
         ] as $model) {
             $model::observe(AuditableObserver::class);
         }
+
+        // Auto-install the Iraqi UAS chart of accounts + journals on every new company.
+        Company::observe(CompanyAccountingObserver::class);
 
         // Share company context with all views for the navbar switcher
         View::composer('components.navbar', function ($view) {

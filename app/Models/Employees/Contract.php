@@ -4,32 +4,13 @@ namespace App\Models\Employees;
 
 use App\Models\Settings\Company;
 use App\Models\User;
-use App\Traits\HasChatter;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class Contract extends Model
 {
-    use HasChatter;
-
     protected $table = 'hr_contracts';
-
-    public array $chatterTracked = [
-        'name'                 => 'Name',
-        'state'                => 'State',
-        'contract_type'        => 'Contract Type',
-        'wage'                 => 'Wage',
-        'currency'             => 'Currency',
-        'date_start'           => 'Start Date',
-        'date_end'             => 'End Date',
-        'trial_date_start'     => 'Trial Start Date',
-        'trial_date_end'       => 'Trial End Date',
-        'job_id'               => 'Job Position',
-        'department_id'        => 'Department',
-        'company_id'           => 'Company',
-        'resource_calendar_id' => 'Working Schedule',
-    ];
 
     protected $fillable = [
         'uuid', 'name', 'employee_id', 'department_id', 'job_id', 'company_id',

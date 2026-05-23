@@ -72,13 +72,15 @@
                     {{-- Shared fields --}}
                     <div class="flex items-center gap-4 py-2 border-b border-gray-100">
                         <label class="w-36 shrink-0 text-sm text-gray-500">{{ __('workflow.step_department_label') }}</label>
-                        <select name="default_department_id"
-                                class="flex-1 text-sm text-gray-800 bg-transparent border-0 focus:outline-none focus:ring-0 px-0 py-0.5">
-                            <option value="">—</option>
-                            @foreach($departments as $dept)
-                            <option value="{{ $dept->id }}" {{ old('default_department_id', $step->default_department_id) == $dept->id ? 'selected' : '' }}>{{ $dept->name }}</option>
-                            @endforeach
-                        </select>
+                        <x-relation-dropdown
+                            table="hr_departments"
+                            field="name"
+                            name="default_department_id"
+                            relation="many2one"
+                            :compact="true"
+                            :selected="old('default_department_id', $step->default_department_id)"
+                            class="flex-1"
+                        />
                     </div>
 
                     <div class="flex items-center gap-4 py-2 border-b border-gray-100">

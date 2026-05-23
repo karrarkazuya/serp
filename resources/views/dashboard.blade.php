@@ -32,6 +32,24 @@ $icons = [
         <circle cx="31.3" cy="33" r="8.2" fill="#22c7b8"/>
         <circle cx="31.3" cy="33" r="4.2" fill="#fff"/>
     </svg>',
+    'inventory' => '<svg viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg" class="w-14 h-14">
+        <rect x="10" y="28" width="44" height="26" rx="4" fill="#f28b2e"/>
+        <rect x="14" y="32" width="36" height="18" rx="2" fill="#fff8f1"/>
+        <rect x="18" y="36" width="10" height="10" rx="1" fill="#f28b2e"/>
+        <rect x="32" y="36" width="10" height="10" rx="1" fill="#f28b2e"/>
+        <path d="M10 32l22-18 22 18H10z" fill="#e67e22"/>
+        <rect x="27" y="36" width="10" height="18" rx="1" fill="#fff8f1"/>
+    </svg>',
+    'accounting' => '<svg viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg" class="w-14 h-14">
+        <rect x="10" y="8" width="44" height="48" rx="5" fill="#0f9d58"/>
+        <rect x="14" y="12" width="36" height="40" rx="3" fill="#ffffff"/>
+        <rect x="18" y="18" width="28" height="4" rx="1" fill="#0f9d58"/>
+        <rect x="18" y="26" width="20" height="2.5" rx="1" fill="#94a3b8"/>
+        <rect x="18" y="31" width="24" height="2.5" rx="1" fill="#94a3b8"/>
+        <rect x="18" y="36" width="18" height="2.5" rx="1" fill="#94a3b8"/>
+        <circle cx="42" cy="42" r="8" fill="#f4b400"/>
+        <text x="42" y="46" text-anchor="middle" font-family="sans-serif" font-size="10" font-weight="bold" fill="#ffffff">$</text>
+    </svg>',
 ];
 @endphp
 
