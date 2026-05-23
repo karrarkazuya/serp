@@ -358,9 +358,8 @@ class AccountingService
         if ($amount <= 0) {
             throw new RuntimeException('Payment amount must be greater than zero.');
         }
-        if ($amount - $residual > 0.005) {
-            throw new RuntimeException('Payment amount cannot exceed the open amount.');
-        }
+        // Allow overpayments: reconcile only up to the outstanding residual.
+        $reconcileAmount = min($amount, $residual);
 
         $journal = isset($data['journal_id'])
             ? AccountJournal::findOrFail($data['journal_id'])
@@ -401,7 +400,7 @@ class AccountingService
             ->where('partner_id', $move->partner_id)
             ->firstOrFail();
 
-        $this->reconcileLines($counterpartLine, $paymentLine, $amount, $date);
+        $this->reconcileLines($counterpartLine, $paymentLine, $reconcileAmount, $date);
         $this->refreshPaymentState($move);
 
         $payment = AccountPayment::create([
@@ -422,6 +421,62 @@ class AccountingService
         return $payment;
     }
 
+    public function createStandalonePayment(array $data): AccountPayment
+    {
+        $journal = AccountJournal::findOrFail($data['journal_id']);
+
+        if (!$journal->default_account_id) {
+            throw new RuntimeException('The selected payment journal needs a default liquidity account.');
+        }
+
+        $counterpartAccountId = $journal->suspense_account_id ?? $journal->default_account_id;
+
+        $paymentType = $data['payment_type'];
+        $amount      = round((float) $data['amount'], self::SCALE);
+        $date        = $data['date'] ?? now()->toDateString();
+        $memo        = $data['memo'] ?? '';
+        $partnerId   = $data['partner_id'] ?? null;
+        $currency    = $data['currency'] ?? null;
+
+        if ($amount <= 0) {
+            throw new RuntimeException('Payment amount must be greater than zero.');
+        }
+
+        $lines = $paymentType === 'inbound'
+            ? [
+                ['account_id' => $journal->default_account_id, 'partner_id' => $partnerId, 'name' => $memo ?: 'Payment', 'debit' => $amount, 'credit' => 0, 'sequence' => 10],
+                ['account_id' => $counterpartAccountId,        'partner_id' => $partnerId, 'name' => $memo ?: 'Payment', 'debit' => 0, 'credit' => $amount, 'sequence' => 20],
+            ]
+            : [
+                ['account_id' => $counterpartAccountId,        'partner_id' => $partnerId, 'name' => $memo ?: 'Payment', 'debit' => $amount, 'credit' => 0, 'sequence' => 10],
+                ['account_id' => $journal->default_account_id, 'partner_id' => $partnerId, 'name' => $memo ?: 'Payment', 'debit' => 0, 'credit' => $amount, 'sequence' => 20],
+            ];
+
+        $paymentMove = $this->createMove([
+            'company_id' => $journal->company_id,
+            'journal_id' => $journal->id,
+            'partner_id' => $partnerId,
+            'date'       => $date,
+            'move_type'  => 'entry',
+            'currency'   => $currency,
+            'ref'        => $memo,
+        ], $lines);
+
+        $paymentMove = $this->postMove($paymentMove);
+
+        return AccountPayment::create([
+            'company_id'   => $journal->company_id,
+            'journal_id'   => $journal->id,
+            'move_id'      => $paymentMove->id,
+            'partner_id'   => $partnerId,
+            'payment_type' => $paymentType,
+            'date'         => $date,
+            'amount'       => $amount,
+            'currency'     => $currency,
+            'memo'         => $memo,
+        ]);
+    }
+
     public function createCreditNote(AccountMove $move): AccountMove
     {
         if (!$move->isPosted()) {
@@ -432,7 +487,7 @@ class AccountingService
             throw new RuntimeException('Only invoices and bills can create credit notes.');
         }
 
-        $move->loadMissing('lines');
+        $move->loadMissing(['lines.taxes']);
         $refundType = $move->move_type === 'out_invoice' ? 'out_refund' : 'in_refund';
 
         $header = [
@@ -448,14 +503,17 @@ class AccountingService
         ];
 
         $lines = $move->lines->map(fn (AccountMoveLine $line) => [
-            'account_id' => $line->account_id,
-            'partner_id' => $line->partner_id,
-            'name' => 'Credit: ' . $line->name,
-            'debit' => (float) $line->credit,
-            'credit' => (float) $line->debit,
-            'currency' => $line->currency,
+            'account_id'      => $line->account_id,
+            'partner_id'      => $line->partner_id,
+            'name'            => 'Credit: ' . $line->name,
+            'debit'           => (float) $line->credit,
+            'credit'          => (float) $line->debit,
+            'currency'        => $line->currency,
             'amount_currency' => -1 * (float) $line->amount_currency,
-            'sequence' => $line->sequence,
+            'sequence'        => $line->sequence,
+            'tax_line_id'     => $line->tax_line_id,
+            'tax_base_amount' => $line->tax_base_amount,
+            'tax_ids'         => $line->taxes->pluck('id')->all(),
         ])->all();
 
         $creditNote = $this->createMove($header, $lines);
@@ -478,7 +536,7 @@ class AccountingService
 
     /**
      * Create a reversal entry: same accounts, flipped debit/credit, optional new date.
-     * The original move must be posted. The reversal is itself created in draft.
+     * The original move must be posted. The reversal is automatically posted (Odoo behaviour).
      */
     public function reverseMove(AccountMove $move, ?Carbon $reversalDate = null): AccountMove
     {
@@ -512,7 +570,7 @@ class AccountingService
             'sequence'        => $line->sequence,
         ])->all();
 
-        $reversal = $this->createMove($reverseHeader, $reverseLines);
+        $reversal = $this->postMove($this->createMove($reverseHeader, $reverseLines));
         $this->chatterService->log($move, "Reversal entry created (#{$reversal->id}).", 'system');
         return $reversal;
     }

@@ -114,10 +114,6 @@
             <x-sortable-th column="state"      :label="__('common.status')"           class="px-3 py-2" />
             <th class="px-3 py-2 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">{{ __('workflow.template_label') }}</th>
             <th class="px-3 py-2 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">{{ __('workflow.created_by_label') }}</th>
-            <x-sortable-th column="deadline"   :label="__('workflow.deadline_label')"   class="px-3 py-2" />
-            <x-sortable-th column="duration"   :label="__('workflow.duration_label')"   class="px-3 py-2" />
-            <x-sortable-th column="sla_passed" :label="__('workflow.sla_passed_label')" class="px-3 py-2" />
-            <x-sortable-th column="sla_limit"  :label="__('workflow.sla_limit_label')"  class="px-3 py-2" />
             <x-sortable-th column="created_at" :label="__('workflow.created_label')"    class="px-3 py-2" />
         </x-slot:columns>
 
@@ -129,19 +125,12 @@
                 @if(!$procedure->active)
                     <span class="ml-1.5 text-[10px] text-amber-600 font-semibold uppercase">{{ __('common.archived') }}</span>
                 @endif
-                @if($procedure->isOverdue())
-                    <span class="ml-1.5 text-[10px] text-red-600 font-semibold uppercase">{{ __('workflow.overdue_label') }}</span>
-                @endif
             </td>
             <td class="px-3 py-2">
                 <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium {{ $procedure->stateColor() }}">{{ $procedure->stateLabel() }}</span>
             </td>
             <td class="px-3 py-2 text-gray-600">{{ $procedure->procedureTemplate?->name ?? '—' }}</td>
             <td class="px-3 py-2 text-gray-600">{{ $procedure->createdByUser?->name ?? '—' }}</td>
-            <td class="px-3 py-2 text-gray-500 text-xs">{{ $procedure->resolve_deadline?->format('M j, Y H:i') ?? '—' }}</td>
-            <td class="px-3 py-2 text-gray-600">{{ $procedure->resolve_duration ?? '—' }}</td>
-            <td class="px-3 py-2 text-gray-600">{{ $procedure->resolve_deadline_passed ?? '—' }}</td>
-            <td class="px-3 py-2 text-gray-600">{{ $procedure->resolve_max_duration ?? '—' }}</td>
             <td class="px-3 py-2 text-gray-500 text-xs">{{ $procedure->created_at->format('M j, Y') }}</td>
         </tr>
         @endforeach

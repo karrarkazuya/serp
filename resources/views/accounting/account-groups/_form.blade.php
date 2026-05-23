@@ -7,6 +7,7 @@
             <x-relation-dropdown
                 name="company_id"
                 table="companies"
+                field="name"
                 :value="old('company_id', $defaultCompanyId ?? '')"
                 placeholder="Select company…"
                 required />
@@ -44,6 +45,7 @@
             <x-relation-dropdown
                 name="parent_id"
                 table="accounting_account_groups"
+                field="name"
                 :value="old('parent_id', $accountGroup->parent_id ?? '')"
                 placeholder="None (top-level)" />
         </div>

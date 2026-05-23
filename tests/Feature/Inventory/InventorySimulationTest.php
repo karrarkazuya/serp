@@ -33,7 +33,7 @@ use Tests\TestCase;
  * Company    : Simulation Corp
  * Warehouse  : SIM  (Stock, Shelf B internal locations)
  * Products   : Widget Pro (storable/none), Widget Lite (storable/none),
- *              Supply Kit (consumable/none)
+ *              Supply Kit (storable/none)
  */
 class InventorySimulationTest extends TestCase
 {
@@ -121,9 +121,9 @@ class InventorySimulationTest extends TestCase
         $this->internalOp = OperationType::where('company_id', $this->company->id)->where('code', 'internal')->firstOrFail();
 
         $productSvc         = app(ProductService::class);
-        $this->widgetPro    = $productSvc->create(['company_id' => $this->company->id, 'uom_id' => $this->units->id, 'uom_po_id' => $this->units->id, 'name' => 'Widget Pro',  'product_type' => 'storable',   'tracking' => 'none', 'cost' => 50.00, 'sale_price' => 100.00, 'active' => true]);
-        $this->widgetLite   = $productSvc->create(['company_id' => $this->company->id, 'uom_id' => $this->units->id, 'uom_po_id' => $this->units->id, 'name' => 'Widget Lite', 'product_type' => 'storable',   'tracking' => 'none', 'cost' => 20.00, 'sale_price' => 40.00,  'active' => true]);
-        $this->supplyKit    = $productSvc->create(['company_id' => $this->company->id, 'uom_id' => $this->units->id, 'uom_po_id' => $this->units->id, 'name' => 'Supply Kit',  'product_type' => 'consumable', 'tracking' => 'none', 'cost' => 5.00,  'sale_price' => 10.00,  'active' => true]);
+        $this->widgetPro    = $productSvc->create(['company_id' => $this->company->id, 'uom_id' => $this->units->id, 'uom_po_id' => $this->units->id, 'name' => 'Widget Pro',  'product_type' => 'storable', 'tracking' => 'none', 'cost' => 50.00, 'sale_price' => 100.00, 'active' => true]);
+        $this->widgetLite   = $productSvc->create(['company_id' => $this->company->id, 'uom_id' => $this->units->id, 'uom_po_id' => $this->units->id, 'name' => 'Widget Lite', 'product_type' => 'storable', 'tracking' => 'none', 'cost' => 20.00, 'sale_price' => 40.00,  'active' => true]);
+        $this->supplyKit    = $productSvc->create(['company_id' => $this->company->id, 'uom_id' => $this->units->id, 'uom_po_id' => $this->units->id, 'name' => 'Supply Kit',  'product_type' => 'storable', 'tracking' => 'none', 'cost' => 5.00,  'sale_price' => 10.00,  'active' => true]);
     }
 
     // ═════════════════════════════════════════════════════════════════════════
@@ -304,7 +304,7 @@ class InventorySimulationTest extends TestCase
         // Return 10 of the 20 delivered
         $return = $this->pickingSvc->createReturn($so, [$so->moves()->first()->id => 10]);
         $this->pickingSvc->confirm($return);
-        $return = $this->pickingSvc->validate($return->fresh());
+        $return = $this->pickingSvc->validate($return->fresh())['picking'];
 
         $this->assertPickingDone($return, 'Return');
         $this->assertQ($this->widgetPro, $this->stockLoc,    40, 'stock after return');
@@ -527,7 +527,7 @@ class InventorySimulationTest extends TestCase
         ], $this->movesData($lines));
 
         $this->pickingSvc->confirm($picking);
-        return $this->pickingSvc->validate($picking->fresh());
+        return $this->pickingSvc->validate($picking->fresh())['picking'];
     }
 
     /** Create + confirm + check availability + validate a delivery (Stock → Customers). */
@@ -545,7 +545,7 @@ class InventorySimulationTest extends TestCase
 
         $this->pickingSvc->confirm($picking);
         $this->pickingSvc->checkAvailability($picking->fresh());
-        return $this->pickingSvc->validate($picking->fresh());
+        return $this->pickingSvc->validate($picking->fresh())['picking'];
     }
 
     /** Create + confirm + check availability + validate an internal transfer. */
@@ -563,7 +563,7 @@ class InventorySimulationTest extends TestCase
 
         $this->pickingSvc->confirm($picking);
         $this->pickingSvc->checkAvailability($picking->fresh());
-        return $this->pickingSvc->validate($picking->fresh());
+        return $this->pickingSvc->validate($picking->fresh())['picking'];
     }
 
     /** Create + validate a scrap order. */

@@ -13,53 +13,37 @@
 @endphp
 
 @section('content')
-<div class="flex min-w-0 flex-col h-full {{ $view === 'tree' ? 'bg-gray-50' : 'bg-white' }}">
-    <div class="flex flex-wrap items-center gap-2 px-4 py-2 border-b border-gray-200 bg-white shrink-0">
-        @can('create', \App\Models\Accounting\Account::class)
-        <a href="{{ route('accounting.accounts.create') }}" class="px-3 py-1.5 bg-[#714B67] hover:bg-[#5c3d55] text-white text-sm font-medium rounded shadow-sm shrink-0">New</a>
-        @endcan
-        <div class="flex flex-col leading-tight shrink-0">
+<div class="flex flex-col h-full bg-gray-50">
+    <x-toolbar :new-href="auth()->user()->can('create', \App\Models\Accounting\Account::class) ? route('accounting.accounts.create') : null">
+        <x-slot:breadcrumb>
             <a href="{{ route('accounting.dashboard') }}" class="text-xs text-purple-600 hover:text-purple-700">Accounting</a>
             <span class="text-sm font-semibold text-gray-800">Chart of Accounts</span>
-        </div>
-
-        @if($view !== 'tree')
-        <x-search
-            :model="\App\Models\Accounting\Account::class"
-            :action="route('accounting.accounts.index')"
-            :quick-filters="$quickFilters"
-            :preserve="['view' => $view]"
-        />
-        @endif
-
-        <div class="ms-auto flex items-center gap-3 text-sm text-gray-500 shrink-0">
-            <span class="text-sm font-semibold text-gray-600">
-                @if($view === 'tree')
-                    {{ $total ?? 0 }}
-                @else
-                    {{ $accounts->total() > 0 ? $accounts->firstItem().'-'.$accounts->lastItem() : 0 }} / {{ $accounts->total() }}
-                @endif
-            </span>
-
-            {{-- View toggle: list vs tree --}}
-            <div class="hidden sm:flex items-center rounded overflow-hidden bg-gray-200">
+        </x-slot:breadcrumb>
+        <x-slot:actions>
+            <div class="flex items-center rounded overflow-hidden border border-gray-300">
                 <a href="{{ $listUrl }}"
-                   class="w-10 h-10 inline-flex items-center justify-center border border-gray-300 {{ $view === 'list' ? 'bg-purple-100 text-gray-900 border-purple-400' : 'text-gray-600 hover:bg-gray-100' }}"
+                   class="w-8 h-8 inline-flex items-center justify-center {{ $view === 'list' ? 'bg-purple-100 text-purple-700' : 'bg-white text-gray-500 hover:bg-gray-50' }}"
                    title="List view">
-                    <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
-                        <path d="M4 5h12v2H4V5zm0 4h12v2H4V9zm0 4h12v2H4v-2z"/>
-                    </svg>
+                    <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20"><path d="M4 5h12v2H4V5zm0 4h12v2H4V9zm0 4h12v2H4v-2z"/></svg>
                 </a>
                 <a href="{{ $treeUrl }}"
-                   class="w-10 h-10 inline-flex items-center justify-center border border-gray-300 {{ $view === 'tree' ? 'bg-purple-100 text-gray-900 border-purple-400' : 'text-gray-600 hover:bg-gray-100' }}"
+                   class="w-8 h-8 inline-flex items-center justify-center border-l border-gray-300 {{ $view === 'tree' ? 'bg-purple-100 text-purple-700' : 'bg-white text-gray-500 hover:bg-gray-50' }}"
                    title="Tree view">
-                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h6m-6 6h3m0 0v6m0-6h7m0 0v6m0-6h3"/>
-                    </svg>
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h6m-6 6h3m0 0v6m0-6h7m0 0v6m0-6h3"/></svg>
                 </a>
             </div>
-        </div>
-    </div>
+        </x-slot:actions>
+    </x-toolbar>
+
+    <div class="flex-1 overflow-y-auto p-4">
+    @if($view !== 'tree')
+    <x-search
+        :model="\App\Models\Accounting\Account::class"
+        :action="route('accounting.accounts.index')"
+        :quick-filters="$quickFilters"
+        :preserve="['view' => $view]"
+    />
+    @endif
 
     @if($view === 'tree')
         <x-tree :nodes="$treeNodes" empty-text="No accounts yet." />
@@ -91,5 +75,6 @@
             @endforeach
         </x-list>
     @endif
+    </div>
 </div>
 @endsection

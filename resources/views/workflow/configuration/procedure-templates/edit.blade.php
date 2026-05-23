@@ -122,17 +122,6 @@
                                 <p class="text-[10px] text-gray-400 mt-1">{{ __('workflow.restrict_departments_hint') }}</p>
                             </div>
 
-                            {{-- SLA --}}
-                            <div class="py-2.5 border-b border-gray-100">
-                                <label class="block text-[10px] font-medium text-gray-400 mb-1">{{ __('workflow.max_resolution_time') }}</label>
-                                <div class="flex items-center gap-2">
-                                    <input type="number" name="resolve_max_duration" min="1"
-                                           value="{{ old('resolve_max_duration', $procedureTemplate->resolve_max_duration) }}"
-                                           class="w-24 text-sm text-gray-800 bg-transparent border-0 focus:outline-none focus:ring-0 px-0 py-0.5"
-                                           placeholder="—">
-                                    <span class="text-xs text-gray-400">{{ __('workflow.hours_label') }}</span>
-                                </div>
-                            </div>
                         </div>
 
                         {{-- ── Section: Options ── --}}
@@ -354,16 +343,6 @@
                     :label="__('workflow.step_department_label')"
                     relation="many2one"
                 />
-
-                {{-- SLA --}}
-                <div class="flex items-center gap-4 py-3">
-                    <label class="w-36 shrink-0 text-sm text-gray-500">{{ __('workflow.max_resolution_time') }}</label>
-                    <div class="flex items-center gap-2">
-                        <input type="number" name="resolve_max_duration" value="24" min="1"
-                               class="w-20 text-sm text-gray-800 bg-transparent border-0 focus:outline-none focus:ring-0 px-0 py-0.5">
-                        <span class="text-xs text-gray-400">{{ __('workflow.hours_label') }}</span>
-                    </div>
-                </div>
 
                 {{-- Next Steps --}}
                 <x-relation-dropdown

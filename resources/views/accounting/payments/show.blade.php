@@ -74,6 +74,12 @@
                 </div>
             </div>
         </div>
+
+        <x-chatter
+            model-type="App\Models\Accounting\AccountPayment"
+            :model-id="$payment->id"
+            :can-comment="auth()->user()->can('comment', $payment)"
+        />
     </div>
 </div>
 @endsection

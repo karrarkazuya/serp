@@ -57,7 +57,16 @@
                     <tr class="hover:bg-gray-50">
                         <td class="px-4 py-2.5 tabular-nums text-gray-600">{{ $line->date?->format('Y-m-d') }}</td>
                         <td class="px-4 py-2.5">
-                            <a href="{{ route('accounting.moves.show', $line->move_id) }}" class="text-purple-600 hover:underline">{{ $line->move?->name }}</a>
+                            @php
+                                $lineRoute = match($line->move?->move_type) {
+                                    'out_invoice' => route('accounting.invoices.show', $line->move_id),
+                                    'in_invoice'  => route('accounting.bills.show', $line->move_id),
+                                    'out_refund'  => route('accounting.credit-notes.show', $line->move_id),
+                                    'in_refund'   => route('accounting.refunds.show', $line->move_id),
+                                    default       => route('accounting.moves.show', $line->move_id),
+                                };
+                            @endphp
+                            <a href="{{ $lineRoute }}" class="text-purple-600 hover:underline">{{ $line->move?->name }}</a>
                         </td>
                         <td class="px-4 py-2.5 text-gray-700">{{ $line->name ?: '—' }}</td>
                         <td class="px-4 py-2.5 text-right tabular-nums text-green-700">{{ $line->debit > 0 ? number_format($line->debit, 2) : '' }}</td>

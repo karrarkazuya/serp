@@ -589,8 +589,11 @@ Route::middleware('auth')->group(function () {
 
         // Payments
         Route::prefix('payments')->name('payments.')->group(function () {
-            Route::get('/', [\App\Http\Controllers\Accounting\AccountPaymentController::class, 'read'])->middleware('permission:accounting.read')->name('index');
-            Route::get('/{payment}', [\App\Http\Controllers\Accounting\AccountPaymentController::class, 'show'])->middleware('permission:accounting.read')->name('show');
+            Route::get('/',        [\App\Http\Controllers\Accounting\AccountPaymentController::class, 'read'])       ->middleware('permission:accounting.read')   ->name('index');
+            Route::get('/create',  [\App\Http\Controllers\Accounting\AccountPaymentController::class, 'create'])     ->middleware('permission:accounting.create') ->name('create');
+            Route::post('/',       [\App\Http\Controllers\Accounting\AccountPaymentController::class, 'store'])      ->middleware('permission:accounting.create') ->name('store');
+            Route::get('/{payment}',          [\App\Http\Controllers\Accounting\AccountPaymentController::class, 'show'])       ->middleware('permission:accounting.read')   ->name('show');
+            Route::post('/{payment}/comment', [\App\Http\Controllers\Accounting\AccountPaymentController::class, 'addComment']) ->middleware('permission:accounting.write')  ->name('comment');
         });
 
         // Journal Entries (manual moves in Phase 1)
@@ -626,6 +629,7 @@ Route::middleware('auth')->group(function () {
             Route::patch('/{tax}/archive', [\App\Http\Controllers\Accounting\AccountTaxController::class, 'archive'])   ->middleware('permission:accounting.write')  ->name('archive');
             Route::patch('/{tax}/unarchive',[\App\Http\Controllers\Accounting\AccountTaxController::class, 'unarchive'])->middleware('permission:accounting.write')  ->name('unarchive');
             Route::delete('/{tax}',        [\App\Http\Controllers\Accounting\AccountTaxController::class, 'unlink'])    ->middleware('permission:accounting.unlink') ->name('delete');
+            Route::post('/{tax}/comment',  [\App\Http\Controllers\Accounting\AccountTaxController::class, 'addComment'])->middleware('permission:accounting.write')  ->name('comment');
         });
 
         // Exchange Rates (multi-currency)
@@ -636,7 +640,8 @@ Route::middleware('auth')->group(function () {
             Route::get('/{currencyRate}',           [\App\Http\Controllers\Accounting\CurrencyRateController::class, 'show'])  ->middleware('permission:accounting.read')  ->name('show');
             Route::get('/{currencyRate}/edit',      [\App\Http\Controllers\Accounting\CurrencyRateController::class, 'edit'])  ->middleware('permission:accounting.write') ->name('edit');
             Route::put('/{currencyRate}',           [\App\Http\Controllers\Accounting\CurrencyRateController::class, 'write']) ->middleware('permission:accounting.write') ->name('update');
-            Route::delete('/{currencyRate}',        [\App\Http\Controllers\Accounting\CurrencyRateController::class, 'unlink'])->middleware('permission:accounting.write') ->name('delete');
+            Route::delete('/{currencyRate}',        [\App\Http\Controllers\Accounting\CurrencyRateController::class, 'unlink'])       ->middleware('permission:accounting.write') ->name('delete');
+            Route::post('/{currencyRate}/comment',  [\App\Http\Controllers\Accounting\CurrencyRateController::class, 'addComment']) ->middleware('permission:accounting.write') ->name('comment');
         });
 
         // Payment Terms
@@ -649,7 +654,8 @@ Route::middleware('auth')->group(function () {
             Route::put('/{paymentTerm}',          [\App\Http\Controllers\Accounting\AccountingPaymentTermController::class, 'write'])     ->middleware('permission:accounting.write')  ->name('update');
             Route::patch('/{paymentTerm}/archive',   [\App\Http\Controllers\Accounting\AccountingPaymentTermController::class, 'archive'])   ->middleware('permission:accounting.write')  ->name('archive');
             Route::patch('/{paymentTerm}/unarchive', [\App\Http\Controllers\Accounting\AccountingPaymentTermController::class, 'unarchive']) ->middleware('permission:accounting.write')  ->name('unarchive');
-            Route::delete('/{paymentTerm}',       [\App\Http\Controllers\Accounting\AccountingPaymentTermController::class, 'unlink'])    ->middleware('permission:accounting.unlink') ->name('delete');
+            Route::delete('/{paymentTerm}',        [\App\Http\Controllers\Accounting\AccountingPaymentTermController::class, 'unlink'])    ->middleware('permission:accounting.unlink') ->name('delete');
+            Route::post('/{paymentTerm}/comment',  [\App\Http\Controllers\Accounting\AccountingPaymentTermController::class, 'addComment'])->middleware('permission:accounting.write')  ->name('comment');
         });
 
         // Incoterms
@@ -660,7 +666,8 @@ Route::middleware('auth')->group(function () {
             Route::get('/{incoterm}',        [\App\Http\Controllers\Accounting\AccountingIncotermController::class, 'show'])    ->middleware('permission:accounting.read')   ->name('show');
             Route::get('/{incoterm}/edit',   [\App\Http\Controllers\Accounting\AccountingIncotermController::class, 'edit'])    ->middleware('permission:accounting.write')  ->name('edit');
             Route::put('/{incoterm}',        [\App\Http\Controllers\Accounting\AccountingIncotermController::class, 'write'])   ->middleware('permission:accounting.write')  ->name('update');
-            Route::delete('/{incoterm}',     [\App\Http\Controllers\Accounting\AccountingIncotermController::class, 'unlink'])  ->middleware('permission:accounting.unlink') ->name('delete');
+            Route::delete('/{incoterm}',      [\App\Http\Controllers\Accounting\AccountingIncotermController::class, 'unlink'])    ->middleware('permission:accounting.unlink') ->name('delete');
+            Route::post('/{incoterm}/comment',[\App\Http\Controllers\Accounting\AccountingIncotermController::class, 'addComment'])->middleware('permission:accounting.write')  ->name('comment');
         });
 
         // Tax Groups
@@ -671,7 +678,8 @@ Route::middleware('auth')->group(function () {
             Route::get('/{taxGroup}',        [\App\Http\Controllers\Accounting\AccountingTaxGroupController::class, 'show'])    ->middleware('permission:accounting.read')   ->name('show');
             Route::get('/{taxGroup}/edit',   [\App\Http\Controllers\Accounting\AccountingTaxGroupController::class, 'edit'])    ->middleware('permission:accounting.write')  ->name('edit');
             Route::put('/{taxGroup}',        [\App\Http\Controllers\Accounting\AccountingTaxGroupController::class, 'write'])   ->middleware('permission:accounting.write')  ->name('update');
-            Route::delete('/{taxGroup}',     [\App\Http\Controllers\Accounting\AccountingTaxGroupController::class, 'unlink'])  ->middleware('permission:accounting.unlink') ->name('delete');
+            Route::delete('/{taxGroup}',      [\App\Http\Controllers\Accounting\AccountingTaxGroupController::class, 'unlink'])    ->middleware('permission:accounting.unlink') ->name('delete');
+            Route::post('/{taxGroup}/comment',[\App\Http\Controllers\Accounting\AccountingTaxGroupController::class, 'addComment'])->middleware('permission:accounting.write')  ->name('comment');
         });
 
         // Account Groups
@@ -682,7 +690,8 @@ Route::middleware('auth')->group(function () {
             Route::get('/{accountGroup}',        [\App\Http\Controllers\Accounting\AccountingAccountGroupController::class, 'show'])    ->middleware('permission:accounting.read')   ->name('show');
             Route::get('/{accountGroup}/edit',   [\App\Http\Controllers\Accounting\AccountingAccountGroupController::class, 'edit'])    ->middleware('permission:accounting.write')  ->name('edit');
             Route::put('/{accountGroup}',        [\App\Http\Controllers\Accounting\AccountingAccountGroupController::class, 'write'])   ->middleware('permission:accounting.write')  ->name('update');
-            Route::delete('/{accountGroup}',     [\App\Http\Controllers\Accounting\AccountingAccountGroupController::class, 'unlink'])  ->middleware('permission:accounting.unlink') ->name('delete');
+            Route::delete('/{accountGroup}',      [\App\Http\Controllers\Accounting\AccountingAccountGroupController::class, 'unlink'])    ->middleware('permission:accounting.unlink') ->name('delete');
+            Route::post('/{accountGroup}/comment',[\App\Http\Controllers\Accounting\AccountingAccountGroupController::class, 'addComment'])->middleware('permission:accounting.write')  ->name('comment');
         });
 
         // Reports
@@ -782,6 +791,7 @@ Route::middleware('auth')->group(function () {
             Route::get('/',               [\App\Http\Controllers\Inventory\ReorderRuleController::class, 'read'])        ->middleware('permission:inventory.read')   ->name('index');
             Route::get('/create',         [\App\Http\Controllers\Inventory\ReorderRuleController::class, 'create'])      ->middleware('permission:inventory.write')  ->name('create');
             Route::post('/',              [\App\Http\Controllers\Inventory\ReorderRuleController::class, 'store'])       ->middleware('permission:inventory.write')  ->name('store');
+            Route::get('/{reorderRule}/edit',    [\App\Http\Controllers\Inventory\ReorderRuleController::class, 'edit'])        ->middleware('permission:inventory.write')  ->name('edit');
             Route::put('/{reorderRule}',         [\App\Http\Controllers\Inventory\ReorderRuleController::class, 'write'])       ->middleware('permission:inventory.write')  ->name('update');
             Route::post('/{reorderRule}/replenish', [\App\Http\Controllers\Inventory\ReorderRuleController::class, 'replenish'])->middleware('permission:inventory.write')  ->name('replenish');
             Route::delete('/{reorderRule}',      [\App\Http\Controllers\Inventory\ReorderRuleController::class, 'unlink'])      ->middleware('permission:inventory.unlink') ->name('delete');

@@ -26,10 +26,6 @@ class Procedure extends Model
         'id'          => 'id',
         'name'        => 'name',
         'state'       => 'state',
-        'deadline'    => 'resolve_deadline',
-        'duration'    => 'resolve_duration',
-        'sla_passed'  => 'resolve_deadline_passed',
-        'sla_limit'   => 'resolve_max_duration',
         'created_at'  => 'created_at',
     ];
 
@@ -47,15 +43,13 @@ class Procedure extends Model
 
     protected $fillable = [
         'uuid', 'procedure_template_id', 'company_id', 'name', 'description', 'state',
-        'created_by_user_id', 'resolve_max_duration', 'resolve_deadline',
-        'resolve_duration', 'resolve_deadline_passed',
+        'created_by_user_id',
         'optional_contact_id', 'optional_ticket_id', 'optional_procedure_id',
         'active', 'created_by', 'updated_by',
     ];
 
     protected $casts = [
-        'active'           => 'boolean',
-        'resolve_deadline' => 'datetime',
+        'active' => 'boolean',
     ];
 
     public function procedureTemplate(): BelongsTo
@@ -131,11 +125,6 @@ class Procedure extends Model
                 ->whereExists(fn ($wu) => $wu->selectRaw('1')->from('workflow_users')
                     ->where('user_id', $user->id)->where('active', true));
         });
-    }
-
-    public function isOverdue(): bool
-    {
-        return $this->resolve_deadline && now()->isAfter($this->resolve_deadline) && $this->state === 'pending';
     }
 
     public function stateLabel(): string

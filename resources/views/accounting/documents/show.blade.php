@@ -167,7 +167,7 @@
             <div class="p-6">
                 <div class="flex items-start justify-between gap-6 mb-1">
                     <div>
-                        <span class="text-lg font-semibold text-gray-800">{{ $config['singular'] === 'Invoice' ? 'Customer Invoice' : 'Vendor Bill' }}</span>
+                        <span class="text-lg font-semibold text-gray-800">{{ match($config['move_type']) { 'out_invoice' => 'Customer Invoice', 'in_invoice' => 'Vendor Bill', 'out_refund' => 'Customer Credit Note', 'in_refund' => 'Vendor Refund', default => $config['singular'] } }}</span>
                         <h1 class="mt-2 text-4xl font-bold {{ $document->name ? 'text-gray-900' : 'text-gray-400' }}">{{ $document->name ?: 'Draft' }}</h1>
                     </div>
                     <div class="flex shrink-0 items-center text-sm font-semibold">
@@ -191,6 +191,38 @@
                             <span class="flex-1 text-sm text-gray-800">{{ $value ?: '—' }}</span>
                         </div>
                         @endforeach
+                        @if($document->reversedMove)
+                        @php
+                            $origRoute = match($document->reversedMove->move_type) {
+                                'out_invoice' => 'accounting.invoices.show',
+                                'in_invoice'  => 'accounting.bills.show',
+                                'out_refund'  => 'accounting.credit-notes.show',
+                                'in_refund'   => 'accounting.refunds.show',
+                                default       => 'accounting.moves.show',
+                            };
+                        @endphp
+                        <div class="flex items-center gap-4 py-2 border-b border-gray-100">
+                            <span class="w-40 shrink-0 text-sm text-gray-500">Reversed From</span>
+                            <a href="{{ route($origRoute, $document->reversedMove) }}" class="flex-1 text-sm text-purple-600 hover:underline">{{ $document->reversedMove->name ?: '(Draft)' }}</a>
+                        </div>
+                        @endif
+                        @if($document->reversal->isNotEmpty())
+                        @foreach($document->reversal as $rev)
+                        @php
+                            $revRoute = match($rev->move_type) {
+                                'out_invoice' => 'accounting.invoices.show',
+                                'in_invoice'  => 'accounting.bills.show',
+                                'out_refund'  => 'accounting.credit-notes.show',
+                                'in_refund'   => 'accounting.refunds.show',
+                                default       => 'accounting.moves.show',
+                            };
+                        @endphp
+                        <div class="flex items-center gap-4 py-2 border-b border-gray-100">
+                            <span class="w-40 shrink-0 text-sm text-gray-500">{{ $loop->first ? 'Reversal(s)' : '' }}</span>
+                            <a href="{{ route($revRoute, $rev) }}" class="flex-1 text-sm text-amber-600 hover:underline">{{ $rev->name ?: '(Draft)' }}</a>
+                        </div>
+                        @endforeach
+                        @endif
                     </div>
                     <div>
                         @foreach([

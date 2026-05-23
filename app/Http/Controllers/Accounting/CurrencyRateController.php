@@ -107,4 +107,16 @@ class CurrencyRateController extends Controller
 
         return redirect()->route('accounting.currencies.index')->with('success', 'Exchange rate deleted.');
     }
+
+    public function addComment(Request $request, CurrencyRate $currencyRate)
+    {
+        $this->authorize('comment', $currencyRate);
+        $activeCompanyIds = $this->companyContext->getActiveCompanyIds();
+        abort_unless(in_array($currencyRate->company_id, $activeCompanyIds), 403);
+
+        $request->validate(['body' => 'required|string|max:5000']);
+        DB::transaction(fn () => $currencyRate->logComment($request->body));
+
+        return back()->with('success', 'Comment added.');
+    }
 }

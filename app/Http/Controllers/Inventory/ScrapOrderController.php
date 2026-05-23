@@ -76,7 +76,11 @@ class ScrapOrderController extends Controller
         $activeCompanyIds = $this->companyContext->getActiveCompanyIds();
         abort_unless(in_array($scrapOrder->company_id, $activeCompanyIds), 403);
         abort_if($scrapOrder->isDone(), 403, 'Already validated.');
-        DB::transaction(fn () => $this->scrapService->validate($scrapOrder));
+        try {
+            DB::transaction(fn () => $this->scrapService->validate($scrapOrder));
+        } catch (\RuntimeException $e) {
+            return back()->with('error', $e->getMessage());
+        }
         return redirect()->route('inventory.scrap.show', $scrapOrder)->with('success', 'Scrap order validated.');
     }
 

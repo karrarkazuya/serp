@@ -356,7 +356,6 @@ class DemoSeeder extends Seeder
             [
                 'description'          => 'Standard new employee onboarding procedure.',
                 'default_group_id'     => $mgmtGroup->id,
-                'resolve_max_duration' => 168,
                 'creator_see_tasks'    => true,
                 'enabled'              => true,
                 'active'               => true,
@@ -370,7 +369,6 @@ class DemoSeeder extends Seeder
                 'name'                  => 'Prepare Workstation',
                 'description'           => 'Set up laptop, accounts, and equipment.',
                 'default_department_id' => $itDept->id,
-                'resolve_max_duration'  => 24,
                 'enabled'               => true,
             ]);
             WorkflowTemplateInput::create([
@@ -387,7 +385,6 @@ class DemoSeeder extends Seeder
                 'name'                  => 'HR Documentation',
                 'description'           => 'Collect signed contracts and ID documents.',
                 'default_department_id' => $hrDept->id,
-                'resolve_max_duration'  => 48,
                 'enabled'               => true,
             ]);
             $docInput = WorkflowTemplateInput::create([
@@ -407,7 +404,6 @@ class DemoSeeder extends Seeder
                 'name'                  => 'Orientation Complete',
                 'description'           => 'Confirm employee completed orientation session.',
                 'default_department_id' => $hrDept->id,
-                'resolve_max_duration'  => 8,
                 'enabled'               => true,
             ]);
             WorkflowTemplateInput::create([

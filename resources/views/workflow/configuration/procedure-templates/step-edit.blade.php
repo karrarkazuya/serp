@@ -84,12 +84,6 @@
                     </div>
 
                     <div class="flex items-center gap-4 py-2 border-b border-gray-100">
-                        <label class="w-36 shrink-0 text-sm text-gray-500">{{ __('workflow.step_sla_label') }}</label>
-                        <input type="number" name="resolve_max_duration" value="{{ old('resolve_max_duration', $step->resolve_max_duration) }}" min="1"
-                               class="flex-1 text-sm text-gray-800 bg-transparent border-0 focus:outline-none focus:ring-0 px-0 py-0.5" placeholder="-">
-                    </div>
-
-                    <div class="flex items-center gap-4 py-2 border-b border-gray-100">
                         <label class="w-36 shrink-0 text-sm text-gray-500">{{ __('workflow.step_enabled_label') }}</label>
                         <label class="flex items-center gap-2 text-sm text-gray-800 cursor-pointer">
                             <input type="checkbox" name="enabled" value="1" {{ old('enabled', $step->enabled) ? 'checked' : '' }} class="rounded border-gray-300 text-purple-600">

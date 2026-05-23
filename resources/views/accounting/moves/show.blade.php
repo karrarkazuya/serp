@@ -131,6 +131,14 @@
                     <a href="{{ route('accounting.moves.show', $move->reversedMove) }}" class="font-semibold underline">{{ $move->reversedMove->name }}</a>
                 </div>
                 @endif
+                @if($move->reversal->isNotEmpty())
+                <div class="mt-4 px-3 py-2 bg-amber-50 border border-amber-200 rounded text-sm text-amber-700">
+                    Reversed by
+                    @foreach($move->reversal as $rev)
+                    <a href="{{ route('accounting.moves.show', $rev) }}" class="font-semibold underline">{{ $rev->name }}</a>{{ !$loop->last ? ', ' : '' }}
+                    @endforeach
+                </div>
+                @endif
 
                 <div class="mt-6 border border-gray-200 rounded-lg overflow-hidden">
                     <table class="w-full text-sm">

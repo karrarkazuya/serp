@@ -158,9 +158,10 @@ class WarehouseService
             'updated_by'              => auth()->id(),
         ]);
 
-        // Set return types
+        // Set return types (internal transfers return to themselves)
         $receiptType->update(['return_picking_type_id' => $deliveryType->id]);
         $deliveryType->update(['return_picking_type_id' => $receiptType->id]);
+        $internalType->update(['return_picking_type_id' => $internalType->id]);
 
         // Update warehouse with location references
         $warehouse->update([

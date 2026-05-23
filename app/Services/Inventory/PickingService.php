@@ -85,8 +85,15 @@ class PickingService
                 continue;
             }
 
-            $toReserve = (float) $move->product_qty;
-            $reserved  = 0.0;
+            $toReserve    = (float) $move->product_qty;
+            $reserved     = 0.0;
+            $lotTracked   = $move->product?->requiresLotTracking();
+            $lotReservations = [];
+
+            // Clear stale detailed operations before re-reserving
+            if ($lotTracked) {
+                $move->moveLines()->delete();
+            }
 
             // Lock quants for this product/location (FIFO by in_date)
             $quants = Quant::where('company_id', $move->company_id)
@@ -103,7 +110,27 @@ class PickingService
                 if ($take > 0) {
                     $quant->increment('reserved_quantity', $take);
                     $reserved += $take;
+                    if ($lotTracked) {
+                        $lotReservations[] = ['lot_id' => $quant->lot_id, 'qty' => $take];
+                    }
                 }
+            }
+
+            // Create detailed operation lines per lot (Odoo action_assign behaviour)
+            foreach ($lotReservations as $res) {
+                MoveLine::create([
+                    'company_id'       => $move->company_id,
+                    'move_id'          => $move->id,
+                    'picking_id'       => $move->picking_id,
+                    'product_id'       => $move->product_id,
+                    'uom_id'           => $move->uom_id,
+                    'location_id'      => $move->location_src_id,
+                    'location_dest_id' => $move->location_dest_id,
+                    'lot_id'           => $res['lot_id'],
+                    'reserved_qty'     => $res['qty'],
+                    'qty_done'         => $res['qty'],
+                    'date'             => now()->toDateString(),
+                ]);
             }
 
             $move->update([

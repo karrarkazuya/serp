@@ -31,4 +31,9 @@ class AccountingAccountGroupPolicy
     {
         return $user->hasPermission('accounting.unlink');
     }
+
+    public function comment(User $user, AccountingAccountGroup $_group): bool
+    {
+        return $user->hasPermission('accounting.write');
+    }
 }

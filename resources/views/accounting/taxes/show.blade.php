@@ -78,6 +78,12 @@
             </div>
             @endforeach
         </div>
+
+        <x-chatter
+            model-type="App\Models\Accounting\AccountTax"
+            :model-id="$tax->id"
+            :can-comment="auth()->user()->can('comment', $tax)"
+        />
     </div>
 </div>
 @endsection

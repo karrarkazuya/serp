@@ -11,31 +11,20 @@
 @endphp
 
 @section('content')
-<div class="flex min-w-0 flex-col h-full bg-white">
-    <div class="flex flex-wrap items-center gap-2 px-4 py-2 border-b border-gray-200 bg-white shrink-0">
-        @can('create', \App\Models\Accounting\AccountMove::class)
-        @if(!empty($config['routes']['create']))
-        <a href="{{ route($config['routes']['create']) }}" class="px-3 py-1.5 bg-[#714B67] hover:bg-[#5c3d55] text-white text-sm font-medium rounded shadow-sm shrink-0">New</a>
-        @endif
-        @endcan
-        <div class="flex flex-col leading-tight shrink-0">
+<div class="flex flex-col h-full bg-gray-50">
+    <x-toolbar :new-href="!empty($config['routes']['create']) && auth()->user()->can('create', \App\Models\Accounting\AccountMove::class) ? route($config['routes']['create']) : null">
+        <x-slot:breadcrumb>
             <a href="{{ route('accounting.dashboard') }}" class="text-xs text-purple-600 hover:text-purple-700">Accounting</a>
             <span class="text-sm font-semibold text-gray-800">{{ $config['title'] }}</span>
-        </div>
+        </x-slot:breadcrumb>
+    </x-toolbar>
 
-        <x-search
-            :model="\App\Models\Accounting\AccountMove::class"
-            :action="route($config['routes']['index'])"
-            :quick-filters="$quickFilters"
-        />
-
-        <div class="ms-auto flex items-center gap-3 text-sm text-gray-500 shrink-0">
-            <span class="text-sm font-semibold text-gray-600">
-                {{ $documents->total() > 0 ? $documents->firstItem().'-'.$documents->lastItem() : 0 }} / {{ $documents->total() }}
-            </span>
-        </div>
-    </div>
-
+    <div class="flex-1 overflow-y-auto p-4">
+    <x-search
+        :model="\App\Models\Accounting\AccountMove::class"
+        :action="route($config['routes']['index'])"
+        :quick-filters="$quickFilters"
+    />
     <x-list :paginator="$documents" :empty-text="'No ' . strtolower($config['title']) . ' yet.'">
         <x-slot:columns>
             <x-sortable-th column="date" label="Date" class="px-4 py-2" :default="true" />
@@ -82,5 +71,6 @@
         </tr>
         @endforeach
     </x-list>
+    </div>
 </div>
 @endsection

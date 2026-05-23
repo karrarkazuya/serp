@@ -35,7 +35,6 @@ return new class extends Migration
             $table->string('name');
             $table->text('description')->nullable();
             $table->foreignId('default_group_id')->nullable()->constrained('workflow_groups')->nullOnDelete();
-            $table->unsignedInteger('resolve_max_duration')->default(168);
             $table->boolean('creator_see_tasks')->default(false);
             $table->boolean('enabled')->default(false);
             $table->boolean('active')->default(true);
@@ -58,7 +57,6 @@ return new class extends Migration
             $table->string('name');
             $table->text('description')->nullable();
             $table->foreignId('default_department_id')->nullable()->constrained('hr_departments')->nullOnDelete();
-            $table->unsignedInteger('resolve_max_duration')->default(168);
             $table->boolean('is_approve_only')->default(false);
             $table->boolean('has_procedures')->default(false);
             $table->boolean('procedures_required')->default(false);

@@ -59,7 +59,11 @@
             @endforeach
         </div>
 
-        <x-chatter :model="$taxGroup" route-prefix="accounting.tax-groups" />
+        <x-chatter
+            model-type="App\Models\Accounting\AccountingTaxGroup"
+            :model-id="$taxGroup->id"
+            :can-comment="auth()->user()->can('comment', $taxGroup)"
+        />
     </div>
 </div>
 @endsection

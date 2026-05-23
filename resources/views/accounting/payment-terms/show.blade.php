@@ -97,6 +97,12 @@
             </div>
             @endif
         </div>
+
+        <x-chatter
+            model-type="App\Models\Accounting\AccountingPaymentTerm"
+            :model-id="$paymentTerm->id"
+            :can-comment="auth()->user()->can('comment', $paymentTerm)"
+        />
     </div>
 </div>
 @endsection

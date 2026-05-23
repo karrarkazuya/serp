@@ -9,11 +9,13 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
+use Illuminate\Database\Eloquent\SoftDeletes;
+
 class ReorderRule extends Model
 {
     protected $table = 'inventory_reorder_rules';
 
-    use HasChatter;
+    use HasChatter, SoftDeletes;
 
     public array $chatterTracked = [
         'product_id'   => ['label' => 'Product',  'table' => 'inventory_products',  'column' => 'name'],

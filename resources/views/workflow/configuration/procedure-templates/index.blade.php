@@ -20,7 +20,6 @@
         <x-slot:columns>
             <x-sortable-th column="name"    :label="__('common.name')"                  class="px-4 py-2" :default="true" />
             <x-sortable-th column="group"   :label="__('workflow.default_group_label')"  class="px-3 py-2" />
-            <x-sortable-th column="sla"     :label="__('workflow.sla_hrs_label')"        class="px-3 py-2" />
             <x-sortable-th column="enabled" :label="__('workflow.enabled_label')"        class="px-3 py-2" />
             <th class="px-3 py-2"></th>
         </x-slot:columns>
@@ -29,7 +28,6 @@
         <tr class="hover:bg-purple-50/30 cursor-pointer" onclick="window.location='{{ route('workflow.config.procedure-templates.show', $tpl) }}'">
             <td class="px-4 py-2 font-medium text-gray-900">{{ $tpl->name }}</td>
             <td class="px-3 py-2 text-gray-600">{{ $tpl->defaultGroup?->name ?? '—' }}</td>
-            <td class="px-3 py-2 text-gray-600">{{ $tpl->resolve_max_duration ?? '—' }}</td>
             <td class="px-3 py-2">
                 <span class="inline-flex px-2 py-0.5 rounded text-xs {{ $tpl->enabled ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500' }}">
                     {{ $tpl->enabled ? __('workflow.yes_label') : __('workflow.no_label') }}

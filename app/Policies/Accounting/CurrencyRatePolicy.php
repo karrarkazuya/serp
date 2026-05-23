@@ -31,4 +31,9 @@ class CurrencyRatePolicy
     {
         return $user->hasPermission('accounting.write');
     }
+
+    public function comment(User $user, CurrencyRate $_rate): bool
+    {
+        return $user->hasPermission('accounting.write');
+    }
 }

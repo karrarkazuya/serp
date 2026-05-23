@@ -31,4 +31,9 @@ class AccountTaxPolicy
     {
         return $user->hasPermission('accounting.unlink');
     }
+
+    public function comment(User $user, AccountTax $_tax): bool
+    {
+        return $user->hasPermission('accounting.write');
+    }
 }

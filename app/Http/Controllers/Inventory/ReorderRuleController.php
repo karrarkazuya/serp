@@ -29,15 +29,23 @@ class ReorderRuleController extends Controller
 
         $activeCompanyIds = $this->companyContext->getActiveCompanyIds();
 
-        // Refresh on-hand quantities
-        $rules = ReorderRule::whereIn('company_id', $activeCompanyIds)->where('active', true)->get();
-        foreach ($rules as $rule) {
-            $onHand = Quant::where('company_id', $rule->company_id)
-                ->where('product_id', $rule->product_id)
-                ->where('location_id', $rule->location_id)
-                ->sum('quantity');
-            $rule->update(['qty_on_hand' => $onHand]);
-        }
+        // Refresh all on-hand quantities in one pass: one aggregate query + one transaction
+        $onHandMap = Quant::selectRaw('company_id, product_id, location_id, SUM(quantity) as total')
+            ->whereIn('company_id', $activeCompanyIds)
+            ->groupBy('company_id', 'product_id', 'location_id')
+            ->get()
+            ->keyBy(fn ($q) => "{$q->company_id}_{$q->product_id}_{$q->location_id}");
+
+        DB::transaction(function () use ($activeCompanyIds, $onHandMap) {
+            ReorderRule::whereIn('company_id', $activeCompanyIds)->where('active', true)
+                ->each(function (ReorderRule $rule) use ($onHandMap) {
+                    $key    = "{$rule->company_id}_{$rule->product_id}_{$rule->location_id}";
+                    $onHand = (float) ($onHandMap[$key]->total ?? 0);
+                    if (abs((float) $rule->qty_on_hand - $onHand) > 0.0001) {
+                        $rule->update(['qty_on_hand' => $onHand]);
+                    }
+                });
+        });
 
         $query = ReorderRule::query()->with(['product.uom', 'location', 'warehouse', 'route'])->forCompanies($activeCompanyIds);
 
@@ -72,6 +80,14 @@ class ReorderRuleController extends Controller
 
         DB::transaction(fn () => ReorderRule::create($data));
         return redirect()->route('inventory.replenishment.index')->with('success', 'Reorder rule created.');
+    }
+
+    public function edit(Request $request, ReorderRule $reorderRule)
+    {
+        $this->authorize('update', $reorderRule);
+        $activeCompanyIds = $this->companyContext->getActiveCompanyIds();
+        abort_unless(in_array($reorderRule->company_id, $activeCompanyIds), 403);
+        return view('inventory.replenishment.edit', compact('reorderRule'));
     }
 
     public function write(Request $request, ReorderRule $reorderRule)
@@ -111,7 +127,9 @@ class ReorderRuleController extends Controller
 
         $supplierLoc = Location::where('usage', 'supplier')->whereNull('company_id')->first();
         $qty = $reorderRule->getReplenishQty();
-        if ($qty <= 0) $qty = $reorderRule->qty_max - $reorderRule->qty_min;
+        if ($qty <= 0) {
+            return back()->with('error', 'Stock is already at or above the maximum quantity. No replenishment needed.');
+        }
 
         $pickingData = [
             'company_id'        => $reorderRule->company_id,

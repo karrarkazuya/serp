@@ -73,6 +73,12 @@
             </div>
             @endif
         </div>
+
+        <x-chatter
+            model-type="App\Models\Accounting\AccountingAccountGroup"
+            :model-id="$accountGroup->id"
+            :can-comment="auth()->user()->can('comment', $accountGroup)"
+        />
     </div>
 </div>
 @endsection

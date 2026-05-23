@@ -11,16 +11,17 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
+use Illuminate\Database\Eloquent\SoftDeletes;
+
 class ProcedureTemplate extends Model
 {
-    use HasChatter;
+    use HasChatter, SoftDeletes;
 
     protected $table = 'workflow_procedure_templates';
 
     public array $sortable = [
         'name'       => 'name',
         'group'      => 'default_group_id',
-        'sla'        => 'resolve_max_duration',
         'enabled'    => 'enabled',
         'active'     => 'active',
         'created_at' => 'created_at',
@@ -41,7 +42,7 @@ class ProcedureTemplate extends Model
     ];
 
     protected $fillable = [
-        'uuid', 'name', 'description', 'default_group_id', 'resolve_max_duration',
+        'uuid', 'name', 'description', 'default_group_id',
         'creator_see_tasks', 'enabled', 'active', 'created_by', 'updated_by',
         'flowchart_sub_positions',
     ];

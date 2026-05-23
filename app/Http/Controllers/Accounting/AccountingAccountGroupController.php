@@ -126,4 +126,16 @@ class AccountingAccountGroupController extends Controller
 
         return redirect()->route('accounting.account-groups.index')->with('success', 'Account group deleted.');
     }
+
+    public function addComment(Request $request, AccountingAccountGroup $accountGroup)
+    {
+        $this->authorize('comment', $accountGroup);
+        $activeCompanyIds = $this->companyContext->getActiveCompanyIds();
+        abort_unless(in_array($accountGroup->company_id, $activeCompanyIds), 403);
+
+        $request->validate(['body' => 'required|string|max:5000']);
+        DB::transaction(fn () => $accountGroup->logComment($request->body));
+
+        return back()->with('success', 'Comment added.');
+    }
 }

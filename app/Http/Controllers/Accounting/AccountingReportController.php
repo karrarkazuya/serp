@@ -426,11 +426,11 @@ class AccountingReportController extends Controller
             ->select(
                 'account_moves.id',
                 'account_moves.name',
-                'account_moves.invoice_date',
+                'account_moves.date as invoice_date',
                 'account_moves.invoice_date_due',
                 'account_moves.partner_id',
                 'contacts.name as partner_name',
-                DB::raw('account_moves.amount_residual as residual')
+                'account_moves.amount_total as residual'
             )
             ->join('contacts', 'contacts.id', '=', 'account_moves.partner_id')
             ->when(!empty($companyIds), fn ($q) => $q->whereIn('account_moves.company_id', $companyIds))

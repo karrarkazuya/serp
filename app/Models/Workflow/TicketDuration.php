@@ -6,8 +6,12 @@ use App\Models\User;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
+use Illuminate\Database\Eloquent\SoftDeletes;
+
 class TicketDuration extends Model
 {
+    use SoftDeletes;
+
     protected $table = 'workflow_ticket_durations';
 
     protected $fillable = ['ticket_id', 'department_id', 'user_id', 'duration'];

@@ -6,8 +6,12 @@ use App\Models\User;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
+use Illuminate\Database\Eloquent\SoftDeletes;
+
 class TicketProcedureLine extends Model
 {
+    use SoftDeletes;
+
     protected $table = 'workflow_ticket_procedure_lines';
 
     protected $fillable = [

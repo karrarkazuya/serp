@@ -223,7 +223,7 @@ class AccountingServiceTest extends TestCase
 
         $reversal = $this->service->reverseMove($posted, Carbon::today()->addDay());
 
-        $this->assertSame('draft', $reversal->state);
+        $this->assertSame('posted', $reversal->state);
         $this->assertSame($posted->id, $reversal->reversed_move_id);
         $this->assertCount(2, $reversal->lines);
 

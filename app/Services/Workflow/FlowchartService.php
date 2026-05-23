@@ -188,7 +188,6 @@ class FlowchartService
                 'height'      => self::NODE_H,
                 'description' => $step->description ?: null,
                 'department'  => $step->defaultDepartment?->name,
-                'sla'         => $step->resolve_max_duration,
                 'next_steps'  => $nextStepNames,
             ];
         }

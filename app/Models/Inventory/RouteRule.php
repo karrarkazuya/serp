@@ -8,8 +8,12 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
+use Illuminate\Database\Eloquent\SoftDeletes;
+
 class RouteRule extends Model
 {
+    use SoftDeletes;
+
     protected $table = 'inventory_route_rules';
 
     protected $fillable = [

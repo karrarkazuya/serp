@@ -27,7 +27,7 @@ Register every new model with `AuditableObserver` in `AppServiceProvider`.
 
 ---
 
-## The 7 Non-Negotiable Rules
+## The 8 Non-Negotiable Rules
 
 Violating any of these is a bug, not a style issue.
 
@@ -131,7 +131,35 @@ DB::transaction(fn () => $this->inventoryService->reserve($order));
 $record = DB::transaction(fn () => $this->fooService->create($data));
 ```
 
-### 8. All file uploads — `FileService` only. All file serving — `/files/{uuid}` only.
+### 8. Soft deletes — every application table and model
+
+Every application database table must have a `deleted_at` column (`$table->softDeletes()`), and every corresponding Eloquent model must use the `SoftDeletes` trait.
+
+**Excluded** (never add `deleted_at` to these):
+- Laravel framework tables: `sessions`, `cache`, `cache_locks`, `jobs`, `job_batches`, `failed_jobs`, `password_reset_tokens`, `personal_access_tokens`
+- Pure pivot tables with composite-only primary keys (no `id` column): e.g. `contact_tag`, `workflow_user_group`, `role_permission`, `account_move_line_taxes`, `inventory_product_routes`, etc.
+
+**Migration pattern:**
+```php
+Schema::table('my_table', function (Blueprint $table) {
+    $table->softDeletes();
+});
+```
+
+**Model pattern:**
+```php
+use Illuminate\Database\Eloquent\SoftDeletes;
+
+class MyModel extends Model
+{
+    use SoftDeletes;
+    // ...
+}
+```
+
+When adding a new table, always add `$table->softDeletes()` in the migration and `use SoftDeletes;` in the model. This is non-negotiable — missing it is a data-loss bug.
+
+### 9. All file uploads — `FileService` only. All file serving — `/files/{uuid}` only.
 
 **Never** store uploaded files directly in controllers or hand-roll file-serving routes. Every file upload in the application must go through `App\Services\FileService::store()`. Every file is served through the single route `GET /files/{uuid}` (`files.serve`) handled by `App\Http\Controllers\FileController`.
 
@@ -313,8 +341,8 @@ Nodes start collapsed. Click the chevron to expand. Children are indented with a
 
 When building a new module, follow `docs/implement_new_module.md` using Contacts as the reference. Quick checklist:
 
-- [ ] Migration: `id`, `uuid`, `company_id` (if applicable), business fields, `active`, `created_by`, `updated_by`, timestamps
-- [ ] Model: fillable, casts, relationships, `scopeActive`, `scopeForCompanies` (if company-scoped)
+- [ ] Migration: `id`, `uuid`, `company_id` (if applicable), business fields, `active`, `created_by`, `updated_by`, timestamps, **`softDeletes()`**
+- [ ] Model: fillable, casts, relationships, `scopeActive`, `scopeForCompanies` (if company-scoped), **`use SoftDeletes`**
 - [ ] Register model with `AuditableObserver` in `AppServiceProvider`
 - [ ] Permissions seeded in `PermissionSeeder` and assigned in `RoleSeeder`
 - [ ] Policy: `viewAny`, `view`, `create`, `update`, `delete`, `comment`

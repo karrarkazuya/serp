@@ -26,7 +26,7 @@
                 @csrf
                 @include('accounting.moves._form', [
                     'move' => null,
-                    'accounts' => $accounts,
+                    'accounts' => [],
                     'defaultCompanyId' => $defaultCompanyId ?? null,
                     'preselectedJournalId' => $preselectedJournalId ?? null,
                 ])

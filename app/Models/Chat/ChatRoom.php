@@ -9,8 +9,12 @@ use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 
+use Illuminate\Database\Eloquent\SoftDeletes;
+
 class ChatRoom extends Model
 {
+    use SoftDeletes;
+
     protected $table = 'chat_rooms';
     protected $fillable = ['name', 'description', 'created_by_user_id', 'active', 'type'];
 

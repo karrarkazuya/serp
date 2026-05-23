@@ -9,11 +9,13 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
+use Illuminate\Database\Eloquent\SoftDeletes;
+
 class ProductCategory extends Model
 {
     protected $table = 'inventory_product_categories';
 
-    use HasChatter;
+    use HasChatter, SoftDeletes;
 
     public array $chatterTracked = [
         'name'             => 'Name',

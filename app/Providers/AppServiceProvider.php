@@ -85,6 +85,7 @@ use App\Policies\Accounting\AccountingIncotermPolicy;
 use App\Policies\Accounting\AccountingPaymentTermPolicy;
 use App\Policies\Accounting\AccountingTaxGroupPolicy;
 use App\Policies\Accounting\AccountJournalPolicy;
+use App\Policies\Accounting\AccountPaymentPolicy;
 use App\Policies\Accounting\AccountMovePolicy;
 use App\Policies\Accounting\AccountPolicy;
 use App\Policies\Accounting\AccountTaxPolicy;
@@ -210,6 +211,7 @@ class AppServiceProvider extends ServiceProvider
         Gate::policy(AccountingIncoterm::class, AccountingIncotermPolicy::class);
         Gate::policy(AccountingTaxGroup::class, AccountingTaxGroupPolicy::class);
         Gate::policy(AccountingAccountGroup::class, AccountingAccountGroupPolicy::class);
+        Gate::policy(AccountPayment::class, AccountPaymentPolicy::class);
         // Inventory
         Gate::policy(Product::class, ProductPolicy::class);
         Gate::policy(ProductCategory::class, ProductCategoryPolicy::class);

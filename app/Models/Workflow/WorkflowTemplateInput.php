@@ -7,8 +7,12 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
+use Illuminate\Database\Eloquent\SoftDeletes;
+
 class WorkflowTemplateInput extends Model
 {
+    use SoftDeletes;
+
     protected $table = 'workflow_template_inputs';
 
     public const TYPES = ['char', 'int', 'float', 'date', 'datetime', 'boolean', 'select', 'multiselect', 'textarea', 'file', 'label'];

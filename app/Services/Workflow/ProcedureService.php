@@ -23,11 +23,7 @@ class ProcedureService
         $procedure = Procedure::create(array_merge($data, [
             'procedure_template_id' => $template->id,
             'state'                 => 'pending',
-            'resolve_max_duration'  => $template->resolve_max_duration,
             'created_by_user_id'    => $actorId,
-            'resolve_deadline'      => $template->resolve_max_duration
-                ? now()->addHours($template->resolve_max_duration)
-                : null,
         ]));
 
         if ($actorId) {
@@ -189,10 +185,6 @@ class ProcedureService
                 'path_choice_required'      => $step->path_choice_required,
                 'ignore_state'              => $step->ignore_state,
                 'is_approve_only'           => $step->is_approve_only,
-                'resolve_max_duration'      => $step->resolve_max_duration,
-                'resolve_deadline'          => $step->resolve_max_duration
-                    ? now()->addHours($step->resolve_max_duration)
-                    : null,
             ]);
 
             foreach ($step->subProcedures as $subProc) {
@@ -330,13 +322,7 @@ class ProcedureService
 
     private function finishProcedureAsCompleted(Procedure $procedure): void
     {
-        $duration = (int) round(now()->diffInHours($procedure->created_at, true));
-        $passed   = max(0, $duration - ($procedure->resolve_max_duration ?? 0));
-        $procedure->update([
-            'state'                   => 'completed',
-            'resolve_duration'        => $duration,
-            'resolve_deadline_passed' => $passed,
-        ]);
+        $procedure->update(['state' => 'completed']);
         $this->chatterService->log($procedure, 'Procedure completed.', 'system');
 
         if ($procedure->created_by_user_id && $procedure->created_by_user_id !== auth()->user()?->id) {
@@ -347,8 +333,7 @@ class ProcedureService
 
     private function finishProcedureAsCancelled(Procedure $procedure): void
     {
-        $duration = (int) round(now()->diffInHours($procedure->created_at, true));
-        $procedure->update(['state' => 'closed', 'resolve_duration' => $duration]);
+        $procedure->update(['state' => 'closed']);
         $this->chatterService->log($procedure, 'No active tickets remaining — procedure cancelled.', 'system');
 
         if ($procedure->created_by_user_id && $procedure->created_by_user_id !== auth()->user()?->id) {
@@ -414,15 +399,9 @@ class ProcedureService
         }
 
         $anyCompleted = $tickets->contains(fn (Ticket $t) => $t->state === 'completed');
-        $duration     = (int) round(now()->diffInHours($procedure->created_at, true));
 
         if ($anyCompleted) {
-            $passed = max(0, $duration - ($procedure->resolve_max_duration ?? 0));
-            $procedure->update([
-                'state'                   => 'completed',
-                'resolve_duration'        => $duration,
-                'resolve_deadline_passed' => $passed,
-            ]);
+            $procedure->update(['state' => 'completed']);
             $this->chatterService->log($procedure, 'All tickets completed — procedure marked as completed.', 'system');
 
             if ($procedure->created_by_user_id && $procedure->created_by_user_id !== auth()->user()?->id) {
@@ -434,10 +413,7 @@ class ProcedureService
                 );
             }
         } else {
-            $procedure->update([
-                'state'            => 'closed',
-                'resolve_duration' => $duration,
-            ]);
+            $procedure->update(['state' => 'closed']);
             $this->chatterService->log($procedure, 'All tickets rejected/skipped — procedure closed.', 'system');
 
             if ($procedure->created_by_user_id && $procedure->created_by_user_id !== auth()->user()?->id) {

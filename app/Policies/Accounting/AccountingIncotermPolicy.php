@@ -31,4 +31,9 @@ class AccountingIncotermPolicy
     {
         return $user->hasPermission('accounting.unlink');
     }
+
+    public function comment(User $user, AccountingIncoterm $_incoterm): bool
+    {
+        return $user->hasPermission('accounting.write');
+    }
 }

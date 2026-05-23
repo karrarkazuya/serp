@@ -126,4 +126,16 @@ class AccountingTaxGroupController extends Controller
 
         return redirect()->route('accounting.tax-groups.index')->with('success', 'Tax group deleted.');
     }
+
+    public function addComment(Request $request, AccountingTaxGroup $taxGroup)
+    {
+        $this->authorize('comment', $taxGroup);
+        $activeCompanyIds = $this->companyContext->getActiveCompanyIds();
+        abort_unless(in_array($taxGroup->company_id, $activeCompanyIds), 403);
+
+        $request->validate(['body' => 'required|string|max:5000']);
+        DB::transaction(fn () => $taxGroup->logComment($request->body));
+
+        return back()->with('success', 'Comment added.');
+    }
 }

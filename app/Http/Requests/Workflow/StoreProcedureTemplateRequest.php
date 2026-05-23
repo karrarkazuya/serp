@@ -17,7 +17,6 @@ class StoreProcedureTemplateRequest extends FormRequest
             'name'                 => 'required|string|max:255',
             'description'          => 'nullable|string|max:5000',
             'default_group_id'     => 'nullable|exists:workflow_groups,id',
-            'resolve_max_duration' => 'nullable|integer|min:1',
             'creator_see_tasks'    => 'boolean',
             'enabled'              => 'boolean',
             'departments'          => 'nullable|array',

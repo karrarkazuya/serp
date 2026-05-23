@@ -31,4 +31,9 @@ class AccountingPaymentTermPolicy
     {
         return $user->hasPermission('accounting.unlink');
     }
+
+    public function comment(User $user, AccountingPaymentTerm $_term): bool
+    {
+        return $user->hasPermission('accounting.write');
+    }
 }

@@ -10,11 +10,13 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
+use Illuminate\Database\Eloquent\SoftDeletes;
+
 class OperationType extends Model
 {
     protected $table = 'inventory_operation_types';
 
-    use HasChatter;
+    use HasChatter, SoftDeletes;
 
     public array $chatterTracked = ['name' => 'Name', 'code' => 'Code'];
 

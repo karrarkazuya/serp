@@ -10,9 +10,11 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
+use Illuminate\Database\Eloquent\SoftDeletes;
+
 class Account extends Model
 {
-    use HasChatter;
+    use HasChatter, SoftDeletes;
 
     public const TYPES = [
         'asset_receivable'     => 'Receivable',

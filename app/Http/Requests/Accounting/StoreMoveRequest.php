@@ -45,7 +45,7 @@ class StoreMoveRequest extends FormRequest
             'partner_id'  => ['nullable', $partnerInCompany],
             'date'        => ['required', 'date'],
             'ref'         => ['nullable', 'string', 'max:128'],
-            'move_type'   => ['nullable', 'string', Rule::in(array_keys(AccountMove::MOVE_TYPES))],
+            'move_type'   => ['nullable', 'string', Rule::in(['entry'])],
             'currency'    => ['nullable', 'string', 'max:10'],
             'narration'   => ['nullable', 'string', 'max:10000'],
 

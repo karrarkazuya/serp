@@ -170,6 +170,7 @@ class AccountController extends Controller
 
     public function write(UpdateAccountRequest $request, Account $account)
     {
+        $this->authorize('update', $account);
         $activeCompanyIds = $this->companyContext->getActiveCompanyIds();
         abort_unless(in_array($account->company_id, $activeCompanyIds), 403);
 

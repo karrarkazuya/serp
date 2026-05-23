@@ -94,4 +94,14 @@ class AccountingIncotermController extends Controller
 
         return redirect()->route('accounting.incoterms.index')->with('success', 'Incoterm deleted.');
     }
+
+    public function addComment(Request $request, AccountingIncoterm $incoterm)
+    {
+        $this->authorize('comment', $incoterm);
+
+        $request->validate(['body' => 'required|string|max:5000']);
+        DB::transaction(fn () => $incoterm->logComment($request->body));
+
+        return back()->with('success', 'Comment added.');
+    }
 }

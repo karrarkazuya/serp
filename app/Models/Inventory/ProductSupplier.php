@@ -7,8 +7,12 @@ use App\Models\User;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
+use Illuminate\Database\Eloquent\SoftDeletes;
+
 class ProductSupplier extends Model
 {
+    use SoftDeletes;
+
     protected $table = 'inventory_product_suppliers';
 
     protected $fillable = [

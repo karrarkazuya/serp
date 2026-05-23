@@ -5,8 +5,12 @@ namespace App\Models\Workflow;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
+use Illuminate\Database\Eloquent\SoftDeletes;
+
 class TicketPath extends Model
 {
+    use SoftDeletes;
+
     protected $table = 'workflow_ticket_paths';
 
     protected $fillable = ['ticket_id', 'target_ticket_id', 'name'];

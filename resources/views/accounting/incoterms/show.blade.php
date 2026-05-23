@@ -57,6 +57,12 @@
             </div>
             @endforeach
         </div>
+
+        <x-chatter
+            model-type="App\Models\Accounting\AccountingIncoterm"
+            :model-id="$incoterm->id"
+            :can-comment="auth()->user()->can('comment', $incoterm)"
+        />
     </div>
 </div>
 @endsection

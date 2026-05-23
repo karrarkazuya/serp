@@ -9,9 +9,11 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
+use Illuminate\Database\Eloquent\SoftDeletes;
+
 class SkillType extends Model
 {
-    use HasChatter;
+    use HasChatter, SoftDeletes;
 
     protected $table = 'hr_skill_types';
 

@@ -30,6 +30,7 @@ class AccountingSettingsController extends Controller
 
     public function write(StoreAccountingSettingsRequest $request, Company $company)
     {
+        $this->authorize('update', $company);
         $activeCompanyIds = $this->companyContext->getActiveCompanyIds();
         abort_unless(in_array($company->id, $activeCompanyIds), 403);
 

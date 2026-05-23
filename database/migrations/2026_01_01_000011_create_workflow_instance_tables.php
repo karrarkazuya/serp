@@ -17,10 +17,6 @@ return new class extends Migration
             $table->text('description')->nullable();
             $table->string('state')->default('pending');
             $table->foreignId('created_by_user_id')->nullable()->constrained('users')->nullOnDelete();
-            $table->unsignedInteger('resolve_max_duration')->default(168);
-            $table->dateTime('resolve_deadline')->nullable();
-            $table->integer('resolve_duration')->default(0);
-            $table->integer('resolve_deadline_passed')->default(0);
             $table->foreignId('optional_contact_id')->nullable()->constrained('contacts')->nullOnDelete();
             $table->unsignedBigInteger('optional_ticket_id')->nullable();
             $table->unsignedBigInteger('optional_procedure_id')->nullable();

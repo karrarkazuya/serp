@@ -24,7 +24,7 @@
         <div class="bg-white mx-4 my-4 rounded-xl border border-gray-200 shadow-sm">
             <form id="move-form" method="POST" action="{{ route('accounting.moves.update', $move) }}">
                 @csrf @method('PUT')
-                @include('accounting.moves._form', ['move' => $move, 'accounts' => $accounts])
+                @include('accounting.moves._form', ['move' => $move, 'accounts' => []])
             </form>
         </div>
     </div>

@@ -185,7 +185,7 @@ window._docFormData = {
     <div class="mb-8 flex items-start justify-between gap-6">
         <input type="hidden" name="move_type" value="{{ $config['move_type'] }}">
         <div>
-            <p class="text-lg font-semibold text-gray-800">{{ $config['singular'] === 'Invoice' ? 'Customer Invoice' : 'Vendor Bill' }}</p>
+            <p class="text-lg font-semibold text-gray-800">{{ match($config['move_type']) { 'out_invoice' => 'Customer Invoice', 'in_invoice' => 'Vendor Bill', 'out_refund' => 'Customer Credit Note', 'in_refund' => 'Vendor Refund', default => $config['singular'] } }}</p>
             @if($document?->name)
                 <h1 class="mt-2 text-4xl font-bold text-gray-900">{{ $document->name }}</h1>
             @else

@@ -11,6 +11,7 @@ use App\Models\Accounting\Account;
 use App\Models\Accounting\AccountJournal;
 use App\Models\Accounting\AccountMove;
 use App\Services\Accounting\AccountingService;
+use Illuminate\Validation\Rule;
 use App\Services\Company\CompanyContextService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -324,7 +325,7 @@ class AccountDocumentController extends Controller
         $this->authorize('view', $document);
         $this->assertDocumentAccess($document, $moveType);
 
-        $document->load(['journal', 'partner', 'company', 'paymentTerm', 'incoterm', 'payments.journal', 'lines.account', 'lines.partner', 'lines.taxes', 'lines.taxLine', 'creator', 'updater', 'poster']);
+        $document->load(['journal', 'partner', 'company', 'paymentTerm', 'incoterm', 'payments.journal', 'lines.account', 'lines.partner', 'lines.taxes', 'lines.taxLine', 'creator', 'updater', 'poster', 'reversedMove', 'reversal']);
         $balance = $this->accounting->computeMoveBalance($document);
         $config = $this->config($moveType);
         $controlLine = $this->controlLine($document);
@@ -361,6 +362,7 @@ class AccountDocumentController extends Controller
 
     private function write(UpdateDocumentRequest $request, AccountMove $document, string $moveType)
     {
+        $this->authorize('update', $document);
         $this->assertDocumentAccess($document, $moveType);
 
         $data = $request->validated();
@@ -429,7 +431,7 @@ class AccountDocumentController extends Controller
         $data = $request->validate([
             'amount'     => ['nullable', 'numeric', 'gt:0'],
             'date'       => ['nullable', 'date'],
-            'journal_id' => ['nullable', 'integer', 'exists:account_journals,id'],
+            'journal_id' => ['nullable', 'integer', Rule::exists('account_journals', 'id')->where('company_id', $document->company_id)],
             'memo'       => ['nullable', 'string', 'max:255'],
         ]);
 
@@ -468,7 +470,7 @@ class AccountDocumentController extends Controller
         $this->authorize('view', $document);
         $this->assertDocumentAccess($document, $moveType);
 
-        $document->load(['journal', 'partner', 'company', 'lines.account', 'lines.partner']);
+        $document->load(['journal', 'partner', 'company', 'lines.account', 'lines.partner', 'lines.taxLine']);
         $config = $this->config($moveType);
         $controlLine = $this->controlLine($document);
         $documentLines = $this->documentLines($document);

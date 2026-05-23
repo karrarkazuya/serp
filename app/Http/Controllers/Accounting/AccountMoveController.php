@@ -26,7 +26,7 @@ class AccountMoveController extends Controller
         $this->authorize('viewAny', AccountMove::class);
 
         $activeCompanyIds = $this->companyContext->getActiveCompanyIds();
-        $query = AccountMove::query()->with(['journal', 'partner']);
+        $query = AccountMove::query()->with(['journal', 'partner'])->where('move_type', 'entry');
 
         if (!empty($activeCompanyIds)) {
             $query->forCompanies($activeCompanyIds);
@@ -56,11 +56,23 @@ class AccountMoveController extends Controller
         $activeCompanyIds = $this->companyContext->getActiveCompanyIds();
         abort_unless(in_array($move->company_id, $activeCompanyIds), 403);
 
-        $move->load(['journal', 'partner', 'lines.account', 'lines.partner', 'creator', 'updater', 'poster', 'reversedMove']);
+        $redirect = match($move->move_type) {
+            'out_invoice' => route('accounting.invoices.show', $move),
+            'in_invoice'  => route('accounting.bills.show', $move),
+            'out_refund'  => route('accounting.credit-notes.show', $move),
+            'in_refund'   => route('accounting.refunds.show', $move),
+            default       => null,
+        };
+        if ($redirect) {
+            return redirect($redirect);
+        }
+
+        $move->load(['journal', 'partner', 'lines.account', 'lines.partner', 'creator', 'updater', 'poster', 'reversedMove', 'reversal']);
 
         $balance = $this->accounting->computeMoveBalance($move);
 
         $allIds = AccountMove::query()
+            ->where('move_type', 'entry')
             ->when(!empty($activeCompanyIds), fn ($q) => $q->forCompanies($activeCompanyIds))
             ->orderByDesc('date')
             ->orderByDesc('id')
@@ -95,16 +107,20 @@ class AccountMoveController extends Controller
         $action = $data['action'] ?? 'save';
         unset($data['lines'], $data['action']);
 
-        $move = DB::transaction(function () use ($data, $lines, $action) {
-            $created = $this->accounting->createMove($data, $lines);
-            if ($action === 'post') {
-                if (!auth()->user()->hasPermission('accounting.post')) {
-                    abort(403, 'You do not have permission to post entries.');
+        try {
+            $move = DB::transaction(function () use ($data, $lines, $action) {
+                $created = $this->accounting->createMove($data, $lines);
+                if ($action === 'post') {
+                    if (!auth()->user()->hasPermission('accounting.post')) {
+                        abort(403, 'You do not have permission to post entries.');
+                    }
+                    $created = $this->accounting->postMove($created);
                 }
-                $created = $this->accounting->postMove($created);
-            }
-            return $created;
-        });
+                return $created;
+            });
+        } catch (\RuntimeException $e) {
+            return back()->withInput()->with('error', $e->getMessage());
+        }
 
         return redirect()
             ->route('accounting.moves.show', $move)
@@ -130,6 +146,7 @@ class AccountMoveController extends Controller
 
     public function write(UpdateMoveRequest $request, AccountMove $move)
     {
+        $this->authorize('update', $move);
         $activeCompanyIds = $this->companyContext->getActiveCompanyIds();
         abort_unless(in_array($move->company_id, $activeCompanyIds), 403);
 

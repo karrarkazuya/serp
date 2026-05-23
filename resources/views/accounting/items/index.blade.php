@@ -63,7 +63,16 @@
         </x-slot:columns>
 
         @foreach($items as $item)
-        <tr class="hover:bg-purple-50/30 cursor-pointer" onclick="window.location='{{ route('accounting.moves.show', $item->move) }}'">
+        @php
+            $itemMoveUrl = match($item->move?->move_type) {
+                'out_invoice' => route('accounting.invoices.show', $item->move),
+                'in_invoice'  => route('accounting.bills.show', $item->move),
+                'out_refund'  => route('accounting.credit-notes.show', $item->move),
+                'in_refund'   => route('accounting.refunds.show', $item->move),
+                default       => route('accounting.moves.show', $item->move),
+            };
+        @endphp
+        <tr class="hover:bg-purple-50/30 cursor-pointer" onclick="window.location='{{ $itemMoveUrl }}'">
             <td class="px-4 py-2 text-gray-700 tabular-nums">{{ optional($item->date)->format('Y-m-d') }}</td>
             <td class="px-3 py-2 font-medium text-gray-900">{{ $item->move?->name ?: '(Draft)' }}</td>
             <td class="px-3 py-2 text-gray-600">{{ $item->journal?->code ?: '—' }}</td>

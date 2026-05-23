@@ -35,7 +35,16 @@
                     <tr class="hover:bg-gray-50">
                         <td class="px-4 py-2.5 tabular-nums text-gray-600">{{ $move->date?->format('Y-m-d') }}</td>
                         <td class="px-4 py-2.5">
-                            <a href="{{ route('accounting.moves.show', $move) }}" class="text-purple-600 hover:underline font-medium">{{ $move->name }}</a>
+                            @php
+                                $auditRoute = match($move->move_type) {
+                                    'out_invoice' => route('accounting.invoices.show', $move),
+                                    'in_invoice'  => route('accounting.bills.show', $move),
+                                    'out_refund'  => route('accounting.credit-notes.show', $move),
+                                    'in_refund'   => route('accounting.refunds.show', $move),
+                                    default       => route('accounting.moves.show', $move),
+                                };
+                            @endphp
+                            <a href="{{ $auditRoute }}" class="text-purple-600 hover:underline font-medium">{{ $move->name }}</a>
                             @if($move->ref) <span class="text-xs text-gray-400 ml-1">{{ $move->ref }}</span> @endif
                         </td>
                         <td class="px-4 py-2.5 text-gray-600">{{ $move->journal?->code }} – {{ $move->journal?->name }}</td>

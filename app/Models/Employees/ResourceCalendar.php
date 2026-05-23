@@ -10,9 +10,11 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
+use Illuminate\Database\Eloquent\SoftDeletes;
+
 class ResourceCalendar extends Model
 {
-    use HasChatter;
+    use HasChatter, SoftDeletes;
 
     protected $table = 'hr_resource_calendars';
 

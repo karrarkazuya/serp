@@ -44,6 +44,9 @@
             </td>
             <td class="px-3 py-2">
                 <div class="flex items-center gap-2 justify-end">
+                    @can('update', $rule)
+                    <a href="{{ route('inventory.replenishment.edit', $rule) }}" class="px-2 py-1 text-xs text-gray-600 border border-gray-200 rounded hover:bg-gray-50">Edit</a>
+                    @endcan
                     <form method="POST" action="{{ route('inventory.replenishment.replenish', $rule) }}">
                         @csrf
                         <button class="px-2 py-1 text-xs font-semibold text-purple-700 border border-purple-200 rounded hover:bg-purple-50">Replenish</button>

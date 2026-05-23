@@ -55,6 +55,12 @@
             </div>
             @endforeach
         </div>
+
+        <x-chatter
+            model-type="App\Models\Accounting\CurrencyRate"
+            :model-id="$currencyRate->id"
+            :can-comment="auth()->user()->can('comment', $currencyRate)"
+        />
     </div>
 </div>
 @endsection

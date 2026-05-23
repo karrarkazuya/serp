@@ -6,8 +6,12 @@ use App\Models\User;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
+use Illuminate\Database\Eloquent\SoftDeletes;
+
 class Setting extends Model
 {
+    use SoftDeletes;
+
     protected $fillable = ['uuid', 'key', 'value', 'group', 'type', 'label', 'description', 'created_by', 'updated_by'];
 
     public function creator(): BelongsTo

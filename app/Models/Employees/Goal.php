@@ -8,9 +8,11 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
+use Illuminate\Database\Eloquent\SoftDeletes;
+
 class Goal extends Model
 {
-    use HasChatter;
+    use HasChatter, SoftDeletes;
 
     protected $table = 'hr_goals';
 

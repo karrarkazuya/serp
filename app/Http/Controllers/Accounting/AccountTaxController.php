@@ -153,4 +153,16 @@ class AccountTaxController extends Controller
 
         return redirect()->route('accounting.taxes.index')->with('success', 'Tax deleted.');
     }
+
+    public function addComment(Request $request, AccountTax $tax)
+    {
+        $this->authorize('comment', $tax);
+        $activeCompanyIds = $this->companyContext->getActiveCompanyIds();
+        abort_unless(in_array($tax->company_id, $activeCompanyIds), 403);
+
+        $request->validate(['body' => 'required|string|max:5000']);
+        DB::transaction(fn () => $tax->logComment($request->body));
+
+        return back()->with('success', 'Comment added.');
+    }
 }

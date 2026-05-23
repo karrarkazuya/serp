@@ -7,8 +7,12 @@ use App\Models\User;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
+use Illuminate\Database\Eloquent\SoftDeletes;
+
 class MoveLine extends Model
 {
+    use SoftDeletes;
+
     protected $table = 'inventory_move_lines';
 
     protected $fillable = [

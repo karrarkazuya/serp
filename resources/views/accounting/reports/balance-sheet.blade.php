@@ -14,9 +14,6 @@
         @include('accounting.reports._filters', ['dateFrom' => $dateFrom, 'dateTo' => $dateTo])
 
         @php
-        function reportSection($rows, $title, $colorClass, $total) {
-            return compact('rows', 'title', 'colorClass', 'total');
-        }
         $sections = [
             ['rows' => $assets,      'title' => 'Assets',      'colorClass' => 'blue',   'total' => $totalAssets],
             ['rows' => $liabilities, 'title' => 'Liabilities', 'colorClass' => 'red',    'total' => $totalLiabilities],

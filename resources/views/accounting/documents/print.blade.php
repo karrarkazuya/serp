@@ -32,11 +32,16 @@
     </style>
 </head>
 <body>
-    @php $lineAmount = fn($line) => in_array($config['move_type'], ['out_invoice', 'in_refund'], true) ? (float) $line->credit : (float) $line->debit; @endphp
+    @php
+        $lineAmount = fn($line) => in_array($config['move_type'], ['out_invoice', 'in_refund'], true) ? (float) $line->credit : (float) $line->debit;
+        $taxLines   = $document->lines->filter(fn($l) => $l->tax_line_id);
+        $untaxed    = $documentLines->sum(fn($l) => $lineAmount($l));
+        $typeLabel  = match($config['move_type']) { 'out_invoice' => 'Customer Invoice', 'in_invoice' => 'Vendor Bill', 'out_refund' => 'Customer Credit Note', 'in_refund' => 'Vendor Refund', default => $config['singular'] };
+    @endphp
     <main class="page">
         <section class="top">
             <div>
-                <div class="muted">{{ $config['singular'] === 'Invoice' ? 'Customer Invoice' : 'Vendor Bill' }}</div>
+                <div class="muted">{{ $typeLabel }}</div>
                 <h1 class="title">{{ $document->name ?: 'Draft' }}</h1>
             </div>
             <div style="text-align:right">
@@ -80,7 +85,11 @@
         </table>
 
         <section class="totals">
-            <div class="total-row"><strong>Untaxed Amount:</strong><span>{{ number_format((float) $document->amount_total, 2) }} {{ $document->currency }}</span></div>
+            <div class="total-row"><strong>Untaxed Amount:</strong><span>{{ number_format($untaxed, 2) }} {{ $document->currency }}</span></div>
+            @foreach($taxLines->groupBy('tax_line_id') as $group)
+            @php $tl = $group->first(); @endphp
+            <div class="total-row"><span>{{ $tl->name }}:</span><span>{{ number_format($group->sum(fn($l) => $lineAmount($l)), 2) }} {{ $document->currency }}</span></div>
+            @endforeach
             <div class="total-row grand"><span>Total:</span><span>{{ number_format((float) $document->amount_total, 2) }} {{ $document->currency }}</span></div>
         </section>
 

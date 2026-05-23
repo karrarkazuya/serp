@@ -283,6 +283,7 @@ class PickingController extends Controller
         abort_if($picking->isDone(), 403, 'Cannot delete a done transfer.');
         DB::transaction(function () use ($picking) {
             $this->pickingService->releasePickingReservations($picking);
+            $picking->moveLines()->delete();
             $picking->moves()->delete();
             $picking->delete();
         });

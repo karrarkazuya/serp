@@ -7,6 +7,7 @@
             <x-relation-dropdown
                 name="company_id"
                 table="companies"
+                field="name"
                 :value="old('company_id', $defaultCompanyId ?? '')"
                 placeholder="Select company…"
                 required />

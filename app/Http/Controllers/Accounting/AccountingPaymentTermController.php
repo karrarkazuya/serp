@@ -23,7 +23,7 @@ class AccountingPaymentTermController extends Controller
 
         $activeCompanyIds = $this->companyContext->getActiveCompanyIds();
 
-        $query = AccountingPaymentTerm::query()->with('company');
+        $query = AccountingPaymentTerm::query()->with('company')->withCount('lines');
 
         if (!empty($activeCompanyIds)) {
             $query->forCompanies($activeCompanyIds);
@@ -195,5 +195,17 @@ class AccountingPaymentTermController extends Controller
         DB::transaction(fn () => $paymentTerm->delete());
 
         return redirect()->route('accounting.payment-terms.index')->with('success', 'Payment term deleted.');
+    }
+
+    public function addComment(Request $request, AccountingPaymentTerm $paymentTerm)
+    {
+        $this->authorize('comment', $paymentTerm);
+        $activeCompanyIds = $this->companyContext->getActiveCompanyIds();
+        abort_unless(in_array($paymentTerm->company_id, $activeCompanyIds), 403);
+
+        $request->validate(['body' => 'required|string|max:5000']);
+        DB::transaction(fn () => $paymentTerm->logComment($request->body));
+
+        return back()->with('success', 'Comment added.');
     }
 }

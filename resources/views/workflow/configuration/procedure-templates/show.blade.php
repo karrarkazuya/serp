@@ -47,10 +47,6 @@
                         <span class="text-gray-700 font-medium truncate">{{ $procedureTemplate->defaultGroup?->name ?? '—' }}</span>
                     </div>
                     <div class="flex items-center justify-between gap-2 text-xs">
-                        <span class="text-gray-400 shrink-0">{{ __('workflow.sla_hrs_label') }}</span>
-                        <span class="text-gray-700 font-medium">{{ $procedureTemplate->resolve_max_duration ? $procedureTemplate->resolve_max_duration . 'h' : '—' }}</span>
-                    </div>
-                    <div class="flex items-center justify-between gap-2 text-xs">
                         <span class="text-gray-400 shrink-0">{{ __('workflow.creator_sees_tickets') }}</span>
                         <span class="text-gray-700 font-medium">{{ $procedureTemplate->creator_see_tasks ? __('workflow.yes_label') : __('workflow.no_label') }}</span>
                     </div>

@@ -8,11 +8,13 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
+use Illuminate\Database\Eloquent\SoftDeletes;
+
 class Uom extends Model
 {
     protected $table = 'inventory_uoms';
 
-    use HasChatter;
+    use HasChatter, SoftDeletes;
 
     public array $chatterTracked = [
         'name'     => 'Name',

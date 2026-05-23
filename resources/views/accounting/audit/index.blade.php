@@ -53,59 +53,44 @@
         </div>
 
         {{-- Log table --}}
-        <div class="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
-            <table class="w-full text-sm">
-                <thead class="bg-gray-50 border-b border-gray-200">
-                    <tr>
-                        <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase">Date & Time</th>
-                        <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase">Model</th>
-                        <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase">Record</th>
-                        <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase">Type</th>
-                        <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase">User</th>
-                        <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase">Event</th>
-                    </tr>
-                </thead>
-                <tbody class="divide-y divide-gray-100">
-                    @forelse($entries as $entry)
-                    @php
-                        $typeColor = match($entry->message_type) {
-                            'system'  => 'bg-blue-50 text-blue-700',
-                            'comment' => 'bg-purple-50 text-purple-700',
-                            default   => 'bg-gray-100 text-gray-600',
-                        };
-                    @endphp
-                    <tr class="hover:bg-gray-50">
-                        <td class="px-4 py-2.5 text-xs tabular-nums text-gray-500 whitespace-nowrap">
-                            {{ $entry->created_at->format('Y-m-d H:i') }}
-                        </td>
-                        <td class="px-4 py-2.5 text-xs text-gray-600">
-                            {{ $modelLabels[$entry->model_type] ?? class_basename($entry->model_type) }}
-                        </td>
-                        <td class="px-4 py-2.5 text-xs text-gray-500">#{{ $entry->model_id }}</td>
-                        <td class="px-4 py-2.5">
-                            <span class="inline-block px-1.5 py-0.5 rounded text-[10px] font-semibold {{ $typeColor }}">
-                                {{ ucfirst($entry->message_type) }}
-                            </span>
-                        </td>
-                        <td class="px-4 py-2.5 text-sm text-gray-700">{{ $entry->user?->name ?? '—' }}</td>
-                        <td class="px-4 py-2.5 text-sm text-gray-700 max-w-md">
-                            <span class="line-clamp-2">{{ $entry->body }}</span>
-                        </td>
-                    </tr>
-                    @empty
-                    <tr>
-                        <td colspan="6" class="px-4 py-12 text-center text-sm text-gray-400">No audit entries found.</td>
-                    </tr>
-                    @endforelse
-                </tbody>
-            </table>
+        <x-list :paginator="$entries" empty-text="No audit entries found.">
+            <x-slot:columns>
+                <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase">Date & Time</th>
+                <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase">Model</th>
+                <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase">Record</th>
+                <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase">Type</th>
+                <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase">User</th>
+                <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase">Event</th>
+            </x-slot:columns>
 
-            @if($entries->hasPages())
-            <div class="px-4 py-3 border-t border-gray-100">
-                {{ $entries->withQueryString()->links() }}
-            </div>
-            @endif
-        </div>
+            @foreach($entries as $entry)
+            @php
+                $typeColor = match($entry->message_type) {
+                    'system'  => 'bg-blue-50 text-blue-700',
+                    'comment' => 'bg-purple-50 text-purple-700',
+                    default   => 'bg-gray-100 text-gray-600',
+                };
+            @endphp
+            <tr class="hover:bg-gray-50">
+                <td class="px-4 py-2.5 text-xs tabular-nums text-gray-500 whitespace-nowrap">
+                    {{ $entry->created_at->format('Y-m-d H:i') }}
+                </td>
+                <td class="px-4 py-2.5 text-xs text-gray-600">
+                    {{ $modelLabels[$entry->model_type] ?? class_basename($entry->model_type) }}
+                </td>
+                <td class="px-4 py-2.5 text-xs text-gray-500">#{{ $entry->model_id }}</td>
+                <td class="px-4 py-2.5">
+                    <span class="inline-block px-1.5 py-0.5 rounded text-[10px] font-semibold {{ $typeColor }}">
+                        {{ ucfirst($entry->message_type) }}
+                    </span>
+                </td>
+                <td class="px-4 py-2.5 text-sm text-gray-700">{{ $entry->user?->name ?? '—' }}</td>
+                <td class="px-4 py-2.5 text-sm text-gray-700 max-w-md">
+                    <span class="line-clamp-2">{{ $entry->body }}</span>
+                </td>
+            </tr>
+            @endforeach
+        </x-list>
     </div>
 </div>
 @endsection

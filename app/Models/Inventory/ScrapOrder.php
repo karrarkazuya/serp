@@ -9,11 +9,13 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
+use Illuminate\Database\Eloquent\SoftDeletes;
+
 class ScrapOrder extends Model
 {
     protected $table = 'inventory_scrap_orders';
 
-    use HasChatter;
+    use HasChatter, SoftDeletes;
 
     public array $chatterTracked = [
         'state'             => 'State',

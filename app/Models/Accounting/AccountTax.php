@@ -10,9 +10,11 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 
+use Illuminate\Database\Eloquent\SoftDeletes;
+
 class AccountTax extends Model
 {
-    use HasChatter;
+    use HasChatter, SoftDeletes;
     public const AMOUNT_TYPES = [
         'percent' => 'Percentage (%)',
         'fixed'   => 'Fixed Amount',

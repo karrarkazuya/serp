@@ -75,7 +75,7 @@ class InventoryProductTest extends TestCase
         $this->actingAs($this->admin);
         $this->productService->delete($product);
 
-        $this->assertDatabaseMissing('inventory_products', ['id' => $id]);
+        $this->assertSoftDeleted('inventory_products', ['id' => $id]);
     }
 
     public function test_admin_can_view_products_index(): void

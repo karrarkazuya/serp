@@ -9,9 +9,11 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 
+use Illuminate\Database\Eloquent\SoftDeletes;
+
 class EmployeeCategory extends Model
 {
-    use HasChatter;
+    use HasChatter, SoftDeletes;
 
     protected $table = 'hr_employee_categories';
 

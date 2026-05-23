@@ -5,8 +5,12 @@ namespace App\Models\Chat;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
+use Illuminate\Database\Eloquent\SoftDeletes;
+
 class ChatMessageFile extends Model
 {
+    use SoftDeletes;
+
     protected $table = 'chat_message_files';
     protected $fillable = ['uuid', 'message_id', 'disk', 'path', 'original_name', 'mime_type', 'size'];
 

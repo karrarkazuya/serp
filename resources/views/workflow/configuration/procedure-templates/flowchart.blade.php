@@ -204,7 +204,6 @@
         view:          @js(__('common.view')),
         description:   @js(__('common.description')),
         department:    @js(__('common.department')),
-        sla:           @js(__('workflow.step_sla_label')),
         next_steps:    @js(__('workflow.next_steps_label')),
         flags:         @js(__('workflow.options_section')),
         no_details:    @js(__('workflow.no_popup_details')),
@@ -495,7 +494,6 @@
         let html = '';
         if (node.description) html += `<div class="stp-row"><span class="stp-k">${I18N.description}</span><span class="stp-v">${escHtml(node.description)}</span></div>`;
         if (node.department)  html += `<div class="stp-row"><span class="stp-k">${I18N.department}</span><span class="stp-v">${escHtml(node.department)}</span></div>`;
-        if (node.sla)         html += `<div class="stp-row"><span class="stp-k">${I18N.sla}</span><span class="stp-v">${escHtml(String(node.sla))}h</span></div>`;
         if (node.next_steps?.length) html += `<div class="stp-row"><span class="stp-k">${I18N.next_steps}</span><span class="stp-v">${escHtml(node.next_steps.join(', '))}</span></div>`;
         if (node.badges?.length) {
             const bdg = node.badges.map(b => `<span class="badge">${escHtml(b)}</span>`).join('');

@@ -112,6 +112,7 @@ class AccountJournalController extends Controller
 
     public function write(UpdateJournalRequest $request, AccountJournal $journal)
     {
+        $this->authorize('update', $journal);
         $activeCompanyIds = $this->companyContext->getActiveCompanyIds();
         abort_unless(in_array($journal->company_id, $activeCompanyIds), 403);
 
