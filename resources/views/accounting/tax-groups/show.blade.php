@@ -13,23 +13,23 @@
         :prev-href="$prevId ? route('accounting.tax-groups.show', $prevId) : null"
         :next-href="$nextId ? route('accounting.tax-groups.show', $nextId) : null">
         <x-slot:breadcrumb>
-            <a href="{{ route('accounting.dashboard') }}" class="text-xs text-purple-600 hover:text-purple-700">Accounting</a>
-            <a href="{{ route('accounting.tax-groups.index') }}" class="text-xs text-purple-600 hover:text-purple-700">Tax Groups</a>
+            <a href="{{ route('accounting.dashboard') }}" class="text-xs text-purple-600 hover:text-purple-700">{{ __('accounting.accounting') }}</a>
+            <a href="{{ route('accounting.tax-groups.index') }}" class="text-xs text-purple-600 hover:text-purple-700">{{ __('accounting.tax_groups') }}</a>
             <span class="text-sm font-semibold text-gray-800">{{ $taxGroup->name }}</span>
         </x-slot:breadcrumb>
         <x-slot:actions>
             <div class="flex items-center gap-2">
                 @can('update', $taxGroup)
-                <a href="{{ route('accounting.tax-groups.edit', $taxGroup) }}" class="px-3 py-1.5 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded hover:bg-gray-50">Edit</a>
+                <a href="{{ route('accounting.tax-groups.edit', $taxGroup) }}" class="px-3 py-1.5 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded hover:bg-gray-50">{{ __('accounting.btn_edit') }}</a>
                 @endcan
                 @can('delete', $taxGroup)
                 <form method="POST" action="{{ route('accounting.tax-groups.delete', $taxGroup) }}" x-data="{ confirming: false }">
                     @csrf @method('DELETE')
-                    <button type="button" x-show="!confirming" @click="confirming = true" class="px-3 py-1.5 text-sm text-red-700 border border-red-200 rounded hover:bg-red-50">Delete</button>
+                    <button type="button" x-show="!confirming" @click="confirming = true" class="px-3 py-1.5 text-sm text-red-700 border border-red-200 rounded hover:bg-red-50">{{ __('accounting.btn_delete') }}</button>
                     <div x-show="confirming" style="display:none" class="flex items-center gap-1.5">
-                        <span class="text-xs text-red-600">Delete this tax group?</span>
-                        <button type="submit" class="px-2 py-1 text-xs font-medium text-white bg-red-600 rounded">Yes</button>
-                        <button type="button" @click="confirming = false" class="px-2 py-1 text-xs text-gray-500">Cancel</button>
+                        <span class="text-xs text-red-600">{{ __('accounting.confirm_delete_generic') }}</span>
+                        <button type="submit" class="px-2 py-1 text-xs font-medium text-white bg-red-600 rounded">{{ __('accounting.btn_yes') }}</button>
+                        <button type="button" @click="confirming = false" class="px-2 py-1 text-xs text-gray-500">{{ __('accounting.btn_cancel') }}</button>
                     </div>
                 </form>
                 @endcan
@@ -46,11 +46,11 @@
             <h1 class="text-2xl font-bold text-gray-900 mb-6">{{ $taxGroup->name }}</h1>
 
             @foreach([
-                ['Name',        $taxGroup->name],
-                ['Sequence',    $taxGroup->sequence],
-                ['Company',     $taxGroup->company?->name ?? '—'],
-                ['Created by',  $taxGroup->creator?->name ?? '—'],
-                ['Updated by',  $taxGroup->updater?->name ?? '—'],
+                [__('accounting.col_name'),     $taxGroup->name],
+                [__('accounting.field_sequence'), $taxGroup->sequence],
+                [__('accounting.col_company'),  $taxGroup->company?->name ?? '—'],
+                ['Created by',                  $taxGroup->creator?->name ?? '—'],
+                ['Updated by',                  $taxGroup->updater?->name ?? '—'],
             ] as [$label, $value])
             <div class="flex items-start gap-4 py-2 border-b border-gray-100">
                 <span class="w-36 shrink-0 text-sm font-medium text-gray-500">{{ $label }}</span>

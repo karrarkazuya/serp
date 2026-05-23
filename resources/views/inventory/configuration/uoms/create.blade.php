@@ -1,5 +1,5 @@
 @extends('layouts.app')
-@section('title', 'New Unit of Measure')
+@section('title', __('inventory.new_unit_of_measure'))
 
 @section('content')
 <div class="flex flex-col h-full bg-gray-50">
@@ -7,13 +7,13 @@
         @csrf
         <x-toolbar>
             <x-slot:breadcrumb>
-                <a href="{{ route('inventory.config.uoms.index') }}" class="text-xs text-purple-600 hover:text-purple-700">Units of Measure</a>
-                <span class="text-sm font-semibold text-gray-800">New</span>
+                <a href="{{ route('inventory.config.uoms.index') }}" class="text-xs text-purple-600 hover:text-purple-700">{{ __('inventory.units_of_measure') }}</a>
+                <span class="text-sm font-semibold text-gray-800">{{ __('inventory.new') }}</span>
             </x-slot:breadcrumb>
             <x-slot:actions>
                 <div class="flex items-center gap-2">
-                    <a href="{{ route('inventory.config.uoms.index') }}" class="px-3 py-1.5 text-sm text-gray-600 border border-gray-300 rounded hover:bg-gray-50">Discard</a>
-                    <button type="submit" class="px-3 py-1.5 text-sm font-semibold text-white bg-[#714B67] hover:bg-[#5c3d55] rounded">Save</button>
+                    <a href="{{ route('inventory.config.uoms.index') }}" class="px-3 py-1.5 text-sm text-gray-600 border border-gray-300 rounded hover:bg-gray-50">{{ __('inventory.discard') }}</a>
+                    <button type="submit" class="px-3 py-1.5 text-sm font-semibold text-white bg-[#714B67] hover:bg-[#5c3d55] rounded">{{ __('inventory.save') }}</button>
                 </div>
             </x-slot:actions>
         </x-toolbar>
@@ -26,25 +26,25 @@
                 @endif
 
                 <div class="mb-5">
-                    <input type="text" name="name" value="{{ old('name') }}" required placeholder="Unit Name"
+                    <input type="text" name="name" value="{{ old('name') }}" required placeholder="{{ __('inventory.name') }}"
                            class="w-full text-2xl font-bold text-gray-900 placeholder-gray-300 border-0 border-b-2 focus:outline-none focus:border-purple-500 pb-1 bg-transparent {{ $errors->has('name') ? 'border-red-400' : 'border-gray-200' }}">
                 </div>
 
                 <div class="grid grid-cols-2 gap-x-8">
                     <div>
                         <div class="flex items-center gap-4 py-2 border-b border-gray-100">
-                            <label class="w-32 shrink-0 text-sm text-gray-500">Category</label>
+                            <label class="w-32 shrink-0 text-sm text-gray-500">{{ __('inventory.category') }}</label>
                             <x-relation-dropdown table="inventory_uom_categories" field="name" name="uom_category_id" relation="many2one"
                                 :selected="old('uom_category_id')" class="flex-1" compact />
                         </div>
                         <div class="flex items-center gap-4 py-2 border-b border-gray-100">
-                            <label class="w-32 shrink-0 text-sm text-gray-500">Symbol</label>
+                            <label class="w-32 shrink-0 text-sm text-gray-500">{{ __('inventory.symbol') }}</label>
                             <input type="text" name="symbol" value="{{ old('symbol') }}" class="flex-1 text-sm bg-transparent border-0 focus:outline-none px-0 py-0.5" placeholder="-">
                         </div>
                         <div class="flex items-center gap-4 py-2 border-b border-gray-100">
-                            <label class="w-32 shrink-0 text-sm text-gray-500">Type</label>
+                            <label class="w-32 shrink-0 text-sm text-gray-500">{{ __('inventory.type') }}</label>
                             <select name="uom_type" class="flex-1 text-sm bg-transparent border-0 focus:outline-none px-0 py-0.5">
-                                @foreach(['reference' => 'Reference Unit', 'bigger' => 'Bigger than reference', 'smaller' => 'Smaller than reference'] as $k => $v)
+                                @foreach(['reference' => __('inventory.reference_unit'), 'bigger' => __('inventory.bigger_than_reference'), 'smaller' => __('inventory.smaller_than_reference')] as $k => $v)
                                 <option value="{{ $k }}" {{ old('uom_type', 'reference') === $k ? 'selected' : '' }}>{{ $v }}</option>
                                 @endforeach
                             </select>
@@ -52,11 +52,11 @@
                     </div>
                     <div>
                         <div class="flex items-center gap-4 py-2 border-b border-gray-100">
-                            <label class="w-32 shrink-0 text-sm text-gray-500">Ratio</label>
+                            <label class="w-32 shrink-0 text-sm text-gray-500">{{ __('inventory.ratio') }}</label>
                             <input type="number" name="ratio" value="{{ old('ratio', 1) }}" step="0.000001" min="0.000001" required class="flex-1 text-sm bg-transparent border-0 focus:outline-none px-0 py-0.5">
                         </div>
                         <div class="flex items-center gap-4 py-2 border-b border-gray-100">
-                            <label class="w-32 shrink-0 text-sm text-gray-500">Rounding</label>
+                            <label class="w-32 shrink-0 text-sm text-gray-500">{{ __('inventory.rounding') }}</label>
                             <input type="number" name="rounding" value="{{ old('rounding', 0.01) }}" step="0.000001" min="0.000001" required class="flex-1 text-sm bg-transparent border-0 focus:outline-none px-0 py-0.5">
                         </div>
                     </div>

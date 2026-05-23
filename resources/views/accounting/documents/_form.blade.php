@@ -52,7 +52,7 @@
 @if($errors->any())
 <div class="px-6 pt-4 pb-0">
     <div class="bg-red-50 border border-red-200 rounded-lg px-4 py-3">
-        <p class="text-sm font-medium text-red-700 mb-1">Please fix the errors below.</p>
+        <p class="text-sm font-medium text-red-700 mb-1">{{ __('accounting.fix_errors') }}</p>
         <ul class="list-disc list-inside text-sm text-red-600 space-y-0.5">
             @foreach($errors->all() as $error)<li>{{ $error }}</li>@endforeach
         </ul>
@@ -182,12 +182,12 @@ window._docFormData = {
             @if($document?->name)
                 <h1 class="mt-2 text-4xl font-bold text-gray-900">{{ $document->name }}</h1>
             @else
-                <h1 class="mt-2 text-4xl font-bold text-gray-900">Draft</h1>
+                <h1 class="mt-2 text-4xl font-bold text-gray-900">{{ __('accounting.status_draft') }}</h1>
             @endif
         </div>
         <div class="flex shrink-0 items-center text-sm font-semibold">
-            <span class="relative px-8 py-2 border border-[#71639e] bg-purple-50 text-gray-900">Draft</span>
-            <span class="px-8 py-2 border border-gray-200 bg-gray-200 text-gray-500">Posted</span>
+            <span class="relative px-8 py-2 border border-[#71639e] bg-purple-50 text-gray-900">{{ __('accounting.status_draft') }}</span>
+            <span class="px-8 py-2 border border-gray-200 bg-gray-200 text-gray-500">{{ __('accounting.status_posted') }}</span>
         </div>
     </div>
 
@@ -206,7 +206,7 @@ window._docFormData = {
                 />
             </div>
             <div class="flex items-center gap-5">
-                <label class="w-28 shrink-0 text-sm font-semibold text-gray-700">Reference</label>
+                <label class="w-28 shrink-0 text-sm font-semibold text-gray-700">{{ __('accounting.col_reference') }}</label>
                 <input type="text" name="ref" value="{{ $val('ref') }}" maxlength="128" class="flex-1 text-sm text-gray-800 bg-transparent border-0 border-b border-dotted border-gray-300 focus:border-purple-500 focus:outline-none focus:ring-0 px-0 py-1">
             </div>
         </div>
@@ -220,7 +220,7 @@ window._docFormData = {
             <div class="flex items-center gap-5"
                  x-data="{ hasPaymentTerm: {{ old('payment_term_id', $document?->payment_term_id) ? 'true' : 'false' }} }"
                  @payment-term-change.window="hasPaymentTerm = !!$event.detail.value; if (hasPaymentTerm) { $nextTick(() => { const d = $el.querySelector('[name=invoice_date_due]'); if(d) d.value=''; }); }">
-                <label class="w-32 shrink-0 text-base font-semibold text-gray-800">Due Date</label>
+                <label class="w-32 shrink-0 text-base font-semibold text-gray-800">{{ __('accounting.col_due_date') }}</label>
                 <input type="date"
                        name="invoice_date_due"
                        value="{{ old('invoice_date_due', $document?->invoice_date_due ? $document->invoice_date_due->format('Y-m-d') : '') }}"
@@ -241,7 +241,7 @@ window._docFormData = {
                 </div>
             </div>
             <div class="flex items-center gap-5">
-                <label class="w-32 shrink-0 text-base font-semibold text-gray-800">Journal</label>
+                <label class="w-32 shrink-0 text-base font-semibold text-gray-800">{{ __('accounting.field_journal') }}</label>
                 <x-relation-dropdown
                     table="account_journals"
                     field="name"
@@ -252,7 +252,7 @@ window._docFormData = {
                     class="flex-1"
                 />
                 <span class="text-sm font-semibold text-gray-700">in</span>
-                <input type="text" name="currency" x-model="currency" maxlength="10" class="w-28 text-sm text-gray-800 bg-transparent border-0 border-b border-dotted border-gray-300 focus:border-purple-500 focus:outline-none focus:ring-0 px-0 py-1" placeholder="IQD">
+                <input type="text" name="currency" x-model="currency" maxlength="10" class="w-28 text-sm text-gray-800 bg-transparent border-0 border-b border-dotted border-gray-300 focus:border-purple-500 focus:outline-none focus:ring-0 px-0 py-1" :placeholder="__('accounting.ph_iqd')">
             </div>
         </div>
     </div>
@@ -265,7 +265,7 @@ window._docFormData = {
             </button>
             <button type="button" @click="tab = 'journal'" class="px-6 py-3 text-sm font-semibold border border-t-0 rounded-b bg-white"
                     :class="tab === 'journal' ? 'text-gray-900 border-gray-300' : 'text-[#71639e] border-transparent'">
-                Journal Items
+                {{ __('accounting.journal_items') }}
             </button>
             <button type="button" @click="tab = 'other'" class="px-6 py-3 text-sm font-semibold border border-t-0 rounded-b bg-white"
                     :class="tab === 'other' ? 'text-gray-900 border-gray-300' : 'text-[#71639e] border-transparent'">
@@ -278,14 +278,14 @@ window._docFormData = {
                 <thead class="bg-gray-200">
                     <tr class="text-sm font-semibold text-gray-700">
                         <th class="px-4 py-3 text-left w-[30%]">Product</th>
-                        <th class="px-4 py-3 text-left">Account</th>
+                        <th class="px-4 py-3 text-left">{{ __('accounting.col_account') }}</th>
                         <th class="px-4 py-3 text-left">Analytic</th>
                         <th class="px-4 py-3 text-right w-28">Quantity</th>
                         <th class="px-4 py-3 text-left w-24">UoM</th>
                         <th class="px-4 py-3 text-right w-28">Price</th>
                         <th class="px-4 py-3 text-right w-20">Disc %</th>
-                        <th class="px-4 py-3 text-left w-28">Taxes</th>
-                        <th class="px-4 py-3 text-right w-36">Amount</th>
+                        <th class="px-4 py-3 text-left w-28">{{ __('accounting.taxes') }}</th>
+                        <th class="px-4 py-3 text-right w-36">{{ __('accounting.col_amount') }}</th>
                     </tr>
                 </thead>
                 <tbody class="divide-y divide-gray-200">
@@ -320,7 +320,7 @@ window._docFormData = {
                                    @input.debounce.300ms="accountSearch(i, line.account_label)"
                                    @focus="line.account_open = true"
                                    @blur="setTimeout(() => line.account_open = false, 150)"
-                                   placeholder="Search account…"
+                                   :placeholder="__('accounting.ph_search_account')"
                                    autocomplete="off"
                                    class="w-full text-sm font-medium text-gray-700 bg-white border-0 border-b border-purple-400 focus:outline-none focus:ring-0 px-0 py-1">
                             <div x-show="line.account_open && line.account_results.length > 0"
@@ -366,7 +366,7 @@ window._docFormData = {
                         {{-- Taxes column --}}
                         <td class="px-4 py-2 relative" @click.outside="line.tax_open = false">
                             <template x-for="(tl, ti) in (line.tax_labels || [])" :key="'tl-' + ti">
-                                <span class="inline-flex items-center gap-0.5 mr-1 px-1.5 py-0.5 rounded text-[10px] font-medium bg-blue-50 text-blue-700 border border-blue-200">
+                                <span class="inline-flex items-center gap-0.5 me-1 px-1.5 py-0.5 rounded text-[10px] font-medium bg-blue-50 text-blue-700 border border-blue-200">
                                     <span x-text="tl.label"></span>
                                     <button type="button" @click.stop="removeTax(i, tl.id)" class="text-blue-400 hover:text-blue-700 ms-0.5">×</button>
                                 </span>
@@ -405,7 +405,7 @@ window._docFormData = {
                     <tr class="bg-gray-50">
                         <td colspan="9" class="px-8 py-3">
                             <div class="flex items-center gap-5 text-sm font-semibold text-[#71639e]">
-                                <button type="button" @click="addLine()" class="hover:text-[#5c3d55]">Add a line</button>
+                                <button type="button" @click="addLine()" class="hover:text-[#5c3d55]">{{ __('accounting.btn_add_line') }}</button>
                                 <button type="button" @click="addLine()" class="hover:text-[#5c3d55]">Add a section</button>
                                 <button type="button" @click="addLine()" class="hover:text-[#5c3d55]">Add a note</button>
                                 <button type="button" class="hover:text-[#5c3d55]">Catalog</button>
@@ -426,7 +426,7 @@ window._docFormData = {
                         <span class="tabular-nums">Computed on save</span>
                     </div>
                     <div class="flex items-center justify-between py-1 text-lg font-bold border-t border-gray-200 mt-1">
-                        <span class="text-gray-700">Total:</span>
+                        <span class="text-gray-700">{{ __('accounting.total') }}:</span>
                         <span class="tabular-nums text-gray-900"><span x-text="f(subtotal)"></span> <span x-text="currency || ''"></span></span>
                     </div>
                 </div>
@@ -437,10 +437,10 @@ window._docFormData = {
             <table class="w-full text-sm">
                 <thead class="bg-gray-200">
                     <tr class="text-sm font-semibold text-gray-700">
-                        <th class="px-4 py-3 text-left">Account</th>
-                        <th class="px-4 py-3 text-left">Label</th>
-                        <th class="px-4 py-3 text-right">Debit</th>
-                        <th class="px-4 py-3 text-right">Credit</th>
+                        <th class="px-4 py-3 text-left">{{ __('accounting.col_account') }}</th>
+                        <th class="px-4 py-3 text-left">{{ __('accounting.col_label') }}</th>
+                        <th class="px-4 py-3 text-right">{{ __('accounting.col_debit') }}</th>
+                        <th class="px-4 py-3 text-right">{{ __('accounting.col_credit') }}</th>
                     </tr>
                 </thead>
                 <tbody class="divide-y divide-gray-200">
@@ -466,7 +466,7 @@ window._docFormData = {
             <div class="grid grid-cols-1 lg:grid-cols-2 gap-x-12 gap-y-4">
                 <div class="space-y-3">
                     <div class="flex items-center gap-4">
-                        <label class="w-40 shrink-0 text-sm font-semibold text-gray-700">Company</label>
+                        <label class="w-40 shrink-0 text-sm font-semibold text-gray-700">{{ __('accounting.field_company') }}</label>
                         <x-relation-dropdown
                             table="companies"
                             field="name"
@@ -492,7 +492,7 @@ window._docFormData = {
                 </div>
                 <div class="space-y-3">
                     <div class="flex items-center gap-4">
-                        <label class="w-40 shrink-0 text-sm font-semibold text-gray-700">Incoterm</label>
+                        <label class="w-40 shrink-0 text-sm font-semibold text-gray-700">{{ __('accounting.field_incoterm') }}</label>
                         <x-relation-dropdown
                             table="accounting_incoterms"
                             field="name"

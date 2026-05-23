@@ -64,7 +64,7 @@
                                     class="text-xs text-red-500 border border-red-200 rounded px-2 py-1 hover:bg-red-50">{{ __('common.delete') }}</button>
                             <div x-show="confirming" style="display:none" class="flex items-center gap-1">
                                 <span class="text-xs text-red-600">{{ __('common.sure') }}</span>
-                                <form method="POST" action="{{ route('employees.documents.delete', [$employee, $doc]) }}">
+                                <form method="POST" action="{{ route('employees.employee-docs.delete', [$employee, $doc]) }}">
                                     @csrf @method('DELETE')
                                     <button type="submit" class="px-1.5 py-0.5 text-xs bg-red-600 text-white rounded">{{ __('common.yes') }}</button>
                                 </form>
@@ -84,7 +84,7 @@
                     {{ __('employees.add_document') }}
                 </button>
                 <div x-show="open" style="display:none" class="mt-3 p-4 border border-gray-200 rounded-lg bg-gray-50">
-                    <form method="POST" action="{{ route('employees.documents.store', $employee) }}" enctype="multipart/form-data">
+                    <form method="POST" action="{{ route('employees.employee-docs.store', $employee) }}" enctype="multipart/form-data">
                         @csrf
                         <div class="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-2">
                             <div class="flex items-center gap-3 py-1.5 border-b border-gray-200 sm:col-span-2">
@@ -99,6 +99,18 @@
                                     <option value="{{ $k }}">{{ $v }}</option>
                                     @endforeach
                                 </select>
+                            </div>
+                            <div class="flex items-center gap-3 py-1.5 border-b border-gray-200">
+                                <label class="w-40 shrink-0 text-sm text-gray-500">{{ __('employees.issued_by') }}</label>
+                                <input type="text" name="issued_by" class="flex-1 text-sm bg-transparent border-0 focus:outline-none">
+                            </div>
+                            <div class="flex items-center gap-3 py-1.5 border-b border-gray-200">
+                                <label class="w-40 shrink-0 text-sm text-gray-500">{{ __('employees.document_number') }}</label>
+                                <input type="text" name="document_number" class="flex-1 text-sm bg-transparent border-0 focus:outline-none">
+                            </div>
+                            <div class="flex items-center gap-3 py-1.5 border-b border-gray-200">
+                                <label class="w-40 shrink-0 text-sm text-gray-500">{{ __('employees.organizational_structure') }}</label>
+                                <input type="text" name="organizational_structure" class="flex-1 text-sm bg-transparent border-0 focus:outline-none">
                             </div>
                             <div class="flex items-center gap-3 py-1.5 border-b border-gray-200">
                                 <label class="w-40 shrink-0 text-sm text-gray-500">{{ __('employees.issue_date') }}</label>

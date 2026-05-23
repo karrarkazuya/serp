@@ -1,12 +1,12 @@
 @extends('layouts.app')
-@section('title', 'Partner Ledger')
+@section('title', __('accounting.report_partner_ledger'))
 
 @section('content')
 <div class="flex flex-col h-full bg-gray-50">
     <x-toolbar>
         <x-slot:breadcrumb>
-            <a href="{{ route('accounting.dashboard') }}" class="text-xs text-purple-600 hover:text-purple-700">Accounting</a>
-            <span class="text-sm font-semibold text-gray-800">Partner Ledger</span>
+            <a href="{{ route('accounting.dashboard') }}" class="text-xs text-purple-600 hover:text-purple-700">{{ __('accounting.accounting') }}</a>
+            <span class="text-sm font-semibold text-gray-800">{{ __('accounting.report_partner_ledger') }}</span>
         </x-slot:breadcrumb>
     </x-toolbar>
 
@@ -17,10 +17,10 @@
             <table class="min-w-full text-sm divide-y divide-gray-200">
                 <thead class="bg-gray-50">
                     <tr>
-                        <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase">Partner</th>
-                        <th class="px-4 py-3 text-right text-xs font-semibold text-gray-500 uppercase">Debit</th>
-                        <th class="px-4 py-3 text-right text-xs font-semibold text-gray-500 uppercase">Credit</th>
-                        <th class="px-4 py-3 text-right text-xs font-semibold text-gray-500 uppercase">Balance</th>
+                        <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase">{{ __('accounting.col_partner') }}</th>
+                        <th class="px-4 py-3 text-right text-xs font-semibold text-gray-500 uppercase">{{ __('accounting.col_debit') }}</th>
+                        <th class="px-4 py-3 text-right text-xs font-semibold text-gray-500 uppercase">{{ __('accounting.col_credit') }}</th>
+                        <th class="px-4 py-3 text-right text-xs font-semibold text-gray-500 uppercase">{{ __('accounting.col_balance') }}</th>
                     </tr>
                 </thead>
                 <tbody class="divide-y divide-gray-100">
@@ -36,17 +36,17 @@
                         <td class="px-4 py-2.5 text-right tabular-nums text-gray-800">{{ number_format($row->total_debit, 2) }}</td>
                         <td class="px-4 py-2.5 text-right tabular-nums text-gray-800">{{ number_format($row->total_credit, 2) }}</td>
                         <td class="px-4 py-2.5 text-right tabular-nums font-medium {{ $row->balance >= 0 ? 'text-gray-800' : 'text-red-600' }}">
-                            {{ number_format(abs($row->balance), 2) }} {{ $row->balance < 0 ? 'Cr' : '' }}
+                            {{ number_format(abs($row->balance), 2) }} {{ $row->balance < 0 ? __('accounting.cr_suffix') : '' }}
                         </td>
                     </tr>
                     @empty
-                    <tr><td colspan="4" class="px-4 py-8 text-sm text-gray-400 text-center">No partner transactions found.</td></tr>
+                    <tr><td colspan="4" class="px-4 py-8 text-sm text-gray-400 text-center">{{ __('accounting.no_data_period') }}</td></tr>
                     @endforelse
                 </tbody>
                 @if($rows->isNotEmpty())
                 <tfoot class="bg-gray-50 border-t-2 border-gray-300">
                     <tr>
-                        <td class="px-4 py-3 text-sm font-bold text-gray-800">Total</td>
+                        <td class="px-4 py-3 text-sm font-bold text-gray-800">{{ __('accounting.total') }}</td>
                         <td class="px-4 py-3 text-right tabular-nums font-bold">{{ number_format($rows->sum('total_debit'), 2) }}</td>
                         <td class="px-4 py-3 text-right tabular-nums font-bold">{{ number_format($rows->sum('total_credit'), 2) }}</td>
                         <td class="px-4 py-3 text-right tabular-nums font-bold">{{ number_format($rows->sum('balance'), 2) }}</td>

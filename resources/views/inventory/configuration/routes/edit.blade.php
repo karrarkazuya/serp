@@ -1,5 +1,5 @@
 @extends('layouts.app')
-@section('title', 'Edit: ' . $route->name)
+@section('title', __('inventory.edit') . ': ' . $route->name)
 
 @section('content')
 <div class="flex flex-col h-full bg-gray-50">
@@ -7,14 +7,14 @@
         @csrf @method('PUT')
         <x-toolbar>
             <x-slot:breadcrumb>
-                <a href="{{ route('inventory.config.routes.index') }}" class="text-xs text-purple-600 hover:text-purple-700">Routes</a>
+                <a href="{{ route('inventory.config.routes.index') }}" class="text-xs text-purple-600 hover:text-purple-700">{{ __('inventory.routes') }}</a>
                 <a href="{{ route('inventory.config.routes.show', $route) }}" class="text-xs text-purple-600 hover:text-purple-700">{{ $route->name }}</a>
-                <span class="text-sm font-semibold text-gray-800">Edit</span>
+                <span class="text-sm font-semibold text-gray-800">{{ __('inventory.edit') }}</span>
             </x-slot:breadcrumb>
             <x-slot:actions>
                 <div class="flex items-center gap-2">
-                    <a href="{{ route('inventory.config.routes.show', $route) }}" class="px-3 py-1.5 text-sm text-gray-600 border border-gray-300 rounded hover:bg-gray-50">Discard</a>
-                    <button type="submit" class="px-3 py-1.5 text-sm font-semibold text-white bg-[#714B67] hover:bg-[#5c3d55] rounded">Save</button>
+                    <a href="{{ route('inventory.config.routes.show', $route) }}" class="px-3 py-1.5 text-sm text-gray-600 border border-gray-300 rounded hover:bg-gray-50">{{ __('inventory.discard') }}</a>
+                    <button type="submit" class="px-3 py-1.5 text-sm font-semibold text-white bg-[#714B67] hover:bg-[#5c3d55] rounded">{{ __('inventory.save') }}</button>
                 </div>
             </x-slot:actions>
         </x-toolbar>
@@ -32,16 +32,16 @@
                 </div>
 
                 <div class="mb-6">
-                    <h3 class="text-sm font-semibold text-gray-700 mb-3">Rules</h3>
+                    <h3 class="text-sm font-semibold text-gray-700 mb-3">{{ __('inventory.section_rules') }}</h3>
                     <table class="w-full text-sm mb-3">
                         <thead>
                             <tr class="border-b border-gray-100">
-                                <th class="py-1.5 text-left text-xs text-gray-500">Name</th>
-                                <th class="py-1.5 text-left text-xs text-gray-500 w-48">Operation Type</th>
-                                <th class="py-1.5 text-left text-xs text-gray-500 w-48">Source Location</th>
-                                <th class="py-1.5 text-left text-xs text-gray-500 w-48">Destination Location</th>
-                                <th class="py-1.5 text-left text-xs text-gray-500 w-28">Action</th>
-                                <th class="py-1.5 text-right text-xs text-gray-500 w-16">Seq.</th>
+                                <th class="py-1.5 text-start text-xs text-gray-500">{{ __('inventory.name') }}</th>
+                                <th class="py-1.5 text-start text-xs text-gray-500 w-48">{{ __('inventory.col_operation_type') }}</th>
+                                <th class="py-1.5 text-start text-xs text-gray-500 w-48">{{ __('inventory.source_location') }}</th>
+                                <th class="py-1.5 text-start text-xs text-gray-500 w-48">{{ __('inventory.destination_location') }}</th>
+                                <th class="py-1.5 text-start text-xs text-gray-500 w-28">{{ __('inventory.col_action') }}</th>
+                                <th class="py-1.5 text-end text-xs text-gray-500 w-16">{{ __('inventory.col_seq') }}</th>
                                 <th class="w-8"></th>
                             </tr>
                         </thead>
@@ -54,7 +54,7 @@
                                     <input type="hidden" name="rules[{{ $idx }}][id]" value="{{ $rule->id }}">
                                     <input type="hidden" name="rules[{{ $idx }}][delete]" :value="deleted ? 1 : 0">
                                     <input type="text" name="rules[{{ $idx }}][name]" value="{{ old('rules.' . $idx . '.name', $rule->name) }}"
-                                        placeholder="Rule name" :disabled="deleted"
+                                        placeholder="{{ __('inventory.rule_name') }}" :disabled="deleted"
                                         class="w-full text-sm bg-transparent border-0 focus:outline-none px-0">
                                 </td>
                                 <td class="py-1.5 w-48">
@@ -86,21 +86,21 @@
                                 </td>
                                 <td class="py-1.5 w-28">
                                     <select name="rules[{{ $idx }}][action]" :disabled="deleted" class="text-sm bg-transparent border-0 focus:outline-none px-0">
-                                        <option value="pull" @selected(old('rules.' . $idx . '.action', $rule->action) === 'pull')>Pull</option>
-                                        <option value="push" @selected(old('rules.' . $idx . '.action', $rule->action) === 'push')>Push</option>
-                                        <option value="pull_push" @selected(old('rules.' . $idx . '.action', $rule->action) === 'pull_push')>Pull & Push</option>
+                                        <option value="pull" @selected(old('rules.' . $idx . '.action', $rule->action) === 'pull')>{{ __('inventory.action_pull') }}</option>
+                                        <option value="push" @selected(old('rules.' . $idx . '.action', $rule->action) === 'push')>{{ __('inventory.action_push') }}</option>
+                                        <option value="pull_push" @selected(old('rules.' . $idx . '.action', $rule->action) === 'pull_push')>{{ __('inventory.action_pull_push') }}</option>
                                     </select>
                                 </td>
                                 <td class="py-1.5 w-16">
                                     <input type="number" name="rules[{{ $idx }}][sequence]"
                                         value="{{ old('rules.' . $idx . '.sequence', $rule->sequence) }}"
                                         min="0" :disabled="deleted"
-                                        class="w-16 text-sm bg-transparent border-0 focus:outline-none px-0 text-right">
+                                        class="w-16 text-sm bg-transparent border-0 focus:outline-none px-0 text-end">
                                 </td>
                                 <td class="py-1.5 text-center w-8">
                                     <button type="button" @click="deleted = !deleted"
                                         :class="deleted ? 'text-green-500' : 'text-gray-300 hover:text-red-500'">
-                                        <template x-if="deleted"><span class="text-xs">Undo</span></template>
+                                        <template x-if="deleted"><span class="text-xs">{{ __('inventory.undo') }}</span></template>
                                         <template x-if="!deleted">
                                             <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
@@ -124,7 +124,7 @@
                                                 addRow.insertAdjacentHTML('beforebegin', html);
                                                 Alpine.initTree(addRow.previousElementSibling);
                                                 nextIdx++;
-                                            })">+ Add a rule</button>
+                                            })">+ {{ __('inventory.add_a_rule') }}</button>
                                 </td>
                             </tr>
                         </tbody>

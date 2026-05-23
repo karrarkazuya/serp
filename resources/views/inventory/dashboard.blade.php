@@ -1,10 +1,10 @@
 @extends('layouts.app')
-@section('title', 'Inventory')
+@section('title', __('inventory.inventory_overview'))
 
 @section('content')
 <div class="flex flex-col h-full bg-gray-50">
     <div class="flex items-center gap-3 px-4 py-3 border-b border-gray-200 bg-white shrink-0">
-        <h1 class="text-xl font-semibold text-gray-800">Inventory Overview</h1>
+        <h1 class="text-xl font-semibold text-gray-800">{{ __('inventory.inventory_overview') }}</h1>
     </div>
 
     <div class="flex-1 overflow-y-auto p-4 sm:p-6">
@@ -25,7 +25,7 @@
                     </div>
                     @if($opType->ready_count > 0)
                     <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-bold bg-green-100 text-green-700">
-                        {{ $opType->ready_count }} Ready
+                        {{ $opType->ready_count }} {{ __('inventory.ready') }}
                     </span>
                     @endif
                 </div>
@@ -33,13 +33,13 @@
                 <p class="text-xs text-gray-500 mt-0.5">{{ $opType->warehouse?->name }}</p>
                 <div class="flex gap-4 mt-3 text-xs text-gray-500">
                     @if(($opType->ready_count ?? 0) > 0)
-                    <span class="font-medium text-green-600">{{ $opType->ready_count }} to process</span>
+                    <span class="font-medium text-green-600">{{ $opType->ready_count }} {{ __('inventory.to_process') }}</span>
                     @endif
                     @if(($opType->waiting_count ?? 0) > 0)
                     <span>{{ $opType->waiting_count }} waiting</span>
                     @endif
                     @if(($opType->late_count ?? 0) > 0)
-                    <span class="text-red-500">{{ $opType->late_count }} late</span>
+                    <span class="text-red-500">{{ $opType->late_count }} {{ __('inventory.late') }}</span>
                     @endif
                 </div>
             </a>
@@ -50,15 +50,15 @@
         <div class="grid grid-cols-2 sm:grid-cols-4 gap-4">
             <a href="{{ route('inventory.replenishment.index') }}" class="bg-white rounded-xl border border-gray-200 shadow-sm hover:shadow-md transition-all p-4 text-center">
                 <p class="text-2xl font-bold text-gray-900">{{ $replenishCount }}</p>
-                <p class="text-xs text-gray-500 mt-1">To Replenish</p>
+                <p class="text-xs text-gray-500 mt-1">{{ __('inventory.to_replenish') }}</p>
             </a>
             <a href="{{ route('inventory.products.index') }}" class="bg-white rounded-xl border border-gray-200 shadow-sm hover:shadow-md transition-all p-4 text-center">
                 <p class="text-2xl font-bold text-gray-900">{{ $productCount }}</p>
-                <p class="text-xs text-gray-500 mt-1">Products</p>
+                <p class="text-xs text-gray-500 mt-1">{{ __('inventory.products') }}</p>
             </a>
             <a href="{{ route('inventory.lots.index') }}" class="bg-white rounded-xl border border-gray-200 shadow-sm hover:shadow-md transition-all p-4 text-center">
                 <p class="text-2xl font-bold text-gray-900">{{ $lotCount }}</p>
-                <p class="text-xs text-gray-500 mt-1">Lots / Serial Numbers</p>
+                <p class="text-xs text-gray-500 mt-1">{{ __('inventory.lots') }}</p>
             </a>
             <a href="{{ route('inventory.reports.stock') }}" class="bg-white rounded-xl border border-gray-200 shadow-sm hover:shadow-md transition-all p-4 text-center">
                 <p class="text-2xl font-bold text-gray-900">{{ $stockLines }}</p>

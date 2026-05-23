@@ -1,12 +1,12 @@
 @extends('layouts.app')
-@section('title', 'Journal Items')
+@section('title', __('accounting.journal_items'))
 
 @php
     $quickFilters = [
-        ['label' => 'Posted',    'params' => ['state' => 'posted'],    'url' => route('accounting.items.index', array_merge(request()->except('page','state'), ['state' => 'posted']))],
-        ['label' => 'Draft',     'params' => ['state' => 'draft'],     'url' => route('accounting.items.index', array_merge(request()->except('page','state'), ['state' => 'draft']))],
-        ['label' => 'Cancelled', 'params' => ['state' => 'cancelled'], 'url' => route('accounting.items.index', array_merge(request()->except('page','state'), ['state' => 'cancelled']))],
-        ['label' => 'All',       'params' => ['state' => ''],          'url' => route('accounting.items.index', array_merge(request()->except('page','state'), ['state' => '']))],
+        ['label' => __('accounting.status_posted'),    'params' => ['state' => 'posted'],    'url' => route('accounting.items.index', array_merge(request()->except('page','state'), ['state' => 'posted']))],
+        ['label' => __('accounting.status_draft'),     'params' => ['state' => 'draft'],     'url' => route('accounting.items.index', array_merge(request()->except('page','state'), ['state' => 'draft']))],
+        ['label' => __('accounting.status_cancelled'), 'params' => ['state' => 'cancelled'], 'url' => route('accounting.items.index', array_merge(request()->except('page','state'), ['state' => 'cancelled']))],
+        ['label' => __('accounting.all_models'),       'params' => ['state' => ''],          'url' => route('accounting.items.index', array_merge(request()->except('page','state'), ['state' => '']))],
     ];
 @endphp
 
@@ -14,8 +14,8 @@
 <div class="flex min-w-0 flex-col h-full bg-white">
     <x-toolbar>
         <x-slot:breadcrumb>
-            <a href="{{ route('accounting.dashboard') }}" class="text-xs text-purple-600 hover:text-purple-700">Accounting</a>
-            <span class="text-sm font-semibold text-gray-800">Journal Items</span>
+            <a href="{{ route('accounting.dashboard') }}" class="text-xs text-purple-600 hover:text-purple-700">{{ __('accounting.accounting') }}</a>
+            <span class="text-sm font-semibold text-gray-800">{{ __('accounting.journal_items') }}</span>
         </x-slot:breadcrumb>
         <x-slot:search>
             <x-search
@@ -37,15 +37,15 @@
 
     <div class="shrink-0 grid grid-cols-1 sm:grid-cols-3 border-b border-gray-200 bg-gray-50">
         <div class="px-4 py-2">
-            <p class="text-[11px] font-semibold uppercase text-gray-500">Debit</p>
+            <p class="text-[11px] font-semibold uppercase text-gray-500">{{ __('accounting.col_debit') }}</p>
             <p class="text-sm font-semibold text-gray-900 tabular-nums">{{ number_format($totalDebit, 2) }}</p>
         </div>
         <div class="px-4 py-2 border-t sm:border-t-0 sm:border-s border-gray-200">
-            <p class="text-[11px] font-semibold uppercase text-gray-500">Credit</p>
+            <p class="text-[11px] font-semibold uppercase text-gray-500">{{ __('accounting.col_credit') }}</p>
             <p class="text-sm font-semibold text-gray-900 tabular-nums">{{ number_format($totalCredit, 2) }}</p>
         </div>
         <div class="px-4 py-2 border-t sm:border-t-0 sm:border-s border-gray-200">
-            <p class="text-[11px] font-semibold uppercase text-gray-500">Balance</p>
+            <p class="text-[11px] font-semibold uppercase text-gray-500">{{ __('accounting.col_balance') }}</p>
             <p class="text-sm font-semibold {{ $totalBalance === 0.0 ? 'text-gray-900' : ($totalBalance > 0 ? 'text-green-700' : 'text-red-700') }} tabular-nums">
                 {{ number_format($totalBalance, 2) }}
             </p>
@@ -53,18 +53,18 @@
     </div>
 
     @if(isset($groups))
-    <x-list :grouped="true" empty-text="No journal items yet.">
+    <x-list :grouped="true" :empty-text="__('accounting.no_items')">
         <x-slot:columns>
-            <x-sortable-th column="date" label="Date" class="px-4 py-2" :default="true" />
-            <th class="px-3 py-2 text-xs font-semibold text-gray-500 uppercase tracking-wide text-left">Journal Entry</th>
-            <th class="px-3 py-2 text-xs font-semibold text-gray-500 uppercase tracking-wide text-left">Journal</th>
-            <th class="px-3 py-2 text-xs font-semibold text-gray-500 uppercase tracking-wide text-left">Account</th>
-            <th class="px-3 py-2 text-xs font-semibold text-gray-500 uppercase tracking-wide text-left">Partner</th>
-            <th class="px-3 py-2 text-xs font-semibold text-gray-500 uppercase tracking-wide text-left">Label</th>
-            <x-sortable-th column="debit" label="Debit" class="px-3 py-2 text-right" />
-            <x-sortable-th column="credit" label="Credit" class="px-3 py-2 text-right" />
-            <th class="px-3 py-2 text-xs font-semibold text-gray-500 uppercase tracking-wide text-right">Balance</th>
-            <x-sortable-th column="state" label="State" class="px-3 py-2" />
+            <x-sortable-th column="date" :label="__('accounting.col_date')" class="px-4 py-2" :default="true" />
+            <th class="px-3 py-2 text-xs font-semibold text-gray-500 uppercase tracking-wide text-left">{{ __('accounting.journal_entries') }}</th>
+            <th class="px-3 py-2 text-xs font-semibold text-gray-500 uppercase tracking-wide text-left">{{ __('accounting.col_journal') }}</th>
+            <th class="px-3 py-2 text-xs font-semibold text-gray-500 uppercase tracking-wide text-left">{{ __('accounting.col_account') }}</th>
+            <th class="px-3 py-2 text-xs font-semibold text-gray-500 uppercase tracking-wide text-left">{{ __('accounting.col_partner') }}</th>
+            <th class="px-3 py-2 text-xs font-semibold text-gray-500 uppercase tracking-wide text-left">{{ __('accounting.col_label') }}</th>
+            <x-sortable-th column="debit" :label="__('accounting.col_debit')" class="px-3 py-2 text-right" />
+            <x-sortable-th column="credit" :label="__('accounting.col_credit')" class="px-3 py-2 text-right" />
+            <th class="px-3 py-2 text-xs font-semibold text-gray-500 uppercase tracking-wide text-right">{{ __('accounting.col_balance') }}</th>
+            <x-sortable-th column="state" :label="__('accounting.col_state')" class="px-3 py-2" />
         </x-slot:columns>
 
         @forelse($groups as $group)
@@ -92,7 +92,7 @@
             @endphp
             <tr x-show="open" class="hover:bg-purple-50/30 cursor-pointer" onclick="window.location='{{ $itemMoveUrl }}'">
                 <td class="px-4 py-2 text-gray-700 tabular-nums">{{ optional($item->date)->format('Y-m-d') }}</td>
-                <td class="px-3 py-2 font-medium text-gray-900">{{ $item->move?->name ?: '(Draft)' }}</td>
+                <td class="px-3 py-2 font-medium text-gray-900">{{ $item->move?->name ?: '('.__('accounting.status_draft').')' }}</td>
                 <td class="px-3 py-2 text-gray-600">{{ $item->journal?->code ?: '—' }}</td>
                 <td class="px-3 py-2 text-gray-700">
                     @if($item->account)
@@ -125,24 +125,24 @@
         </tbody>
         @empty
         <tbody>
-            <tr><td colspan="99" class="px-4 py-20 text-center text-sm text-gray-400">No journal items yet.</td></tr>
+            <tr><td colspan="99" class="px-4 py-20 text-center text-sm text-gray-400">{{ __('accounting.no_items') }}</td></tr>
         </tbody>
         @endforelse
     </x-list>
 
     @else
-    <x-list :paginator="$items" empty-text="No journal items yet.">
+    <x-list :paginator="$items" :empty-text="__('accounting.no_items')">
         <x-slot:columns>
-            <x-sortable-th column="date" label="Date" class="px-4 py-2" :default="true" />
-            <th class="px-3 py-2 text-xs font-semibold text-gray-500 uppercase tracking-wide text-left">Journal Entry</th>
-            <th class="px-3 py-2 text-xs font-semibold text-gray-500 uppercase tracking-wide text-left">Journal</th>
-            <th class="px-3 py-2 text-xs font-semibold text-gray-500 uppercase tracking-wide text-left">Account</th>
-            <th class="px-3 py-2 text-xs font-semibold text-gray-500 uppercase tracking-wide text-left">Partner</th>
-            <th class="px-3 py-2 text-xs font-semibold text-gray-500 uppercase tracking-wide text-left">Label</th>
-            <x-sortable-th column="debit" label="Debit" class="px-3 py-2 text-right" />
-            <x-sortable-th column="credit" label="Credit" class="px-3 py-2 text-right" />
-            <th class="px-3 py-2 text-xs font-semibold text-gray-500 uppercase tracking-wide text-right">Balance</th>
-            <x-sortable-th column="state" label="State" class="px-3 py-2" />
+            <x-sortable-th column="date" :label="__('accounting.col_date')" class="px-4 py-2" :default="true" />
+            <th class="px-3 py-2 text-xs font-semibold text-gray-500 uppercase tracking-wide text-left">{{ __('accounting.journal_entries') }}</th>
+            <th class="px-3 py-2 text-xs font-semibold text-gray-500 uppercase tracking-wide text-left">{{ __('accounting.col_journal') }}</th>
+            <th class="px-3 py-2 text-xs font-semibold text-gray-500 uppercase tracking-wide text-left">{{ __('accounting.col_account') }}</th>
+            <th class="px-3 py-2 text-xs font-semibold text-gray-500 uppercase tracking-wide text-left">{{ __('accounting.col_partner') }}</th>
+            <th class="px-3 py-2 text-xs font-semibold text-gray-500 uppercase tracking-wide text-left">{{ __('accounting.col_label') }}</th>
+            <x-sortable-th column="debit" :label="__('accounting.col_debit')" class="px-3 py-2 text-right" />
+            <x-sortable-th column="credit" :label="__('accounting.col_credit')" class="px-3 py-2 text-right" />
+            <th class="px-3 py-2 text-xs font-semibold text-gray-500 uppercase tracking-wide text-right">{{ __('accounting.col_balance') }}</th>
+            <x-sortable-th column="state" :label="__('accounting.col_state')" class="px-3 py-2" />
         </x-slot:columns>
 
         @foreach($items as $item)
@@ -157,7 +157,7 @@
         @endphp
         <tr class="hover:bg-purple-50/30 cursor-pointer" onclick="window.location='{{ $itemMoveUrl }}'">
             <td class="px-4 py-2 text-gray-700 tabular-nums">{{ optional($item->date)->format('Y-m-d') }}</td>
-            <td class="px-3 py-2 font-medium text-gray-900">{{ $item->move?->name ?: '(Draft)' }}</td>
+            <td class="px-3 py-2 font-medium text-gray-900">{{ $item->move?->name ?: '('.__('accounting.status_draft').')' }}</td>
             <td class="px-3 py-2 text-gray-600">{{ $item->journal?->code ?: '—' }}</td>
             <td class="px-3 py-2 text-gray-700">
                 @if($item->account)

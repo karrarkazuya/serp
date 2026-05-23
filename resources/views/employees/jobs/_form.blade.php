@@ -22,9 +22,10 @@
             <x-relation-dropdown
                 name="department_id"
                 table="hr_departments"
-                :selected-id="old('department_id', $job?->department_id)"
-                :selected-label="$job?->department?->name"
+                field="name"
+                :selected="old('department_id', $job?->department_id)"
                 placeholder="Select department..."
+                compact
             />
         </div>
 
@@ -33,9 +34,10 @@
             <x-relation-dropdown
                 name="company_id"
                 table="companies"
-                :selected-id="old('company_id', $job?->company_id)"
-                :selected-label="$job?->company?->name"
+                field="name"
+                :selected="old('company_id', $job?->company_id)"
                 placeholder="Select company..."
+                compact
             />
         </div>
 

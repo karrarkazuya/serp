@@ -29,7 +29,7 @@
     <td class="py-1.5 w-24">
         <input type="number" name="moves[{{ $idx }}][product_qty]" value="1"
             step="0.001" min="0.001"
-            class="w-full text-sm bg-transparent border-0 focus:outline-none px-0 text-right">
+            class="w-full text-sm bg-transparent border-0 focus:outline-none px-0 text-end">
     </td>
     <td class="py-1.5 text-center w-8">
         <button type="button" onclick="this.closest('tr').remove()" class="text-gray-300 hover:text-red-500">

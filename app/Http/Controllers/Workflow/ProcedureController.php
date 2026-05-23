@@ -12,6 +12,7 @@ use App\Models\Workflow\TicketPath;
 use App\Models\Workflow\WorkflowRecordInput;
 use App\Models\Workflow\WorkflowTemplateInputOption;
 use App\Models\Workflow\WorkflowUser;
+use App\Helpers\GroupsQuery;
 use App\Helpers\SearchFilters;
 use App\Helpers\SortsTable;
 use App\Services\Company\CompanyContextService;
@@ -53,11 +54,25 @@ class ProcedureController extends Controller
             $query->where('state', $state);
         }
 
+        $view = $request->query('view', 'list');
+
+        if ($view === 'list') {
+            $groupBy = $request->query('group_by');
+            if ($groupBy) {
+                $fields = SearchFilters::fieldsFor(Procedure::class);
+                if (isset($fields[$groupBy])) {
+                    $records = (clone $query)->with(['procedureTemplate', 'createdByUser'])->orderBy('id')->get();
+                    $groups  = GroupsQuery::apply($records, $fields[$groupBy]);
+                    return view('workflow.procedures.index', compact('groups', 'view'));
+                }
+            }
+        }
+
         SortsTable::apply($query, $request);
 
         $procedures = $query->paginate(24)->withQueryString();
 
-        return view('workflow.procedures.index', compact('procedures'));
+        return view('workflow.procedures.index', compact('procedures', 'view'));
     }
 
     public function show(Procedure $procedure)

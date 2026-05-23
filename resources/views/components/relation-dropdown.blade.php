@@ -11,6 +11,8 @@
         exclude: @js($exceptValues),
         selected: @js($selectedValues),
         selectedRecords: @js($selectedOptions),
+        pendingIds: [],
+        pendingRecords: [],
         options: [],
         modalOptions: [],
         loading: false,
@@ -134,17 +136,71 @@
             this.$nextTick(() => this.$refs.searchInput?.focus());
         },
         openSearchMore() {
+            this.pendingIds = [...this.selected];
+            this.pendingRecords = [...this.selectedRecords];
             this.modalOpen = true;
             this.open = false;
             this.modalSearch = this.search;
             this.fetchModal(1);
             this.$nextTick(() => this.$refs.modalSearchInput?.focus());
         },
+        hasPending(id) {
+            return this.pendingIds.map(String).includes(String(id));
+        },
+        togglePending(option) {
+            if (!this.multiple) {
+                this.selected = [option.id];
+                this.selectedRecords = [option];
+                this.search = option.label;
+                this.modalOpen = false;
+                this.pendingIds = [];
+                this.pendingRecords = [];
+                this.emitSelection();
+                return;
+            }
+            const id = option.id;
+            if (this.hasPending(id)) {
+                this.pendingIds = this.pendingIds.filter((i) => String(i) !== String(id));
+                this.pendingRecords = this.pendingRecords.filter((r) => String(r.id) !== String(id));
+            } else {
+                this.pendingIds.push(id);
+                this.pendingRecords.push(option);
+            }
+        },
+        allPageSelected() {
+            return this.modalOptions.length > 0 && this.modalOptions.every((opt) => this.hasPending(opt.id));
+        },
+        toggleSelectAll() {
+            if (this.allPageSelected()) {
+                const pageIds = this.modalOptions.map((o) => String(o.id));
+                this.pendingIds     = this.pendingIds.filter((id) => !pageIds.includes(String(id)));
+                this.pendingRecords = this.pendingRecords.filter((r) => !pageIds.includes(String(r.id)));
+            } else {
+                this.modalOptions.forEach((opt) => {
+                    if (!this.hasPending(opt.id)) {
+                        this.pendingIds.push(opt.id);
+                        this.pendingRecords.push(opt);
+                    }
+                });
+            }
+        },
+        closeModal() {
+            this.modalOpen = false;
+            this.pendingIds = [];
+            this.pendingRecords = [];
+        },
         selectAndClose() {
+            if (this.multiple) {
+                this.selected = [...this.pendingIds];
+                this.selectedRecords = [...this.pendingRecords];
+                this.emitSelection();
+            }
             this.modalOpen = false;
             this.open = false;
             this.search = '';
             this.modalSearch = '';
+            this.pendingIds = [];
+            this.pendingRecords = [];
         },
      }"
      @click.outside="open = false">
@@ -247,10 +303,10 @@
                  class="fixed inset-0 z-100 bg-black/45 flex items-center justify-center p-6"
                  style="display:none">
                 <div class="bg-white w-full max-w-5xl max-h-[86vh] rounded-lg shadow-2xl border border-gray-300 flex flex-col overflow-hidden"
-                     @click.outside="modalOpen = false">
+                     @click.outside="closeModal()">
                     <div class="flex items-center gap-4 px-6 py-5 border-b border-gray-200">
                         <h2 class="text-xl font-bold text-gray-800">Search: {{ $label ?? ucfirst($name) }}</h2>
-                        <button type="button" @click="modalOpen = false" class="ms-auto text-gray-500 hover:text-gray-800">
+                        <button type="button" @click="closeModal()" class="ms-auto text-gray-500 hover:text-gray-800">
                             <svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M6 18L18 6M6 6l12 12"/>
                             </svg>
@@ -303,7 +359,12 @@
                             <thead>
                                 <tr class="border-b border-gray-200 bg-white">
                                     <th class="w-12 px-6 py-3 text-left">
-                                        <span class="block w-4 h-4 rounded border border-gray-300"></span>
+                                        <template x-if="multiple">
+                                            <input type="checkbox"
+                                                   class="w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500 cursor-pointer"
+                                                   :checked="allPageSelected()"
+                                                   @click="toggleSelectAll()">
+                                        </template>
                                     </th>
                                     <th class="px-3 py-3 text-start text-sm font-semibold text-gray-800">{{ __('common.name') }}</th>
                                     @if($colorField)
@@ -317,14 +378,20 @@
                                 </tr>
 
                                 <template x-for="option in modalOptions" :key="option.id">
-                                    <tr class="border-b border-gray-200 hover:bg-gray-50 cursor-pointer" @click="toggle(option)">
+                                    <tr class="border-b border-gray-200 hover:bg-gray-50 cursor-pointer" @click="togglePending(option)">
                                         <td class="px-6 py-3">
-                                            <span class="w-4 h-4 rounded border flex items-center justify-center"
-                                                  :class="has(option.id) ? 'bg-blue-600 border-blue-600' : 'border-gray-300'">
-                                                <svg x-show="has(option.id)" class="w-3 h-3 text-white" fill="currentColor" viewBox="0 0 20 20">
-                                                    <path fill-rule="evenodd" d="M16.7 5.3a1 1 0 010 1.4l-8 8a1 1 0 01-1.4 0l-4-4a1 1 0 111.4-1.4L8 12.6l7.3-7.3a1 1 0 011.4 0z" clip-rule="evenodd"/>
-                                                </svg>
-                                            </span>
+                                            <template x-if="multiple">
+                                                <input type="checkbox"
+                                                       class="w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500 cursor-pointer"
+                                                       :checked="hasPending(option.id)"
+                                                       @click.stop="togglePending(option)">
+                                            </template>
+                                            <template x-if="!multiple">
+                                                <span class="w-4 h-4 rounded-full border flex items-center justify-center"
+                                                      :class="has(option.id) ? 'border-blue-600' : 'border-gray-300'">
+                                                    <span x-show="has(option.id)" class="w-2 h-2 rounded-full bg-blue-600"></span>
+                                                </span>
+                                            </template>
                                         </td>
                                         <td class="px-3 py-3 text-gray-700 font-medium" x-text="option.label"></td>
                                         @if($colorField)
@@ -344,15 +411,15 @@
                     <div class="px-6 py-4 border-t border-gray-200 flex items-center gap-2">
                         <button type="button"
                                 @click="selectAndClose()"
-                                class="px-4 py-2 bg-[#714B67]/50 text-white text-sm font-semibold rounded hover:bg-[#714B67]">
-                            Select
+                                class="px-4 py-2 bg-[#714B67]/50 text-white text-sm font-semibold rounded hover:bg-[#714B67]"
+                                x-text="multiple ? (pendingIds.length ? `Add (${pendingIds.length})` : 'Add') : 'Select'">
                         </button>
                         @if($canCreate && $createUrl)
                         <a href="{{ $createUrl }}" class="px-4 py-2 bg-[#714B67] text-white text-sm font-semibold rounded hover:bg-[#5c3d55]">
                             New
                         </a>
                         @endif
-                        <button type="button" @click="modalOpen = false" class="px-4 py-2 bg-gray-200 text-gray-700 text-sm font-semibold rounded hover:bg-gray-300">
+                        <button type="button" @click="closeModal()" class="px-4 py-2 bg-gray-200 text-gray-700 text-sm font-semibold rounded hover:bg-gray-300">
                             Close
                         </button>
                     </div>

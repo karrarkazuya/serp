@@ -174,7 +174,27 @@
       "Bash(grep -rn 'if \\(!empty\\($activeCompanyIds\\)\\)' /Users/karrar/Projects/web/serp/app/Http/Controllers/Accounting/)",
       "Bash(grep -n '$this->journals\\\\|$this->accounts' /Users/karrar/Projects/web/serp/app/Http/Controllers/Accounting/AccountingReportController.php)",
       "Bash(grep -n 'isset\\($groups\\)' /Users/karrar/Projects/web/serp/resources/views/accounting/items/index.blade.php /Users/karrar/Projects/web/serp/resources/views/accounting/payments/index.blade.php /Users/karrar/Projects/web/serp/resources/views/accounting/taxes/index.blade.php /Users/karrar/Projects/web/serp/resources/views/accounting/account-groups/index.blade.php /Users/karrar/Projects/web/serp/resources/views/accounting/incoterms/index.blade.php /Users/karrar/Projects/web/serp/resources/views/accounting/payment-terms/index.blade.php /Users/karrar/Projects/web/serp/resources/views/accounting/tax-groups/index.blade.php /Users/karrar/Projects/web/serp/resources/views/accounting/currencies/index.blade.php /Users/karrar/Projects/web/serp/resources/views/accounting/documents/index.blade.php)",
-      "Bash(grep -n 'isset\\($groups\\)' /Users/karrar/Projects/web/serp/resources/views/contacts/index.blade.php /Users/karrar/Projects/web/serp/resources/views/contacts/tags/index.blade.php)"
+      "Bash(grep -n 'isset\\($groups\\)' /Users/karrar/Projects/web/serp/resources/views/contacts/index.blade.php /Users/karrar/Projects/web/serp/resources/views/contacts/tags/index.blade.php)",
+      "Bash(grep -l 'isset\\($groups\\)' /Users/karrar/Projects/web/serp/resources/views/accounting/taxes/index.blade.php /Users/karrar/Projects/web/serp/resources/views/accounting/account-groups/index.blade.php /Users/karrar/Projects/web/serp/resources/views/accounting/incoterms/index.blade.php /Users/karrar/Projects/web/serp/resources/views/accounting/payment-terms/index.blade.php /Users/karrar/Projects/web/serp/resources/views/accounting/tax-groups/index.blade.php /Users/karrar/Projects/web/serp/resources/views/accounting/currencies/index.blade.php /Users/karrar/Projects/web/serp/resources/views/accounting/documents/index.blade.php)",
+      "Bash(awk '/prefix.*accounting/,/^    }\\\\\\);/' /Users/karrar/Projects/web/serp/routes/web.php)",
+      "Bash(grep -rn \"\\\\$[a-z].*->[a-z]*?->\" /Users/karrar/Projects/web/serp/resources/views/accounting/)",
+      "Bash(grep -n '$line\\\\.\\\\|->account\\\\|->journal\\\\|->move\\\\|->partner' /Users/karrar/Projects/web/serp/resources/views/accounting/reports/general-ledger.blade.php /Users/karrar/Projects/web/serp/resources/views/accounting/reports/journal-audit.blade.php)",
+      "Bash(grep -n 'isset\\($groups\\)' /Users/karrar/Projects/web/serp/resources/views/workflow/configuration/groups/index.blade.php)",
+      "Bash(grep -q 'isset\\($groups\\)\\\\|isset\\($groupedRows\\)' /Users/karrar/Projects/web/serp/__TRACKED_VAR__)",
+      "Bash(grep -n 'SortsTable\\\\|GroupsQuery\\\\|return view' /Users/karrar/Projects/web/serp/__TRACKED_VAR__)",
+      "Bash(php -r 'require '\\\\''/Users/karrar/Projects/web/serp/vendor/autoload.php'\\\\''; $app = require '\\\\''/Users/karrar/Projects/web/serp/bootstrap/app.php'\\\\''; $app->make\\(\\\\Illuminate\\\\Contracts\\\\Console\\\\Kernel::class\\)->bootstrap\\(\\); $routes = \\\\Illuminate\\\\Support\\\\Facades\\\\Route::getRoutes\\(\\); foreach \\($routes as $r\\) { if \\(str_contains\\($r->getName\\(\\) ?? '\\\\'''\\\\'', '\\\\''workflow.tasks'\\\\''\\)\\) echo $r->getName\\(\\) . '\\\\'' => '\\\\'' . $r->getActionName\\(\\) . PHP_EOL; }')",
+      "Bash(awk '/routeIs\\\\\\('\"'\"'accounting\\\\.\\\\*'\"'\"'\\\\\\)/,/routeIs\\\\\\('\"'\"'inventory\\\\.\\\\*'\"'\"'\\\\\\)/' /Users/karrar/Projects/web/serp/resources/views/components/navbar.blade.php)",
+      "Bash(awk 'f; /routeIs\\\\\\('\"'\"'accounting\\\\.\\\\*'\"'\"'\\\\\\)/{f=1} /routeIs\\\\\\('\"'\"'inventory\\\\.\\\\*'\"'\"'\\\\\\)/{f=0}' /Users/karrar/Projects/web/serp/resources/views/components/navbar.blade.php)",
+      "Bash(php -r 'echo '\\\\''EN: '\\\\''; $r = require '\\\\''/Users/karrar/Projects/web/serp/lang/en/accounting.php'\\\\''; echo count\\($r\\).'\\\\'' keys'\\\\''; echo PHP_EOL;')",
+      "Bash(php -r 'echo '\\\\''AR: '\\\\''; $r = require '\\\\''/Users/karrar/Projects/web/serp/lang/ar/accounting.php'\\\\''; echo count\\($r\\).'\\\\'' keys'\\\\''; echo PHP_EOL;')",
+      "Bash(grep -v \"^\\\\s*$\")",
+      "Bash(php -l /Users/karrar/Projects/web/serp/app/Http/Controllers/Employees/EmployeeDocumentController.php)",
+      "Bash(php -l /Users/karrar/Projects/web/serp/app/Http/Controllers/Employees/EmployeeCertificateController.php)",
+      "Bash(php -l /Users/karrar/Projects/web/serp/app/Models/Employees/EmployeeCertificate.php)",
+      "Bash(php -l /Users/karrar/Projects/web/serp/app/Models/Employees/Employee.php)",
+      "Bash(php -l /Users/karrar/Projects/web/serp/app/Models/Employees/EmployeeDocument.php)",
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\" http://127.0.0.1:8000/employees/certificates)",
+      "Bash(php -l /Users/karrar/Projects/web/serp/app/Http/Controllers/Employees/EmployeePositionController.php)"
     ],
     "additionalDirectories": [
       "/Users/karrar/Projects/web/serp/storage/app/public/avatars/contacts"

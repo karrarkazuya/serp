@@ -1,12 +1,12 @@
 @extends('layouts.app')
-@section('title', 'Payment Terms')
+@section('title', __('accounting.payment_terms'))
 
 @section('content')
 <div class="flex flex-col h-full bg-gray-50">
     <x-toolbar :new-href="auth()->user()->hasPermission('accounting.create') ? route('accounting.payment-terms.create') : null">
         <x-slot:breadcrumb>
-            <a href="{{ route('accounting.dashboard') }}" class="text-xs text-purple-600 hover:text-purple-700">Accounting</a>
-            <span class="text-sm font-semibold text-gray-800">Payment Terms</span>
+            <a href="{{ route('accounting.dashboard') }}" class="text-xs text-purple-600 hover:text-purple-700">{{ __('accounting.accounting') }}</a>
+            <span class="text-sm font-semibold text-gray-800">{{ __('accounting.payment_terms') }}</span>
         </x-slot:breadcrumb>
         <x-slot:search>
             <x-search :model="\App\Models\Accounting\AccountingPaymentTerm::class" />
@@ -16,11 +16,11 @@
     @if(session('success'))<div class="shrink-0 px-4 py-2 bg-green-50 border-b border-green-200 text-sm text-green-700">{{ session('success') }}</div>@endif
 
     @if(isset($groups))
-    <x-list :grouped="true" empty-text="No payment terms found.">
+    <x-list :grouped="true" :empty-text="__('accounting.no_payment_terms')">
         <x-slot:columns>
-            <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase">Name</th>
-            <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase">Lines</th>
-            <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase">Status</th>
+            <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase">{{ __('accounting.col_name') }}</th>
+            <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase">{{ __('accounting.col_lines') }}</th>
+            <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase">{{ __('accounting.col_status') }}</th>
         </x-slot:columns>
 
         @forelse($groups as $group)
@@ -42,7 +42,7 @@
                 <td class="px-4 py-3 text-sm text-gray-500">{{ $term->lines_count ?? '—' }}</td>
                 <td class="px-4 py-3">
                     <span class="inline-block px-2 py-0.5 rounded text-[11px] font-medium {{ $term->active ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500' }}">
-                        {{ $term->active ? 'Active' : 'Archived' }}
+                        {{ $term->active ? __('accounting.status_active') : __('accounting.status_archived') }}
                     </span>
                 </td>
             </tr>
@@ -50,17 +50,17 @@
         </tbody>
         @empty
         <tbody>
-            <tr><td colspan="99" class="px-4 py-20 text-center text-sm text-gray-400">No payment terms found.</td></tr>
+            <tr><td colspan="99" class="px-4 py-20 text-center text-sm text-gray-400">{{ __('accounting.no_payment_terms') }}</td></tr>
         </tbody>
         @endforelse
     </x-list>
 
     @else
-    <x-list :paginator="$terms" empty-text="No payment terms found.">
+    <x-list :paginator="$terms" :empty-text="__('accounting.no_payment_terms')">
             <x-slot:columns>
-                <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase">Name</th>
-                <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase">Lines</th>
-                <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase">Status</th>
+                <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase">{{ __('accounting.col_name') }}</th>
+                <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase">{{ __('accounting.col_lines') }}</th>
+                <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase">{{ __('accounting.col_status') }}</th>
             </x-slot:columns>
 
             @foreach($terms as $term)
@@ -69,7 +69,7 @@
                 <td class="px-4 py-3 text-sm text-gray-500">{{ $term->lines_count ?? '—' }}</td>
                 <td class="px-4 py-3">
                     <span class="inline-block px-2 py-0.5 rounded text-[11px] font-medium {{ $term->active ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500' }}">
-                        {{ $term->active ? 'Active' : 'Archived' }}
+                        {{ $term->active ? __('accounting.status_active') : __('accounting.status_archived') }}
                     </span>
                 </td>
             </tr>

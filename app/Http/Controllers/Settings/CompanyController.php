@@ -8,6 +8,7 @@ use App\Http\Requests\Settings\UpdateCompanyRequest;
 use App\Models\Settings\Company;
 use App\Services\Company\CompanyService;
 use App\Services\FileService;
+use App\Helpers\GroupsQuery;
 use App\Helpers\SearchFilters;
 use App\Helpers\SortsTable;
 use Illuminate\Http\Request;
@@ -34,6 +35,16 @@ class CompanyController extends Controller
             // no filter
         } else {
             $query->active();
+        }
+
+        $groupBy = $request->query('group_by');
+        if ($groupBy) {
+            $fields = SearchFilters::fieldsFor(Company::class);
+            if (isset($fields[$groupBy])) {
+                $records = (clone $query)->orderBy('id')->get();
+                $groups  = GroupsQuery::apply($records, $fields[$groupBy]);
+                return view('settings.companies.index', compact('groups'));
+            }
         }
 
         SortsTable::apply($query, $request);

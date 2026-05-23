@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Inventory;
 
+use App\Helpers\GroupsQuery;
 use App\Helpers\SearchFilters;
 use App\Helpers\SortsTable;
 use App\Http\Controllers\Controller;
@@ -45,11 +46,25 @@ class ProductController extends Controller
             $query->where('product_type', $type);
         }
 
+        $view = $request->query('view', 'kanban');
+
+        if ($view === 'list') {
+            $groupBy = $request->query('group_by');
+            if ($groupBy) {
+                $fields = SearchFilters::fieldsFor(Product::class);
+                if (isset($fields[$groupBy])) {
+                    $records = (clone $query)->with(['category', 'uom', 'company'])->orderBy('id')->get();
+                    $groups  = GroupsQuery::apply($records, $fields[$groupBy]);
+                    return view('inventory.products.index', compact('groups', 'view'));
+                }
+            }
+        }
+
         SortsTable::apply($query, $request);
 
         $products = $query->paginate(24)->withQueryString();
 
-        return view('inventory.products.index', compact('products'));
+        return view('inventory.products.index', compact('products', 'view'));
     }
 
     public function show(Product $product)

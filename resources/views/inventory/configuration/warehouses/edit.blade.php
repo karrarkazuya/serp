@@ -1,5 +1,5 @@
 @extends('layouts.app')
-@section('title', 'Edit: ' . $warehouse->name)
+@section('title', __('inventory.edit') . ': ' . $warehouse->name)
 
 @section('content')
 <div class="flex flex-col h-full bg-gray-50">
@@ -7,14 +7,14 @@
         @csrf @method('PUT')
         <x-toolbar>
             <x-slot:breadcrumb>
-                <a href="{{ route('inventory.config.warehouses.index') }}" class="text-xs text-purple-600 hover:text-purple-700">Warehouses</a>
+                <a href="{{ route('inventory.config.warehouses.index') }}" class="text-xs text-purple-600 hover:text-purple-700">{{ __('inventory.warehouses') }}</a>
                 <a href="{{ route('inventory.config.warehouses.show', $warehouse) }}" class="text-xs text-purple-600 hover:text-purple-700">{{ $warehouse->name }}</a>
-                <span class="text-sm font-semibold text-gray-800">Edit</span>
+                <span class="text-sm font-semibold text-gray-800">{{ __('inventory.edit') }}</span>
             </x-slot:breadcrumb>
             <x-slot:actions>
                 <div class="flex items-center gap-2">
-                    <a href="{{ route('inventory.config.warehouses.show', $warehouse) }}" class="px-3 py-1.5 text-sm text-gray-600 border border-gray-300 rounded hover:bg-gray-50">Discard</a>
-                    <button type="submit" class="px-3 py-1.5 text-sm font-semibold text-white bg-[#714B67] hover:bg-[#5c3d55] rounded">Save</button>
+                    <a href="{{ route('inventory.config.warehouses.show', $warehouse) }}" class="px-3 py-1.5 text-sm text-gray-600 border border-gray-300 rounded hover:bg-gray-50">{{ __('inventory.discard') }}</a>
+                    <button type="submit" class="px-3 py-1.5 text-sm font-semibold text-white bg-[#714B67] hover:bg-[#5c3d55] rounded">{{ __('inventory.save') }}</button>
                 </div>
             </x-slot:actions>
         </x-toolbar>
@@ -34,7 +34,7 @@
                 <div class="grid grid-cols-2 gap-x-8">
                     <div>
                         <div class="flex items-center gap-4 py-2 border-b border-gray-100">
-                            <label class="w-40 shrink-0 text-sm text-gray-500">Short Name</label>
+                            <label class="w-40 shrink-0 text-sm text-gray-500">{{ __('inventory.short_name') }}</label>
                             <input type="text" name="code" value="{{ old('code', $warehouse->code) }}" required maxlength="5" class="flex-1 text-sm bg-transparent border-0 focus:outline-none px-0 py-0.5">
                         </div>
                     </div>

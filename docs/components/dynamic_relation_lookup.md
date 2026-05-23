@@ -224,6 +224,31 @@ When using the component in another module, add equivalent request validation fo
 5. Validate posted IDs in the module's form request.
 6. Save the relationship in the controller or service.
 
+## Modal Behavior: Single vs Multi-Select
+
+The `relation` prop drives whether the "Search More" modal works in single-select or multi-select mode. This is automatic — no extra flag needed.
+
+| `relation` | `multiple` | Modal behavior |
+|---|---|---|
+| `many2one` / `one2one` | `false` | Click a row → immediately selects and closes modal |
+| `many2many` / `one2many` | `true` | Staging mode: check rows, then click "Add (N)" to apply |
+
+### Multi-select modal features (many2many / one2many)
+
+- **Checkboxes**: real `<input type="checkbox">` on every row, clearly interactive.
+- **Select All**: header checkbox selects / deselects all rows on the current page.
+- **Staging**: selections are staged in a pending list and do not modify the field until "Add" is clicked.
+- **Add button**: shows `Add (N)` where N is the number of items that will be selected.
+- **Cancel / Close / click-outside**: discards pending changes, reverts to the selection at the time the modal was opened.
+
+When the modal opens, the pending list is pre-initialized from the current field value, so already-selected items appear checked.
+
+### Single-select modal features (many2one / one2one)
+
+- Rows show a radio-style indicator for the current selection.
+- Clicking any row immediately applies and closes the modal.
+- No staging, no "Add" button behavior.
+
 ## Notes
 
 The component is intentionally config-driven. Avoid adding table-specific logic to the Blade view or the lookup controller unless it applies to all dynamic relation lookups.

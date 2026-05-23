@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Inventory\Configuration;
 
+use App\Helpers\GroupsQuery;
 use App\Helpers\SearchFilters;
 use App\Helpers\SortsTable;
 use App\Http\Controllers\Controller;
@@ -20,6 +21,18 @@ class UomController extends Controller
         abort_unless($request->user()->hasPermission('inventory.read'), 403);
         $query = Uom::query()->with('category');
         SearchFilters::apply($query, $request);
+
+        $groupBy = $request->query('group_by');
+        if ($groupBy) {
+            $fields = SearchFilters::fieldsFor(Uom::class);
+            if (isset($fields[$groupBy])) {
+                $records = (clone $query)->with('category')->orderBy('id')->get();
+                $groups  = GroupsQuery::apply($records, $fields[$groupBy]);
+                $categories = UomCategory::active()->orderBy('name')->get();
+                return view('inventory.configuration.uoms.index', compact('groups', 'categories'));
+            }
+        }
+
         SortsTable::apply($query, $request);
         $uoms = $query->paginate(24)->withQueryString();
         $categories = UomCategory::active()->orderBy('name')->get();

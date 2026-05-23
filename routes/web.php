@@ -24,6 +24,8 @@ use App\Http\Controllers\Employees\BadgeController;
 use App\Http\Controllers\Employees\ChallengeController;
 use App\Http\Controllers\Employees\GoalController;
 use App\Http\Controllers\Employees\EmployeeDocumentController;
+use App\Http\Controllers\Employees\EmployeeCertificateController;
+use App\Http\Controllers\Employees\EmployeePositionController;
 use App\Http\Controllers\Components\RelationLookupController;
 use App\Http\Controllers\Settings\CompanyController;
 use App\Http\Controllers\Settings\PermissionController;
@@ -330,7 +332,49 @@ Route::middleware('auth')->group(function () {
             Route::post('/{goal}/comment', [GoalController::class, 'addComment'])->middleware('permission:employees.write')->name('comment');
         });
 
-        // Employee CRUD (after fixed sub-routes)
+        // Positions — standalone sub-module (before /{employee} to avoid binding conflict)
+        Route::prefix('positions')->name('positions.')->group(function () {
+            Route::get('/',                       [EmployeePositionController::class, 'read'])->middleware('permission:employees.read')->name('index');
+            Route::get('/create',                 [EmployeePositionController::class, 'create'])->middleware('permission:employees.write')->name('create');
+            Route::post('/',                      [EmployeePositionController::class, 'store'])->middleware('permission:employees.write')->name('store');
+            Route::get('/{position}',                                   [EmployeePositionController::class, 'show'])->middleware('permission:employees.read')->name('show');
+            Route::get('/{position}/edit',                              [EmployeePositionController::class, 'edit'])->middleware('permission:employees.write')->name('edit');
+            Route::put('/{position}',                                   [EmployeePositionController::class, 'write'])->middleware('permission:employees.write')->name('update');
+            Route::patch('/{position}/archive',                         [EmployeePositionController::class, 'archive'])->middleware('permission:employees.write')->name('archive');
+            Route::patch('/{position}/unarchive',                       [EmployeePositionController::class, 'unarchive'])->middleware('permission:employees.write')->name('unarchive');
+            Route::delete('/{position}',                                [EmployeePositionController::class, 'unlink'])->middleware('permission:employees.unlink')->name('delete');
+            Route::put('/{position}/employees',                          [EmployeePositionController::class, 'syncEmployees'])->middleware('permission:employees.write')->name('employees.sync');
+            Route::post('/{position}/comment',                          [EmployeePositionController::class, 'addComment'])->middleware('permission:employees.write')->name('comment');
+        });
+
+        // Documents — standalone sub-module (before /{employee} to avoid binding conflict)
+        Route::prefix('documents')->name('documents.')->group(function () {
+            Route::get('/',                     [EmployeeDocumentController::class, 'read'])->middleware('permission:employees.read')->name('index');
+            Route::get('/create',               [EmployeeDocumentController::class, 'create'])->middleware('permission:employees.write')->name('create');
+            Route::post('/',                    [EmployeeDocumentController::class, 'store'])->middleware('permission:employees.write')->name('store');
+            Route::get('/{document}',           [EmployeeDocumentController::class, 'show'])->middleware('permission:employees.read')->name('show');
+            Route::get('/{document}/edit',      [EmployeeDocumentController::class, 'edit'])->middleware('permission:employees.write')->name('edit');
+            Route::put('/{document}',           [EmployeeDocumentController::class, 'write'])->middleware('permission:employees.write')->name('update');
+            Route::patch('/{document}/archive', [EmployeeDocumentController::class, 'archive'])->middleware('permission:employees.write')->name('archive');
+            Route::patch('/{document}/unarchive',[EmployeeDocumentController::class, 'unarchive'])->middleware('permission:employees.write')->name('unarchive');
+            Route::delete('/{document}',        [EmployeeDocumentController::class, 'unlink'])->middleware('permission:employees.unlink')->name('delete');
+        });
+
+        // Certificates — standalone sub-module (before /{employee} to avoid binding conflict)
+        Route::prefix('certificates')->name('certificates.')->group(function () {
+            Route::get('/',                        [EmployeeCertificateController::class, 'read'])->middleware('permission:employees.read')->name('index');
+            Route::get('/create',                  [EmployeeCertificateController::class, 'create'])->middleware('permission:employees.write')->name('create');
+            Route::post('/',                       [EmployeeCertificateController::class, 'store'])->middleware('permission:employees.write')->name('store');
+            Route::get('/{certificate}',           [EmployeeCertificateController::class, 'show'])->middleware('permission:employees.read')->name('show');
+            Route::get('/{certificate}/edit',      [EmployeeCertificateController::class, 'edit'])->middleware('permission:employees.write')->name('edit');
+            Route::put('/{certificate}',           [EmployeeCertificateController::class, 'write'])->middleware('permission:employees.write')->name('update');
+            Route::patch('/{certificate}/archive', [EmployeeCertificateController::class, 'archive'])->middleware('permission:employees.write')->name('archive');
+            Route::patch('/{certificate}/unarchive',[EmployeeCertificateController::class, 'unarchive'])->middleware('permission:employees.write')->name('unarchive');
+            Route::delete('/{certificate}',        [EmployeeCertificateController::class, 'unlink'])->middleware('permission:employees.unlink')->name('delete');
+            Route::post('/{certificate}/comment',  [EmployeeCertificateController::class, 'addComment'])->middleware('permission:employees.write')->name('comment');
+        });
+
+        // Employee CRUD (after all fixed sub-routes)
         Route::get('/avatar/{uuid}', [EmployeeController::class, 'serveAvatar'])->middleware('permission:employees.read')->name('avatar');
         Route::get('/{employee}', [EmployeeController::class, 'show'])->middleware('permission:employees.read')->name('show');
         Route::get('/{employee}/edit', [EmployeeController::class, 'edit'])->middleware('permission:employees.write')->name('edit');
@@ -340,11 +384,11 @@ Route::middleware('auth')->group(function () {
         Route::delete('/{employee}', [EmployeeController::class, 'unlink'])->middleware('permission:employees.unlink')->name('delete');
         Route::post('/{employee}/comment', [EmployeeController::class, 'addComment'])->middleware('permission:employees.write')->name('comment');
 
-        // Documents (nested under employee)
-        Route::post('/{employee}/documents', [EmployeeDocumentController::class, 'store'])->middleware('permission:employees.write')->name('documents.store');
-        Route::delete('/{employee}/documents/{document}', [EmployeeDocumentController::class, 'unlink'])->middleware('permission:employees.write')->name('documents.delete');
-        Route::get('/{employee}/documents/{document}/download', [EmployeeDocumentController::class, 'download'])->middleware('permission:employees.read')->name('documents.download');
-        Route::get('/{employee}/documents/{document}/preview', [EmployeeDocumentController::class, 'preview'])->middleware('permission:employees.read')->name('documents.preview');
+        // Documents — inline helpers (from employee edit page)
+        Route::post('/{employee}/documents', [EmployeeDocumentController::class, 'employeeStore'])->middleware('permission:employees.write')->name('employee-docs.store');
+        Route::delete('/{employee}/documents/{document}', [EmployeeDocumentController::class, 'employeeUnlink'])->middleware('permission:employees.write')->name('employee-docs.delete');
+        Route::get('/{employee}/documents/{document}/download', [EmployeeDocumentController::class, 'download'])->middleware('permission:employees.read')->name('employee-docs.download');
+        Route::get('/{employee}/documents/{document}/preview', [EmployeeDocumentController::class, 'preview'])->middleware('permission:employees.read')->name('employee-docs.preview');
 
         // Contracts (nested under employee)
         Route::post('/{employee}/contracts', [ContractController::class, 'store'])->middleware('permission:employees.write')->name('contracts.store');
@@ -600,6 +644,7 @@ Route::middleware('auth')->group(function () {
             Route::patch('/{payment}/confirm',     [\App\Http\Controllers\Accounting\AccountPaymentController::class, 'confirm'])    ->middleware('permission:accounting.write')  ->name('confirm');
             Route::patch('/{payment}/reset-draft', [\App\Http\Controllers\Accounting\AccountPaymentController::class, 'resetDraft']) ->middleware('permission:accounting.write')  ->name('reset-draft');
             Route::patch('/{payment}/cancel',      [\App\Http\Controllers\Accounting\AccountPaymentController::class, 'cancel'])     ->middleware('permission:accounting.write')  ->name('cancel');
+            Route::delete('/{payment}',            [\App\Http\Controllers\Accounting\AccountPaymentController::class, 'unlink'])     ->middleware('permission:accounting.unlink') ->name('delete');
             Route::post('/{payment}/comment',      [\App\Http\Controllers\Accounting\AccountPaymentController::class, 'addComment']) ->middleware('permission:accounting.write')  ->name('comment');
         });
 

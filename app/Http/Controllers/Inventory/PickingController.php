@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Inventory;
 
+use App\Helpers\GroupsQuery;
 use App\Helpers\SearchFilters;
 use App\Helpers\SortsTable;
 use App\Http\Controllers\Controller;
@@ -45,9 +46,6 @@ class PickingController extends Controller
             $query->whereIn('state', [Picking::STATE_DRAFT, Picking::STATE_CONFIRMED, Picking::STATE_ASSIGNED]);
         }
 
-        SortsTable::apply($query, $request);
-
-        $pickings = $query->paginate(24)->withQueryString();
         $typeCode = $request->query('type');
         $title    = match($typeCode) {
             'incoming' => 'Receipts',
@@ -55,6 +53,20 @@ class PickingController extends Controller
             'internal' => 'Internal Transfers',
             default    => 'All Transfers',
         };
+
+        $groupBy = $request->query('group_by');
+        if ($groupBy) {
+            $fields = SearchFilters::fieldsFor(Picking::class);
+            if (isset($fields[$groupBy])) {
+                $records = (clone $query)->with(['operationType', 'partner', 'srcLocation', 'destLocation'])->orderBy('id')->get();
+                $groups  = GroupsQuery::apply($records, $fields[$groupBy]);
+                return view('inventory.transfers.index', compact('groups', 'typeCode', 'title'));
+            }
+        }
+
+        SortsTable::apply($query, $request);
+
+        $pickings = $query->paginate(24)->withQueryString();
 
         return view('inventory.transfers.index', compact('pickings', 'typeCode', 'title'));
     }
@@ -155,14 +167,24 @@ class PickingController extends Controller
             $query->whereIn('state', [Picking::STATE_DRAFT, Picking::STATE_CONFIRMED, Picking::STATE_ASSIGNED]);
         }
 
-        SortsTable::apply($query, $request);
-        $pickings = $query->paginate(24)->withQueryString();
-
         $viewMap = [
             'incoming' => 'inventory.receipts.index',
             'outgoing' => 'inventory.deliveries.index',
             'internal' => 'inventory.internal-transfers.index',
         ];
+
+        $groupBy = $request->query('group_by');
+        if ($groupBy) {
+            $fields = SearchFilters::fieldsFor(Picking::class);
+            if (isset($fields[$groupBy])) {
+                $records = (clone $query)->with(['operationType', 'partner', 'srcLocation', 'destLocation'])->orderBy('id')->get();
+                $groups  = GroupsQuery::apply($records, $fields[$groupBy]);
+                return view($viewMap[$typeCode], compact('groups'));
+            }
+        }
+
+        SortsTable::apply($query, $request);
+        $pickings = $query->paginate(24)->withQueryString();
 
         return view($viewMap[$typeCode], compact('pickings'));
     }

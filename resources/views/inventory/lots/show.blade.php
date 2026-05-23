@@ -13,23 +13,23 @@
         :prev-href="$prevId ? route('inventory.lots.show', $prevId) : null"
         :next-href="$nextId ? route('inventory.lots.show', $nextId) : null">
         <x-slot:breadcrumb>
-            <a href="{{ route('inventory.lots.index') }}" class="text-xs text-purple-600 hover:text-purple-700">Lots / Serial Numbers</a>
+            <a href="{{ route('inventory.lots.index') }}" class="text-xs text-purple-600 hover:text-purple-700">{{ __('inventory.lots') }}</a>
             <span class="text-sm font-semibold text-gray-800">{{ $lot->name }}</span>
         </x-slot:breadcrumb>
         <x-slot:actions>
             <div class="flex items-center gap-2">
                 @can('update', $lot)
-                <a href="{{ route('inventory.lots.edit', $lot) }}" class="px-3 py-1.5 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded hover:bg-gray-50">Edit</a>
+                <a href="{{ route('inventory.lots.edit', $lot) }}" class="px-3 py-1.5 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded hover:bg-gray-50">{{ __('inventory.edit') }}</a>
                 @endcan
                 @can('delete', $lot)
                 <div x-data="{ confirming: false }">
                     <form method="POST" action="{{ route('inventory.lots.delete', $lot) }}">
                         @csrf @method('DELETE')
-                        <button type="button" x-show="!confirming" @click="confirming = true" class="px-3 py-1.5 text-sm text-red-700 border border-red-200 rounded hover:bg-red-50">Delete</button>
+                        <button type="button" x-show="!confirming" @click="confirming = true" class="px-3 py-1.5 text-sm text-red-700 border border-red-200 rounded hover:bg-red-50">{{ __('inventory.delete') }}</button>
                         <div x-show="confirming" style="display:none" class="flex items-center gap-1.5">
-                            <span class="text-xs text-red-600">Are you sure?</span>
-                            <button type="submit" class="px-2 py-1 text-xs bg-red-600 text-white rounded">Yes</button>
-                            <button type="button" @click="confirming = false" class="px-2 py-1 text-xs text-gray-500 border rounded">Cancel</button>
+                            <span class="text-xs text-red-600">{{ __('inventory.are_you_sure') }}</span>
+                            <button type="submit" class="px-2 py-1 text-xs bg-red-600 text-white rounded">{{ __('inventory.yes') }}</button>
+                            <button type="button" @click="confirming = false" class="px-2 py-1 text-xs text-gray-500 border rounded">{{ __('inventory.cancel') }}</button>
                         </div>
                     </form>
                 </div>
@@ -43,26 +43,27 @@
             <h1 class="text-2xl font-bold text-gray-900 mb-6">{{ $lot->name }}</h1>
             <div class="grid grid-cols-2 gap-x-8">
                 <div>
+                    @php $expirationLabel = __('inventory.expiration_date'); @endphp
                     @foreach([
-                        ['Product', $lot->product?->name],
-                        ['Company', $lot->company?->name],
-                        ['Manufacture Date', $lot->manufacture_date?->format('M d, Y')],
-                        ['Expiration Date', $lot->expiration_date?->format('M d, Y')],
+                        [__('inventory.product'), $lot->product?->name],
+                        [__('inventory.company'), $lot->company?->name],
+                        [__('inventory.manufacture_date'), $lot->manufacture_date?->format('M d, Y')],
+                        [$expirationLabel, $lot->expiration_date?->format('M d, Y')],
                     ] as [$label, $value])
                     <div class="flex items-center gap-4 py-2 border-b border-gray-100">
                         <span class="w-40 shrink-0 text-sm text-gray-500">{{ $label }}</span>
-                        <span class="flex-1 text-sm {{ $label === 'Expiration Date' && $lot->isExpired() ? 'text-red-600 font-medium' : 'text-gray-800' }}">{{ $value ?: '-' }}</span>
+                        <span class="flex-1 text-sm {{ $label === $expirationLabel && $lot->isExpired() ? 'text-red-600 font-medium' : 'text-gray-800' }}">{{ $value ?: '-' }}</span>
                     </div>
                     @endforeach
                 </div>
                 <div>
                     <div class="flex items-center gap-4 py-2 border-b border-gray-100">
-                        <span class="w-40 shrink-0 text-sm text-gray-500">On Hand Qty</span>
+                        <span class="w-40 shrink-0 text-sm text-gray-500">{{ __('inventory.qty_on_hand') }}</span>
                         <span class="flex-1 text-sm font-semibold text-gray-900">{{ number_format($lot->getOnHandQty(), 2) }}</span>
                     </div>
                     @if($lot->description)
                     <div class="flex items-start gap-4 py-2 border-b border-gray-100">
-                        <span class="w-40 shrink-0 text-sm text-gray-500">Description</span>
+                        <span class="w-40 shrink-0 text-sm text-gray-500">{{ __('inventory.description') }}</span>
                         <span class="flex-1 text-sm text-gray-800">{{ $lot->description }}</span>
                     </div>
                     @endif

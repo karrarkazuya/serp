@@ -1,18 +1,18 @@
 @extends('layouts.app')
-@section('title', 'New Tax Group')
+@section('title', __('accounting.tax_groups'))
 
 @section('content')
 <div class="flex flex-col h-full bg-gray-50">
     <x-toolbar>
         <x-slot:breadcrumb>
-            <a href="{{ route('accounting.dashboard') }}" class="text-xs text-purple-600 hover:text-purple-700">Accounting</a>
-            <a href="{{ route('accounting.tax-groups.index') }}" class="text-xs text-purple-600 hover:text-purple-700">Tax Groups</a>
-            <span class="text-sm font-semibold text-gray-800">New</span>
+            <a href="{{ route('accounting.dashboard') }}" class="text-xs text-purple-600 hover:text-purple-700">{{ __('accounting.accounting') }}</a>
+            <a href="{{ route('accounting.tax-groups.index') }}" class="text-xs text-purple-600 hover:text-purple-700">{{ __('accounting.tax_groups') }}</a>
+            <span class="text-sm font-semibold text-gray-800">{{ __('accounting.tax_groups') }}</span>
         </x-slot:breadcrumb>
         <x-slot:actions>
             <div class="flex items-center gap-2">
-                <a href="{{ route('accounting.tax-groups.index') }}" class="px-3 py-1.5 text-sm text-gray-600 border border-gray-300 rounded hover:bg-gray-50">Cancel</a>
-                <button type="submit" form="main-form" class="px-3 py-1.5 text-sm font-medium text-white bg-purple-600 rounded hover:bg-purple-700">Save</button>
+                <a href="{{ route('accounting.tax-groups.index') }}" class="px-3 py-1.5 text-sm text-gray-600 border border-gray-300 rounded hover:bg-gray-50">{{ __('accounting.btn_cancel') }}</a>
+                <button type="submit" form="main-form" class="px-3 py-1.5 text-sm font-medium text-white bg-purple-600 rounded hover:bg-purple-700">{{ __('accounting.btn_save') }}</button>
             </div>
         </x-slot:actions>
     </x-toolbar>

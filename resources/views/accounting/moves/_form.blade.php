@@ -26,7 +26,7 @@
 @if($errors->any())
 <div class="px-6 pt-4 pb-0">
     <div class="bg-red-50 border border-red-200 rounded-lg px-4 py-3">
-        <p class="text-sm font-medium text-red-700 mb-1">Please fix the errors below.</p>
+        <p class="text-sm font-medium text-red-700 mb-1">{{ __('accounting.fix_errors') }}</p>
         <ul class="list-disc list-inside text-sm text-red-600 space-y-0.5">
             @foreach($errors->all() as $error)<li>{{ $error }}</li>@endforeach
         </ul>
@@ -154,14 +154,14 @@
     {{-- Header: title + state stepper --}}
     <div class="mb-8 flex items-start justify-between gap-6">
         <div>
-            <p class="text-lg font-semibold text-gray-800">Journal Entry</p>
-            <h1 class="mt-2 text-4xl font-bold text-gray-900">{{ $move?->name ?: 'Draft' }}</h1>
+            <p class="text-lg font-semibold text-gray-800">{{ __('accounting.move_type_entry') }}</p>
+            <h1 class="mt-2 text-4xl font-bold text-gray-900">{{ $move?->name ?: __('accounting.status_draft') }}</h1>
         </div>
         <div class="flex shrink-0 items-center text-sm font-semibold">
-            <span class="relative px-8 py-2 border {{ $state === 'draft' ? 'border-[#71639e] bg-purple-50 text-gray-900' : 'border-gray-200 bg-gray-100 text-gray-400' }}">Draft</span>
-            <span class="px-8 py-2 border {{ $state === 'posted' ? 'border-green-500 bg-green-50 text-green-700' : 'border-gray-200 bg-gray-100 text-gray-400' }}">Posted</span>
+            <span class="relative px-8 py-2 border {{ $state === 'draft' ? 'border-[#71639e] bg-purple-50 text-gray-900' : 'border-gray-200 bg-gray-100 text-gray-400' }}">{{ __('accounting.status_draft') }}</span>
+            <span class="px-8 py-2 border {{ $state === 'posted' ? 'border-green-500 bg-green-50 text-green-700' : 'border-gray-200 bg-gray-100 text-gray-400' }}">{{ __('accounting.status_posted') }}</span>
             @if($state === 'cancelled')
-            <span class="px-8 py-2 border border-gray-400 bg-gray-200 text-gray-600">Cancelled</span>
+            <span class="px-8 py-2 border border-gray-400 bg-gray-200 text-gray-600">{{ __('accounting.status_cancelled') }}</span>
             @endif
         </div>
     </div>
@@ -172,19 +172,19 @@
     <div class="grid grid-cols-1 lg:grid-cols-2 gap-x-12 gap-y-4 mb-8">
         <div class="space-y-3">
             <div class="flex items-center gap-5">
-                <label class="w-28 shrink-0 text-base font-semibold text-gray-800">Reference</label>
+                <label class="w-28 shrink-0 text-base font-semibold text-gray-800">{{ __('accounting.col_reference') }}</label>
                 <input type="text" name="ref" value="{{ $val('ref') }}" maxlength="128"
                        class="flex-1 text-sm text-gray-800 bg-transparent border-0 border-b border-dotted border-gray-300 focus:border-purple-500 focus:outline-none focus:ring-0 px-0 py-1">
             </div>
         </div>
         <div class="space-y-3">
             <div class="flex items-center gap-5">
-                <label class="w-40 shrink-0 text-base font-semibold text-gray-800">Accounting Date</label>
+                <label class="w-40 shrink-0 text-base font-semibold text-gray-800">{{ __('accounting.field_accounting_date') }}</label>
                 <input type="date" name="date" value="{{ $dateValue }}" required
                        class="flex-1 text-sm text-gray-800 bg-transparent border-0 border-b border-dotted border-gray-300 focus:border-purple-500 focus:outline-none focus:ring-0 px-0 py-1">
             </div>
             <div class="flex items-center gap-5">
-                <label class="w-40 shrink-0 text-base font-semibold text-gray-800">Journal</label>
+                <label class="w-40 shrink-0 text-base font-semibold text-gray-800">{{ __('accounting.field_journal') }}</label>
                 <x-relation-dropdown
                     table="account_journals"
                     field="name"
@@ -205,7 +205,7 @@
             <button type="button" @click="tab = 'lines'"
                     class="px-5 py-3 text-sm font-semibold border-b-2 -mb-px bg-white transition-colors"
                     :class="tab === 'lines' ? 'border-[#71639e] text-[#71639e]' : 'border-transparent text-gray-500 hover:text-gray-700'">
-                Journal Items
+                {{ __('accounting.journal_items') }}
             </button>
             <button type="button" @click="tab = 'other'"
                     class="px-5 py-3 text-sm font-semibold border-b-2 -mb-px bg-white transition-colors"
@@ -219,11 +219,11 @@
             <table class="w-full text-sm">
                 <thead class="bg-gray-100 border-b border-gray-200">
                     <tr class="text-xs font-semibold text-gray-500 uppercase tracking-wide">
-                        <th class="px-4 py-3 text-left w-72">Account</th>
-                        <th class="px-4 py-3 text-left w-48">Partner</th>
-                        <th class="px-4 py-3 text-left">Label</th>
-                        <th class="px-4 py-3 text-right w-36">Debit</th>
-                        <th class="px-4 py-3 text-right w-36">Credit</th>
+                        <th class="px-4 py-3 text-left w-72">{{ __('accounting.col_account') }}</th>
+                        <th class="px-4 py-3 text-left w-48">{{ __('accounting.col_partner') }}</th>
+                        <th class="px-4 py-3 text-left">{{ __('accounting.col_label') }}</th>
+                        <th class="px-4 py-3 text-right w-36">{{ __('accounting.col_debit') }}</th>
+                        <th class="px-4 py-3 text-right w-36">{{ __('accounting.col_credit') }}</th>
                         <th class="px-4 py-3 w-10"></th>
                     </tr>
                 </thead>
@@ -241,7 +241,7 @@
                                        @focus="line.account_open = true; fetchDropdown(i, 'accounts', line.account_label, 'account_results')"
                                        @blur="setTimeout(() => line.account_open = false, 150)"
                                        @keydown.escape="line.account_open = false"
-                                       placeholder="Search account…"
+                                       :placeholder="'{{ __('accounting.ph_search_account') }}'"
                                        autocomplete="off"
                                        class="flex-1 min-w-0 border-0 bg-transparent px-0 py-1 text-sm text-gray-800 focus:outline-none focus:ring-0">
                                 <button type="button" x-show="line.account_id" @click.prevent="clearAccount(i)"
@@ -262,7 +262,7 @@
                             <div x-show="line.account_open && line.account_results.length === 0 && line.account_label.length > 1"
                                  class="absolute left-0 top-full z-40 w-80 bg-white border border-gray-200 rounded-b-lg shadow-lg px-4 py-2 text-sm text-gray-400"
                                  style="display:none">
-                                No accounts found
+                                {{ __('accounting.no_accounts') }}
                             </div>
                         </td>
                         {{-- Partner --}}
@@ -276,7 +276,7 @@
                                        @focus="line.partner_open = true; fetchDropdown(i, 'contacts', line.partner_label, 'partner_results')"
                                        @blur="setTimeout(() => line.partner_open = false, 150)"
                                        @keydown.escape="line.partner_open = false"
-                                       placeholder="Partner…"
+                                       :placeholder="'{{ __('accounting.ph_search_partner') }}'"
                                        autocomplete="off"
                                        class="flex-1 min-w-0 border-0 bg-transparent px-0 py-1 text-sm text-gray-800 focus:outline-none focus:ring-0">
                                 <button type="button" x-show="line.partner_id" @click.prevent="clearPartner(i)"
@@ -333,30 +333,30 @@
                         <td colspan="6" class="px-8 py-3">
                             <button type="button" @click="addLine()"
                                     class="text-sm font-semibold text-[#71639e] hover:text-[#5c527f]">
-                                Add a line
+                                {{ __('accounting.btn_add_line') }}
                             </button>
                         </td>
                     </tr>
                 </tbody>
                 <tfoot class="border-t border-gray-200">
                     <tr class="bg-gray-50 text-sm font-semibold">
-                        <td colspan="3" class="px-4 py-2.5 text-right text-gray-600">Total</td>
+                        <td colspan="3" class="px-4 py-2.5 text-right text-gray-600">{{ __('accounting.total') }}</td>
                         <td class="px-4 py-2.5 text-right tabular-nums text-gray-900" x-text="f(totalDebit)"></td>
                         <td class="px-4 py-2.5 text-right tabular-nums text-gray-900" x-text="f(totalCredit)"></td>
                         <td></td>
                     </tr>
                     <tr class="text-sm font-medium border-t border-gray-100"
                         :class="isBalanced ? 'bg-green-50 text-green-700' : 'bg-amber-50 text-amber-700'">
-                        <td colspan="3" class="px-4 py-2 text-right">Difference</td>
+                        <td colspan="3" class="px-4 py-2 text-right">{{ __('accounting.difference') }}</td>
                         <td colspan="2" class="px-4 py-2 text-right tabular-nums" x-text="f(difference)"></td>
                         <td class="px-4 py-2 text-center">
                             <span x-show="isBalanced"
                                   class="inline-block px-2 py-0.5 text-[10px] font-semibold rounded bg-green-100 text-green-700">
-                                Balanced
+                                {{ __('accounting.balanced') }}
                             </span>
                             <span x-show="!isBalanced"
                                   class="inline-block px-2 py-0.5 text-[10px] font-semibold rounded bg-amber-100 text-amber-700">
-                                Unbalanced
+                                {{ __('accounting.unbalanced') }}
                             </span>
                         </td>
                     </tr>
@@ -369,7 +369,7 @@
             <div class="grid grid-cols-1 lg:grid-cols-2 gap-x-12 gap-y-4">
                 <div class="space-y-3">
                     <div class="flex items-center gap-4">
-                        <label class="w-32 shrink-0 text-sm font-semibold text-gray-700">Company</label>
+                        <label class="w-32 shrink-0 text-sm font-semibold text-gray-700">{{ __('accounting.field_company') }}</label>
                         <x-relation-dropdown
                             table="companies"
                             field="name"
@@ -381,15 +381,15 @@
                         />
                     </div>
                     <div class="flex items-center gap-4">
-                        <label class="w-32 shrink-0 text-sm font-semibold text-gray-700">Currency</label>
+                        <label class="w-32 shrink-0 text-sm font-semibold text-gray-700">{{ __('accounting.field_currency') }}</label>
                         <input type="text" name="currency" value="{{ $val('currency') }}" maxlength="10"
-                               placeholder="IQD"
+                               :placeholder="'{{ __('accounting.ph_iqd') }}'"
                                class="flex-1 text-sm text-gray-800 bg-transparent border-0 border-b border-dotted border-gray-300 focus:border-purple-500 focus:outline-none focus:ring-0 px-0 py-1">
                     </div>
                 </div>
                 <div class="space-y-3">
                     <div class="flex items-center gap-4">
-                        <label class="w-32 shrink-0 text-sm font-semibold text-gray-700">Partner</label>
+                        <label class="w-32 shrink-0 text-sm font-semibold text-gray-700">{{ __('accounting.field_partner') }}</label>
                         <x-relation-dropdown
                             table="contacts"
                             field="name"
@@ -403,7 +403,7 @@
                 </div>
             </div>
             <div class="mt-6">
-                <label class="block text-xs font-semibold text-gray-500 uppercase mb-1">Notes</label>
+                <label class="block text-xs font-semibold text-gray-500 uppercase mb-1">{{ __('accounting.field_notes') }}</label>
                 <textarea name="narration" rows="4"
                           class="w-full text-sm border border-gray-200 rounded px-3 py-2 focus:outline-none focus:ring-0 focus:border-purple-500 resize-none">{{ $val('narration') }}</textarea>
             </div>

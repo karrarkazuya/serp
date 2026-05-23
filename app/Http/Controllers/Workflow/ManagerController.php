@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Workflow;
 
 use App\Http\Controllers\Controller;
+use App\Helpers\GroupsQuery;
 use App\Helpers\SearchFilters;
 use App\Helpers\SortsTable;
 use App\Models\Workflow\Manager;
@@ -17,6 +18,17 @@ class ManagerController extends Controller
 
         $query = Manager::query()->with(['workflowUser.user', 'departments']);
         SearchFilters::apply($query, $request);
+
+        $groupBy = $request->query('group_by');
+        if ($groupBy) {
+            $fields = SearchFilters::fieldsFor(Manager::class);
+            if (isset($fields[$groupBy])) {
+                $records = (clone $query)->with(['workflowUser.user', 'departments'])->orderBy('id')->get();
+                $groups  = GroupsQuery::apply($records, $fields[$groupBy]);
+                return view('workflow.configuration.managers.index', compact('groups'));
+            }
+        }
+
         SortsTable::apply($query, $request, 'workflow_user');
         $managers = $query->paginate(24)->withQueryString();
 

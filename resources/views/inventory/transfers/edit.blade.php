@@ -1,5 +1,5 @@
 @extends('layouts.app')
-@section('title', 'Edit: ' . $picking->name)
+@section('title', __('inventory.edit') . ': ' . $picking->name)
 
 @section('content')
 <div class="flex flex-col h-full bg-gray-50">
@@ -9,20 +9,20 @@
             <x-slot:breadcrumb>
                 @php
                     [$listRoute, $listLabel] = match($picking->operationType?->code) {
-                        'incoming' => [route('inventory.receipts.index'), 'Receipts'],
-                        'outgoing' => [route('inventory.deliveries.index'), 'Deliveries'],
-                        'internal' => [route('inventory.internal-transfers.index'), 'Internal Transfers'],
-                        default    => [route('inventory.transfers.index'), 'Transfers'],
+                        'incoming' => [route('inventory.receipts.index'), __('inventory.receipts')],
+                        'outgoing' => [route('inventory.deliveries.index'), __('inventory.deliveries')],
+                        'internal' => [route('inventory.internal-transfers.index'), __('inventory.internal_transfers')],
+                        default    => [route('inventory.transfers.index'), __('inventory.transfers')],
                     };
                 @endphp
                 <a href="{{ $listRoute }}" class="text-xs text-purple-600 hover:text-purple-700">{{ $listLabel }}</a>
                 <a href="{{ route('inventory.transfers.show', $picking) }}" class="text-xs text-purple-600 hover:text-purple-700">{{ $picking->name }}</a>
-                <span class="text-sm font-semibold text-gray-800">Edit</span>
+                <span class="text-sm font-semibold text-gray-800">{{ __('inventory.edit') }}</span>
             </x-slot:breadcrumb>
             <x-slot:actions>
                 <div class="flex items-center gap-2">
-                    <a href="{{ route('inventory.transfers.show', $picking) }}" class="px-3 py-1.5 text-sm text-gray-600 border border-gray-300 rounded hover:bg-gray-50">Discard</a>
-                    <button type="submit" class="px-3 py-1.5 text-sm font-semibold text-white bg-[#714B67] hover:bg-[#5c3d55] rounded">Save</button>
+                    <a href="{{ route('inventory.transfers.show', $picking) }}" class="px-3 py-1.5 text-sm text-gray-600 border border-gray-300 rounded hover:bg-gray-50">{{ __('inventory.discard') }}</a>
+                    <button type="submit" class="px-3 py-1.5 text-sm font-semibold text-white bg-[#714B67] hover:bg-[#5c3d55] rounded">{{ __('inventory.save') }}</button>
                 </div>
             </x-slot:actions>
         </x-toolbar>
@@ -40,37 +40,37 @@
                 <div class="grid grid-cols-2 gap-x-8 mb-6">
                     <div>
                         <div class="flex items-center gap-4 py-2 border-b border-gray-100">
-                            <label class="w-40 shrink-0 text-sm text-gray-500">Source Location</label>
+                            <label class="w-40 shrink-0 text-sm text-gray-500">{{ __('inventory.source_location') }}</label>
                             <x-relation-dropdown table="inventory_locations" field="complete_name" name="location_src_id" relation="many2one"
                                 :selected="old('location_src_id', $picking->location_src_id)" class="flex-1" compact />
                         </div>
                         <div class="flex items-center gap-4 py-2 border-b border-gray-100">
-                            <label class="w-40 shrink-0 text-sm text-gray-500">Destination</label>
+                            <label class="w-40 shrink-0 text-sm text-gray-500">{{ __('inventory.destination') }}</label>
                             <x-relation-dropdown table="inventory_locations" field="complete_name" name="location_dest_id" relation="many2one"
                                 :selected="old('location_dest_id', $picking->location_dest_id)" class="flex-1" compact />
                         </div>
                     </div>
                     <div>
                         <div class="flex items-center gap-4 py-2 border-b border-gray-100">
-                            <label class="w-40 shrink-0 text-sm text-gray-500">Scheduled Date</label>
+                            <label class="w-40 shrink-0 text-sm text-gray-500">{{ __('inventory.scheduled_date') }}</label>
                             <input type="datetime-local" name="scheduled_date" value="{{ old('scheduled_date', $picking->scheduled_date?->format('Y-m-d\TH:i')) }}"
                                    class="flex-1 text-sm bg-transparent border-0 focus:outline-none px-0 py-0.5">
                         </div>
                         <div class="flex items-center gap-4 py-2 border-b border-gray-100">
-                            <label class="w-40 shrink-0 text-sm text-gray-500">Source Document</label>
+                            <label class="w-40 shrink-0 text-sm text-gray-500">{{ __('inventory.source_document') }}</label>
                             <input type="text" name="origin" value="{{ old('origin', $picking->origin) }}" class="flex-1 text-sm bg-transparent border-0 focus:outline-none px-0 py-0.5" placeholder="-">
                         </div>
                     </div>
                 </div>
 
                 {{-- Moves --}}
-                <div class="mb-2 text-sm font-semibold text-gray-700">Operations</div>
+                <div class="mb-2 text-sm font-semibold text-gray-700">{{ __('inventory.section_operations') }}</div>
                 <table class="w-full text-sm mb-3">
                     <thead>
                         <tr class="border-b border-gray-100">
-                            <th class="py-1.5 text-left text-xs text-gray-500">Product</th>
-                            <th class="py-1.5 text-left text-xs text-gray-500 w-32">Unit of Measure</th>
-                            <th class="py-1.5 text-right text-xs text-gray-500 w-24">Quantity</th>
+                            <th class="py-1.5 text-start text-xs text-gray-500">{{ __('inventory.product') }}</th>
+                            <th class="py-1.5 text-start text-xs text-gray-500 w-32">{{ __('inventory.unit_of_measure') }}</th>
+                            <th class="py-1.5 text-end text-xs text-gray-500 w-24">{{ __('inventory.quantity') }}</th>
                             <th class="w-8"></th>
                         </tr>
                     </thead>
@@ -118,12 +118,12 @@
                                     name="moves[{{ $idx }}][product_qty]"
                                     value="{{ old('moves.' . $idx . '.product_qty', $move->product_qty) }}"
                                     step="0.001" min="0.001" :disabled="deleted"
-                                    class="w-full text-sm bg-transparent border-0 focus:outline-none px-0 text-right">
+                                    class="w-full text-sm bg-transparent border-0 focus:outline-none px-0 text-end">
                             </td>
                             <td class="py-1.5 text-center w-8">
                                 <button type="button" @click="deleted = !deleted"
                                     :class="deleted ? 'text-green-500' : 'text-gray-300 hover:text-red-500'">
-                                    <template x-if="deleted"><span class="text-xs">Undo</span></template>
+                                    <template x-if="deleted"><span class="text-xs">{{ __('inventory.undo') }}</span></template>
                                     <template x-if="!deleted">
                                         <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
@@ -147,7 +147,7 @@
                                             addRow.insertAdjacentHTML('beforebegin', html);
                                             Alpine.initTree(addRow.previousElementSibling);
                                             nextIdx++;
-                                        })">+ Add a product</button>
+                                        })">+ {{ __('inventory.add_a_product') }}</button>
                             </td>
                         </tr>
                     </tbody>

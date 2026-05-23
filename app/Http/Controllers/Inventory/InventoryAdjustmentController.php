@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Inventory;
 
+use App\Helpers\GroupsQuery;
 use App\Helpers\SearchFilters;
 use App\Helpers\SortsTable;
 use App\Http\Controllers\Controller;
@@ -33,6 +34,17 @@ class InventoryAdjustmentController extends Controller
         }
 
         SearchFilters::apply($query, $request);
+
+        $groupBy = $request->query('group_by');
+        if ($groupBy) {
+            $fields = SearchFilters::fieldsFor(InventoryAdjustment::class);
+            if (isset($fields[$groupBy])) {
+                $records = (clone $query)->with('company')->orderBy('id')->get();
+                $groups  = GroupsQuery::apply($records, $fields[$groupBy]);
+                return view('inventory.adjustments.index', compact('groups'));
+            }
+        }
+
         SortsTable::apply($query, $request);
 
         $adjustments = $query->paginate(24)->withQueryString();

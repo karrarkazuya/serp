@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Inventory;
 
+use App\Helpers\GroupsQuery;
 use App\Helpers\SearchFilters;
 use App\Helpers\SortsTable;
 use App\Http\Controllers\Controller;
@@ -54,6 +55,17 @@ class ReorderRuleController extends Controller
         }
 
         SearchFilters::apply($query, $request);
+
+        $groupBy = $request->query('group_by');
+        if ($groupBy) {
+            $fields = SearchFilters::fieldsFor(ReorderRule::class);
+            if (isset($fields[$groupBy])) {
+                $records = (clone $query)->with(['product.uom', 'location', 'warehouse', 'route'])->orderBy('id')->get();
+                $groups  = GroupsQuery::apply($records, $fields[$groupBy]);
+                return view('inventory.replenishment.index', compact('groups'));
+            }
+        }
+
         SortsTable::apply($query, $request);
         $rules = $query->paginate(24)->withQueryString();
 

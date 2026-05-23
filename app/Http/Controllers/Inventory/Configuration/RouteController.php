@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Inventory\Configuration;
 
+use App\Helpers\GroupsQuery;
 use App\Helpers\SearchFilters;
 use App\Helpers\SortsTable;
 use App\Http\Controllers\Controller;
@@ -26,6 +27,17 @@ class RouteController extends Controller
         $query = Route::query()->with('company')->forCompanies($activeCompanyIds);
         if ($request->query('filter') !== 'all') $query->active();
         SearchFilters::apply($query, $request);
+
+        $groupBy = $request->query('group_by');
+        if ($groupBy) {
+            $fields = SearchFilters::fieldsFor(Route::class);
+            if (isset($fields[$groupBy])) {
+                $records = (clone $query)->with('company')->orderBy('id')->get();
+                $groups  = GroupsQuery::apply($records, $fields[$groupBy]);
+                return view('inventory.configuration.routes.index', compact('groups'));
+            }
+        }
+
         SortsTable::apply($query, $request);
         $routes = $query->paginate(24)->withQueryString();
         return view('inventory.configuration.routes.index', compact('routes'));

@@ -1,12 +1,12 @@
 @extends('layouts.app')
-@section('title', 'Journal Entries')
+@section('title', __('accounting.journal_entries'))
 
 @php
     $quickFilters = [
-        ['label' => 'Draft',     'params' => ['state' => 'draft'],     'url' => route('accounting.moves.index', array_merge(request()->except('page','state'), ['state' => 'draft']))],
-        ['label' => 'Posted',    'params' => ['state' => 'posted'],    'url' => route('accounting.moves.index', array_merge(request()->except('page','state'), ['state' => 'posted']))],
-        ['label' => 'Cancelled', 'params' => ['state' => 'cancelled'], 'url' => route('accounting.moves.index', array_merge(request()->except('page','state'), ['state' => 'cancelled']))],
-        ['label' => 'All',       'params' => ['state' => ''],          'url' => route('accounting.moves.index', array_merge(request()->except('page','state'), ['state' => '']))],
+        ['label' => __('accounting.status_draft'),     'params' => ['state' => 'draft'],     'url' => route('accounting.moves.index', array_merge(request()->except('page','state'), ['state' => 'draft']))],
+        ['label' => __('accounting.status_posted'),    'params' => ['state' => 'posted'],    'url' => route('accounting.moves.index', array_merge(request()->except('page','state'), ['state' => 'posted']))],
+        ['label' => __('accounting.status_cancelled'), 'params' => ['state' => 'cancelled'], 'url' => route('accounting.moves.index', array_merge(request()->except('page','state'), ['state' => 'cancelled']))],
+        ['label' => __('accounting.all_models'),       'params' => ['state' => ''],          'url' => route('accounting.moves.index', array_merge(request()->except('page','state'), ['state' => '']))],
     ];
 @endphp
 
@@ -14,8 +14,8 @@
 <div class="flex flex-col h-full bg-gray-50">
     <x-toolbar :new-href="auth()->user()->can('create', \App\Models\Accounting\AccountMove::class) ? route('accounting.moves.create') : null">
         <x-slot:breadcrumb>
-            <a href="{{ route('accounting.dashboard') }}" class="text-xs text-purple-600 hover:text-purple-700">Accounting</a>
-            <span class="text-sm font-semibold text-gray-800">Journal Entries</span>
+            <a href="{{ route('accounting.dashboard') }}" class="text-xs text-purple-600 hover:text-purple-700">{{ __('accounting.accounting') }}</a>
+            <span class="text-sm font-semibold text-gray-800">{{ __('accounting.journal_entries') }}</span>
         </x-slot:breadcrumb>
         <x-slot:search>
             <x-search
@@ -44,15 +44,15 @@
     @endphp
 
     @if(isset($groups))
-    <x-list :grouped="true" empty-text="No journal entries yet.">
+    <x-list :grouped="true" :empty-text="__('accounting.no_moves')">
         <x-slot:columns>
-            <x-sortable-th column="date" label="Date"    class="px-4 py-2" :default="true" />
-            <x-sortable-th column="name" label="Number"  class="px-3 py-2" />
-            <th class="px-3 py-2 text-xs font-semibold text-gray-500 uppercase tracking-wide text-left">Journal</th>
-            <th class="px-3 py-2 text-xs font-semibold text-gray-500 uppercase tracking-wide text-left">Partner</th>
-            <th class="px-3 py-2 text-xs font-semibold text-gray-500 uppercase tracking-wide text-left">Reference</th>
-            <x-sortable-th column="amount_total" label="Amount" class="px-3 py-2 text-right" />
-            <x-sortable-th column="state" label="State" class="px-3 py-2" />
+            <x-sortable-th column="date" :label="__('accounting.col_date')"   class="px-4 py-2" :default="true" />
+            <x-sortable-th column="name" :label="__('accounting.col_number')" class="px-3 py-2" />
+            <th class="px-3 py-2 text-xs font-semibold text-gray-500 uppercase tracking-wide text-left">{{ __('accounting.col_journal') }}</th>
+            <th class="px-3 py-2 text-xs font-semibold text-gray-500 uppercase tracking-wide text-left">{{ __('accounting.col_partner') }}</th>
+            <th class="px-3 py-2 text-xs font-semibold text-gray-500 uppercase tracking-wide text-left">{{ __('accounting.col_reference') }}</th>
+            <x-sortable-th column="amount_total" :label="__('accounting.col_amount')" class="px-3 py-2 text-right" />
+            <x-sortable-th column="state" :label="__('accounting.col_state')" class="px-3 py-2" />
         </x-slot:columns>
 
         @forelse($groups as $group)
@@ -71,7 +71,7 @@
             @foreach($group['items'] as $move)
             <tr x-show="open" class="hover:bg-purple-50/30 cursor-pointer" onclick="window.location='{{ route('accounting.moves.show', $move) }}'">
                 <td class="px-4 py-2 text-gray-700 tabular-nums">{{ optional($move->date)->format('Y-m-d') }}</td>
-                <td class="px-3 py-2 font-medium text-gray-900">{{ $move->name ?: '(Draft)' }}</td>
+                <td class="px-3 py-2 font-medium text-gray-900">{{ $move->name ?: '('.__('accounting.status_draft').')' }}</td>
                 <td class="px-3 py-2 text-gray-600">{{ $move->journal?->name ?: '—' }}</td>
                 <td class="px-3 py-2 text-gray-600">{{ $move->partner?->name ?: '—' }}</td>
                 <td class="px-3 py-2 text-gray-600">{{ $move->ref ?: '—' }}</td>
@@ -84,21 +84,21 @@
         </tbody>
         @empty
         <tbody>
-            <tr><td colspan="99" class="px-4 py-20 text-center text-sm text-gray-400">No journal entries yet.</td></tr>
+            <tr><td colspan="99" class="px-4 py-20 text-center text-sm text-gray-400">{{ __('accounting.no_moves') }}</td></tr>
         </tbody>
         @endforelse
     </x-list>
 
     @else
-    <x-list :paginator="$moves" empty-text="No journal entries yet." :selectable="true" :total-count="$moves->total()">
+    <x-list :paginator="$moves" :empty-text="__('accounting.no_moves')" :selectable="true" :total-count="$moves->total()">
         <x-slot:columns>
-            <x-sortable-th column="date" label="Date"    class="px-4 py-2" :default="true" />
-            <x-sortable-th column="name" label="Number"  class="px-3 py-2" />
-            <th class="px-3 py-2 text-xs font-semibold text-gray-500 uppercase tracking-wide text-left">Journal</th>
-            <th class="px-3 py-2 text-xs font-semibold text-gray-500 uppercase tracking-wide text-left">Partner</th>
-            <th class="px-3 py-2 text-xs font-semibold text-gray-500 uppercase tracking-wide text-left">Reference</th>
-            <x-sortable-th column="amount_total" label="Amount" class="px-3 py-2 text-right" />
-            <x-sortable-th column="state" label="State" class="px-3 py-2" />
+            <x-sortable-th column="date" :label="__('accounting.col_date')"   class="px-4 py-2" :default="true" />
+            <x-sortable-th column="name" :label="__('accounting.col_number')" class="px-3 py-2" />
+            <th class="px-3 py-2 text-xs font-semibold text-gray-500 uppercase tracking-wide text-left">{{ __('accounting.col_journal') }}</th>
+            <th class="px-3 py-2 text-xs font-semibold text-gray-500 uppercase tracking-wide text-left">{{ __('accounting.col_partner') }}</th>
+            <th class="px-3 py-2 text-xs font-semibold text-gray-500 uppercase tracking-wide text-left">{{ __('accounting.col_reference') }}</th>
+            <x-sortable-th column="amount_total" :label="__('accounting.col_amount')" class="px-3 py-2 text-right" />
+            <x-sortable-th column="state" :label="__('accounting.col_state')" class="px-3 py-2" />
         </x-slot:columns>
 
         @foreach($moves as $move)
@@ -110,7 +110,7 @@
                        value="{{ $move->id }}">
             </td>
             <td class="px-4 py-2 text-gray-700 tabular-nums">{{ optional($move->date)->format('Y-m-d') }}</td>
-            <td class="px-3 py-2 font-medium text-gray-900">{{ $move->name ?: '(Draft)' }}</td>
+            <td class="px-3 py-2 font-medium text-gray-900">{{ $move->name ?: '('.__('accounting.status_draft').')' }}</td>
             <td class="px-3 py-2 text-gray-600">{{ $move->journal?->name ?: '—' }}</td>
             <td class="px-3 py-2 text-gray-600">{{ $move->partner?->name ?: '—' }}</td>
             <td class="px-3 py-2 text-gray-600">{{ $move->ref ?: '—' }}</td>

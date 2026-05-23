@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Workflow;
 
 use App\Http\Controllers\Controller;
+use App\Helpers\GroupsQuery;
 use App\Helpers\SearchFilters;
 use App\Helpers\SortsTable;
 use App\Models\User;
@@ -26,6 +27,17 @@ class WorkflowUserController extends Controller
             ->with(['workflowUser.defaultDepartment', 'workflowUser.groups']);
 
         SearchFilters::apply($query, $request);
+
+        $groupBy = $request->query('group_by');
+        if ($groupBy) {
+            $fields = SearchFilters::fieldsFor(User::class);
+            if (isset($fields[$groupBy])) {
+                $records = (clone $query)->with(['workflowUser.defaultDepartment', 'workflowUser.groups'])->orderBy('id')->get();
+                $groups  = GroupsQuery::apply($records, $fields[$groupBy]);
+                return view('workflow.configuration.users.index', compact('groups'));
+            }
+        }
+
         SortsTable::apply($query, $request, 'name');
 
         $users = $query->paginate(30)->withQueryString();

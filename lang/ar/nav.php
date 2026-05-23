@@ -23,4 +23,5 @@ return [
     'procedure_performance'=> 'أداء الإجراءات',
     'ticket_performance'   => 'أداء التذاكر',
     'task_performance'     => 'أداء المهام',
+    'accounting'           => 'المحاسبة',
 ];

@@ -1,5 +1,5 @@
 @extends('layouts.app')
-@section('title', 'New Physical Inventory')
+@section('title', __('inventory.new_physical_inventory'))
 
 @section('content')
 <div class="flex flex-col h-full bg-gray-50">
@@ -7,13 +7,13 @@
         @csrf
         <x-toolbar>
             <x-slot:breadcrumb>
-                <a href="{{ route('inventory.adjustments.index') }}" class="text-xs text-purple-600 hover:text-purple-700">Physical Inventory</a>
-                <span class="text-sm font-semibold text-gray-800">New</span>
+                <a href="{{ route('inventory.adjustments.index') }}" class="text-xs text-purple-600 hover:text-purple-700">{{ __('inventory.physical_inventory') }}</a>
+                <span class="text-sm font-semibold text-gray-800">{{ __('inventory.new') }}</span>
             </x-slot:breadcrumb>
             <x-slot:actions>
                 <div class="flex items-center gap-2">
-                    <a href="{{ route('inventory.adjustments.index') }}" class="px-3 py-1.5 text-sm text-gray-600 border border-gray-300 rounded hover:bg-gray-50">Discard</a>
-                    <button type="submit" class="px-3 py-1.5 text-sm font-semibold text-white bg-[#714B67] hover:bg-[#5c3d55] rounded">Save</button>
+                    <a href="{{ route('inventory.adjustments.index') }}" class="px-3 py-1.5 text-sm text-gray-600 border border-gray-300 rounded hover:bg-gray-50">{{ __('inventory.discard') }}</a>
+                    <button type="submit" class="px-3 py-1.5 text-sm font-semibold text-white bg-[#714B67] hover:bg-[#5c3d55] rounded">{{ __('inventory.save') }}</button>
                 </div>
             </x-slot:actions>
         </x-toolbar>
@@ -31,18 +31,18 @@
                 <div class="grid grid-cols-2 gap-x-8">
                     <div>
                         <div class="flex items-center gap-4 py-2 border-b border-gray-100">
-                            <label class="w-40 shrink-0 text-sm text-gray-500">Company</label>
+                            <label class="w-40 shrink-0 text-sm text-gray-500">{{ __('inventory.company') }}</label>
                             <x-relation-dropdown table="companies" field="name" name="company_id" relation="many2one"
                                 :selected="old('company_id', $defaultCompanyId ?? null)" class="flex-1" compact />
                         </div>
                         <div class="flex items-center gap-4 py-2 border-b border-gray-100">
-                            <label class="w-40 shrink-0 text-sm text-gray-500">Date</label>
+                            <label class="w-40 shrink-0 text-sm text-gray-500">{{ __('inventory.date') }}</label>
                             <input type="date" name="date" value="{{ old('date', today()->format('Y-m-d')) }}" class="flex-1 text-sm bg-transparent border-0 focus:outline-none px-0 py-0.5">
                         </div>
                     </div>
                     <div>
                         <div class="flex items-start gap-4 py-2 border-b border-gray-100">
-                            <label class="w-40 shrink-0 text-sm text-gray-500 pt-0.5">Note</label>
+                            <label class="w-40 shrink-0 text-sm text-gray-500 pt-0.5">{{ __('inventory.note') }}</label>
                             <textarea name="note" rows="2" class="flex-1 text-sm bg-transparent border-0 focus:outline-none px-0 resize-none" placeholder="-">{{ old('note') }}</textarea>
                         </div>
                     </div>

@@ -43,9 +43,10 @@
                         <x-relation-dropdown
                             name="company_id"
                             table="companies"
-                            :selected-id="old('company_id', $location->company_id)"
-                            :selected-label="$location->company?->name"
+                            field="name"
+                            :selected="old('company_id', $location->company_id)"
                             placeholder="Select company..."
+                            compact
                         />
                     </div>
                     <div class="sm:col-span-2">

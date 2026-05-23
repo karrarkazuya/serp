@@ -1,21 +1,21 @@
 @extends('layouts.app')
-@section('title', 'Edit — ' . ($move->name ?: 'Draft'))
+@section('title', __('accounting.btn_edit') . ' — ' . ($move->name ?: __('accounting.status_draft')))
 
 @section('content')
 <div class="flex flex-col h-full bg-gray-50">
     <x-toolbar>
         <x-slot:breadcrumb>
-            <a href="{{ route('accounting.dashboard') }}" class="text-xs text-purple-600 hover:text-purple-700">Accounting</a>
-            <a href="{{ route('accounting.moves.index') }}" class="text-xs text-purple-600 hover:text-purple-700">Journal Entries</a>
-            <span class="text-sm font-semibold text-gray-800">{{ $move->name ?: 'Draft' }}</span>
+            <a href="{{ route('accounting.dashboard') }}" class="text-xs text-purple-600 hover:text-purple-700">{{ __('accounting.accounting') }}</a>
+            <a href="{{ route('accounting.moves.index') }}" class="text-xs text-purple-600 hover:text-purple-700">{{ __('accounting.journal_entries') }}</a>
+            <span class="text-sm font-semibold text-gray-800">{{ $move->name ?: __('accounting.status_draft') }}</span>
         </x-slot:breadcrumb>
         <x-slot:actions>
             <div class="flex items-center gap-2">
                 @if(auth()->user()->hasPermission('accounting.post'))
-                <button form="move-form" type="submit" name="action" value="post" class="px-4 py-1.5 text-sm font-medium text-white bg-[#71639e] hover:bg-[#5c527f] rounded shadow-sm">Post</button>
+                <button form="move-form" type="submit" name="action" value="post" class="px-4 py-1.5 text-sm font-medium text-white bg-[#71639e] hover:bg-[#5c527f] rounded shadow-sm">{{ __('accounting.btn_post') }}</button>
                 @endif
-                <button form="move-form" type="submit" name="action" value="save" class="px-3 py-1.5 text-sm text-gray-700 bg-white border border-gray-300 rounded hover:bg-gray-50">Save Draft</button>
-                <a href="{{ route('accounting.moves.show', $move) }}" class="px-3 py-1.5 text-sm text-gray-600 bg-white border border-gray-300 rounded hover:bg-gray-50">Discard</a>
+                <button form="move-form" type="submit" name="action" value="save" class="px-3 py-1.5 text-sm text-gray-700 bg-white border border-gray-300 rounded hover:bg-gray-50">{{ __('accounting.btn_save') }}</button>
+                <a href="{{ route('accounting.moves.show', $move) }}" class="px-3 py-1.5 text-sm text-gray-600 bg-white border border-gray-300 rounded hover:bg-gray-50">{{ __('accounting.btn_discard') }}</a>
             </div>
         </x-slot:actions>
     </x-toolbar>

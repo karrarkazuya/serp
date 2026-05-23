@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Workflow;
 
 use App\Http\Controllers\Controller;
+use App\Helpers\GroupsQuery;
 use App\Helpers\SearchFilters;
 use App\Helpers\SortsTable;
 use App\Http\Requests\Workflow\StoreGroupRequest;
@@ -22,10 +23,21 @@ class GroupController extends Controller
         $this->authorize('viewAny', Group::class);
         $query = Group::query();
         SearchFilters::apply($query, $request);
-        SortsTable::apply($query, $request);
-        $groups = $query->paginate(30)->withQueryString();
 
-        return view('workflow.configuration.groups.index', compact('groups'));
+        $groupBy = $request->query('group_by');
+        if ($groupBy) {
+            $fields = SearchFilters::fieldsFor(Group::class);
+            if (isset($fields[$groupBy])) {
+                $records    = (clone $query)->orderBy('id')->get();
+                $groupedRows = GroupsQuery::apply($records, $fields[$groupBy]);
+                return view('workflow.configuration.groups.index', ['workflowGroups' => null, 'groupedRows' => $groupedRows]);
+            }
+        }
+
+        SortsTable::apply($query, $request);
+        $workflowGroups = $query->paginate(30)->withQueryString();
+
+        return view('workflow.configuration.groups.index', compact('workflowGroups'));
     }
 
     public function create()

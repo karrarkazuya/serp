@@ -1,5 +1,5 @@
 @extends('layouts.app')
-@section('title', $move->name ?: 'Journal Entry')
+@section('title', $move->name ?: __('accounting.move_type_entry'))
 
 @section('content')
 <div class="flex flex-col h-full bg-gray-50">
@@ -13,9 +13,9 @@
         :prev-href="$prevId ? route('accounting.moves.show', $prevId) : null"
         :next-href="$nextId ? route('accounting.moves.show', $nextId) : null">
         <x-slot:breadcrumb>
-            <a href="{{ route('accounting.dashboard') }}" class="text-xs text-purple-600 hover:text-purple-700">Accounting</a>
-            <a href="{{ route('accounting.moves.index') }}" class="text-xs text-purple-600 hover:text-purple-700">Journal Entries</a>
-            <span class="text-sm font-semibold text-gray-800">{{ $move->name ?: 'Draft' }}</span>
+            <a href="{{ route('accounting.dashboard') }}" class="text-xs text-purple-600 hover:text-purple-700">{{ __('accounting.accounting') }}</a>
+            <a href="{{ route('accounting.moves.index') }}" class="text-xs text-purple-600 hover:text-purple-700">{{ __('accounting.journal_entries') }}</a>
+            <span class="text-sm font-semibold text-gray-800">{{ $move->name ?: __('accounting.status_draft') }}</span>
         </x-slot:breadcrumb>
         <x-slot:actions>
             <div class="flex items-center gap-2">
@@ -23,40 +23,40 @@
                     @can('post', $move)
                     <form method="POST" action="{{ route('accounting.moves.post', $move) }}">
                         @csrf @method('PATCH')
-                        <button class="px-3 py-1.5 text-sm font-medium text-white bg-[#71639e] hover:bg-[#5c527f] rounded">Post</button>
+                        <button class="px-3 py-1.5 text-sm font-medium text-white bg-[#71639e] hover:bg-[#5c527f] rounded">{{ __('accounting.btn_post') }}</button>
                     </form>
                     @endcan
                     @can('update', $move)
-                    <a href="{{ route('accounting.moves.edit', $move) }}" class="px-3 py-1.5 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded hover:bg-gray-50">Edit</a>
+                    <a href="{{ route('accounting.moves.edit', $move) }}" class="px-3 py-1.5 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded hover:bg-gray-50">{{ __('accounting.btn_edit') }}</a>
                     @endcan
                     @can('post', $move)
                     <form method="POST" action="{{ route('accounting.moves.cancel', $move) }}">
                         @csrf @method('PATCH')
-                        <button class="px-3 py-1.5 text-sm text-gray-700 border border-gray-300 rounded hover:bg-gray-50">Cancel</button>
+                        <button class="px-3 py-1.5 text-sm text-gray-700 border border-gray-300 rounded hover:bg-gray-50">{{ __('accounting.btn_cancel') }}</button>
                     </form>
                     @endcan
                 @elseif($move->isPosted())
                     @can('post', $move)
                     <form method="POST" action="{{ route('accounting.moves.reset-draft', $move) }}">
                         @csrf @method('PATCH')
-                        <button class="px-3 py-1.5 text-sm text-amber-700 border border-amber-200 rounded hover:bg-amber-50">Reset to Draft</button>
+                        <button class="px-3 py-1.5 text-sm text-amber-700 border border-amber-200 rounded hover:bg-amber-50">{{ __('accounting.btn_reset_draft') }}</button>
                     </form>
                     <form method="POST" action="{{ route('accounting.moves.reverse', $move) }}"
                           x-data="{ open: false }" class="relative">
                         @csrf
                         <button type="button" @click="open = !open"
                                 class="px-3 py-1.5 text-sm text-purple-700 border border-purple-200 rounded hover:bg-purple-50">
-                            Reverse
+                            {{ __('accounting.btn_reverse') }}
                         </button>
                         <div x-show="open" style="display:none"
                              class="absolute right-0 mt-1 z-20 bg-white border border-gray-200 rounded-lg shadow-lg p-3 flex items-end gap-2">
                             <div>
-                                <label class="block text-[11px] font-semibold text-gray-500 uppercase mb-1">Reversal Date</label>
+                                <label class="block text-[11px] font-semibold text-gray-500 uppercase mb-1">{{ __('accounting.field_date') }}</label>
                                 <input type="date" name="reversal_date" value="{{ now()->toDateString() }}"
                                        class="text-sm border border-gray-200 rounded px-2 py-1">
                             </div>
-                            <button type="submit" class="px-3 py-1.5 text-sm font-medium text-white bg-[#71639e] hover:bg-[#5c527f] rounded">Confirm</button>
-                            <button type="button" @click="open = false" class="px-2 py-1 text-xs text-gray-500">Cancel</button>
+                            <button type="submit" class="px-3 py-1.5 text-sm font-medium text-white bg-[#71639e] hover:bg-[#5c527f] rounded">{{ __('accounting.btn_confirm') }}</button>
+                            <button type="button" @click="open = false" class="px-2 py-1 text-xs text-gray-500">{{ __('accounting.btn_cancel') }}</button>
                         </div>
                     </form>
                     @endcan
@@ -64,7 +64,7 @@
                     @can('post', $move)
                     <form method="POST" action="{{ route('accounting.moves.reset-draft', $move) }}">
                         @csrf @method('PATCH')
-                        <button class="px-3 py-1.5 text-sm text-amber-700 border border-amber-200 rounded hover:bg-amber-50">Reset to Draft</button>
+                        <button class="px-3 py-1.5 text-sm text-amber-700 border border-amber-200 rounded hover:bg-amber-50">{{ __('accounting.btn_reset_draft') }}</button>
                     </form>
                     @endcan
                 @endif
@@ -74,12 +74,12 @@
                     @csrf @method('DELETE')
                     <button type="button" x-show="!confirming" @click="confirming = true"
                             class="px-3 py-1.5 text-sm text-red-700 border border-red-200 rounded hover:bg-red-50">
-                        Delete
+                        {{ __('accounting.btn_delete') }}
                     </button>
                     <div x-show="confirming" style="display:none" class="flex items-center gap-1.5">
-                        <span class="text-xs text-red-600">Delete this entry?</span>
-                        <button type="submit" class="px-2 py-1 text-xs font-medium text-white bg-red-600 rounded">Yes</button>
-                        <button type="button" @click="confirming = false" class="px-2 py-1 text-xs text-gray-500">Cancel</button>
+                        <span class="text-xs text-red-600">{{ __('accounting.confirm_delete_move') }}</span>
+                        <button type="submit" class="px-2 py-1 text-xs font-medium text-white bg-red-600 rounded">{{ __('accounting.btn_yes') }}</button>
+                        <button type="button" @click="confirming = false" class="px-2 py-1 text-xs text-gray-500">{{ __('accounting.btn_cancel') }}</button>
                     </div>
                 </form>
                 @endcan
@@ -100,16 +100,16 @@
                 {{-- Header: title + state stepper --}}
                 <div class="mb-8 flex items-start justify-between gap-6">
                     <div>
-                        <p class="text-lg font-semibold text-gray-800">Journal Entry</p>
+                        <p class="text-lg font-semibold text-gray-800">{{ __('accounting.move_type_entry') }}</p>
                         <h1 class="mt-2 text-4xl font-bold {{ $move->name ? 'text-gray-900' : 'text-gray-400' }}">
-                            {{ $move->name ?: 'Draft' }}
+                            {{ $move->name ?: __('accounting.status_draft') }}
                         </h1>
                     </div>
                     <div class="flex shrink-0 items-center text-sm font-semibold">
-                        <span class="relative px-8 py-2 border {{ $move->isDraft() ? 'border-[#71639e] bg-purple-50 text-gray-900' : 'border-gray-200 bg-gray-100 text-gray-400' }}">Draft</span>
-                        <span class="px-8 py-2 border {{ $move->isPosted() ? 'border-green-500 bg-green-50 text-green-700' : 'border-gray-200 bg-gray-100 text-gray-400' }}">Posted</span>
+                        <span class="relative px-8 py-2 border {{ $move->isDraft() ? 'border-[#71639e] bg-purple-50 text-gray-900' : 'border-gray-200 bg-gray-100 text-gray-400' }}">{{ __('accounting.status_draft') }}</span>
+                        <span class="px-8 py-2 border {{ $move->isPosted() ? 'border-green-500 bg-green-50 text-green-700' : 'border-gray-200 bg-gray-100 text-gray-400' }}">{{ __('accounting.status_posted') }}</span>
                         @if($move->isCancelled())
-                        <span class="px-8 py-2 border border-gray-400 bg-gray-200 text-gray-600">Cancelled</span>
+                        <span class="px-8 py-2 border border-gray-400 bg-gray-200 text-gray-600">{{ __('accounting.status_cancelled') }}</span>
                         @endif
                     </div>
                 </div>
@@ -118,17 +118,17 @@
                 <div class="grid grid-cols-1 lg:grid-cols-2 gap-x-12 gap-y-0 mb-8">
                     <div>
                         <div class="flex items-center gap-5 py-2 border-b border-gray-100">
-                            <span class="w-32 shrink-0 text-sm font-semibold text-gray-500">Reference</span>
+                            <span class="w-32 shrink-0 text-sm font-semibold text-gray-500">{{ __('accounting.col_reference') }}</span>
                             <span class="flex-1 text-sm text-gray-800">{{ $move->ref ?: '—' }}</span>
                         </div>
                     </div>
                     <div>
                         <div class="flex items-center gap-5 py-2 border-b border-gray-100">
-                            <span class="w-40 shrink-0 text-sm font-semibold text-gray-500">Accounting Date</span>
+                            <span class="w-40 shrink-0 text-sm font-semibold text-gray-500">{{ __('accounting.field_accounting_date') }}</span>
                             <span class="flex-1 text-sm text-gray-800">{{ optional($move->date)->format('Y-m-d') }}</span>
                         </div>
                         <div class="flex items-center gap-5 py-2 border-b border-gray-100">
-                            <span class="w-40 shrink-0 text-sm font-semibold text-gray-500">Journal</span>
+                            <span class="w-40 shrink-0 text-sm font-semibold text-gray-500">{{ __('accounting.col_journal') }}</span>
                             <span class="flex-1 text-sm text-gray-800">{{ $move->journal?->name ?: '—' }}</span>
                         </div>
                     </div>
@@ -155,7 +155,7 @@
                     <button type="button" @click="tab = 'lines'"
                             class="px-5 py-3 text-sm font-semibold border-b-2 -mb-px bg-white transition-colors"
                             :class="tab === 'lines' ? 'border-[#71639e] text-[#71639e]' : 'border-transparent text-gray-500 hover:text-gray-700'">
-                        Journal Items
+                        {{ __('accounting.journal_items') }}
                     </button>
                     <button type="button" @click="tab = 'other'"
                             class="px-5 py-3 text-sm font-semibold border-b-2 -mb-px bg-white transition-colors"
@@ -169,11 +169,11 @@
                     <table class="w-full text-sm">
                         <thead class="bg-gray-100 border-b border-gray-200">
                             <tr class="text-xs font-semibold text-gray-500 uppercase tracking-wide">
-                                <th class="px-4 py-3 text-left w-72">Account</th>
-                                <th class="px-4 py-3 text-left">Partner</th>
-                                <th class="px-4 py-3 text-left">Label</th>
-                                <th class="px-4 py-3 text-right w-36">Debit</th>
-                                <th class="px-4 py-3 text-right w-36">Credit</th>
+                                <th class="px-4 py-3 text-left w-72">{{ __('accounting.col_account') }}</th>
+                                <th class="px-4 py-3 text-left">{{ __('accounting.col_partner') }}</th>
+                                <th class="px-4 py-3 text-left">{{ __('accounting.col_label') }}</th>
+                                <th class="px-4 py-3 text-right w-36">{{ __('accounting.col_debit') }}</th>
+                                <th class="px-4 py-3 text-right w-36">{{ __('accounting.col_credit') }}</th>
                             </tr>
                         </thead>
                         <tbody class="divide-y divide-gray-100">
@@ -193,13 +193,13 @@
                         </tbody>
                         <tfoot class="border-t border-gray-200">
                             <tr class="bg-gray-100 text-sm font-semibold">
-                                <td colspan="3" class="px-4 py-2.5 text-right text-gray-700">Total</td>
+                                <td colspan="3" class="px-4 py-2.5 text-right text-gray-700">{{ __('accounting.total') }}</td>
                                 <td class="px-4 py-2.5 text-right tabular-nums">{{ number_format($balance['debit'], 2) }}</td>
                                 <td class="px-4 py-2.5 text-right tabular-nums">{{ number_format($balance['credit'], 2) }}</td>
                             </tr>
                             @if(abs($balance['difference']) > 0.005)
                             <tr class="bg-amber-50 text-amber-700 text-sm font-medium border-t border-amber-100">
-                                <td colspan="3" class="px-4 py-2 text-right">Difference</td>
+                                <td colspan="3" class="px-4 py-2 text-right">{{ __('accounting.difference') }}</td>
                                 <td colspan="2" class="px-4 py-2 text-right tabular-nums">{{ number_format($balance['difference'], 2) }}</td>
                             </tr>
                             @endif
@@ -212,24 +212,24 @@
                     <div class="grid grid-cols-1 lg:grid-cols-2 gap-x-12 gap-y-0">
                         <div>
                             <div class="flex items-center gap-5 py-2 border-b border-gray-100">
-                                <span class="w-32 shrink-0 text-sm font-semibold text-gray-500">Company</span>
+                                <span class="w-32 shrink-0 text-sm font-semibold text-gray-500">{{ __('accounting.field_company') }}</span>
                                 <span class="flex-1 text-sm text-gray-800">{{ $move->company?->name ?: '—' }}</span>
                             </div>
                             <div class="flex items-center gap-5 py-2 border-b border-gray-100">
-                                <span class="w-32 shrink-0 text-sm font-semibold text-gray-500">Currency</span>
+                                <span class="w-32 shrink-0 text-sm font-semibold text-gray-500">{{ __('accounting.field_currency') }}</span>
                                 <span class="flex-1 text-sm text-gray-800">{{ $move->currency ?: '—' }}</span>
                             </div>
                         </div>
                         <div>
                             <div class="flex items-center gap-5 py-2 border-b border-gray-100">
-                                <span class="w-32 shrink-0 text-sm font-semibold text-gray-500">Partner</span>
+                                <span class="w-32 shrink-0 text-sm font-semibold text-gray-500">{{ __('accounting.field_partner') }}</span>
                                 <span class="flex-1 text-sm text-gray-800">{{ $move->partner?->name ?: '—' }}</span>
                             </div>
                         </div>
                     </div>
                     @if($move->narration)
                     <div class="mt-6">
-                        <p class="text-xs font-semibold text-gray-500 uppercase mb-1">Notes</p>
+                        <p class="text-xs font-semibold text-gray-500 uppercase mb-1">{{ __('accounting.field_notes') }}</p>
                         <p class="text-sm text-gray-700 whitespace-pre-line">{{ $move->narration }}</p>
                     </div>
                     @endif

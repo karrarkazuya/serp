@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Inventory\Configuration;
 
+use App\Helpers\GroupsQuery;
 use App\Helpers\SearchFilters;
 use App\Helpers\SortsTable;
 use App\Http\Controllers\Controller;
@@ -27,6 +28,17 @@ class WarehouseController extends Controller
         $query = Warehouse::query()->with('company')->forCompanies($activeCompanyIds);
         if ($request->query('filter') !== 'all') $query->active();
         SearchFilters::apply($query, $request);
+
+        $groupBy = $request->query('group_by');
+        if ($groupBy) {
+            $fields = SearchFilters::fieldsFor(Warehouse::class);
+            if (isset($fields[$groupBy])) {
+                $records = (clone $query)->with('company')->orderBy('id')->get();
+                $groups  = GroupsQuery::apply($records, $fields[$groupBy]);
+                return view('inventory.configuration.warehouses.index', compact('groups'));
+            }
+        }
+
         SortsTable::apply($query, $request);
         $warehouses = $query->paginate(24)->withQueryString();
         return view('inventory.configuration.warehouses.index', compact('warehouses'));

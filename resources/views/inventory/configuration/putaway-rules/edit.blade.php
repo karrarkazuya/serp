@@ -1,5 +1,5 @@
 @extends('layouts.app')
-@section('title', 'Edit Putaway Rule')
+@section('title', __('inventory.edit_putaway_rule'))
 
 @section('content')
 <div class="flex flex-col h-full bg-gray-50">
@@ -7,13 +7,13 @@
         @csrf @method('PUT')
         <x-toolbar>
             <x-slot:breadcrumb>
-                <a href="{{ route('inventory.config.putaway-rules.index') }}" class="text-xs text-purple-600 hover:text-purple-700">Putaway Rules</a>
-                <span class="text-sm font-semibold text-gray-800">Edit</span>
+                <a href="{{ route('inventory.config.putaway-rules.index') }}" class="text-xs text-purple-600 hover:text-purple-700">{{ __('inventory.putaway_rules') }}</a>
+                <span class="text-sm font-semibold text-gray-800">{{ __('inventory.edit') }}</span>
             </x-slot:breadcrumb>
             <x-slot:actions>
                 <div class="flex items-center gap-2">
-                    <a href="{{ route('inventory.config.putaway-rules.index') }}" class="px-3 py-1.5 text-sm text-gray-600 border border-gray-300 rounded hover:bg-gray-50">Discard</a>
-                    <button type="submit" class="px-3 py-1.5 text-sm font-semibold text-white bg-[#714B67] hover:bg-[#5c3d55] rounded">Save</button>
+                    <a href="{{ route('inventory.config.putaway-rules.index') }}" class="px-3 py-1.5 text-sm text-gray-600 border border-gray-300 rounded hover:bg-gray-50">{{ __('inventory.discard') }}</a>
+                    <button type="submit" class="px-3 py-1.5 text-sm font-semibold text-white bg-[#714B67] hover:bg-[#5c3d55] rounded">{{ __('inventory.save') }}</button>
                 </div>
             </x-slot:actions>
         </x-toolbar>
@@ -28,25 +28,25 @@
                 <div class="grid grid-cols-2 gap-x-8">
                     <div>
                         <div class="flex items-center gap-4 py-2 border-b border-gray-100">
-                            <label class="w-40 shrink-0 text-sm text-gray-500">When Arriving In</label>
+                            <label class="w-40 shrink-0 text-sm text-gray-500">{{ __('inventory.when_arriving_in') }}</label>
                             <x-relation-dropdown table="inventory_locations" field="complete_name" name="location_id" relation="many2one" :selected="old('location_id', $putawayRule->location_id)" class="flex-1" compact />
                         </div>
                         <div class="flex items-center gap-4 py-2 border-b border-gray-100">
-                            <label class="w-40 shrink-0 text-sm text-gray-500">Store In</label>
+                            <label class="w-40 shrink-0 text-sm text-gray-500">{{ __('inventory.store_in') }}</label>
                             <x-relation-dropdown table="inventory_locations" field="complete_name" name="fixed_location_id" relation="many2one" :selected="old('fixed_location_id', $putawayRule->fixed_location_id)" class="flex-1" compact />
                         </div>
                     </div>
                     <div>
                         <div class="flex items-center gap-4 py-2 border-b border-gray-100">
-                            <label class="w-40 shrink-0 text-sm text-gray-500">Product</label>
+                            <label class="w-40 shrink-0 text-sm text-gray-500">{{ __('inventory.product') }}</label>
                             <x-relation-dropdown table="inventory_products" field="name" name="product_id" relation="many2one" :selected="old('product_id', $putawayRule->product_id)" class="flex-1" compact />
                         </div>
                         <div class="flex items-center gap-4 py-2 border-b border-gray-100">
-                            <label class="w-40 shrink-0 text-sm text-gray-500">Product Category</label>
+                            <label class="w-40 shrink-0 text-sm text-gray-500">{{ __('inventory.product_category') }}</label>
                             <x-relation-dropdown table="inventory_product_categories" field="complete_name" name="product_category_id" relation="many2one" :selected="old('product_category_id', $putawayRule->product_category_id)" class="flex-1" compact />
                         </div>
                         <div class="flex items-center gap-4 py-2 border-b border-gray-100">
-                            <label class="w-40 shrink-0 text-sm text-gray-500">Sequence</label>
+                            <label class="w-40 shrink-0 text-sm text-gray-500">{{ __('inventory.sequence') }}</label>
                             <input type="number" name="sequence" value="{{ old('sequence', $putawayRule->sequence) }}" min="0" class="flex-1 text-sm bg-transparent border-0 focus:outline-none px-0 py-0.5">
                         </div>
                     </div>

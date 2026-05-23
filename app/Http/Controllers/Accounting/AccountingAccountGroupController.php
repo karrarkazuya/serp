@@ -96,6 +96,11 @@ class AccountingAccountGroupController extends Controller
         $activeCompanyIds = $this->companyContext->getActiveCompanyIds();
         abort_unless(in_array($data['company_id'], $activeCompanyIds), 403);
 
+        if (!empty($data['parent_id'])) {
+            $parent = AccountingAccountGroup::findOrFail($data['parent_id']);
+            abort_unless(in_array($parent->company_id, $activeCompanyIds), 403);
+        }
+
         $group = DB::transaction(fn () => AccountingAccountGroup::create($data));
 
         return redirect()->route('accounting.account-groups.show', $group)->with('success', 'Account group created.');
@@ -122,6 +127,11 @@ class AccountingAccountGroupController extends Controller
             'code_prefix_start' => ['nullable', 'string', 'max:50'],
             'code_prefix_end'   => ['nullable', 'string', 'max:50'],
         ]);
+
+        if (!empty($data['parent_id'])) {
+            $parent = AccountingAccountGroup::findOrFail($data['parent_id']);
+            abort_unless(in_array($parent->company_id, $activeCompanyIds), 403);
+        }
 
         DB::transaction(fn () => $accountGroup->update($data));
 

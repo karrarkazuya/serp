@@ -42,7 +42,7 @@
         <section class="top">
             <div>
                 <div class="muted">{{ $typeLabel }}</div>
-                <h1 class="title">{{ $document->name ?: 'Draft' }}</h1>
+                <h1 class="title">{{ $document->name ?: __('accounting.status_draft') }}</h1>
             </div>
             <div style="text-align:right">
                 <span class="badge">{{ $document->state_label }}</span>
@@ -55,13 +55,13 @@
         <section class="grid">
             <div>
                 <div class="row"><span class="label">{{ $config['partner_label'] }}</span><span class="value">{{ $document->partner?->name ?: '—' }}</span></div>
-                <div class="row"><span class="label">Reference</span><span class="value">{{ $document->ref ?: '—' }}</span></div>
+                <div class="row"><span class="label">{{ __('accounting.col_reference') }}</span><span class="value">{{ $document->ref ?: '—' }}</span></div>
                 <div class="row"><span class="label">{{ $config['control_account_label'] }}</span><span class="value">{{ $controlLine?->account?->display_name ?: '—' }}</span></div>
             </div>
             <div>
                 <div class="row"><span class="label">{{ $config['singular'] }} Date</span><span class="value">{{ optional($document->date)->format('Y-m-d') }}</span></div>
-                <div class="row"><span class="label">Journal</span><span class="value">{{ $document->journal?->name ?: '—' }}</span></div>
-                <div class="row"><span class="label">Currency</span><span class="value">{{ $document->currency ?: '—' }}</span></div>
+                <div class="row"><span class="label">{{ __('accounting.field_journal') }}</span><span class="value">{{ $document->journal?->name ?: '—' }}</span></div>
+                <div class="row"><span class="label">{{ __('accounting.field_currency') }}</span><span class="value">{{ $document->currency ?: '—' }}</span></div>
             </div>
         </section>
 
@@ -69,8 +69,8 @@
             <thead>
                 <tr>
                     <th>Description</th>
-                    <th>Account</th>
-                    <th class="num">Amount</th>
+                    <th>{{ __('accounting.col_account') }}</th>
+                    <th class="num">{{ __('accounting.col_amount') }}</th>
                 </tr>
             </thead>
             <tbody>
@@ -90,7 +90,7 @@
             @php $tl = $group->first(); @endphp
             <div class="total-row"><span>{{ $tl->name }}:</span><span>{{ number_format($group->sum(fn($l) => $lineAmount($l)), 2) }} {{ $document->currency }}</span></div>
             @endforeach
-            <div class="total-row grand"><span>Total:</span><span>{{ number_format((float) $document->amount_total, 2) }} {{ $document->currency }}</span></div>
+            <div class="total-row grand"><span>{{ __('accounting.total') }}:</span><span>{{ number_format((float) $document->amount_total, 2) }} {{ $document->currency }}</span></div>
         </section>
 
         @if($document->narration)

@@ -1,12 +1,12 @@
 @extends('layouts.app')
-@section('title', 'Accounting Audit Log')
+@section('title', __('accounting.section_audit'))
 
 @section('content')
 <div class="flex flex-col h-full bg-gray-50">
     <x-toolbar>
         <x-slot:breadcrumb>
-            <a href="{{ route('accounting.dashboard') }}" class="text-xs text-purple-600 hover:text-purple-700">Accounting</a>
-            <span class="text-sm font-semibold text-gray-800">Audit Log</span>
+            <a href="{{ route('accounting.dashboard') }}" class="text-xs text-purple-600 hover:text-purple-700">{{ __('accounting.accounting') }}</a>
+            <span class="text-sm font-semibold text-gray-800">{{ __('accounting.section_audit') }}</span>
         </x-slot:breadcrumb>
     </x-toolbar>
 
@@ -14,16 +14,16 @@
     <div class="shrink-0 bg-white border-b border-gray-200 px-4 py-3">
         <form method="GET" class="flex flex-wrap items-end gap-3">
             <div>
-                <label class="block text-xs font-semibold text-gray-500 mb-1">Model</label>
+                <label class="block text-xs font-semibold text-gray-500 mb-1">{{ __('accounting.col_record') }}</label>
                 <select name="model_type" class="text-sm border border-gray-300 rounded px-2 py-1.5 focus:outline-none focus:ring-0 focus:border-purple-500">
-                    <option value="">All Models</option>
+                    <option value="">{{ __('accounting.all_models') }}</option>
                     @foreach($modelLabels as $class => $label)
                     <option value="{{ $class }}" @selected(request('model_type') === $class)>{{ $label }}</option>
                     @endforeach
                 </select>
             </div>
             <div>
-                <label class="block text-xs font-semibold text-gray-500 mb-1">Event Type</label>
+                <label class="block text-xs font-semibold text-gray-500 mb-1">{{ __('accounting.col_event') }}</label>
                 <select name="message_type" class="text-sm border border-gray-300 rounded px-2 py-1.5 focus:outline-none focus:ring-0 focus:border-purple-500">
                     <option value="">All</option>
                     <option value="system" @selected(request('message_type') === 'system')>System</option>
@@ -32,33 +32,33 @@
                 </select>
             </div>
             <div>
-                <label class="block text-xs font-semibold text-gray-500 mb-1">From</label>
+                <label class="block text-xs font-semibold text-gray-500 mb-1">{{ __('accounting.field_date_from') }}</label>
                 <input type="date" name="date_from" value="{{ request('date_from') }}"
                        class="text-sm border border-gray-300 rounded px-2 py-1.5 focus:outline-none focus:ring-0 focus:border-purple-500">
             </div>
             <div>
-                <label class="block text-xs font-semibold text-gray-500 mb-1">To</label>
+                <label class="block text-xs font-semibold text-gray-500 mb-1">{{ __('accounting.field_date_to') }}</label>
                 <input type="date" name="date_to" value="{{ request('date_to') }}"
                        class="text-sm border border-gray-300 rounded px-2 py-1.5 focus:outline-none focus:ring-0 focus:border-purple-500">
             </div>
             <div class="flex-1 min-w-50">
                 <label class="block text-xs font-semibold text-gray-500 mb-1">Search</label>
-                <input type="text" name="search" value="{{ request('search') }}" placeholder="Search log body…"
+                <input type="text" name="search" value="{{ request('search') }}" :placeholder="__('accounting.ph_search_model')"
                        class="w-full text-sm border border-gray-300 rounded px-2 py-1.5 focus:outline-none focus:ring-0 focus:border-purple-500">
             </div>
-            <button type="submit" class="px-3 py-1.5 text-sm font-medium text-white bg-[#71639e] hover:bg-[#5c527f] rounded">Filter</button>
+            <button type="submit" class="px-3 py-1.5 text-sm font-medium text-white bg-[#71639e] hover:bg-[#5c527f] rounded">{{ __('accounting.btn_filter') }}</button>
             <a href="{{ route('accounting.audit') }}" class="px-3 py-1.5 text-sm text-gray-600 border border-gray-300 rounded hover:bg-gray-50">Reset</a>
         </form>
     </div>
 
-    <x-list :paginator="$entries" empty-text="No audit entries found.">
+    <x-list :paginator="$entries" :empty-text="__('accounting.no_audit')">
         <x-slot:columns>
-            <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase">Date & Time</th>
-            <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase">Model</th>
-            <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase">Record</th>
-            <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase">Type</th>
-            <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase">User</th>
-            <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase">Event</th>
+            <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase">{{ __('accounting.col_date_time') }}</th>
+            <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase">{{ __('accounting.col_record') }}</th>
+            <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase">{{ __('accounting.col_record') }}</th>
+            <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase">{{ __('accounting.col_type') }}</th>
+            <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase">{{ __('accounting.col_user') }}</th>
+            <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase">{{ __('accounting.col_event') }}</th>
         </x-slot:columns>
 
         @foreach($entries as $entry)

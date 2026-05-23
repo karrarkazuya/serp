@@ -13,22 +13,22 @@
         :prev-href="$prevId ? route('inventory.config.operation-types.show', $prevId) : null"
         :next-href="$nextId ? route('inventory.config.operation-types.show', $nextId) : null">
         <x-slot:breadcrumb>
-            <a href="{{ route('inventory.config.operation-types.index') }}" class="text-xs text-purple-600 hover:text-purple-700">Operation Types</a>
+            <a href="{{ route('inventory.config.operation-types.index') }}" class="text-xs text-purple-600 hover:text-purple-700">{{ __('inventory.operation_types') }}</a>
             <span class="text-sm font-semibold text-gray-800">{{ $operationType->name }}</span>
         </x-slot:breadcrumb>
         <x-slot:actions>
             <div class="flex items-center gap-2">
                 @can('update', $operationType)
-                <a href="{{ route('inventory.config.operation-types.edit', $operationType) }}" class="px-3 py-1.5 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded hover:bg-gray-50">Edit</a>
+                <a href="{{ route('inventory.config.operation-types.edit', $operationType) }}" class="px-3 py-1.5 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded hover:bg-gray-50">{{ __('inventory.edit') }}</a>
                 @if($operationType->active)
                 <form method="POST" action="{{ route('inventory.config.operation-types.archive', $operationType) }}">
                     @csrf @method('PATCH')
-                    <button class="px-3 py-1.5 text-sm text-amber-700 border border-amber-200 rounded hover:bg-amber-50">Archive</button>
+                    <button class="px-3 py-1.5 text-sm text-amber-700 border border-amber-200 rounded hover:bg-amber-50">{{ __('inventory.archive') }}</button>
                 </form>
                 @else
                 <form method="POST" action="{{ route('inventory.config.operation-types.unarchive', $operationType) }}">
                     @csrf @method('PATCH')
-                    <button class="px-3 py-1.5 text-sm text-green-700 border border-green-200 rounded hover:bg-green-50">Restore</button>
+                    <button class="px-3 py-1.5 text-sm text-green-700 border border-green-200 rounded hover:bg-green-50">{{ __('inventory.restore') }}</button>
                 </form>
                 @endif
                 @endcan
@@ -42,11 +42,11 @@
             <div class="grid grid-cols-2 gap-x-8">
                 <div>
                     @foreach([
-                        ['Type', $operationType->code_label],
-                        ['Warehouse', $operationType->warehouse?->name],
-                        ['Company', $operationType->company?->name],
-                        ['Default Source', $operationType->defaultSrcLocation?->complete_name],
-                        ['Default Destination', $operationType->defaultDestLocation?->complete_name],
+                        [__('inventory.type'), $operationType->code_label],
+                        [__('inventory.warehouse'), $operationType->warehouse?->name],
+                        [__('inventory.company'), $operationType->company?->name],
+                        [__('inventory.from'), $operationType->defaultSrcLocation?->complete_name],
+                        [__('inventory.to'), $operationType->defaultDestLocation?->complete_name],
                     ] as [$label, $value])
                     <div class="flex items-center gap-4 py-2 border-b border-gray-100">
                         <span class="w-40 shrink-0 text-sm text-gray-500">{{ $label }}</span>
@@ -56,10 +56,9 @@
                 </div>
                 <div>
                     @foreach([
-                        ['Sequence Prefix', $operationType->sequence_prefix],
-                        ['Reservation Method', ucwords(str_replace('_', ' ', $operationType->reservation_method))],
-                        ['Create Lots', $operationType->use_create_lots ? 'Yes' : 'No'],
-                        ['Use Existing Lots', $operationType->use_existing_lots ? 'Yes' : 'No'],
+                        [__('inventory.sequence'), $operationType->sequence_prefix],
+                        [__('inventory.action'), ucwords(str_replace('_', ' ', $operationType->reservation_method))],
+                        [__('inventory.col_lot'), $operationType->use_create_lots ? __('inventory.yes') : __('inventory.no')],
                     ] as [$label, $value])
                     <div class="flex items-center gap-4 py-2 border-b border-gray-100">
                         <span class="w-40 shrink-0 text-sm text-gray-500">{{ $label }}</span>

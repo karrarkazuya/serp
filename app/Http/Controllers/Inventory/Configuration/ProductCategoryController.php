@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Inventory\Configuration;
 
+use App\Helpers\GroupsQuery;
 use App\Helpers\SearchFilters;
 use App\Helpers\SortsTable;
 use App\Http\Controllers\Controller;
@@ -19,6 +20,17 @@ class ProductCategoryController extends Controller
         abort_unless($request->user()->hasPermission('inventory.read'), 403);
         $query = ProductCategory::query()->with('parent');
         SearchFilters::apply($query, $request);
+
+        $groupBy = $request->query('group_by');
+        if ($groupBy) {
+            $fields = SearchFilters::fieldsFor(ProductCategory::class);
+            if (isset($fields[$groupBy])) {
+                $records = (clone $query)->with('parent')->orderBy('id')->get();
+                $groups  = GroupsQuery::apply($records, $fields[$groupBy]);
+                return view('inventory.configuration.product-categories.index', compact('groups'));
+            }
+        }
+
         SortsTable::apply($query, $request);
         $categories = $query->paginate(24)->withQueryString();
         return view('inventory.configuration.product-categories.index', compact('categories'));

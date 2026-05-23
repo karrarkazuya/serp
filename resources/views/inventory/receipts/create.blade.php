@@ -1,5 +1,5 @@
 @extends('layouts.app')
-@section('title', 'New Receipt')
+@section('title', __('inventory.new_receipt'))
 
 @section('content')
 <div class="flex flex-col h-full bg-gray-50">
@@ -7,13 +7,13 @@
         @csrf
         <x-toolbar>
             <x-slot:breadcrumb>
-                <a href="{{ route('inventory.receipts.index') }}" class="text-xs text-purple-600 hover:text-purple-700">Receipts</a>
-                <span class="text-sm font-semibold text-gray-800">New</span>
+                <a href="{{ route('inventory.receipts.index') }}" class="text-xs text-purple-600 hover:text-purple-700">{{ __('inventory.receipts') }}</a>
+                <span class="text-sm font-semibold text-gray-800">{{ __('inventory.new') }}</span>
             </x-slot:breadcrumb>
             <x-slot:actions>
                 <div class="flex items-center gap-2">
-                    <a href="{{ route('inventory.receipts.index') }}" class="px-3 py-1.5 text-sm text-gray-600 border border-gray-300 rounded hover:bg-gray-50">Discard</a>
-                    <button type="submit" class="px-3 py-1.5 text-sm font-semibold text-white bg-[#714B67] hover:bg-[#5c3d55] rounded">Save</button>
+                    <a href="{{ route('inventory.receipts.index') }}" class="px-3 py-1.5 text-sm text-gray-600 border border-gray-300 rounded hover:bg-gray-50">{{ __('inventory.discard') }}</a>
+                    <button type="submit" class="px-3 py-1.5 text-sm font-semibold text-white bg-[#714B67] hover:bg-[#5c3d55] rounded">{{ __('inventory.save') }}</button>
                 </div>
             </x-slot:actions>
         </x-toolbar>
@@ -31,38 +31,38 @@
                 <div class="grid grid-cols-2 gap-x-8">
                     <div>
                         <div class="flex items-center gap-4 py-2 border-b border-gray-100">
-                            <label class="w-40 shrink-0 text-sm text-gray-500">Operation Type</label>
+                            <label class="w-40 shrink-0 text-sm text-gray-500">{{ __('inventory.operation_type') }}</label>
                             <x-relation-dropdown table="inventory_operation_types" field="name" name="operation_type_id" relation="many2one"
                                 :selected="old('operation_type_id', $defaultOperationTypeId ?? null)" class="flex-1" compact />
                         </div>
                         <div class="flex items-center gap-4 py-2 border-b border-gray-100">
-                            <label class="w-40 shrink-0 text-sm text-gray-500">Receive From</label>
+                            <label class="w-40 shrink-0 text-sm text-gray-500">{{ __('inventory.receive_from') }}</label>
                             <x-relation-dropdown table="inventory_locations" field="complete_name" name="location_src_id" relation="many2one"
                                 :selected="old('location_src_id')" class="flex-1" compact />
                         </div>
                         <div class="flex items-center gap-4 py-2 border-b border-gray-100">
-                            <label class="w-40 shrink-0 text-sm text-gray-500">Destination</label>
+                            <label class="w-40 shrink-0 text-sm text-gray-500">{{ __('inventory.destination') }}</label>
                             <x-relation-dropdown table="inventory_locations" field="complete_name" name="location_dest_id" relation="many2one"
                                 :selected="old('location_dest_id')" class="flex-1" compact />
                         </div>
                         <div class="flex items-center gap-4 py-2 border-b border-gray-100">
-                            <label class="w-40 shrink-0 text-sm text-gray-500">Vendor</label>
+                            <label class="w-40 shrink-0 text-sm text-gray-500">{{ __('inventory.vendor') }}</label>
                             <x-relation-dropdown table="contacts" field="name" name="partner_id" relation="many2one"
                                 :selected="old('partner_id')" class="flex-1" compact />
                         </div>
                     </div>
                     <div>
                         <div class="flex items-center gap-4 py-2 border-b border-gray-100">
-                            <label class="w-40 shrink-0 text-sm text-gray-500">Scheduled Date</label>
+                            <label class="w-40 shrink-0 text-sm text-gray-500">{{ __('inventory.scheduled_date') }}</label>
                             <input type="datetime-local" name="scheduled_date" value="{{ old('scheduled_date', now()->format('Y-m-d\TH:i')) }}"
                                    class="flex-1 text-sm text-gray-800 bg-transparent border-0 focus:outline-none focus:ring-0 px-0 py-0.5">
                         </div>
                         <div class="flex items-center gap-4 py-2 border-b border-gray-100">
-                            <label class="w-40 shrink-0 text-sm text-gray-500">Source Document</label>
+                            <label class="w-40 shrink-0 text-sm text-gray-500">{{ __('inventory.source_document') }}</label>
                             <input type="text" name="origin" value="{{ old('origin') }}" class="flex-1 text-sm text-gray-800 bg-transparent border-0 focus:outline-none focus:ring-0 px-0 py-0.5" placeholder="-">
                         </div>
                         <div class="flex items-center gap-4 py-2 border-b border-gray-100">
-                            <label class="w-40 shrink-0 text-sm text-gray-500">Company</label>
+                            <label class="w-40 shrink-0 text-sm text-gray-500">{{ __('inventory.company') }}</label>
                             <x-relation-dropdown table="companies" field="name" name="company_id" relation="many2one"
                                 :selected="old('company_id', $defaultCompanyId ?? null)" class="flex-1" compact />
                         </div>
@@ -71,20 +71,20 @@
 
                 <div class="mt-4">
                     <div class="flex items-start gap-4 py-2 border-b border-gray-100">
-                        <label class="w-40 shrink-0 text-sm text-gray-500 pt-0.5">Note</label>
+                        <label class="w-40 shrink-0 text-sm text-gray-500 pt-0.5">{{ __('inventory.note') }}</label>
                         <textarea name="note" rows="2" class="flex-1 text-sm text-gray-800 bg-transparent border-0 focus:outline-none focus:ring-0 px-0 resize-none" placeholder="-">{{ old('note') }}</textarea>
                     </div>
                 </div>
 
                 {{-- Moves --}}
                 <div class="mt-6">
-                    <div class="mb-2 text-sm font-semibold text-gray-700">Products</div>
+                    <div class="mb-2 text-sm font-semibold text-gray-700">{{ __('inventory.section_products') }}</div>
                     <table class="w-full text-sm mb-3">
                         <thead>
                             <tr class="border-b border-gray-100">
-                                <th class="py-1.5 text-left text-xs text-gray-500">Product</th>
-                                <th class="py-1.5 text-left text-xs text-gray-500 w-32">Unit of Measure</th>
-                                <th class="py-1.5 text-right text-xs text-gray-500 w-24">Quantity</th>
+                                <th class="py-1.5 text-start text-xs text-gray-500">{{ __('inventory.product') }}</th>
+                                <th class="py-1.5 text-start text-xs text-gray-500 w-32">{{ __('inventory.unit_of_measure') }}</th>
+                                <th class="py-1.5 text-end text-xs text-gray-500 w-24">{{ __('inventory.quantity') }}</th>
                                 <th class="w-8"></th>
                             </tr>
                         </thead>
@@ -111,7 +111,7 @@
                                 </td>
                                 <td class="py-1.5 w-24">
                                     <input type="number" name="moves[{{ $oldIdx }}][product_qty]" value="{{ $oldMove['product_qty'] ?? 1 }}"
-                                        step="0.001" min="0.001" class="w-full text-sm bg-transparent border-0 focus:outline-none px-0 text-right">
+                                        step="0.001" min="0.001" class="w-full text-sm bg-transparent border-0 focus:outline-none px-0 text-end">
                                 </td>
                                 <td class="py-1.5 text-center w-8">
                                     <button type="button" onclick="this.closest('tr').remove()" class="text-gray-300 hover:text-red-500">
@@ -131,7 +131,7 @@
                                                 addRow.insertAdjacentHTML('beforebegin', html);
                                                 Alpine.initTree(addRow.previousElementSibling);
                                                 nextIdx++;
-                                            })">+ Add a product</button>
+                                            })">+ {{ __('inventory.add_a_product') }}</button>
                                 </td>
                             </tr>
                         </tbody>

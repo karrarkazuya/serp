@@ -152,6 +152,21 @@ class AccountPaymentController extends Controller
         return redirect()->route('accounting.payments.show', $payment)->with('success', 'Payment cancelled.');
     }
 
+    public function unlink(Request $_request, AccountPayment $payment)
+    {
+        abort_unless(auth()->user()->hasPermission('accounting.unlink'), 403);
+        abort_unless(in_array($payment->company_id, $this->companyContext->getActiveCompanyIds()), 403);
+        abort_unless($payment->isDraft(), 403);
+
+        try {
+            DB::transaction(fn () => $payment->delete());
+        } catch (\RuntimeException $e) {
+            return back()->with('error', $e->getMessage());
+        }
+
+        return redirect()->route('accounting.payments.index')->with('success', 'Payment deleted.');
+    }
+
     public function addComment(Request $request, AccountPayment $payment)
     {
         $this->authorize('comment', $payment);

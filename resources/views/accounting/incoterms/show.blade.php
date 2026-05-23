@@ -13,23 +13,23 @@
         :prev-href="$prevId ? route('accounting.incoterms.show', $prevId) : null"
         :next-href="$nextId ? route('accounting.incoterms.show', $nextId) : null">
         <x-slot:breadcrumb>
-            <a href="{{ route('accounting.dashboard') }}" class="text-xs text-purple-600 hover:text-purple-700">Accounting</a>
-            <a href="{{ route('accounting.incoterms.index') }}" class="text-xs text-purple-600 hover:text-purple-700">Incoterms</a>
+            <a href="{{ route('accounting.dashboard') }}" class="text-xs text-purple-600 hover:text-purple-700">{{ __('accounting.accounting') }}</a>
+            <a href="{{ route('accounting.incoterms.index') }}" class="text-xs text-purple-600 hover:text-purple-700">{{ __('accounting.incoterms') }}</a>
             <span class="text-sm font-semibold text-gray-800">{{ $incoterm->code }}</span>
         </x-slot:breadcrumb>
         <x-slot:actions>
             <div class="flex items-center gap-2">
                 @can('update', $incoterm)
-                <a href="{{ route('accounting.incoterms.edit', $incoterm) }}" class="px-3 py-1.5 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded hover:bg-gray-50">Edit</a>
+                <a href="{{ route('accounting.incoterms.edit', $incoterm) }}" class="px-3 py-1.5 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded hover:bg-gray-50">{{ __('accounting.btn_edit') }}</a>
                 @endcan
                 @can('delete', $incoterm)
                 <form method="POST" action="{{ route('accounting.incoterms.delete', $incoterm) }}" x-data="{ confirming: false }">
                     @csrf @method('DELETE')
-                    <button type="button" x-show="!confirming" @click="confirming = true" class="px-3 py-1.5 text-sm text-red-700 border border-red-200 rounded hover:bg-red-50">Delete</button>
+                    <button type="button" x-show="!confirming" @click="confirming = true" class="px-3 py-1.5 text-sm text-red-700 border border-red-200 rounded hover:bg-red-50">{{ __('accounting.btn_delete') }}</button>
                     <div x-show="confirming" style="display:none" class="flex items-center gap-1.5">
-                        <span class="text-xs text-red-600">Delete this incoterm?</span>
-                        <button type="submit" class="px-2 py-1 text-xs font-medium text-white bg-red-600 rounded">Yes</button>
-                        <button type="button" @click="confirming = false" class="px-2 py-1 text-xs text-gray-500">Cancel</button>
+                        <span class="text-xs text-red-600">{{ __('accounting.confirm_delete_generic') }}</span>
+                        <button type="submit" class="px-2 py-1 text-xs font-medium text-white bg-red-600 rounded">{{ __('accounting.btn_yes') }}</button>
+                        <button type="button" @click="confirming = false" class="px-2 py-1 text-xs text-gray-500">{{ __('accounting.btn_cancel') }}</button>
                     </div>
                 </form>
                 @endcan
@@ -46,10 +46,10 @@
             <h1 class="text-2xl font-bold text-gray-900 mb-6">{{ $incoterm->code }} — {{ $incoterm->name }}</h1>
 
             @foreach([
-                ['Code',        $incoterm->code],
-                ['Name',        $incoterm->name],
-                ['Created by',  $incoterm->creator?->name ?? '—'],
-                ['Updated by',  $incoterm->updater?->name ?? '—'],
+                [__('accounting.field_code'),   $incoterm->code],
+                [__('accounting.field_name'),   $incoterm->name],
+                ['Created by',                  $incoterm->creator?->name ?? '—'],
+                ['Updated by',                  $incoterm->updater?->name ?? '—'],
             ] as [$label, $value])
             <div class="flex items-start gap-4 py-2 border-b border-gray-100">
                 <span class="w-36 shrink-0 text-sm font-medium text-gray-500">{{ $label }}</span>

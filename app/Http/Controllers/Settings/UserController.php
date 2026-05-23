@@ -7,6 +7,7 @@ use App\Http\Requests\Settings\StoreUserRequest;
 use App\Http\Requests\Settings\UpdateUserRequest;
 use App\Models\User;
 use App\Services\Settings\UserService;
+use App\Helpers\GroupsQuery;
 use App\Helpers\SearchFilters;
 use App\Helpers\SortsTable;
 use Illuminate\Http\Request;
@@ -23,6 +24,16 @@ class UserController extends Controller
         $query = User::with('roles')->whereKeyNot(0);
 
         SearchFilters::apply($query, $request);
+
+        $groupBy = $request->query('group_by');
+        if ($groupBy) {
+            $fields = SearchFilters::fieldsFor(User::class);
+            if (isset($fields[$groupBy])) {
+                $records = (clone $query)->with('roles')->orderBy('id')->get();
+                $groups  = GroupsQuery::apply($records, $fields[$groupBy]);
+                return view('settings.users.index', compact('groups'));
+            }
+        }
 
         SortsTable::apply($query, $request);
 

@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Inventory\Configuration;
 
+use App\Helpers\GroupsQuery;
 use App\Helpers\SearchFilters;
 use App\Helpers\SortsTable;
 use App\Http\Controllers\Controller;
@@ -26,6 +27,17 @@ class OperationTypeController extends Controller
         if ($request->query('filter') !== 'all') $query->active();
         if ($code = $request->query('code')) $query->where('code', $code);
         SearchFilters::apply($query, $request);
+
+        $groupBy = $request->query('group_by');
+        if ($groupBy) {
+            $fields = SearchFilters::fieldsFor(OperationType::class);
+            if (isset($fields[$groupBy])) {
+                $records = (clone $query)->with(['warehouse', 'company'])->orderBy('id')->get();
+                $groups  = GroupsQuery::apply($records, $fields[$groupBy]);
+                return view('inventory.configuration.operation-types.index', compact('groups'));
+            }
+        }
+
         SortsTable::apply($query, $request);
         $operationTypes = $query->paginate(24)->withQueryString();
         return view('inventory.configuration.operation-types.index', compact('operationTypes'));

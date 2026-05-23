@@ -8,23 +8,23 @@
     @endcan
     <x-toolbar :new-href="$newHref ?? null">
         <x-slot:breadcrumb>
-            <a href="{{ route('accounting.dashboard') }}" class="text-xs text-purple-600 hover:text-purple-700">Accounting</a>
-            <a href="{{ route('accounting.currencies.index') }}" class="text-xs text-purple-600 hover:text-purple-700">Exchange Rates</a>
+            <a href="{{ route('accounting.dashboard') }}" class="text-xs text-purple-600 hover:text-purple-700">{{ __('accounting.accounting') }}</a>
+            <a href="{{ route('accounting.currencies.index') }}" class="text-xs text-purple-600 hover:text-purple-700">{{ __('accounting.exchange_rates') }}</a>
             <span class="text-sm font-semibold text-gray-800">{{ $currencyRate->currency }} — {{ $currencyRate->date->format('Y-m-d') }}</span>
         </x-slot:breadcrumb>
         <x-slot:actions>
             <div class="flex items-center gap-2">
                 @can('update', $currencyRate)
-                <a href="{{ route('accounting.currencies.edit', $currencyRate) }}" class="px-3 py-1.5 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded hover:bg-gray-50">Edit</a>
+                <a href="{{ route('accounting.currencies.edit', $currencyRate) }}" class="px-3 py-1.5 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded hover:bg-gray-50">{{ __('accounting.btn_edit') }}</a>
                 @endcan
                 @can('delete', $currencyRate)
                 <form method="POST" action="{{ route('accounting.currencies.delete', $currencyRate) }}" x-data="{ confirming: false }">
                     @csrf @method('DELETE')
-                    <button type="button" x-show="!confirming" @click="confirming = true" class="px-3 py-1.5 text-sm text-red-700 border border-red-200 rounded hover:bg-red-50">Delete</button>
+                    <button type="button" x-show="!confirming" @click="confirming = true" class="px-3 py-1.5 text-sm text-red-700 border border-red-200 rounded hover:bg-red-50">{{ __('accounting.btn_delete') }}</button>
                     <div x-show="confirming" style="display:none" class="flex items-center gap-1.5">
-                        <span class="text-xs text-red-600">Delete this rate?</span>
-                        <button type="submit" class="px-2 py-1 text-xs font-medium text-white bg-red-600 rounded">Yes</button>
-                        <button type="button" @click="confirming = false" class="px-2 py-1 text-xs text-gray-500">Cancel</button>
+                        <span class="text-xs text-red-600">{{ __('accounting.confirm_delete_generic') }}</span>
+                        <button type="submit" class="px-2 py-1 text-xs font-medium text-white bg-red-600 rounded">{{ __('accounting.btn_yes') }}</button>
+                        <button type="button" @click="confirming = false" class="px-2 py-1 text-xs text-gray-500">{{ __('accounting.btn_cancel') }}</button>
                     </div>
                 </form>
                 @endcan
@@ -38,14 +38,14 @@
         @endif
 
         <div class="bg-white rounded-xl border border-gray-200 shadow-sm p-6 max-w-2xl">
-            <h1 class="text-2xl font-bold text-gray-900 mb-6">{{ $currencyRate->currency }} Exchange Rate</h1>
+            <h1 class="text-2xl font-bold text-gray-900 mb-6">{{ $currencyRate->currency }} {{ __('accounting.exchange_rates') }}</h1>
 
             @foreach([
-                ['Currency',       $currencyRate->currency],
-                ['Rate',           number_format((float)$currencyRate->rate, 6) . ' (base units per 1 ' . $currencyRate->currency . ')'],
-                ['Effective Date', $currencyRate->date->format('Y-m-d')],
-                ['Company',        $currencyRate->company?->name ?? '—'],
-                ['Status',         $currencyRate->active ? 'Active' : 'Inactive'],
+                [__('accounting.col_currency'),       $currencyRate->currency],
+                [__('accounting.field_rate'),          number_format((float)$currencyRate->rate, 6) . ' (base units per 1 ' . $currencyRate->currency . ')'],
+                [__('accounting.col_effective_date'),  $currencyRate->date->format('Y-m-d')],
+                [__('accounting.col_company'),         $currencyRate->company?->name ?? '—'],
+                [__('accounting.col_status'),          $currencyRate->active ? __('accounting.status_active') : __('accounting.status_archived')],
                 ['Created by',     $currencyRate->creator?->name ?? '—'],
                 ['Last updated by',$currencyRate->updater?->name ?? '—'],
             ] as [$label, $value])

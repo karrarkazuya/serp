@@ -27,6 +27,7 @@ class AccountingReportController extends Controller
 
         $query = AccountMoveLine::query()
             ->with(['account', 'journal', 'move'])
+            ->when(empty($activeCompanyIds), fn ($q) => $q->whereRaw('1 = 0'))
             ->when(!empty($activeCompanyIds), fn ($q) => $q->whereIn('account_move_lines.company_id', $activeCompanyIds))
             ->where('account_move_lines.state', 'posted')
             ->when($dateFrom, fn ($q) => $q->where('account_move_lines.date', '>=', $dateFrom))
@@ -60,6 +61,7 @@ class AccountingReportController extends Controller
                 DB::raw('SUM(debit) - SUM(credit) as balance')
             )
             ->with('account')
+            ->when(empty($activeCompanyIds), fn ($q) => $q->whereRaw('1 = 0'))
             ->when(!empty($activeCompanyIds), fn ($q) => $q->whereIn('company_id', $activeCompanyIds))
             ->where('state', 'posted')
             ->when($dateFrom, fn ($q) => $q->where('date', '>=', $dateFrom))
@@ -154,6 +156,7 @@ class AccountingReportController extends Controller
                 DB::raw('SUM(account_move_lines.debit) - SUM(account_move_lines.credit) as net')
             )
             ->join('accounts', 'accounts.id', '=', 'account_move_lines.account_id')
+            ->when(empty($activeCompanyIds), fn ($q) => $q->whereRaw('1 = 0'))
             ->when(!empty($activeCompanyIds), fn ($q) => $q->whereIn('account_move_lines.company_id', $activeCompanyIds))
             ->where('account_move_lines.state', 'posted')
             ->where('accounts.account_type', 'asset_cash')
@@ -190,6 +193,7 @@ class AccountingReportController extends Controller
                 DB::raw('SUM(debit) - SUM(credit) as net')
             )
             ->with('taxLine')
+            ->when(empty($activeCompanyIds), fn ($q) => $q->whereRaw('1 = 0'))
             ->when(!empty($activeCompanyIds), fn ($q) => $q->whereIn('company_id', $activeCompanyIds))
             ->where('state', 'posted')
             ->whereNotNull('tax_line_id')
@@ -219,6 +223,7 @@ class AccountingReportController extends Controller
                 DB::raw('SUM(debit) - SUM(credit) as balance')
             )
             ->with('partner')
+            ->when(empty($activeCompanyIds), fn ($q) => $q->whereRaw('1 = 0'))
             ->when(!empty($activeCompanyIds), fn ($q) => $q->whereIn('company_id', $activeCompanyIds))
             ->where('state', 'posted')
             ->whereNotNull('partner_id')
@@ -271,6 +276,7 @@ class AccountingReportController extends Controller
 
         $moves = AccountMove::query()
             ->with(['journal', 'partner', 'company'])
+            ->when(empty($activeCompanyIds), fn ($q) => $q->whereRaw('1 = 0'))
             ->when(!empty($activeCompanyIds), fn ($q) => $q->whereIn('company_id', $activeCompanyIds))
             ->where('state', 'posted')
             ->when($dateFrom,  fn ($q) => $q->where('date', '>=', $dateFrom))
@@ -292,6 +298,7 @@ class AccountingReportController extends Controller
         $activeCompanyIds = $this->companyContext->getActiveCompanyIds();
 
         $bankJournals = AccountJournal::query()
+            ->when(empty($activeCompanyIds), fn ($q) => $q->whereRaw('1 = 0'))
             ->when(!empty($activeCompanyIds), fn ($q) => $q->whereIn('company_id', $activeCompanyIds))
             ->whereIn('type', ['bank', 'cash'])
             ->where('active', true)
@@ -305,6 +312,7 @@ class AccountingReportController extends Controller
         if ($journalId) {
             $lines = AccountMoveLine::query()
                 ->with(['move', 'account'])
+                ->when(empty($activeCompanyIds), fn ($q) => $q->whereRaw('1 = 0'))
                 ->when(!empty($activeCompanyIds), fn ($q) => $q->whereIn('account_move_lines.company_id', $activeCompanyIds))
                 ->where('account_move_lines.journal_id', $journalId)
                 ->where('account_move_lines.state', 'posted')
@@ -341,10 +349,12 @@ class AccountingReportController extends Controller
         $totalLiabs     = $this->sumByAccountType($activeCompanyIds, $liabTypes, null, $dateTo)->sum('net');
 
         $draftCount   = AccountMove::query()
+            ->when(empty($activeCompanyIds), fn ($q) => $q->whereRaw('1 = 0'))
             ->when(!empty($activeCompanyIds), fn ($q) => $q->whereIn('company_id', $activeCompanyIds))
             ->where('state', 'draft')->count();
 
         $overdueCount = AccountMove::query()
+            ->when(empty($activeCompanyIds), fn ($q) => $q->whereRaw('1 = 0'))
             ->when(!empty($activeCompanyIds), fn ($q) => $q->whereIn('company_id', $activeCompanyIds))
             ->whereIn('move_type', ['out_invoice', 'in_invoice'])
             ->where('state', 'posted')
@@ -384,6 +394,7 @@ class AccountingReportController extends Controller
                 DB::raw('SUM(account_move_lines.debit) - SUM(account_move_lines.credit) as net')
             )
             ->join('accounts', 'accounts.id', '=', 'account_move_lines.account_id')
+            ->when(empty($companyIds), fn ($q) => $q->whereRaw('1 = 0'))
             ->when(!empty($companyIds), fn ($q) => $q->whereIn('account_move_lines.company_id', $companyIds))
             ->where('account_move_lines.state', 'posted')
             ->whereIn('accounts.account_type', $types)
@@ -409,6 +420,7 @@ class AccountingReportController extends Controller
                 'account_moves.amount_total as residual'
             )
             ->join('contacts', 'contacts.id', '=', 'account_moves.partner_id')
+            ->when(empty($companyIds), fn ($q) => $q->whereRaw('1 = 0'))
             ->when(!empty($companyIds), fn ($q) => $q->whereIn('account_moves.company_id', $companyIds))
             ->where('account_moves.move_type', $moveType)
             ->where('account_moves.state', 'posted')

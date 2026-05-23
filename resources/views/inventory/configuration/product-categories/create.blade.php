@@ -1,5 +1,5 @@
 @extends('layouts.app')
-@section('title', 'New Product Category')
+@section('title', __('inventory.product_categories'))
 
 @section('content')
 <div class="flex flex-col h-full bg-gray-50">
@@ -7,13 +7,13 @@
         @csrf
         <x-toolbar>
             <x-slot:breadcrumb>
-                <a href="{{ route('inventory.config.product-categories.index') }}" class="text-xs text-purple-600 hover:text-purple-700">Product Categories</a>
-                <span class="text-sm font-semibold text-gray-800">New</span>
+                <a href="{{ route('inventory.config.product-categories.index') }}" class="text-xs text-purple-600 hover:text-purple-700">{{ __('inventory.product_categories') }}</a>
+                <span class="text-sm font-semibold text-gray-800">{{ __('inventory.new') }}</span>
             </x-slot:breadcrumb>
             <x-slot:actions>
                 <div class="flex items-center gap-2">
-                    <a href="{{ route('inventory.config.product-categories.index') }}" class="px-3 py-1.5 text-sm text-gray-600 border border-gray-300 rounded hover:bg-gray-50">Discard</a>
-                    <button type="submit" class="px-3 py-1.5 text-sm font-semibold text-white bg-[#714B67] hover:bg-[#5c3d55] rounded">Save</button>
+                    <a href="{{ route('inventory.config.product-categories.index') }}" class="px-3 py-1.5 text-sm text-gray-600 border border-gray-300 rounded hover:bg-gray-50">{{ __('inventory.discard') }}</a>
+                    <button type="submit" class="px-3 py-1.5 text-sm font-semibold text-white bg-[#714B67] hover:bg-[#5c3d55] rounded">{{ __('inventory.save') }}</button>
                 </div>
             </x-slot:actions>
         </x-toolbar>

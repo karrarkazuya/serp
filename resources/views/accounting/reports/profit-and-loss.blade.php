@@ -1,12 +1,12 @@
 @extends('layouts.app')
-@section('title', 'Profit and Loss')
+@section('title', __('accounting.report_profit_loss'))
 
 @section('content')
 <div class="flex flex-col h-full bg-gray-50">
     <x-toolbar>
         <x-slot:breadcrumb>
-            <a href="{{ route('accounting.dashboard') }}" class="text-xs text-purple-600 hover:text-purple-700">Accounting</a>
-            <span class="text-sm font-semibold text-gray-800">Profit and Loss</span>
+            <a href="{{ route('accounting.dashboard') }}" class="text-xs text-purple-600 hover:text-purple-700">{{ __('accounting.accounting') }}</a>
+            <span class="text-sm font-semibold text-gray-800">{{ __('accounting.report_profit_loss') }}</span>
         </x-slot:breadcrumb>
     </x-toolbar>
 
@@ -17,7 +17,7 @@
             {{-- Income --}}
             <div class="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
                 <div class="px-5 py-3 bg-green-50 border-b border-green-100">
-                    <h2 class="text-sm font-bold text-green-800">Income</h2>
+                    <h2 class="text-sm font-bold text-green-800">{{ __('accounting.income') }}</h2>
                 </div>
                 <table class="min-w-full text-sm">
                     <tbody class="divide-y divide-gray-100">
@@ -31,7 +31,7 @@
                     </tbody>
                     <tfoot class="bg-green-50 border-t border-green-100">
                         <tr>
-                            <td colspan="2" class="px-5 py-2.5 text-sm font-bold text-green-800">Total Income</td>
+                            <td colspan="2" class="px-5 py-2.5 text-sm font-bold text-green-800">{{ __('accounting.total') }} {{ __('accounting.income') }}</td>
                             <td class="px-5 py-2.5 text-right tabular-nums font-bold text-green-800">{{ number_format($totalIncome, 2) }}</td>
                         </tr>
                     </tfoot>
@@ -41,7 +41,7 @@
             {{-- Expenses --}}
             <div class="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
                 <div class="px-5 py-3 bg-red-50 border-b border-red-100">
-                    <h2 class="text-sm font-bold text-red-800">Expenses</h2>
+                    <h2 class="text-sm font-bold text-red-800">{{ __('accounting.expense') }}</h2>
                 </div>
                 <table class="min-w-full text-sm">
                     <tbody class="divide-y divide-gray-100">
@@ -55,7 +55,7 @@
                     </tbody>
                     <tfoot class="bg-red-50 border-t border-red-100">
                         <tr>
-                            <td colspan="2" class="px-5 py-2.5 text-sm font-bold text-red-800">Total Expenses</td>
+                            <td colspan="2" class="px-5 py-2.5 text-sm font-bold text-red-800">{{ __('accounting.total') }} {{ __('accounting.expense') }}</td>
                             <td class="px-5 py-2.5 text-right tabular-nums font-bold text-red-800">{{ number_format($totalExpense, 2) }}</td>
                         </tr>
                     </tfoot>
@@ -66,7 +66,7 @@
             <div class="bg-white rounded-xl border-2 {{ $netProfit >= 0 ? 'border-green-300' : 'border-red-300' }} shadow-sm p-5">
                 <div class="flex justify-between items-center">
                     <span class="text-base font-bold {{ $netProfit >= 0 ? 'text-green-800' : 'text-red-800' }}">
-                        {{ $netProfit >= 0 ? 'Net Profit' : 'Net Loss' }}
+                        {{ $netProfit >= 0 ? __('accounting.net_profit') : __('accounting.net_loss') }}
                     </span>
                     <span class="text-xl font-bold tabular-nums {{ $netProfit >= 0 ? 'text-green-700' : 'text-red-700' }}">
                         {{ number_format(abs($netProfit), 2) }}

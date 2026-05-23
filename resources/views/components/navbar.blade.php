@@ -153,13 +153,47 @@
         </a>
         @endcan
 
+        {{-- Allocations dropdown --}}
+        @can('viewAny', \App\Models\Employees\Employee::class)
+        <div x-data="{ open: false }" class="relative h-full shrink-0" @click.outside="open = false">
+            <button type="button"
+                    @click="open = !open"
+                    class="hidden sm:flex items-center h-full px-4 text-white/85 hover:text-white hover:bg-[#5c3d55] transition-colors text-sm font-semibold
+                           {{ request()->routeIs('employees.positions.*', 'employees.certificates.*') ? 'bg-[#5c3d55]' : '' }}">
+                Allocations
+                <svg class="ms-1 w-3.5 h-3.5 transition-transform" :class="open ? 'rotate-180' : ''" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
+                </svg>
+            </button>
+
+            <div x-show="open"
+                 x-transition:enter="transition ease-out duration-100"
+                 x-transition:enter-start="opacity-0 scale-95"
+                 x-transition:enter-end="opacity-100 scale-100"
+                 x-transition:leave="transition ease-in duration-75"
+                 x-transition:leave-start="opacity-100 scale-100"
+                 x-transition:leave-end="opacity-0 scale-95"
+                 class="absolute start-0 top-full w-56 bg-white rounded-b-lg shadow-xl border border-gray-200 z-50 py-1"
+                 style="display:none">
+                <a href="{{ route('employees.positions.index') }}"
+                   class="block px-4 py-2.5 text-sm text-gray-800 hover:bg-gray-100 {{ request()->routeIs('employees.positions.*') ? 'bg-gray-100 font-semibold' : '' }}">
+                    Positions
+                </a>
+                <a href="{{ route('employees.certificates.index') }}"
+                   class="block px-4 py-2.5 text-sm text-gray-800 hover:bg-gray-100 {{ request()->routeIs('employees.certificates.*') ? 'bg-gray-100 font-semibold' : '' }}">
+                    Certificates
+                </a>
+            </div>
+        </div>
+        @endcan
+
         {{-- Configuration dropdown --}}
         @can('viewAny', \App\Models\Employees\Employee::class)
         <div x-data="{ open: false }" class="relative h-full shrink-0" @click.outside="open = false">
             <button type="button"
                     @click="open = !open"
                     class="hidden sm:flex items-center h-full px-4 text-white/85 hover:text-white hover:bg-[#5c3d55] transition-colors text-sm font-semibold
-                           {{ request()->routeIs('employees.departments.*', 'employees.jobs.*', 'employees.work-locations.*', 'employees.schedules.*', 'employees.categories.*', 'employees.departure-reasons.*', 'employees.skill-types.*', 'employees.resume-line-types.*', 'employees.employment-types.*', 'employees.badges.*', 'employees.challenges.*', 'employees.goals.*') ? 'bg-[#5c3d55]' : '' }}">
+                           {{ request()->routeIs('employees.jobs.*', 'employees.departments.*', 'employees.documents.*', 'employees.work-locations.*', 'employees.schedules.*', 'employees.categories.*', 'employees.departure-reasons.*', 'employees.skill-types.*', 'employees.resume-line-types.*', 'employees.employment-types.*', 'employees.badges.*', 'employees.challenges.*', 'employees.goals.*') ? 'bg-[#5c3d55]' : '' }}">
                 Configuration
                 <svg class="ms-1 w-3.5 h-3.5 transition-transform" :class="open ? 'rotate-180' : ''" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
@@ -176,13 +210,17 @@
                  class="absolute start-0 top-full w-56 bg-white rounded-b-lg shadow-xl border border-gray-200 z-50 py-1"
                  style="display:none">
                 <div class="px-3 py-1.5 text-[10px] font-semibold text-gray-400 uppercase">Organization</div>
+                <a href="{{ route('employees.jobs.index') }}"
+                   class="block px-4 py-2.5 text-sm text-gray-800 hover:bg-gray-100 {{ request()->routeIs('employees.jobs.*') ? 'bg-gray-100 font-semibold' : '' }}">
+                    Job Positions
+                </a>
                 <a href="{{ route('employees.departments.index') }}"
                    class="block px-4 py-2.5 text-sm text-gray-800 hover:bg-gray-100 {{ request()->routeIs('employees.departments.*') ? 'bg-gray-100 font-semibold' : '' }}">
                     Departments
                 </a>
-                <a href="{{ route('employees.jobs.index') }}"
-                   class="block px-4 py-2.5 text-sm text-gray-800 hover:bg-gray-100 {{ request()->routeIs('employees.jobs.*') ? 'bg-gray-100 font-semibold' : '' }}">
-                    Job Positions
+                <a href="{{ route('employees.documents.index') }}"
+                   class="block px-4 py-2.5 text-sm text-gray-800 hover:bg-gray-100 {{ request()->routeIs('employees.documents.*') ? 'bg-gray-100 font-semibold' : '' }}">
+                    Documents
                 </a>
                 <div class="border-t border-gray-100 my-1"></div>
                 <div class="px-3 py-1.5 text-[10px] font-semibold text-gray-400 uppercase">Settings</div>
@@ -248,30 +286,30 @@
         {{-- Dashboard --}}
         <a href="{{ route('accounting.dashboard') }}"
            class="{{ $accLink }} {{ request()->routeIs('accounting.dashboard') ? 'bg-[#5c3d55]' : '' }}">
-            Dashboard
+            {{ __('accounting.nav_dashboard') }}
         </a>
 
         {{-- Customers --}}
         <div x-data="{ open: false }" class="relative h-full shrink-0" @click.outside="open = false">
             <button type="button" @click="open = !open"
                     class="{{ $accBtn }} {{ request()->routeIs('accounting.invoices.*', 'accounting.credit-notes.*', 'accounting.payments.*') ? 'bg-[#5c3d55]' : '' }}">
-                Customers {!! $caret !!}
+                {{ __('accounting.nav_customers') }} {!! $caret !!}
             </button>
             <div x-show="open" x-transition class="{{ $accDD }}" style="display:none">
                 <a href="{{ route('accounting.invoices.index') }}"
                    class="{{ $accItem }} {{ request()->routeIs('accounting.invoices.*') ? 'bg-gray-100 font-semibold' : '' }}">
-                    Invoices
+                    {{ __('accounting.invoices') }}
                 </a>
                 <a href="{{ route('accounting.credit-notes.index') }}"
                    class="{{ $accItem }} {{ request()->routeIs('accounting.credit-notes.*') ? 'bg-gray-100 font-semibold' : '' }}">
-                    Credit Notes
+                    {{ __('accounting.credit_notes') }}
                 </a>
                 <a href="{{ route('accounting.payments.index') }}"
                    class="{{ $accItem }} {{ request()->routeIs('accounting.payments.*') ? 'bg-gray-100 font-semibold' : '' }}">
-                    Payments
+                    {{ __('accounting.payments') }}
                 </a>
-                <a href="{{ route('inventory.products.index') }}" class="{{ $accItem }}">Products</a>
-                <a href="{{ route('contacts.index', ['type' => 'individual']) }}" class="{{ $accItem }}">Customers</a>
+                <a href="{{ route('inventory.products.index') }}" class="{{ $accItem }}">{{ __('accounting.nav_products') }}</a>
+                <a href="{{ route('contacts.index', ['type' => 'individual']) }}" class="{{ $accItem }}">{{ __('accounting.nav_customers_label') }}</a>
             </div>
         </div>
 
@@ -279,23 +317,23 @@
         <div x-data="{ open: false }" class="relative h-full shrink-0" @click.outside="open = false">
             <button type="button" @click="open = !open"
                     class="{{ $accBtn }} {{ request()->routeIs('accounting.bills.*', 'accounting.refunds.*', 'accounting.payments.*') ? 'bg-[#5c3d55]' : '' }}">
-                Vendors {!! $caret !!}
+                {{ __('accounting.nav_vendors') }} {!! $caret !!}
             </button>
             <div x-show="open" x-transition class="{{ $accDD }}" style="display:none">
                 <a href="{{ route('accounting.bills.index') }}"
                    class="{{ $accItem }} {{ request()->routeIs('accounting.bills.*') ? 'bg-gray-100 font-semibold' : '' }}">
-                    Bills
+                    {{ __('accounting.bills') }}
                 </a>
                 <a href="{{ route('accounting.refunds.index') }}"
                    class="{{ $accItem }} {{ request()->routeIs('accounting.refunds.*') ? 'bg-gray-100 font-semibold' : '' }}">
-                    Refunds
+                    {{ __('accounting.refunds') }}
                 </a>
                 <a href="{{ route('accounting.payments.index') }}"
                    class="{{ $accItem }} {{ request()->routeIs('accounting.payments.*') ? 'bg-gray-100 font-semibold' : '' }}">
-                    Payments
+                    {{ __('accounting.payments') }}
                 </a>
-                <a href="{{ route('inventory.products.index') }}" class="{{ $accItem }}">Products</a>
-                <a href="{{ route('contacts.index', ['type' => 'company']) }}" class="{{ $accItem }}">Vendors</a>
+                <a href="{{ route('inventory.products.index') }}" class="{{ $accItem }}">{{ __('accounting.nav_products') }}</a>
+                <a href="{{ route('contacts.index', ['type' => 'company']) }}" class="{{ $accItem }}">{{ __('accounting.nav_vendors_label') }}</a>
             </div>
         </div>
 
@@ -303,25 +341,25 @@
         <div x-data="{ open: false }" class="relative h-full shrink-0" @click.outside="open = false">
             <button type="button" @click="open = !open"
                     class="{{ $accBtn }} {{ request()->routeIs('accounting.moves.*', 'accounting.items.*') ? 'bg-[#5c3d55]' : '' }}">
-                Accounting {!! $caret !!}
+                {{ __('accounting.nav_accounting') }} {!! $caret !!}
             </button>
             <div x-show="open" x-transition class="{{ $accDD }}" style="display:none">
                 <a href="{{ route('accounting.moves.index') }}"
                    class="{{ $accItem }} {{ request()->routeIs('accounting.moves.*') ? 'bg-gray-100 font-semibold' : '' }}">
-                    Journal Entries
+                    {{ __('accounting.journal_entries') }}
                 </a>
                 <a href="{{ route('accounting.items.index') }}"
                    class="{{ $accItem }} {{ request()->routeIs('accounting.items.*') ? 'bg-gray-100 font-semibold' : '' }}">
-                    Journal Items
+                    {{ __('accounting.journal_items') }}
                 </a>
-                <div class="{{ $accHead }}">Actions</div>
+                <div class="{{ $accHead }}">{{ __('accounting.nav_actions') }}</div>
                 @if(auth()->user()->hasPermission('accounting.lock'))
                 <a href="{{ route('accounting.settings') }}"
                    class="{{ $accItem }} {{ request()->routeIs('accounting.settings') ? 'bg-gray-100 font-semibold' : '' }}">
-                    Lock Dates
+                    {{ __('accounting.nav_lock_dates') }}
                 </a>
                 @else
-                <span class="{{ $accDis }}" title="Requires accounting.lock permission">Lock Dates</span>
+                <span class="{{ $accDis }}" title="{{ __('accounting.requires_lock_perm') }}">{{ __('accounting.nav_lock_dates') }}</span>
                 @endif
             </div>
         </div>
@@ -330,59 +368,59 @@
         <div x-data="{ open: false }" class="relative h-full shrink-0" @click.outside="open = false">
             <button type="button" @click="open = !open"
                     class="{{ $accBtn }} {{ request()->routeIs('accounting.reports.*') ? 'bg-[#5c3d55]' : '' }}">
-                Reporting {!! $caret !!}
+                {{ __('accounting.nav_reporting') }} {!! $caret !!}
             </button>
             <div x-show="open" x-transition class="{{ $accDD }} max-h-[80vh] overflow-y-auto" style="display:none">
-                <div class="{{ $accHead }}">Statement Reports</div>
+                <div class="{{ $accHead }}">{{ __('accounting.nav_statement_reports') }}</div>
                 <a href="{{ route('accounting.reports.profit-and-loss') }}"
                    class="{{ $accItem }} {{ request()->routeIs('accounting.reports.profit-and-loss') ? 'bg-gray-100 font-semibold' : '' }}">
-                    Profit and Loss
+                    {{ __('accounting.report_profit_loss') }}
                 </a>
                 <a href="{{ route('accounting.reports.balance-sheet') }}"
                    class="{{ $accItem }} {{ request()->routeIs('accounting.reports.balance-sheet') ? 'bg-gray-100 font-semibold' : '' }}">
-                    Balance Sheet
+                    {{ __('accounting.report_balance_sheet') }}
                 </a>
                 <a href="{{ route('accounting.reports.executive-summary') }}"
                    class="{{ $accItem }} {{ request()->routeIs('accounting.reports.executive-summary') ? 'bg-gray-100 font-semibold' : '' }}">
-                    Executive Summary
+                    {{ __('accounting.report_executive') }}
                 </a>
                 <a href="{{ route('accounting.reports.cash-flow') }}"
                    class="{{ $accItem }} {{ request()->routeIs('accounting.reports.cash-flow') ? 'bg-gray-100 font-semibold' : '' }}">
-                    Cash Flow Statement
+                    {{ __('accounting.report_cash_flow') }}
                 </a>
                 <a href="{{ route('accounting.reports.tax-report') }}"
                    class="{{ $accItem }} {{ request()->routeIs('accounting.reports.tax-report') ? 'bg-gray-100 font-semibold' : '' }}">
-                    Tax Report
+                    {{ __('accounting.report_tax') }}
                 </a>
-                <div class="{{ $accHead }}">Ledger Reports</div>
+                <div class="{{ $accHead }}">{{ __('accounting.nav_ledger_reports') }}</div>
                 <a href="{{ route('accounting.reports.general-ledger') }}"
                    class="{{ $accItem }} {{ request()->routeIs('accounting.reports.general-ledger') ? 'bg-gray-100 font-semibold' : '' }}">
-                    General Ledger
+                    {{ __('accounting.report_general_ledger') }}
                 </a>
                 <a href="{{ route('accounting.reports.trial-balance') }}"
                    class="{{ $accItem }} {{ request()->routeIs('accounting.reports.trial-balance') ? 'bg-gray-100 font-semibold' : '' }}">
-                    Trial Balance
+                    {{ __('accounting.report_trial_balance') }}
                 </a>
                 <a href="{{ route('accounting.reports.partner-ledger') }}"
                    class="{{ $accItem }} {{ request()->routeIs('accounting.reports.partner-ledger') ? 'bg-gray-100 font-semibold' : '' }}">
-                    Partner Ledger
+                    {{ __('accounting.report_partner_ledger') }}
                 </a>
                 <a href="{{ route('accounting.reports.aged-receivable') }}"
                    class="{{ $accItem }} {{ request()->routeIs('accounting.reports.aged-receivable') ? 'bg-gray-100 font-semibold' : '' }}">
-                    Aged Receivable
+                    {{ __('accounting.report_aged_receivable') }}
                 </a>
                 <a href="{{ route('accounting.reports.aged-payable') }}"
                    class="{{ $accItem }} {{ request()->routeIs('accounting.reports.aged-payable') ? 'bg-gray-100 font-semibold' : '' }}">
-                    Aged Payable
+                    {{ __('accounting.report_aged_payable') }}
                 </a>
-                <div class="{{ $accHead }}">Audit Reports</div>
+                <div class="{{ $accHead }}">{{ __('accounting.nav_audit_reports') }}</div>
                 <a href="{{ route('accounting.reports.journal-audit') }}"
                    class="{{ $accItem }} {{ request()->routeIs('accounting.reports.journal-audit') ? 'bg-gray-100 font-semibold' : '' }}">
-                    Journal Audit
+                    {{ __('accounting.report_journal_audit') }}
                 </a>
                 <a href="{{ route('accounting.reports.bank-reconciliation') }}"
                    class="{{ $accItem }} {{ request()->routeIs('accounting.reports.bank-reconciliation') ? 'bg-gray-100 font-semibold' : '' }}">
-                    Bank Reconciliation
+                    {{ __('accounting.report_bank_recon') }}
                 </a>
             </div>
         </div>
@@ -391,59 +429,59 @@
         <div x-data="{ open: false }" class="relative h-full shrink-0" @click.outside="open = false">
             <button type="button" @click="open = !open"
                     class="{{ $accBtn }} {{ request()->routeIs('accounting.accounts.*', 'accounting.journals.*', 'accounting.taxes.*', 'accounting.currencies.*', 'accounting.settings', 'accounting.audit', 'accounting.payment-terms.*', 'accounting.incoterms.*', 'accounting.tax-groups.*', 'accounting.account-groups.*') ? 'bg-[#5c3d55]' : '' }}">
-                Configuration {!! $caret !!}
+                {{ __('accounting.nav_configuration') }} {!! $caret !!}
             </button>
             <div x-show="open" x-transition class="{{ $accDD }} w-64 max-h-[80vh] overflow-y-auto" style="display:none">
                 @if(auth()->user()->hasPermission('accounting.lock'))
                 <a href="{{ route('accounting.settings') }}"
                    class="{{ $accItem }} {{ request()->routeIs('accounting.settings') ? 'bg-gray-100 font-semibold' : '' }}">
-                    Settings &amp; Lock Dates
+                    {{ __('accounting.nav_settings_lock') }}
                 </a>
                 @else
-                <span class="{{ $accDis }}" title="Requires accounting.lock permission">Settings &amp; Lock Dates</span>
+                <span class="{{ $accDis }}" title="{{ __('accounting.requires_lock_perm') }}">{{ __('accounting.nav_settings_lock') }}</span>
                 @endif
 
-                <div class="{{ $accHead }}">Invoicing</div>
+                <div class="{{ $accHead }}">{{ __('accounting.nav_invoicing') }}</div>
                 <a href="{{ route('accounting.payment-terms.index') }}"
                    class="{{ $accItem }} {{ request()->routeIs('accounting.payment-terms.*') ? 'bg-gray-100 font-semibold' : '' }}">
-                    Payment Terms
+                    {{ __('accounting.payment_terms') }}
                 </a>
                 <a href="{{ route('accounting.incoterms.index') }}"
                    class="{{ $accItem }} {{ request()->routeIs('accounting.incoterms.*') ? 'bg-gray-100 font-semibold' : '' }}">
-                    Incoterms
+                    {{ __('accounting.incoterms') }}
                 </a>
 
-                <div class="{{ $accHead }}">Banks</div>
-                <a href="{{ route('accounting.journals.create') }}" class="{{ $accItem }}">Add a Bank Account</a>
+                <div class="{{ $accHead }}">{{ __('accounting.nav_banks') }}</div>
+                <a href="{{ route('accounting.journals.create') }}" class="{{ $accItem }}">{{ __('accounting.nav_add_bank') }}</a>
 
-                <div class="{{ $accHead }}">Accounting</div>
+                <div class="{{ $accHead }}">{{ __('accounting.nav_accounting') }}</div>
                 <a href="{{ route('accounting.accounts.index') }}"
                    class="{{ $accItem }} {{ request()->routeIs('accounting.accounts.*') ? 'bg-gray-100 font-semibold' : '' }}">
-                    Chart of Accounts
+                    {{ __('accounting.chart_of_accounts') }}
                 </a>
                 <a href="{{ route('accounting.taxes.index') }}"
                    class="{{ $accItem }} {{ request()->routeIs('accounting.taxes.*') ? 'bg-gray-100 font-semibold' : '' }}">
-                    Taxes
+                    {{ __('accounting.taxes') }}
                 </a>
                 <a href="{{ route('accounting.journals.index') }}"
                    class="{{ $accItem }} {{ request()->routeIs('accounting.journals.*') ? 'bg-gray-100 font-semibold' : '' }}">
-                    Journals
+                    {{ __('accounting.journals') }}
                 </a>
                 <a href="{{ route('accounting.currencies.index') }}"
                    class="{{ $accItem }} {{ request()->routeIs('accounting.currencies.*') ? 'bg-gray-100 font-semibold' : '' }}">
-                    Exchange Rates
+                    {{ __('accounting.exchange_rates') }}
                 </a>
                 <a href="{{ route('accounting.tax-groups.index') }}"
                    class="{{ $accItem }} {{ request()->routeIs('accounting.tax-groups.*') ? 'bg-gray-100 font-semibold' : '' }}">
-                    Tax Groups
+                    {{ __('accounting.tax_groups') }}
                 </a>
                 <a href="{{ route('accounting.account-groups.index') }}"
                    class="{{ $accItem }} {{ request()->routeIs('accounting.account-groups.*') ? 'bg-gray-100 font-semibold' : '' }}">
-                    Account Groups
+                    {{ __('accounting.account_groups') }}
                 </a>
 
 
-                <div class="{{ $accHead }}">Audit</div>
+                <div class="{{ $accHead }}">{{ __('accounting.section_audit') }}</div>
                 <a href="{{ route('accounting.audit') }}"
                    class="{{ $accItem }} {{ request()->routeIs('accounting.audit') ? 'bg-gray-100 font-semibold' : '' }}">
                     Audit Log

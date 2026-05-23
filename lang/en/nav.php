@@ -23,4 +23,5 @@ return [
     'procedure_performance'=> 'Procedure Performance',
     'ticket_performance'   => 'Ticket Performance',
     'task_performance'     => 'Task Performance',
+    'accounting'           => 'Accounting',
 ];

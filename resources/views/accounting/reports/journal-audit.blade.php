@@ -1,12 +1,12 @@
 @extends('layouts.app')
-@section('title', 'Journal Audit')
+@section('title', __('accounting.report_journal_audit'))
 
 @section('content')
 <div class="flex flex-col h-full bg-gray-50">
     <x-toolbar>
         <x-slot:breadcrumb>
-            <a href="{{ route('accounting.dashboard') }}" class="text-xs text-purple-600 hover:text-purple-700">Accounting</a>
-            <span class="text-sm font-semibold text-gray-800">Journal Audit</span>
+            <a href="{{ route('accounting.dashboard') }}" class="text-xs text-purple-600 hover:text-purple-700">{{ __('accounting.accounting') }}</a>
+            <span class="text-sm font-semibold text-gray-800">{{ __('accounting.report_journal_audit') }}</span>
         </x-slot:breadcrumb>
     </x-toolbar>
 
@@ -22,11 +22,11 @@
             <table class="min-w-full text-sm divide-y divide-gray-200">
                 <thead class="bg-gray-50">
                     <tr>
-                        <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase">Date</th>
-                        <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase">Reference</th>
-                        <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase">Journal</th>
-                        <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase">Partner</th>
-                        <th class="px-4 py-3 text-right text-xs font-semibold text-gray-500 uppercase">Amount</th>
+                        <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase">{{ __('accounting.col_date') }}</th>
+                        <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase">{{ __('accounting.col_reference') }}</th>
+                        <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase">{{ __('accounting.col_journal') }}</th>
+                        <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase">{{ __('accounting.col_partner') }}</th>
+                        <th class="px-4 py-3 text-right text-xs font-semibold text-gray-500 uppercase">{{ __('accounting.col_amount') }}</th>
                     </tr>
                 </thead>
                 <tbody class="divide-y divide-gray-100">
@@ -44,14 +44,14 @@
                                 };
                             @endphp
                             <a href="{{ $auditRoute }}" class="text-purple-600 hover:underline font-medium">{{ $move->name }}</a>
-                            @if($move->ref) <span class="text-xs text-gray-400 ml-1">{{ $move->ref }}</span> @endif
+                            @if($move->ref) <span class="text-xs text-gray-400 ms-1">{{ $move->ref }}</span> @endif
                         </td>
                         <td class="px-4 py-2.5 text-gray-600">{{ $move->journal?->code }} – {{ $move->journal?->name }}</td>
                         <td class="px-4 py-2.5 text-gray-600">{{ $move->partner?->name ?? '—' }}</td>
                         <td class="px-4 py-2.5 text-right tabular-nums text-gray-800">{{ number_format($move->amount_total, 2) }}</td>
                     </tr>
                     @empty
-                    <tr><td colspan="5" class="px-4 py-8 text-sm text-gray-400 text-center">No journal entries for the selected filters.</td></tr>
+                    <tr><td colspan="5" class="px-4 py-8 text-sm text-gray-400 text-center">{{ __('accounting.no_journal_items_filter') }}</td></tr>
                     @endforelse
                 </tbody>
             </table>

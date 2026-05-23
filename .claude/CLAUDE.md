@@ -75,6 +75,10 @@ Do not invent new form layouts.
 
 Never use a raw `<select>` populated from a full table query. All relational fields must use `<x-relation-dropdown>`. The target table must be registered in `config/relation_dropdowns.php`. See `docs/components/dynamic_relation_lookup.md`.
 
+The `relation` prop drives the "Search More" modal behavior automatically:
+- `many2one` / `one2one` (`multiple=false`): clicking a row immediately selects and closes.
+- `many2many` / `one2many` (`multiple=true`): staging mode — checkboxes, Select All on current page, "Add (N)" button applies all at once. Closing without clicking "Add" discards pending changes.
+
 ### 5. Tables with `company_id` — company filtering in every controller method
 
 If a model has `company_id`, every controller method (read, show, create, store, edit, write, archive, unarchive, unlink, any custom action) must filter/gate by active companies:

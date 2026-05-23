@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Workflow;
 
 use App\Http\Controllers\Controller;
+use App\Helpers\GroupsQuery;
 use App\Helpers\SearchFilters;
 use App\Helpers\SortsTable;
 use App\Http\Requests\Workflow\StoreTicketTemplateRequest;
@@ -24,6 +25,17 @@ class TicketTemplateController extends Controller
         $this->authorize('viewAny', TicketTemplate::class);
         $query = TicketTemplate::query()->with(['defaultGroup', 'defaultDepartment']);
         SearchFilters::apply($query, $request);
+
+        $groupBy = $request->query('group_by');
+        if ($groupBy) {
+            $fields = SearchFilters::fieldsFor(TicketTemplate::class);
+            if (isset($fields[$groupBy])) {
+                $records = (clone $query)->with(['defaultGroup', 'defaultDepartment'])->orderBy('id')->get();
+                $groups  = GroupsQuery::apply($records, $fields[$groupBy]);
+                return view('workflow.configuration.ticket-templates.index', compact('groups'));
+            }
+        }
+
         SortsTable::apply($query, $request);
         $templates = $query->paginate(20)->withQueryString();
 

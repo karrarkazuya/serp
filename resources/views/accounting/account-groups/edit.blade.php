@@ -5,15 +5,15 @@
 <div class="flex flex-col h-full bg-gray-50">
     <x-toolbar>
         <x-slot:breadcrumb>
-            <a href="{{ route('accounting.dashboard') }}" class="text-xs text-purple-600 hover:text-purple-700">Accounting</a>
-            <a href="{{ route('accounting.account-groups.index') }}" class="text-xs text-purple-600 hover:text-purple-700">Account Groups</a>
+            <a href="{{ route('accounting.dashboard') }}" class="text-xs text-purple-600 hover:text-purple-700">{{ __('accounting.accounting') }}</a>
+            <a href="{{ route('accounting.account-groups.index') }}" class="text-xs text-purple-600 hover:text-purple-700">{{ __('accounting.account_groups') }}</a>
             <a href="{{ route('accounting.account-groups.show', $accountGroup) }}" class="text-xs text-purple-600 hover:text-purple-700">{{ $accountGroup->name }}</a>
-            <span class="text-sm font-semibold text-gray-800">Edit</span>
+            <span class="text-sm font-semibold text-gray-800">{{ __('accounting.btn_edit') }}</span>
         </x-slot:breadcrumb>
         <x-slot:actions>
             <div class="flex items-center gap-2">
-                <a href="{{ route('accounting.account-groups.show', $accountGroup) }}" class="px-3 py-1.5 text-sm text-gray-600 border border-gray-300 rounded hover:bg-gray-50">Cancel</a>
-                <button type="submit" form="main-form" class="px-3 py-1.5 text-sm font-medium text-white bg-purple-600 rounded hover:bg-purple-700">Save</button>
+                <a href="{{ route('accounting.account-groups.show', $accountGroup) }}" class="px-3 py-1.5 text-sm text-gray-600 border border-gray-300 rounded hover:bg-gray-50">{{ __('accounting.btn_cancel') }}</a>
+                <button type="submit" form="main-form" class="px-3 py-1.5 text-sm font-medium text-white bg-purple-600 rounded hover:bg-purple-700">{{ __('accounting.btn_save') }}</button>
             </div>
         </x-slot:actions>
     </x-toolbar>

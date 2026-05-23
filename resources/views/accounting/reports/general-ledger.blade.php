@@ -1,12 +1,12 @@
 @extends('layouts.app')
-@section('title', 'General Ledger')
+@section('title', __('accounting.report_general_ledger'))
 
 @section('content')
 <div class="flex flex-col h-full bg-gray-50">
     <x-toolbar>
         <x-slot:breadcrumb>
-            <a href="{{ route('accounting.dashboard') }}" class="text-xs text-purple-600 hover:text-purple-700">Accounting</a>
-            <span class="text-sm font-semibold text-gray-800">General Ledger</span>
+            <a href="{{ route('accounting.dashboard') }}" class="text-xs text-purple-600 hover:text-purple-700">{{ __('accounting.accounting') }}</a>
+            <span class="text-sm font-semibold text-gray-800">{{ __('accounting.report_general_ledger') }}</span>
         </x-slot:breadcrumb>
     </x-toolbar>
 
@@ -24,12 +24,12 @@
             <table class="min-w-full text-sm divide-y divide-gray-200">
                 <thead class="bg-gray-50">
                     <tr>
-                        <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase">Date</th>
-                        <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase">Journal Entry</th>
-                        <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase">Account</th>
-                        <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase">Label</th>
-                        <th class="px-4 py-3 text-right text-xs font-semibold text-gray-500 uppercase">Debit</th>
-                        <th class="px-4 py-3 text-right text-xs font-semibold text-gray-500 uppercase">Credit</th>
+                        <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase">{{ __('accounting.col_date') }}</th>
+                        <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase">{{ __('accounting.journal_entries') }}</th>
+                        <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase">{{ __('accounting.col_account') }}</th>
+                        <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase">{{ __('accounting.col_label') }}</th>
+                        <th class="px-4 py-3 text-right text-xs font-semibold text-gray-500 uppercase">{{ __('accounting.col_debit') }}</th>
+                        <th class="px-4 py-3 text-right text-xs font-semibold text-gray-500 uppercase">{{ __('accounting.col_credit') }}</th>
                     </tr>
                 </thead>
                 <tbody class="divide-y divide-gray-100">
@@ -57,7 +57,7 @@
                     </tr>
                     @empty
                     <tr>
-                        <td colspan="6" class="px-4 py-8 text-sm text-gray-400 text-center">No journal items found for the selected filters.</td>
+                        <td colspan="6" class="px-4 py-8 text-sm text-gray-400 text-center">{{ __('accounting.no_journal_items_filter') }}</td>
                     </tr>
                     @endforelse
                 </tbody>

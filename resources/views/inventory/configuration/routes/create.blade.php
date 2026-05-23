@@ -1,5 +1,5 @@
 @extends('layouts.app')
-@section('title', 'New Route')
+@section('title', __('inventory.new_route'))
 
 @section('content')
 <div class="flex flex-col h-full bg-gray-50">
@@ -7,13 +7,13 @@
         @csrf
         <x-toolbar>
             <x-slot:breadcrumb>
-                <a href="{{ route('inventory.config.routes.index') }}" class="text-xs text-purple-600 hover:text-purple-700">Routes</a>
-                <span class="text-sm font-semibold text-gray-800">New</span>
+                <a href="{{ route('inventory.config.routes.index') }}" class="text-xs text-purple-600 hover:text-purple-700">{{ __('inventory.routes') }}</a>
+                <span class="text-sm font-semibold text-gray-800">{{ __('inventory.new') }}</span>
             </x-slot:breadcrumb>
             <x-slot:actions>
                 <div class="flex items-center gap-2">
-                    <a href="{{ route('inventory.config.routes.index') }}" class="px-3 py-1.5 text-sm text-gray-600 border border-gray-300 rounded hover:bg-gray-50">Discard</a>
-                    <button type="submit" class="px-3 py-1.5 text-sm font-semibold text-white bg-[#714B67] hover:bg-[#5c3d55] rounded">Save</button>
+                    <a href="{{ route('inventory.config.routes.index') }}" class="px-3 py-1.5 text-sm text-gray-600 border border-gray-300 rounded hover:bg-gray-50">{{ __('inventory.discard') }}</a>
+                    <button type="submit" class="px-3 py-1.5 text-sm font-semibold text-white bg-[#714B67] hover:bg-[#5c3d55] rounded">{{ __('inventory.save') }}</button>
                 </div>
             </x-slot:actions>
         </x-toolbar>
@@ -26,15 +26,15 @@
                 @endif
 
                 <div class="mb-5">
-                    <input type="text" name="name" value="{{ old('name') }}" required placeholder="Route Name"
+                    <input type="text" name="name" value="{{ old('name') }}" required placeholder="{{ __('inventory.name') }}"
                            class="w-full text-2xl font-bold text-gray-900 placeholder-gray-300 border-0 border-b-2 focus:outline-none focus:border-purple-500 pb-1 bg-transparent {{ $errors->has('name') ? 'border-red-400' : 'border-gray-200' }}">
                 </div>
 
                 <div class="flex items-center gap-4 py-2 border-b border-gray-100">
-                    <label class="w-40 shrink-0 text-sm text-gray-500">Company</label>
+                    <label class="w-40 shrink-0 text-sm text-gray-500">{{ __('inventory.company') }}</label>
                     <x-relation-dropdown table="companies" field="name" name="company_id" relation="many2one" :selected="old('company_id', $defaultCompanyId ?? null)" class="flex-1" compact />
                 </div>
-                <p class="mt-3 text-xs text-gray-400">Rules can be added after saving.</p>
+                <p class="mt-3 text-xs text-gray-400">{{ __('inventory.rules_added_after_saving') }}</p>
             </div>
         </div>
     </form>

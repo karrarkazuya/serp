@@ -23,11 +23,13 @@ class AccountingDashboardController extends Controller
         $activeCompanyIds = $this->companyContext->getActiveCompanyIds();
 
         $accountsCount = Account::query()
+            ->when(empty($activeCompanyIds), fn ($q) => $q->whereRaw('1 = 0'))
             ->when(!empty($activeCompanyIds), fn ($q) => $q->whereIn('company_id', $activeCompanyIds))
             ->where('active', true)
             ->count();
 
         $journals = AccountJournal::query()
+            ->when(empty($activeCompanyIds), fn ($q) => $q->whereRaw('1 = 0'))
             ->when(!empty($activeCompanyIds), fn ($q) => $q->whereIn('company_id', $activeCompanyIds))
             ->where('active', true)
             ->orderBy('type')
@@ -35,21 +37,25 @@ class AccountingDashboardController extends Controller
             ->get();
 
         $draftCount = AccountMove::query()
+            ->when(empty($activeCompanyIds), fn ($q) => $q->whereRaw('1 = 0'))
             ->when(!empty($activeCompanyIds), fn ($q) => $q->whereIn('company_id', $activeCompanyIds))
             ->where('state', 'draft')
             ->count();
 
         $invoiceCount = AccountMove::query()
+            ->when(empty($activeCompanyIds), fn ($q) => $q->whereRaw('1 = 0'))
             ->when(!empty($activeCompanyIds), fn ($q) => $q->whereIn('company_id', $activeCompanyIds))
             ->where('move_type', 'out_invoice')
             ->count();
 
         $billCount = AccountMove::query()
+            ->when(empty($activeCompanyIds), fn ($q) => $q->whereRaw('1 = 0'))
             ->when(!empty($activeCompanyIds), fn ($q) => $q->whereIn('company_id', $activeCompanyIds))
             ->where('move_type', 'in_invoice')
             ->count();
 
         $postedCount = AccountMove::query()
+            ->when(empty($activeCompanyIds), fn ($q) => $q->whereRaw('1 = 0'))
             ->when(!empty($activeCompanyIds), fn ($q) => $q->whereIn('company_id', $activeCompanyIds))
             ->where('state', 'posted')
             ->count();
@@ -60,6 +66,7 @@ class AccountingDashboardController extends Controller
             ->count();
 
         $recentMoves = AccountMove::query()
+            ->when(empty($activeCompanyIds), fn ($q) => $q->whereRaw('1 = 0'))
             ->when(!empty($activeCompanyIds), fn ($q) => $q->whereIn('company_id', $activeCompanyIds))
             ->with(['journal', 'partner'])
             ->orderByDesc('date')

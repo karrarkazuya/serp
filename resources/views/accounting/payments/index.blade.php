@@ -1,12 +1,12 @@
 @extends('layouts.app')
-@section('title', 'Payments')
+@section('title', __('accounting.payments'))
 
 @section('content')
 <div class="flex flex-col h-full bg-gray-50">
     <x-toolbar :new-href="route('accounting.payments.create')">
         <x-slot:breadcrumb>
-            <a href="{{ route('accounting.dashboard') }}" class="text-xs text-purple-600 hover:text-purple-700">Accounting</a>
-            <span class="text-sm font-semibold text-gray-800">Payments</span>
+            <a href="{{ route('accounting.dashboard') }}" class="text-xs text-purple-600 hover:text-purple-700">{{ __('accounting.accounting') }}</a>
+            <span class="text-sm font-semibold text-gray-800">{{ __('accounting.payments') }}</span>
         </x-slot:breadcrumb>
         <x-slot:search>
             <x-search
@@ -17,15 +17,15 @@
     </x-toolbar>
 
     @if(isset($groups))
-    <x-list :grouped="true" empty-text="No payments yet.">
+    <x-list :grouped="true" :empty-text="__('accounting.no_payments')">
         <x-slot:columns>
-            <x-sortable-th column="date" label="Date" class="px-4 py-2" :default="true" />
-            <th class="px-3 py-2 text-xs font-semibold text-gray-500 uppercase tracking-wide text-left">Type</th>
-            <th class="px-3 py-2 text-xs font-semibold text-gray-500 uppercase tracking-wide text-left">Partner</th>
-            <th class="px-3 py-2 text-xs font-semibold text-gray-500 uppercase tracking-wide text-left">Journal</th>
-            <th class="px-3 py-2 text-xs font-semibold text-gray-500 uppercase tracking-wide text-left">Document</th>
-            <th class="px-3 py-2 text-xs font-semibold text-gray-500 uppercase tracking-wide text-left">Memo</th>
-            <x-sortable-th column="amount" label="Amount" class="px-3 py-2 text-right" />
+            <x-sortable-th column="date" :label="__('accounting.col_date')" class="px-4 py-2" :default="true" />
+            <th class="px-3 py-2 text-xs font-semibold text-gray-500 uppercase tracking-wide text-left">{{ __('accounting.col_type') }}</th>
+            <th class="px-3 py-2 text-xs font-semibold text-gray-500 uppercase tracking-wide text-left">{{ __('accounting.col_partner') }}</th>
+            <th class="px-3 py-2 text-xs font-semibold text-gray-500 uppercase tracking-wide text-left">{{ __('accounting.col_journal') }}</th>
+            <th class="px-3 py-2 text-xs font-semibold text-gray-500 uppercase tracking-wide text-left">{{ __('accounting.field_document') }}</th>
+            <th class="px-3 py-2 text-xs font-semibold text-gray-500 uppercase tracking-wide text-left">{{ __('accounting.field_memo') }}</th>
+            <x-sortable-th column="amount" :label="__('accounting.col_amount')" class="px-3 py-2 text-right" />
         </x-slot:columns>
 
         @forelse($groups as $group)
@@ -59,21 +59,21 @@
         </tbody>
         @empty
         <tbody>
-            <tr><td colspan="99" class="px-4 py-20 text-center text-sm text-gray-400">No payments yet.</td></tr>
+            <tr><td colspan="99" class="px-4 py-20 text-center text-sm text-gray-400">{{ __('accounting.no_payments') }}</td></tr>
         </tbody>
         @endforelse
     </x-list>
 
     @else
-    <x-list :paginator="$payments" empty-text="No payments yet.">
+    <x-list :paginator="$payments" :empty-text="__('accounting.no_payments')">
         <x-slot:columns>
-            <x-sortable-th column="date" label="Date" class="px-4 py-2" :default="true" />
-            <th class="px-3 py-2 text-xs font-semibold text-gray-500 uppercase tracking-wide text-left">Type</th>
-            <th class="px-3 py-2 text-xs font-semibold text-gray-500 uppercase tracking-wide text-left">Partner</th>
-            <th class="px-3 py-2 text-xs font-semibold text-gray-500 uppercase tracking-wide text-left">Journal</th>
-            <th class="px-3 py-2 text-xs font-semibold text-gray-500 uppercase tracking-wide text-left">Document</th>
-            <th class="px-3 py-2 text-xs font-semibold text-gray-500 uppercase tracking-wide text-left">Memo</th>
-            <x-sortable-th column="amount" label="Amount" class="px-3 py-2 text-right" />
+            <x-sortable-th column="date" :label="__('accounting.col_date')" class="px-4 py-2" :default="true" />
+            <th class="px-3 py-2 text-xs font-semibold text-gray-500 uppercase tracking-wide text-left">{{ __('accounting.col_type') }}</th>
+            <th class="px-3 py-2 text-xs font-semibold text-gray-500 uppercase tracking-wide text-left">{{ __('accounting.col_partner') }}</th>
+            <th class="px-3 py-2 text-xs font-semibold text-gray-500 uppercase tracking-wide text-left">{{ __('accounting.col_journal') }}</th>
+            <th class="px-3 py-2 text-xs font-semibold text-gray-500 uppercase tracking-wide text-left">{{ __('accounting.field_document') }}</th>
+            <th class="px-3 py-2 text-xs font-semibold text-gray-500 uppercase tracking-wide text-left">{{ __('accounting.field_memo') }}</th>
+            <x-sortable-th column="amount" :label="__('accounting.col_amount')" class="px-3 py-2 text-right" />
         </x-slot:columns>
 
         @foreach($payments as $payment)

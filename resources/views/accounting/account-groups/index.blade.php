@@ -1,12 +1,12 @@
 @extends('layouts.app')
-@section('title', 'Account Groups')
+@section('title', __('accounting.account_groups'))
 
 @section('content')
 <div class="flex flex-col h-full bg-gray-50">
     <x-toolbar :new-href="auth()->user()->hasPermission('accounting.create') ? route('accounting.account-groups.create') : null">
         <x-slot:breadcrumb>
-            <a href="{{ route('accounting.dashboard') }}" class="text-xs text-purple-600 hover:text-purple-700">Accounting</a>
-            <span class="text-sm font-semibold text-gray-800">Account Groups</span>
+            <a href="{{ route('accounting.dashboard') }}" class="text-xs text-purple-600 hover:text-purple-700">{{ __('accounting.accounting') }}</a>
+            <span class="text-sm font-semibold text-gray-800">{{ __('accounting.account_groups') }}</span>
         </x-slot:breadcrumb>
         <x-slot:search>
             <x-search :model="\App\Models\Accounting\AccountingAccountGroup::class" />
@@ -16,12 +16,12 @@
     @if(session('success'))<div class="shrink-0 px-4 py-2 bg-green-50 border-b border-green-200 text-sm text-green-700">{{ session('success') }}</div>@endif
 
     @if(isset($groups))
-    <x-list :grouped="true" empty-text="No account groups found.">
+    <x-list :grouped="true" empty-text="{{ __('accounting.no_account_groups') }}">
         <x-slot:columns>
-            <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase">Name</th>
-            <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase">Code Range</th>
-            <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase">Parent</th>
-            <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase">Company</th>
+            <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase">{{ __('accounting.col_name') }}</th>
+            <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase">{{ __('accounting.col_code_range') }}</th>
+            <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase">{{ __('accounting.col_parent') }}</th>
+            <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase">{{ __('accounting.col_company') }}</th>
         </x-slot:columns>
 
         @forelse($groups as $group)
@@ -54,18 +54,18 @@
         </tbody>
         @empty
         <tbody>
-            <tr><td colspan="99" class="px-4 py-20 text-center text-sm text-gray-400">No account groups found.</td></tr>
+            <tr><td colspan="99" class="px-4 py-20 text-center text-sm text-gray-400">{{ __('accounting.no_account_groups') }}</td></tr>
         </tbody>
         @endforelse
     </x-list>
 
     @else
-    <x-list :paginator="$accountGroups" empty-text="No account groups found.">
+    <x-list :paginator="$accountGroups" empty-text="{{ __('accounting.no_account_groups') }}">
             <x-slot:columns>
-                <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase">Name</th>
-                <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase">Code Range</th>
-                <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase">Parent</th>
-                <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase">Company</th>
+                <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase">{{ __('accounting.col_name') }}</th>
+                <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase">{{ __('accounting.col_code_range') }}</th>
+                <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase">{{ __('accounting.col_parent') }}</th>
+                <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase">{{ __('accounting.col_company') }}</th>
             </x-slot:columns>
 
             @foreach($accountGroups as $group)

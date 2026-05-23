@@ -38,7 +38,9 @@
         />
 
         <div class="ms-auto flex items-center gap-2 sm:gap-3 text-sm text-gray-500 shrink-0">
-            @if($procedures->total() > 0)
+            @if(isset($groups))
+                <span class="text-sm font-semibold text-gray-600 whitespace-nowrap">{{ collect($groups)->sum('count') }} records</span>
+            @elseif(isset($procedures) && $procedures->total() > 0)
                 <span class="text-sm font-semibold text-gray-600 whitespace-nowrap">
                     {{ $procedures->firstItem() }}-{{ $procedures->lastItem() }} / {{ $procedures->total() }}
                 </span>
@@ -46,18 +48,20 @@
                 <span class="text-sm font-semibold text-gray-400">{{ __('workflow.zero_records') }}</span>
             @endif
 
+            @if(!isset($groups))
             <div class="flex items-center gap-1">
-                @if($procedures->onFirstPage())
+                @if(isset($procedures) && $procedures->onFirstPage())
                     <span class="w-10 h-10 inline-flex items-center justify-center rounded bg-gray-100 text-gray-300">‹</span>
-                @else
+                @elseif(isset($procedures))
                     <a href="{{ $procedures->previousPageUrl() }}" class="w-10 h-10 inline-flex items-center justify-center rounded bg-gray-100 text-gray-600 hover:text-gray-900">‹</a>
                 @endif
-                @if($procedures->hasMorePages())
+                @if(isset($procedures) && $procedures->hasMorePages())
                     <a href="{{ $procedures->nextPageUrl() }}" class="w-10 h-10 inline-flex items-center justify-center rounded bg-gray-100 text-gray-600 hover:text-gray-900">›</a>
-                @else
+                @elseif(isset($procedures))
                     <span class="w-10 h-10 inline-flex items-center justify-center rounded bg-gray-100 text-gray-300">›</span>
                 @endif
             </div>
+            @endif
 
             <div class="hidden sm:flex items-center rounded overflow-hidden bg-gray-200">
                 <a href="{{ route('workflow.procedures.index', array_merge(request()->except('view','page'), ['view' => 'kanban'])) }}"
@@ -106,6 +110,55 @@
             </div>
         @endif
     </div>
+    @elseif(isset($groups))
+    <x-list :grouped="true" :empty-text="__('workflow.no_procedures_found')">
+        <x-slot:columns>
+            <x-sortable-th column="id"         label="ID"                            class="px-4 py-2" />
+            <x-sortable-th column="name"       :label="__('common.name')"             class="px-3 py-2" :default="true" />
+            <x-sortable-th column="state"      :label="__('common.status')"           class="px-3 py-2" />
+            <th class="px-3 py-2 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">{{ __('workflow.template_label') }}</th>
+            <th class="px-3 py-2 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">{{ __('workflow.created_by_label') }}</th>
+            <x-sortable-th column="created_at" :label="__('workflow.created_label')"    class="px-3 py-2" />
+        </x-slot:columns>
+
+        @forelse($groups as $group)
+        <tbody x-data="{ open: {{ $loop->first ? 'true' : 'false' }} }" class="divide-y divide-gray-100">
+            <tr class="bg-gray-50 border-y border-gray-200 cursor-pointer select-none" @click="open = !open">
+                <td colspan="99" class="px-4 py-2.5">
+                    <div class="flex items-center gap-2 text-sm font-semibold text-gray-800">
+                        <svg class="w-3.5 h-3.5 transition-transform shrink-0 text-gray-400" :class="open ? 'rotate-90' : ''" fill="currentColor" viewBox="0 0 20 20">
+                            <path fill-rule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clip-rule="evenodd"/>
+                        </svg>
+                        {{ $group['label'] }}
+                        <span class="ms-1 text-xs text-gray-400 font-normal">({{ $group['count'] }})</span>
+                    </div>
+                </td>
+            </tr>
+            @foreach($group['items'] as $procedure)
+            <tr x-show="open" class="hover:bg-purple-50/30 cursor-pointer" onclick="window.location='{{ route('workflow.procedures.show', $procedure) }}'">
+                <td class="px-4 py-2 text-gray-500">{{ $procedure->id }}</td>
+                <td class="px-3 py-2 font-medium text-gray-900">
+                    {{ $procedure->name }}
+                    @if(!$procedure->active)
+                        <span class="ml-1.5 text-[10px] text-amber-600 font-semibold uppercase">{{ __('common.archived') }}</span>
+                    @endif
+                </td>
+                <td class="px-3 py-2">
+                    <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium {{ $procedure->stateColor() }}">{{ $procedure->stateLabel() }}</span>
+                </td>
+                <td class="px-3 py-2 text-gray-600">{{ $procedure->procedureTemplate?->name ?? '—' }}</td>
+                <td class="px-3 py-2 text-gray-600">{{ $procedure->createdByUser?->name ?? '—' }}</td>
+                <td class="px-3 py-2 text-gray-500 text-xs">{{ $procedure->created_at->format('M j, Y') }}</td>
+            </tr>
+            @endforeach
+        </tbody>
+        @empty
+        <tbody>
+            <tr><td colspan="99" class="px-4 py-20 text-center text-sm text-gray-400">{{ __('workflow.no_procedures_found') }}</td></tr>
+        </tbody>
+        @endforelse
+    </x-list>
+
     @else
     <x-list :paginator="$procedures" :empty-text="__('workflow.no_procedures_found')">
         <x-slot:columns>

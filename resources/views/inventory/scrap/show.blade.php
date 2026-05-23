@@ -9,7 +9,7 @@
         :prev-href="$prevId ? route('inventory.scrap.show', $prevId) : null"
         :next-href="$nextId ? route('inventory.scrap.show', $nextId) : null">
         <x-slot:breadcrumb>
-            <a href="{{ route('inventory.scrap.index') }}" class="text-xs text-purple-600 hover:text-purple-700">Scrap Orders</a>
+            <a href="{{ route('inventory.scrap.index') }}" class="text-xs text-purple-600 hover:text-purple-700">{{ __('inventory.scrap_orders') }}</a>
             <span class="text-sm font-semibold text-gray-800">{{ $scrapOrder->name }}</span>
         </x-slot:breadcrumb>
         <x-slot:actions>
@@ -18,7 +18,7 @@
                 @if($scrapOrder->isDraft())
                 <form method="POST" action="{{ route('inventory.scrap.validate', $scrapOrder) }}">
                     @csrf
-                    <button class="px-3 py-1.5 text-sm font-semibold text-white bg-green-600 hover:bg-green-700 rounded">Validate</button>
+                    <button class="px-3 py-1.5 text-sm font-semibold text-white bg-green-600 hover:bg-green-700 rounded">{{ __('inventory.validate') }}</button>
                 </form>
                 @endif
                 @endcan
@@ -27,11 +27,11 @@
                 <div x-data="{ confirming: false }">
                     <form method="POST" action="{{ route('inventory.scrap.delete', $scrapOrder) }}">
                         @csrf @method('DELETE')
-                        <button type="button" x-show="!confirming" @click="confirming = true" class="px-3 py-1.5 text-sm text-red-700 border border-red-200 rounded hover:bg-red-50">Delete</button>
+                        <button type="button" x-show="!confirming" @click="confirming = true" class="px-3 py-1.5 text-sm text-red-700 border border-red-200 rounded hover:bg-red-50">{{ __('inventory.delete') }}</button>
                         <div x-show="confirming" style="display:none" class="flex items-center gap-1.5">
-                            <span class="text-xs text-red-600">Are you sure?</span>
-                            <button type="submit" class="px-2 py-1 text-xs bg-red-600 text-white rounded">Yes</button>
-                            <button type="button" @click="confirming = false" class="px-2 py-1 text-xs text-gray-500 border rounded">Cancel</button>
+                            <span class="text-xs text-red-600">{{ __('inventory.are_you_sure') }}</span>
+                            <button type="submit" class="px-2 py-1 text-xs bg-red-600 text-white rounded">{{ __('inventory.yes') }}</button>
+                            <button type="button" @click="confirming = false" class="px-2 py-1 text-xs text-gray-500 border rounded">{{ __('inventory.cancel') }}</button>
                         </div>
                     </form>
                 </div>
@@ -52,9 +52,9 @@
             <div class="grid grid-cols-2 gap-x-8">
                 <div>
                     @foreach([
-                        ['Product', $scrapOrder->product?->name],
-                        ['Lot / Serial', $scrapOrder->lot?->name],
-                        ['Quantity', number_format($scrapOrder->scrap_qty, 2) . ' ' . $scrapOrder->product?->uom?->name],
+                        [__('inventory.product'), $scrapOrder->product?->name],
+                        [__('inventory.lot_serial'), $scrapOrder->lot?->name],
+                        [__('inventory.quantity'), number_format($scrapOrder->scrap_qty, 2) . ' ' . $scrapOrder->product?->uom?->name],
                     ] as [$label, $value])
                     <div class="flex items-center gap-4 py-2 border-b border-gray-100">
                         <span class="w-40 shrink-0 text-sm text-gray-500">{{ $label }}</span>
@@ -64,9 +64,9 @@
                 </div>
                 <div>
                     @foreach([
-                        ['Source Location', $scrapOrder->location?->complete_name],
-                        ['Scrap Location', $scrapOrder->scrapLocation?->complete_name],
-                        ['Date Done', $scrapOrder->date_done?->format('M d, Y')],
+                        [__('inventory.source_location'), $scrapOrder->location?->complete_name],
+                        [__('inventory.scrap_location'), $scrapOrder->scrapLocation?->complete_name],
+                        [__('inventory.date'), $scrapOrder->date_done?->format('M d, Y')],
                     ] as [$label, $value])
                     <div class="flex items-center gap-4 py-2 border-b border-gray-100">
                         <span class="w-40 shrink-0 text-sm text-gray-500">{{ $label }}</span>

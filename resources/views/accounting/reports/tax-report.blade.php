@@ -1,12 +1,12 @@
 @extends('layouts.app')
-@section('title', 'Tax Report')
+@section('title', __('accounting.report_tax'))
 
 @section('content')
 <div class="flex flex-col h-full bg-gray-50">
     <x-toolbar>
         <x-slot:breadcrumb>
-            <a href="{{ route('accounting.dashboard') }}" class="text-xs text-purple-600 hover:text-purple-700">Accounting</a>
-            <span class="text-sm font-semibold text-gray-800">Tax Report</span>
+            <a href="{{ route('accounting.dashboard') }}" class="text-xs text-purple-600 hover:text-purple-700">{{ __('accounting.accounting') }}</a>
+            <span class="text-sm font-semibold text-gray-800">{{ __('accounting.report_tax') }}</span>
         </x-slot:breadcrumb>
     </x-toolbar>
 
@@ -17,11 +17,11 @@
             <table class="min-w-full text-sm divide-y divide-gray-200">
                 <thead class="bg-gray-50">
                     <tr>
-                        <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase">Tax</th>
-                        <th class="px-4 py-3 text-right text-xs font-semibold text-gray-500 uppercase">Tax Base</th>
-                        <th class="px-4 py-3 text-right text-xs font-semibold text-gray-500 uppercase">Tax Amount (Dr)</th>
-                        <th class="px-4 py-3 text-right text-xs font-semibold text-gray-500 uppercase">Tax Amount (Cr)</th>
-                        <th class="px-4 py-3 text-right text-xs font-semibold text-gray-500 uppercase">Net</th>
+                        <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase">{{ __('accounting.taxes') }}</th>
+                        <th class="px-4 py-3 text-right text-xs font-semibold text-gray-500 uppercase">{{ __('accounting.base_amount') }}</th>
+                        <th class="px-4 py-3 text-right text-xs font-semibold text-gray-500 uppercase">{{ __('accounting.tax_amount_col') }} (Dr)</th>
+                        <th class="px-4 py-3 text-right text-xs font-semibold text-gray-500 uppercase">{{ __('accounting.tax_amount_col') }} (Cr)</th>
+                        <th class="px-4 py-3 text-right text-xs font-semibold text-gray-500 uppercase">{{ __('accounting.net') }}</th>
                     </tr>
                 </thead>
                 <tbody class="divide-y divide-gray-100">
@@ -36,13 +36,13 @@
                         </td>
                     </tr>
                     @empty
-                    <tr><td colspan="5" class="px-4 py-8 text-sm text-gray-400 text-center">No tax lines for the selected period.</td></tr>
+                    <tr><td colspan="5" class="px-4 py-8 text-sm text-gray-400 text-center">{{ __('accounting.no_data_period') }}</td></tr>
                     @endforelse
                 </tbody>
                 @if($rows->isNotEmpty())
                 <tfoot class="bg-gray-50 border-t-2 border-gray-300">
                     <tr>
-                        <td class="px-4 py-3 text-sm font-bold text-gray-800">Total</td>
+                        <td class="px-4 py-3 text-sm font-bold text-gray-800">{{ __('accounting.total') }}</td>
                         <td class="px-4 py-3 text-right tabular-nums font-bold text-gray-800">{{ number_format($rows->sum('total_base'), 2) }}</td>
                         <td class="px-4 py-3 text-right tabular-nums font-bold text-gray-800">{{ number_format($rows->sum('total_debit'), 2) }}</td>
                         <td class="px-4 py-3 text-right tabular-nums font-bold text-gray-800">{{ number_format($rows->sum('total_credit'), 2) }}</td>

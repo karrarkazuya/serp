@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Workflow;
 
 use App\Http\Controllers\Controller;
+use App\Helpers\GroupsQuery;
 use App\Helpers\SearchFilters;
 use App\Helpers\SortsTable;
 use App\Http\Requests\Workflow\StoreProcedureTemplateRequest;
@@ -28,6 +29,17 @@ class ProcedureTemplateController extends Controller
         $this->authorize('viewAny', ProcedureTemplate::class);
         $query = ProcedureTemplate::query()->with(['defaultGroup']);
         SearchFilters::apply($query, $request);
+
+        $groupBy = $request->query('group_by');
+        if ($groupBy) {
+            $fields = SearchFilters::fieldsFor(ProcedureTemplate::class);
+            if (isset($fields[$groupBy])) {
+                $records = (clone $query)->with(['defaultGroup'])->orderBy('id')->get();
+                $groups  = GroupsQuery::apply($records, $fields[$groupBy]);
+                return view('workflow.configuration.procedure-templates.index', compact('groups'));
+            }
+        }
+
         SortsTable::apply($query, $request);
         $templates = $query->paginate(20)->withQueryString();
 

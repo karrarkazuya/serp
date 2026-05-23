@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Inventory\Configuration;
 
+use App\Helpers\GroupsQuery;
 use App\Helpers\SearchFilters;
 use App\Helpers\SortsTable;
 use App\Http\Controllers\Controller;
@@ -28,6 +29,17 @@ class LocationController extends Controller
         if ($request->query('filter') !== 'all') $query->active();
         if ($usage = $request->query('usage')) $query->where('usage', $usage);
         SearchFilters::apply($query, $request);
+
+        $groupBy = $request->query('group_by');
+        if ($groupBy) {
+            $fields = SearchFilters::fieldsFor(Location::class);
+            if (isset($fields[$groupBy])) {
+                $records = (clone $query)->with(['parent', 'company'])->orderBy('id')->get();
+                $groups  = GroupsQuery::apply($records, $fields[$groupBy]);
+                return view('inventory.configuration.locations.index', compact('groups'));
+            }
+        }
+
         SortsTable::apply($query, $request);
         $locations = $query->paginate(50)->withQueryString();
         return view('inventory.configuration.locations.index', compact('locations'));

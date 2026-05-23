@@ -1,12 +1,12 @@
 @extends('layouts.app')
-@section('title', 'Executive Summary')
+@section('title', __('accounting.report_executive'))
 
 @section('content')
 <div class="flex flex-col h-full bg-gray-50">
     <x-toolbar>
         <x-slot:breadcrumb>
-            <a href="{{ route('accounting.dashboard') }}" class="text-xs text-purple-600 hover:text-purple-700">Accounting</a>
-            <span class="text-sm font-semibold text-gray-800">Executive Summary</span>
+            <a href="{{ route('accounting.dashboard') }}" class="text-xs text-purple-600 hover:text-purple-700">{{ __('accounting.accounting') }}</a>
+            <span class="text-sm font-semibold text-gray-800">{{ __('accounting.report_executive') }}</span>
         </x-slot:breadcrumb>
     </x-toolbar>
 
@@ -16,12 +16,12 @@
         <div class="grid grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
             @php
             $cards = [
-                ['label' => 'Total Income',   'value' => $totalIncome,   'color' => 'green'],
-                ['label' => 'Total Expenses', 'value' => $totalExpense,  'color' => 'red'],
-                ['label' => $netProfit >= 0 ? 'Net Profit' : 'Net Loss', 'value' => abs($netProfit), 'color' => $netProfit >= 0 ? 'green' : 'red'],
-                ['label' => 'Total Assets',   'value' => $totalAssets,   'color' => 'blue'],
-                ['label' => 'Total Liabilities', 'value' => $totalLiabs, 'color' => 'orange'],
-                ['label' => 'Draft Entries',  'value' => $draftCount,    'color' => 'gray', 'is_count' => true],
+                ['label' => __('accounting.total') . ' ' . __('accounting.income'),   'value' => $totalIncome,   'color' => 'green'],
+                ['label' => __('accounting.total') . ' ' . __('accounting.expense'),  'value' => $totalExpense,  'color' => 'red'],
+                ['label' => $netProfit >= 0 ? __('accounting.net_profit') : __('accounting.net_loss'), 'value' => abs($netProfit), 'color' => $netProfit >= 0 ? 'green' : 'red'],
+                ['label' => __('accounting.total_assets'),   'value' => $totalAssets,   'color' => 'blue'],
+                ['label' => __('accounting.total_liabilities'), 'value' => $totalLiabs, 'color' => 'orange'],
+                ['label' => __('accounting.draft_entries'),  'value' => $draftCount,    'color' => 'gray', 'is_count' => true],
             ];
             @endphp
 
@@ -61,8 +61,8 @@
                 <p class="text-xs text-red-600">Invoices or bills past their due date with outstanding balances.</p>
             </div>
             <div class="ms-auto flex gap-2">
-                <a href="{{ route('accounting.reports.aged-receivable') }}" class="text-xs text-red-700 underline">Aged Receivable</a>
-                <a href="{{ route('accounting.reports.aged-payable') }}" class="text-xs text-red-700 underline">Aged Payable</a>
+                <a href="{{ route('accounting.reports.aged-receivable') }}" class="text-xs text-red-700 underline">{{ __('accounting.report_aged_receivable') }}</a>
+                <a href="{{ route('accounting.reports.aged-payable') }}" class="text-xs text-red-700 underline">{{ __('accounting.report_aged_payable') }}</a>
             </div>
         </div>
         @endif

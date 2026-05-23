@@ -8,6 +8,7 @@ use App\Http\Requests\Settings\UpdateRoleRequest;
 use App\Models\Security\Permission;
 use App\Models\Security\Role;
 use App\Services\Settings\RoleService;
+use App\Helpers\GroupsQuery;
 use App\Helpers\SearchFilters;
 use App\Helpers\SortsTable;
 use Illuminate\Http\Request;
@@ -23,6 +24,16 @@ class RoleController extends Controller
         $query = Role::withCount(['permissions', 'users']);
 
         SearchFilters::apply($query, $request);
+
+        $groupBy = $request->query('group_by');
+        if ($groupBy) {
+            $fields = SearchFilters::fieldsFor(Role::class);
+            if (isset($fields[$groupBy])) {
+                $records = (clone $query)->withCount(['permissions', 'users'])->orderBy('id')->get();
+                $groups  = GroupsQuery::apply($records, $fields[$groupBy]);
+                return view('settings.roles.index', compact('groups'));
+            }
+        }
 
         SortsTable::apply($query, $request);
 

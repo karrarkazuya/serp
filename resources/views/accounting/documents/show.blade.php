@@ -20,26 +20,26 @@
     @endcan
     <x-toolbar :new-href="$newHref ?? null">
         <x-slot:breadcrumb>
-            <a href="{{ route('accounting.dashboard') }}" class="text-xs text-purple-600 hover:text-purple-700">Accounting</a>
+            <a href="{{ route('accounting.dashboard') }}" class="text-xs text-purple-600 hover:text-purple-700">{{ __('accounting.accounting') }}</a>
             <a href="{{ route($config['routes']['index']) }}" class="text-xs text-purple-600 hover:text-purple-700">{{ $config['title'] }}</a>
-            <span class="text-sm font-semibold text-gray-800">{{ $document->name ?: 'Draft' }}</span>
+            <span class="text-sm font-semibold text-gray-800">{{ $document->name ?: __('accounting.status_draft') }}</span>
         </x-slot:breadcrumb>
         <x-slot:actions>
             <div class="flex items-center gap-2">
                 @if($document->isDraft())
                     @can('update', $document)
                     @if(!empty($config['routes']['edit']))
-                    <a href="{{ route($config['routes']['edit'], $document) }}" class="px-3 py-1.5 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded hover:bg-gray-50">Edit</a>
+                    <a href="{{ route($config['routes']['edit'], $document) }}" class="px-3 py-1.5 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded hover:bg-gray-50">{{ __('accounting.btn_edit') }}</a>
                     @endif
                     @endcan
                     @can('post', $document)
                     <form method="POST" action="{{ route($config['routes']['post'], $document) }}">
                         @csrf @method('PATCH')
-                        <button class="px-3 py-1.5 text-sm font-medium text-white bg-green-700 hover:bg-green-800 rounded">Confirm</button>
+                        <button class="px-3 py-1.5 text-sm font-medium text-white bg-green-700 hover:bg-green-800 rounded">{{ __('accounting.btn_confirm') }}</button>
                     </form>
                     <form method="POST" action="{{ route($config['routes']['cancel'], $document) }}">
                         @csrf @method('PATCH')
-                        <button class="px-3 py-1.5 text-sm text-gray-700 border border-gray-300 rounded hover:bg-gray-50">Cancel</button>
+                        <button class="px-3 py-1.5 text-sm text-gray-700 border border-gray-300 rounded hover:bg-gray-50">{{ __('accounting.btn_cancel') }}</button>
                     </form>
                     @endcan
                 @elseif($document->isPosted())
@@ -47,7 +47,7 @@
                     @if(!$document->isPaid())
                     <button type="button" @click="payOpen = !payOpen"
                             class="px-3 py-1.5 text-sm font-medium text-white bg-[#71639e] hover:bg-[#5c527f] rounded">
-                        Register Payment
+                        {{ __('accounting.btn_register_payment') }}
                     </button>
                     @endif
                     <x-print-action :href="route($config['routes']['print'], $document)" />
@@ -60,14 +60,14 @@
                     @endif
                     <form method="POST" action="{{ route($config['routes']['reset'], $document) }}">
                         @csrf @method('PATCH')
-                        <button class="px-3 py-1.5 text-sm font-medium text-gray-700 bg-gray-200 hover:bg-gray-300 rounded">Reset to Draft</button>
+                        <button class="px-3 py-1.5 text-sm font-medium text-gray-700 bg-gray-200 hover:bg-gray-300 rounded">{{ __('accounting.btn_reset_draft') }}</button>
                     </form>
                     @endcan
                 @elseif($document->isCancelled())
                     @can('post', $document)
                     <form method="POST" action="{{ route($config['routes']['reset'], $document) }}">
                         @csrf @method('PATCH')
-                        <button class="px-3 py-1.5 text-sm text-amber-700 border border-amber-200 rounded hover:bg-amber-50">Reset to Draft</button>
+                        <button class="px-3 py-1.5 text-sm text-amber-700 border border-amber-200 rounded hover:bg-amber-50">{{ __('accounting.btn_reset_draft') }}</button>
                     </form>
                     @endcan
                 @endif
@@ -75,11 +75,11 @@
                 @can('delete', $document)
                 <form method="POST" action="{{ route($config['routes']['delete'], $document) }}" x-data="{ confirming: false }">
                     @csrf @method('DELETE')
-                    <button type="button" x-show="!confirming" @click="confirming = true" class="px-3 py-1.5 text-sm text-red-700 border border-red-200 rounded hover:bg-red-50">Delete</button>
+                    <button type="button" x-show="!confirming" @click="confirming = true" class="px-3 py-1.5 text-sm text-red-700 border border-red-200 rounded hover:bg-red-50">{{ __('accounting.btn_delete') }}</button>
                     <div x-show="confirming" style="display:none" class="flex items-center gap-1.5">
                         <span class="text-xs text-red-600">Delete this {{ strtolower($config['singular']) }}?</span>
-                        <button type="submit" class="px-2 py-1 text-xs font-medium text-white bg-red-600 rounded">Yes</button>
-                        <button type="button" @click="confirming = false" class="px-2 py-1 text-xs text-gray-500">Cancel</button>
+                        <button type="submit" class="px-2 py-1 text-xs font-medium text-white bg-red-600 rounded">{{ __('accounting.btn_yes') }}</button>
+                        <button type="button" @click="confirming = false" class="px-2 py-1 text-xs text-gray-500">{{ __('accounting.btn_cancel') }}</button>
                     </div>
                 </form>
                 @endcan
@@ -92,23 +92,23 @@
     @if($document->isPosted() && !$document->isPaid())
     <div x-show="payOpen" style="display:none"
          class="shrink-0 bg-white border-b border-gray-200 px-6 py-5 shadow-sm">
-        <p class="text-sm font-semibold text-gray-800 mb-4">Register Payment</p>
+        <p class="text-sm font-semibold text-gray-800 mb-4">{{ __('accounting.btn_register_payment') }}</p>
         <form method="POST" action="{{ route($config['routes']['pay'], $document) }}">
             @csrf @method('PATCH')
             <div class="grid grid-cols-2 md:grid-cols-4 gap-4 items-end">
                 <div>
-                    <label class="block text-xs font-semibold text-gray-500 mb-1">Amount</label>
+                    <label class="block text-xs font-semibold text-gray-500 mb-1">{{ __('accounting.field_amount') }}</label>
                     <input type="number" name="amount" step="0.01" min="0.01"
                            value="{{ old('amount', number_format($residual ?? 0, 2, '.', '')) }}"
                            class="w-full text-sm border border-gray-300 rounded px-3 py-1.5 focus:outline-none focus:ring-1 focus:ring-purple-500">
                 </div>
                 <div>
-                    <label class="block text-xs font-semibold text-gray-500 mb-1">Payment Date</label>
+                    <label class="block text-xs font-semibold text-gray-500 mb-1">{{ __('accounting.field_date') }}</label>
                     <input type="date" name="date" value="{{ old('date', now()->toDateString()) }}"
                            class="w-full text-sm border border-gray-300 rounded px-3 py-1.5 focus:outline-none focus:ring-1 focus:ring-purple-500">
                 </div>
                 <div>
-                    <label class="block text-xs font-semibold text-gray-500 mb-1">Journal</label>
+                    <label class="block text-xs font-semibold text-gray-500 mb-1">{{ __('accounting.field_journal') }}</label>
                     <x-relation-dropdown
                         table="account_journals"
                         field="name"
@@ -118,7 +118,7 @@
                     />
                 </div>
                 <div>
-                    <label class="block text-xs font-semibold text-gray-500 mb-1">Memo</label>
+                    <label class="block text-xs font-semibold text-gray-500 mb-1">{{ __('accounting.field_memo') }}</label>
                     <input type="text" name="memo" maxlength="255"
                            value="{{ old('memo', 'Payment for ' . ($document->name ?: "#{$document->id}")) }}"
                            class="w-full text-sm border border-gray-300 rounded px-3 py-1.5 focus:outline-none focus:ring-1 focus:ring-purple-500">
@@ -126,10 +126,10 @@
             </div>
             <div class="flex items-center gap-2 mt-4">
                 <button type="submit" class="px-4 py-1.5 text-sm font-medium text-white bg-[#71639e] hover:bg-[#5c527f] rounded">
-                    Validate Payment
+                    {{ __('accounting.btn_register_payment') }}
                 </button>
                 <button type="button" @click="payOpen = false" class="px-4 py-1.5 text-sm text-gray-600 border border-gray-300 rounded hover:bg-gray-50">
-                    Cancel
+                    {{ __('accounting.btn_cancel') }}
                 </button>
             </div>
         </form>
@@ -145,7 +145,7 @@
         {{-- Payments widget --}}
         @if($document->isPosted() && $document->payments->isNotEmpty())
         <div class="mx-4 mt-4 rounded-xl border border-green-200 bg-green-50 px-5 py-3 shadow-sm">
-            <p class="text-xs font-semibold text-green-700 uppercase mb-2">Payments</p>
+            <p class="text-xs font-semibold text-green-700 uppercase mb-2">{{ __('accounting.payments') }}</p>
             <div class="flex flex-wrap gap-3">
                 @foreach($document->payments as $pmt)
                 @php
@@ -169,12 +169,12 @@
                 <div class="flex items-start justify-between gap-6 mb-1">
                     <div>
                         <span class="text-lg font-semibold text-gray-800">{{ match($config['move_type']) { 'out_invoice' => 'Customer Invoice', 'in_invoice' => 'Vendor Bill', 'out_refund' => 'Customer Credit Note', 'in_refund' => 'Vendor Refund', default => $config['singular'] } }}</span>
-                        <h1 class="mt-2 text-4xl font-bold {{ $document->name ? 'text-gray-900' : 'text-gray-400' }}">{{ $document->name ?: 'Draft' }}</h1>
+                        <h1 class="mt-2 text-4xl font-bold {{ $document->name ? 'text-gray-900' : 'text-gray-400' }}">{{ $document->name ?: __('accounting.status_draft') }}</h1>
                     </div>
                     <div class="flex shrink-0 items-center text-sm font-semibold">
-                        <span class="px-6 py-2 border {{ $document->isDraft() ? 'border-[#71639e] bg-purple-50 text-gray-900' : 'border-gray-200 bg-gray-200 text-gray-400' }}">Draft</span>
-                        <span class="px-6 py-2 border {{ $document->isPosted() ? 'border-green-600 bg-green-50 text-green-800' : 'border-gray-200 bg-gray-200 text-gray-400' }}">Posted</span>
-                        <span class="px-6 py-2 border {{ $document->isCancelled() ? 'border-red-400 bg-red-50 text-red-700' : 'border-gray-200 bg-gray-200 text-gray-400' }}">Cancelled</span>
+                        <span class="px-6 py-2 border {{ $document->isDraft() ? 'border-[#71639e] bg-purple-50 text-gray-900' : 'border-gray-200 bg-gray-200 text-gray-400' }}">{{ __('accounting.status_draft') }}</span>
+                        <span class="px-6 py-2 border {{ $document->isPosted() ? 'border-green-600 bg-green-50 text-green-800' : 'border-gray-200 bg-gray-200 text-gray-400' }}">{{ __('accounting.status_posted') }}</span>
+                        <span class="px-6 py-2 border {{ $document->isCancelled() ? 'border-red-400 bg-red-50 text-red-700' : 'border-gray-200 bg-gray-200 text-gray-400' }}">{{ __('accounting.status_cancelled') }}</span>
                     </div>
                 </div>
 
@@ -182,7 +182,7 @@
                     <div>
                         @foreach([
                             [$config['partner_label'], $document->partner?->name],
-                            ['Reference', $document->ref],
+                            [__('accounting.col_reference'), $document->ref],
                             ['Source Document', $document->invoice_origin],
                             ['Payment Status', $document->payment_state_label],
                             ['Amount Due', number_format($residual ?? 0, 2) . ' ' . $document->currency],
@@ -228,10 +228,10 @@
                     <div>
                         @foreach([
                             [$config['singular'] . ' Date', optional($document->date)->format('Y-m-d')],
-                            ['Due Date', optional($document->invoice_date_due)->format('Y-m-d')],
-                            ['Payment Terms', $document->paymentTerm?->name],
-                            ['Journal', $document->journal?->name],
-                            ['Currency', $document->currency],
+                            [__('accounting.col_due_date'), optional($document->invoice_date_due)->format('Y-m-d')],
+                            [__('accounting.field_payment_terms'), $document->paymentTerm?->name],
+                            [__('accounting.field_journal'), $document->journal?->name],
+                            [__('accounting.field_currency'), $document->currency],
                         ] as [$label, $value])
                         <div class="flex items-center gap-4 py-2 border-b border-gray-100">
                             <span class="w-36 shrink-0 text-sm text-gray-500">{{ $label }}</span>
@@ -249,7 +249,7 @@
                         </button>
                         <button type="button" @click="tab = 'journal'" class="px-6 py-3 text-sm font-semibold border border-t-0 rounded-b bg-white"
                                 :class="tab === 'journal' ? 'text-gray-900 border-gray-300' : 'text-[#71639e] border-transparent'">
-                            Journal Items
+                            {{ __('accounting.journal_items') }}
                         </button>
                         <button type="button" @click="tab = 'other'" class="px-6 py-3 text-sm font-semibold border border-t-0 rounded-b bg-white"
                                 :class="tab === 'other' ? 'text-gray-900 border-gray-300' : 'text-[#71639e] border-transparent'">
@@ -263,9 +263,9 @@
                         <thead class="bg-gray-50">
                             <tr class="text-sm font-semibold text-gray-700">
                                 <th class="px-6 py-3 text-left">Description</th>
-                                <th class="px-4 py-3 text-left">Account</th>
-                                <th class="px-4 py-3 text-left">Taxes</th>
-                                <th class="px-6 py-3 text-right">Amount</th>
+                                <th class="px-4 py-3 text-left">{{ __('accounting.col_account') }}</th>
+                                <th class="px-4 py-3 text-left">{{ __('accounting.taxes') }}</th>
+                                <th class="px-6 py-3 text-right">{{ __('accounting.col_amount') }}</th>
                             </tr>
                         </thead>
                         @php
@@ -287,7 +287,7 @@
                                 <td class="px-6 py-2 text-right tabular-nums font-semibold">{{ number_format($lineAmount($line), 2) }} {{ $document->currency }}</td>
                             </tr>
                             @empty
-                            <tr><td colspan="4" class="px-3 py-12 text-center text-sm text-gray-400">No lines yet.</td></tr>
+                            <tr><td colspan="4" class="px-3 py-12 text-center text-sm text-gray-400">{{ __('accounting.no_lines') }}</td></tr>
                             @endforelse
                         </tbody>
                         <tfoot class="bg-gray-100 font-semibold">
@@ -303,7 +303,7 @@
                             </tr>
                             @endforeach
                             <tr class="text-xl border-t border-gray-300">
-                                <td colspan="3" class="px-6 py-2 text-right text-gray-700">Total:</td>
+                                <td colspan="3" class="px-6 py-2 text-right text-gray-700">{{ __('accounting.total') }}:</td>
                                 <td class="px-6 py-2 text-right tabular-nums text-gray-900">{{ number_format((float) $document->amount_total, 2) }} {{ $document->currency }}</td>
                             </tr>
                         </tfoot>
@@ -314,10 +314,10 @@
                     <table class="w-full text-sm">
                         <thead class="bg-gray-50">
                             <tr class="text-xs font-semibold text-gray-500 uppercase">
-                                <th class="px-3 py-2 text-left">Account</th>
-                                <th class="px-3 py-2 text-left">Label</th>
-                                <th class="px-3 py-2 text-right">Debit</th>
-                                <th class="px-3 py-2 text-right">Credit</th>
+                                <th class="px-3 py-2 text-left">{{ __('accounting.col_account') }}</th>
+                                <th class="px-3 py-2 text-left">{{ __('accounting.col_label') }}</th>
+                                <th class="px-3 py-2 text-right">{{ __('accounting.col_debit') }}</th>
+                                <th class="px-3 py-2 text-right">{{ __('accounting.col_credit') }}</th>
                             </tr>
                         </thead>
                         <tbody class="divide-y divide-gray-100">
@@ -344,9 +344,9 @@
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-x-12">
                         <div>
                             @foreach([
-                                ['Company', $document->company?->name],
+                                [__('accounting.field_company'), $document->company?->name],
                                 [$config['control_account_label'], $controlLine?->account?->display_name],
-                                ['Incoterm', $document->incoterm?->name],
+                                [__('accounting.field_incoterm'), $document->incoterm?->name],
                             ] as [$label, $value])
                             <div class="flex items-center gap-4 py-2 border-b border-gray-100">
                                 <span class="w-40 text-sm text-gray-500">{{ $label }}</span>
@@ -359,7 +359,7 @@
 
                 @if($document->narration)
                 <div class="mt-6">
-                    <p class="text-xs font-semibold text-gray-500 uppercase mb-1">Narration</p>
+                    <p class="text-xs font-semibold text-gray-500 uppercase mb-1">{{ __('accounting.field_narration') }}</p>
                     <p class="text-sm text-gray-700 whitespace-pre-line">{{ $document->narration }}</p>
                 </div>
                 @endif

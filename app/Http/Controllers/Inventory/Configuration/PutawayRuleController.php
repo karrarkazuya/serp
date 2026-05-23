@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Inventory\Configuration;
 
+use App\Helpers\GroupsQuery;
 use App\Helpers\SearchFilters;
 use App\Helpers\SortsTable;
 use App\Http\Controllers\Controller;
@@ -20,6 +21,17 @@ class PutawayRuleController extends Controller
         $activeCompanyIds = $this->companyContext->getActiveCompanyIds();
         $query = PutawayRule::query()->with(['company', 'location', 'fixedLocation', 'product', 'productCategory'])->forCompanies($activeCompanyIds);
         SearchFilters::apply($query, $request);
+
+        $groupBy = $request->query('group_by');
+        if ($groupBy) {
+            $fields = SearchFilters::fieldsFor(PutawayRule::class);
+            if (isset($fields[$groupBy])) {
+                $records = (clone $query)->with(['company', 'location', 'fixedLocation', 'product', 'productCategory'])->orderBy('id')->get();
+                $groups  = GroupsQuery::apply($records, $fields[$groupBy]);
+                return view('inventory.configuration.putaway-rules.index', compact('groups'));
+            }
+        }
+
         SortsTable::apply($query, $request);
         $putawayRules = $query->paginate(24)->withQueryString();
         return view('inventory.configuration.putaway-rules.index', compact('putawayRules'));

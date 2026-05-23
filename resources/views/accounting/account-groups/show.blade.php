@@ -13,23 +13,23 @@
         :prev-href="$prevId ? route('accounting.account-groups.show', $prevId) : null"
         :next-href="$nextId ? route('accounting.account-groups.show', $nextId) : null">
         <x-slot:breadcrumb>
-            <a href="{{ route('accounting.dashboard') }}" class="text-xs text-purple-600 hover:text-purple-700">Accounting</a>
-            <a href="{{ route('accounting.account-groups.index') }}" class="text-xs text-purple-600 hover:text-purple-700">Account Groups</a>
+            <a href="{{ route('accounting.dashboard') }}" class="text-xs text-purple-600 hover:text-purple-700">{{ __('accounting.accounting') }}</a>
+            <a href="{{ route('accounting.account-groups.index') }}" class="text-xs text-purple-600 hover:text-purple-700">{{ __('accounting.account_groups') }}</a>
             <span class="text-sm font-semibold text-gray-800">{{ $accountGroup->name }}</span>
         </x-slot:breadcrumb>
         <x-slot:actions>
             <div class="flex items-center gap-2">
                 @can('update', $accountGroup)
-                <a href="{{ route('accounting.account-groups.edit', $accountGroup) }}" class="px-3 py-1.5 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded hover:bg-gray-50">Edit</a>
+                <a href="{{ route('accounting.account-groups.edit', $accountGroup) }}" class="px-3 py-1.5 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded hover:bg-gray-50">{{ __('accounting.btn_edit') }}</a>
                 @endcan
                 @can('delete', $accountGroup)
                 <form method="POST" action="{{ route('accounting.account-groups.delete', $accountGroup) }}" x-data="{ confirming: false }">
                     @csrf @method('DELETE')
-                    <button type="button" x-show="!confirming" @click="confirming = true" class="px-3 py-1.5 text-sm text-red-700 border border-red-200 rounded hover:bg-red-50">Delete</button>
+                    <button type="button" x-show="!confirming" @click="confirming = true" class="px-3 py-1.5 text-sm text-red-700 border border-red-200 rounded hover:bg-red-50">{{ __('accounting.btn_delete') }}</button>
                     <div x-show="confirming" style="display:none" class="flex items-center gap-1.5">
-                        <span class="text-xs text-red-600">Delete this group?</span>
-                        <button type="submit" class="px-2 py-1 text-xs font-medium text-white bg-red-600 rounded">Yes</button>
-                        <button type="button" @click="confirming = false" class="px-2 py-1 text-xs text-gray-500">Cancel</button>
+                        <span class="text-xs text-red-600">{{ __('accounting.confirm_delete_group') }}</span>
+                        <button type="submit" class="px-2 py-1 text-xs font-medium text-white bg-red-600 rounded">{{ __('accounting.btn_yes') }}</button>
+                        <button type="button" @click="confirming = false" class="px-2 py-1 text-xs text-gray-500">{{ __('accounting.btn_cancel') }}</button>
                     </div>
                 </form>
                 @endcan
@@ -46,13 +46,13 @@
             <h1 class="text-2xl font-bold text-gray-900 mb-6">{{ $accountGroup->name }}</h1>
 
             @foreach([
-                ['Name',        $accountGroup->name],
-                ['Code From',   $accountGroup->code_prefix_start ?: '—'],
-                ['Code To',     $accountGroup->code_prefix_end ?: '—'],
-                ['Parent',      $accountGroup->parent?->name ?? '—'],
-                ['Company',     $accountGroup->company?->name ?? '—'],
-                ['Created by',  $accountGroup->creator?->name ?? '—'],
-                ['Updated by',  $accountGroup->updater?->name ?? '—'],
+                [__('accounting.field_name'),        $accountGroup->name],
+                [__('accounting.field_code_start'),  $accountGroup->code_prefix_start ?: '—'],
+                [__('accounting.field_code_end'),    $accountGroup->code_prefix_end ?: '—'],
+                [__('accounting.col_parent'),        $accountGroup->parent?->name ?? '—'],
+                [__('accounting.field_company'),     $accountGroup->company?->name ?? '—'],
+                ['Created by',                       $accountGroup->creator?->name ?? '—'],
+                ['Updated by',                       $accountGroup->updater?->name ?? '—'],
             ] as [$label, $value])
             <div class="flex items-start gap-4 py-2 border-b border-gray-100">
                 <span class="w-36 shrink-0 text-sm font-medium text-gray-500">{{ $label }}</span>
@@ -62,7 +62,7 @@
 
             @if($accountGroup->children->isNotEmpty())
             <div class="mt-6">
-                <h2 class="text-sm font-semibold text-gray-700 mb-3">Sub-groups</h2>
+                <h2 class="text-sm font-semibold text-gray-700 mb-3">{{ __('accounting.section_sub_groups') }}</h2>
                 <ul class="space-y-1">
                     @foreach($accountGroup->children as $child)
                     <li>

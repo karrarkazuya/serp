@@ -1,12 +1,12 @@
 @extends('layouts.app')
-@section('title', 'Aged Payable')
+@section('title', __('accounting.report_aged_payable'))
 
 @section('content')
 <div class="flex flex-col h-full bg-gray-50">
     <x-toolbar>
         <x-slot:breadcrumb>
-            <a href="{{ route('accounting.dashboard') }}" class="text-xs text-purple-600 hover:text-purple-700">Accounting</a>
-            <span class="text-sm font-semibold text-gray-800">Aged Payable</span>
+            <a href="{{ route('accounting.dashboard') }}" class="text-xs text-purple-600 hover:text-purple-700">{{ __('accounting.accounting') }}</a>
+            <span class="text-sm font-semibold text-gray-800">{{ __('accounting.report_aged_payable') }}</span>
         </x-slot:breadcrumb>
     </x-toolbar>
 
@@ -22,16 +22,16 @@
         @if(($grouped[$bucket] ?? collect())->isNotEmpty())
         <div class="mb-4 bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
             <div class="px-4 py-2 bg-gray-50 border-b border-gray-100">
-                <span class="text-xs font-semibold text-gray-600 uppercase">{{ $bucket }} days overdue</span>
+                <span class="text-xs font-semibold text-gray-600 uppercase">{{ $bucket }} {{ __('accounting.days_overdue') }}</span>
             </div>
             <table class="min-w-full text-sm">
                 <thead>
                     <tr class="border-b border-gray-100">
-                        <th class="px-4 py-2 text-left text-xs text-gray-400">Bill</th>
+                        <th class="px-4 py-2 text-left text-xs text-gray-400">{{ __('accounting.bills') }}</th>
                         <th class="px-4 py-2 text-left text-xs text-gray-400">Vendor</th>
                         <th class="px-4 py-2 text-left text-xs text-gray-400">Bill Date</th>
-                        <th class="px-4 py-2 text-left text-xs text-gray-400">Due Date</th>
-                        <th class="px-4 py-2 text-right text-xs text-gray-400">Days Overdue</th>
+                        <th class="px-4 py-2 text-left text-xs text-gray-400">{{ __('accounting.col_due_date') }}</th>
+                        <th class="px-4 py-2 text-right text-xs text-gray-400">{{ __('accounting.days_overdue') }}</th>
                         <th class="px-4 py-2 text-right text-xs text-gray-400">Residual</th>
                     </tr>
                 </thead>

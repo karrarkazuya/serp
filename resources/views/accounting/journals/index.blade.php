@@ -1,5 +1,5 @@
 @extends('layouts.app')
-@section('title', 'Journals')
+@section('title', __('accounting.journals'))
 
 @php
     $quickFilters = [
@@ -17,8 +17,8 @@
 <div class="flex flex-col h-full bg-gray-50">
     <x-toolbar :new-href="auth()->user()->can('create', \App\Models\Accounting\AccountJournal::class) ? route('accounting.journals.create') : null">
         <x-slot:breadcrumb>
-            <a href="{{ route('accounting.dashboard') }}" class="text-xs text-purple-600 hover:text-purple-700">Accounting</a>
-            <span class="text-sm font-semibold text-gray-800">Journals</span>
+            <a href="{{ route('accounting.dashboard') }}" class="text-xs text-purple-600 hover:text-purple-700">{{ __('accounting.accounting') }}</a>
+            <span class="text-sm font-semibold text-gray-800">{{ __('accounting.journals') }}</span>
         </x-slot:breadcrumb>
         <x-slot:search>
             <x-search
@@ -30,14 +30,14 @@
     </x-toolbar>
 
     @if(isset($groups))
-    <x-list :grouped="true" empty-text="No journals yet.">
+    <x-list :grouped="true" :empty-text="__('accounting.no_journals')">
         <x-slot:columns>
-            <x-sortable-th column="code" label="Code" class="px-4 py-2" :default="true" />
-            <x-sortable-th column="name" label="Name" class="px-3 py-2" />
-            <x-sortable-th column="type" label="Type" class="px-3 py-2" />
-            <th class="px-3 py-2 text-xs font-semibold text-gray-500 uppercase tracking-wide text-left">Default Account</th>
-            <th class="px-3 py-2 text-xs font-semibold text-gray-500 uppercase tracking-wide text-left">Currency</th>
-            <th class="px-3 py-2 text-xs font-semibold text-gray-500 uppercase tracking-wide text-left">Next #</th>
+            <x-sortable-th column="code" :label="__('accounting.col_code')" class="px-4 py-2" :default="true" />
+            <x-sortable-th column="name" :label="__('accounting.col_name')" class="px-3 py-2" />
+            <x-sortable-th column="type" :label="__('accounting.col_type')" class="px-3 py-2" />
+            <th class="px-3 py-2 text-xs font-semibold text-gray-500 uppercase tracking-wide text-left">{{ __('accounting.col_default_account') }}</th>
+            <th class="px-3 py-2 text-xs font-semibold text-gray-500 uppercase tracking-wide text-left">{{ __('accounting.col_currency') }}</th>
+            <th class="px-3 py-2 text-xs font-semibold text-gray-500 uppercase tracking-wide text-left">{{ __('accounting.col_next_number') }}</th>
         </x-slot:columns>
 
         @forelse($groups as $group)
@@ -58,7 +58,7 @@
                 <td class="px-4 py-2 font-medium text-gray-900">{{ $journal->code }}</td>
                 <td class="px-3 py-2 text-gray-800">
                     {{ $journal->name }}
-                    @if(!$journal->active)<span class="ms-1.5 text-[10px] text-amber-600 font-semibold uppercase">Archived</span>@endif
+                    @if(!$journal->active)<span class="ms-1.5 text-[10px] text-amber-600 font-semibold uppercase">{{ __('accounting.status_archived') }}</span>@endif
                 </td>
                 <td class="px-3 py-2 text-gray-600">{{ $journal->type_label }}</td>
                 <td class="px-3 py-2 text-gray-600">{{ $journal->defaultAccount ? $journal->defaultAccount->code.' '.$journal->defaultAccount->name : '—' }}</td>
@@ -69,20 +69,20 @@
         </tbody>
         @empty
         <tbody>
-            <tr><td colspan="99" class="px-4 py-20 text-center text-sm text-gray-400">No journals yet.</td></tr>
+            <tr><td colspan="99" class="px-4 py-20 text-center text-sm text-gray-400">{{ __('accounting.no_journals') }}</td></tr>
         </tbody>
         @endforelse
     </x-list>
 
     @else
-    <x-list :paginator="$journals" empty-text="No journals yet.">
+    <x-list :paginator="$journals" :empty-text="__('accounting.no_journals')">
         <x-slot:columns>
-            <x-sortable-th column="code" label="Code" class="px-4 py-2" :default="true" />
-            <x-sortable-th column="name" label="Name" class="px-3 py-2" />
-            <x-sortable-th column="type" label="Type" class="px-3 py-2" />
-            <th class="px-3 py-2 text-xs font-semibold text-gray-500 uppercase tracking-wide text-left">Default Account</th>
-            <th class="px-3 py-2 text-xs font-semibold text-gray-500 uppercase tracking-wide text-left">Currency</th>
-            <th class="px-3 py-2 text-xs font-semibold text-gray-500 uppercase tracking-wide text-left">Next #</th>
+            <x-sortable-th column="code" :label="__('accounting.col_code')" class="px-4 py-2" :default="true" />
+            <x-sortable-th column="name" :label="__('accounting.col_name')" class="px-3 py-2" />
+            <x-sortable-th column="type" :label="__('accounting.col_type')" class="px-3 py-2" />
+            <th class="px-3 py-2 text-xs font-semibold text-gray-500 uppercase tracking-wide text-left">{{ __('accounting.col_default_account') }}</th>
+            <th class="px-3 py-2 text-xs font-semibold text-gray-500 uppercase tracking-wide text-left">{{ __('accounting.col_currency') }}</th>
+            <th class="px-3 py-2 text-xs font-semibold text-gray-500 uppercase tracking-wide text-left">{{ __('accounting.col_next_number') }}</th>
         </x-slot:columns>
 
         @foreach($journals as $journal)
@@ -90,7 +90,7 @@
             <td class="px-4 py-2 font-medium text-gray-900">{{ $journal->code }}</td>
             <td class="px-3 py-2 text-gray-800">
                 {{ $journal->name }}
-                @if(!$journal->active)<span class="ms-1.5 text-[10px] text-amber-600 font-semibold uppercase">Archived</span>@endif
+                @if(!$journal->active)<span class="ms-1.5 text-[10px] text-amber-600 font-semibold uppercase">{{ __('accounting.status_archived') }}</span>@endif
             </td>
             <td class="px-3 py-2 text-gray-600">{{ $journal->type_label }}</td>
             <td class="px-3 py-2 text-gray-600">{{ $journal->defaultAccount ? $journal->defaultAccount->code.' '.$journal->defaultAccount->name : '—' }}</td>

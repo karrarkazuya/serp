@@ -39,9 +39,11 @@
         <input type="text" name="name" value="{{ $val('name') }}" required placeholder="{{ __('employees.employee_name') }}"
                class="w-full text-3xl font-bold text-gray-900 placeholder-gray-300 border-0 border-b-2 focus:outline-none focus:border-purple-500 pb-1 bg-transparent {{ $errors->has('name') ? 'border-red-400' : 'border-gray-200' }}">
     </div>
-    <div class="mb-5">
+    <div class="mb-5 flex gap-4 items-end">
         <input type="text" name="job_title" value="{{ $val('job_title') }}" placeholder="{{ __('employees.job_position') }}"
-               class="w-full text-sm text-gray-500 placeholder-gray-300 border-0 focus:outline-none bg-transparent pb-0.5">
+               class="flex-1 text-sm text-gray-500 placeholder-gray-300 border-0 focus:outline-none bg-transparent pb-0.5">
+        <input type="text" name="scientific_title" value="{{ $val('scientific_title') }}" placeholder="{{ __('employees.scientific_title') }}"
+               class="flex-1 text-sm text-gray-400 placeholder-gray-300 border-0 focus:outline-none bg-transparent pb-0.5">
     </div>
 
     {{-- Main header: three columns + avatar --}}
@@ -203,7 +205,51 @@
                                class="flex-1 text-sm text-gray-800 bg-transparent border-0 focus:outline-none px-0 py-0" placeholder="e.g. Asia/Baghdad">
                     </div>
                 </div>
-                <div class="flex-1"></div>
+                <div class="flex-1">
+                    <div class="flex items-center justify-between mb-2">
+                        <p class="text-xs font-semibold text-gray-400 uppercase">{{ __('employees.position_section') }}</p>
+                        @if($employee?->exists)
+                        <a href="{{ route('employees.positions.index') }}"
+                           class="text-xs text-purple-600 hover:text-purple-700">{{ __('employees.view_all_positions') }}</a>
+                        @endif
+                    </div>
+                    @php $cp = $employee?->currentPosition(); @endphp
+                    @if($cp)
+                    <div class="flex items-center gap-4 py-1.5 border-b border-gray-100">
+                        <span class="w-44 shrink-0 text-sm text-gray-500">{{ __('employees.organizational_structure') }}</span>
+                        <span class="flex-1 text-sm text-gray-800">{{ $cp->organizational_structure ?? '—' }}</span>
+                    </div>
+                    <div class="flex items-center gap-4 py-1.5 border-b border-gray-100">
+                        <span class="w-44 shrink-0 text-sm text-gray-500">{{ __('employees.assignment_type') }}</span>
+                        <span class="flex-1 text-sm text-gray-800">{{ $cp->assignment_type ?? '—' }}</span>
+                    </div>
+                    <div class="flex items-center gap-4 py-1.5 border-b border-gray-100">
+                        <span class="w-44 shrink-0 text-sm text-gray-500">{{ __('employees.data_status') }}</span>
+                        <span class="flex-1 text-sm text-gray-800">
+                            @if($cp->data_status)
+                            <span class="inline-block px-2 py-0.5 rounded text-xs font-semibold {{ $cp->data_status === 'current' ? 'bg-green-50 text-green-700' : 'bg-gray-100 text-gray-600' }}">
+                                {{ $cp->data_status === 'current' ? __('employees.data_status_current') : __('employees.data_status_previous') }}
+                            </span>
+                            @else —
+                            @endif
+                        </span>
+                    </div>
+                    <div class="flex items-center gap-4 py-1.5 border-b border-gray-100">
+                        <span class="w-44 shrink-0 text-sm text-gray-500">{{ __('employees.financial_specialization') }}</span>
+                        <span class="flex-1 text-sm text-gray-800">{{ $cp->financial_specialization ? number_format($cp->financial_specialization, 2) : '—' }}</span>
+                    </div>
+                    <div class="flex items-center gap-4 py-1.5 border-b border-gray-100">
+                        <span class="w-44 shrink-0 text-sm text-gray-500">{{ __('employees.affective_date') }}</span>
+                        <span class="flex-1 text-sm text-gray-800">{{ $cp->affective_date?->format('d M Y') ?? '—' }}</span>
+                    </div>
+                    <div class="mt-2">
+                        <a href="{{ route('employees.positions.index', ['search' => $employee->name]) }}"
+                           class="text-xs text-purple-600 hover:underline">{{ __('employees.view_all_positions') }}</a>
+                    </div>
+                    @else
+                    <p class="text-sm text-gray-400 py-2">{{ __('employees.no_current_position') }}</p>
+                    @endif
+                </div>
             </div>
         </div>
 
