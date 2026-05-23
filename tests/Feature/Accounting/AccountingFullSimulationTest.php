@@ -163,7 +163,7 @@ class AccountingFullSimulationTest extends TestCase
             ->delete(route('accounting.moves.delete', $move))
             ->assertRedirect(route('accounting.moves.index'));
 
-        $this->assertDatabaseMissing('account_moves', ['id' => $move->id]);
+        $this->assertSoftDeleted('account_moves', ['id' => $move->id]);
     }
 
     public function test_journal_entry_stored_with_action_post_goes_straight_to_posted(): void
@@ -272,7 +272,7 @@ class AccountingFullSimulationTest extends TestCase
             ->delete(route('accounting.accounts.delete', $account))
             ->assertRedirect(route('accounting.accounts.index'));
 
-        $this->assertDatabaseMissing('accounts', ['id' => $account->id]);
+        $this->assertSoftDeleted('accounts', ['id' => $account->id]);
     }
 
     public function test_account_with_move_lines_cannot_be_deleted(): void
@@ -382,7 +382,7 @@ class AccountingFullSimulationTest extends TestCase
             ->delete(route('accounting.journals.delete', $journal))
             ->assertRedirect(route('accounting.journals.index'));
 
-        $this->assertDatabaseMissing('account_journals', ['id' => $journal->id]);
+        $this->assertSoftDeleted('account_journals', ['id' => $journal->id]);
     }
 
     public function test_journal_with_moves_cannot_be_deleted(): void
@@ -497,7 +497,7 @@ class AccountingFullSimulationTest extends TestCase
             ->delete(route('accounting.taxes.delete', $tax))
             ->assertRedirect(route('accounting.taxes.index'));
 
-        $this->assertDatabaseMissing('account_taxes', ['id' => $tax->id]);
+        $this->assertSoftDeleted('account_taxes', ['id' => $tax->id]);
     }
 
     // =========================================================================
@@ -550,7 +550,7 @@ class AccountingFullSimulationTest extends TestCase
             ->delete(route('accounting.currencies.delete', $rate))
             ->assertRedirect(route('accounting.currencies.index'));
 
-        $this->assertDatabaseMissing('currency_rates', ['id' => $rate->id]);
+        $this->assertSoftDeleted('currency_rates', ['id' => $rate->id]);
     }
 
     // =========================================================================
@@ -627,7 +627,7 @@ class AccountingFullSimulationTest extends TestCase
             ->delete(route('accounting.payment-terms.delete', $term))
             ->assertRedirect(route('accounting.payment-terms.index'));
 
-        $this->assertDatabaseMissing('accounting_payment_terms', ['id' => $term->id]);
+        $this->assertSoftDeleted('accounting_payment_terms', ['id' => $term->id]);
     }
 
     // =========================================================================
@@ -744,7 +744,7 @@ class AccountingFullSimulationTest extends TestCase
             ->delete(route('accounting.moves.delete', $move))
             ->assertRedirect(route('accounting.moves.index'));
 
-        $this->assertDatabaseMissing('account_moves', ['id' => $move->id]);
+        $this->assertSoftDeleted('account_moves', ['id' => $move->id]);
     }
 
     // =========================================================================

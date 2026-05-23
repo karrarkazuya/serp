@@ -7,6 +7,10 @@
     <div class="shrink-0 flex flex-col leading-tight">{{ $breadcrumb }}</div>
     @endisset
 
+    @isset($search)
+    <div class="flex-1 min-w-0">{{ $search }}</div>
+    @endisset
+
     @isset($actions)
     {{ $actions }}
     @endisset

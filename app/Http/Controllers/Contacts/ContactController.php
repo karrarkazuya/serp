@@ -211,12 +211,7 @@ class ContactController extends Controller
         $activeCompanyIds = $this->companyContext->getActiveCompanyIds();
         abort_unless(in_array($contact->company_id, $activeCompanyIds), 403);
 
-        $avatarUuid = $contact->avatar;
         DB::transaction(fn () => $this->contactService->delete($contact));
-
-        if ($avatarUuid) {
-            $this->fileService->deleteByUuid($avatarUuid);
-        }
 
         return redirect()->route('contacts.index')->with('success', 'Contact deleted.');
     }

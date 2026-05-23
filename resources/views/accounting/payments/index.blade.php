@@ -8,13 +8,15 @@
             <a href="{{ route('accounting.dashboard') }}" class="text-xs text-purple-600 hover:text-purple-700">Accounting</a>
             <span class="text-sm font-semibold text-gray-800">Payments</span>
         </x-slot:breadcrumb>
+        <x-slot:search>
+            <x-search
+                :model="\App\Models\Accounting\AccountPayment::class"
+                :action="route('accounting.payments.index')"
+            />
+        </x-slot:search>
     </x-toolbar>
 
     <div class="flex-1 overflow-y-auto p-4">
-    <x-search
-        :model="\App\Models\Accounting\AccountPayment::class"
-        :action="route('accounting.payments.index')"
-    />
 
     <x-list :paginator="$payments" empty-text="No payments yet.">
         <x-slot:columns>

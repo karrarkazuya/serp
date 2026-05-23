@@ -102,6 +102,91 @@ class PickingController extends Controller
         return view('inventory.transfers.create', compact('defaultCompanyId', 'operationType', 'operationTypes'));
     }
 
+    // ── Typed index views (Receipts / Deliveries / Internal Transfers) ─────────
+
+    public function readReceipts(Request $request)
+    {
+        return $this->readByType($request, 'incoming');
+    }
+
+    public function readDeliveries(Request $request)
+    {
+        return $this->readByType($request, 'outgoing');
+    }
+
+    public function readInternal(Request $request)
+    {
+        return $this->readByType($request, 'internal');
+    }
+
+    public function createReceipt(Request $request)
+    {
+        return $this->createByType('incoming');
+    }
+
+    public function createDelivery(Request $request)
+    {
+        return $this->createByType('outgoing');
+    }
+
+    public function createInternal(Request $request)
+    {
+        return $this->createByType('internal');
+    }
+
+    private function readByType(Request $request, string $typeCode): \Illuminate\View\View
+    {
+        $this->authorize('viewAny', Picking::class);
+
+        $activeCompanyIds = $this->companyContext->getActiveCompanyIds();
+
+        $query = Picking::query()
+            ->with(['operationType', 'partner', 'srcLocation', 'destLocation'])
+            ->forCompanies($activeCompanyIds)
+            ->whereHas('operationType', fn($q) => $q->where('code', $typeCode));
+
+        SearchFilters::apply($query, $request);
+
+        if ($request->query('filter') === 'all') {
+            // no state filter
+        } elseif ($state = $request->query('state')) {
+            $query->where('state', $state);
+        } else {
+            $query->whereIn('state', [Picking::STATE_DRAFT, Picking::STATE_CONFIRMED, Picking::STATE_ASSIGNED]);
+        }
+
+        SortsTable::apply($query, $request);
+        $pickings = $query->paginate(24)->withQueryString();
+
+        $viewMap = [
+            'incoming' => 'inventory.receipts.index',
+            'outgoing' => 'inventory.deliveries.index',
+            'internal' => 'inventory.internal-transfers.index',
+        ];
+
+        return view($viewMap[$typeCode], compact('pickings'));
+    }
+
+    private function createByType(string $typeCode): \Illuminate\View\View
+    {
+        $this->authorize('create', Picking::class);
+
+        $activeCompanyIds = $this->companyContext->getActiveCompanyIds();
+        $defaultCompanyId = count($activeCompanyIds) === 1 ? $activeCompanyIds[0] : null;
+
+        $defaultOperationTypeId = OperationType::where('code', $typeCode)
+            ->when($defaultCompanyId, fn($q) => $q->where('company_id', $defaultCompanyId))
+            ->value('id');
+
+        $viewMap = [
+            'incoming' => 'inventory.receipts.create',
+            'outgoing' => 'inventory.deliveries.create',
+            'internal' => 'inventory.internal-transfers.create',
+        ];
+
+        return view($viewMap[$typeCode], compact('defaultCompanyId', 'defaultOperationTypeId'));
+    }
+
     public function store(StorePickingRequest $request)
     {
         $data      = $request->validated();

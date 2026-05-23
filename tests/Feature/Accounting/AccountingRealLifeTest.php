@@ -115,7 +115,7 @@ class AccountingRealLifeTest extends TestCase
             ->delete(route('accounting.incoterms.delete', $incoterm))
             ->assertRedirect(route('accounting.incoterms.index'));
 
-        $this->assertDatabaseMissing('accounting_incoterms', ['id' => $incoterm->id]);
+        $this->assertSoftDeleted('accounting_incoterms', ['id' => $incoterm->id]);
     }
 
     public function test_duplicate_incoterm_code_is_rejected(): void
@@ -204,7 +204,7 @@ class AccountingRealLifeTest extends TestCase
             ->delete(route('accounting.tax-groups.delete', $group))
             ->assertRedirect(route('accounting.tax-groups.index'));
 
-        $this->assertDatabaseMissing('accounting_tax_groups', ['id' => $group->id]);
+        $this->assertSoftDeleted('accounting_tax_groups', ['id' => $group->id]);
     }
 
     public function test_tax_group_from_different_company_returns_403(): void
@@ -313,7 +313,7 @@ class AccountingRealLifeTest extends TestCase
             ->delete(route('accounting.account-groups.delete', $child))
             ->assertRedirect(route('accounting.account-groups.index'));
 
-        $this->assertDatabaseMissing('accounting_account_groups', ['id' => $child->id]);
+        $this->assertSoftDeleted('accounting_account_groups', ['id' => $child->id]);
         $this->assertDatabaseHas('accounting_account_groups', ['id' => $parent->id]);
     }
 
@@ -658,7 +658,7 @@ class AccountingRealLifeTest extends TestCase
             ->delete(route('accounting.bills.delete', $bill))
             ->assertRedirect(route('accounting.bills.index'));
 
-        $this->assertDatabaseMissing('account_moves', ['id' => $bill->id]);
+        $this->assertSoftDeleted('account_moves', ['id' => $bill->id]);
     }
 
     // =========================================================================
@@ -724,7 +724,7 @@ class AccountingRealLifeTest extends TestCase
             ->delete(route('accounting.credit-notes.delete', $creditNote))
             ->assertRedirect(route('accounting.credit-notes.index'));
 
-        $this->assertDatabaseMissing('account_moves', ['id' => $creditNote->id]);
+        $this->assertSoftDeleted('account_moves', ['id' => $creditNote->id]);
     }
 
     public function test_refund_post_pay_print_cancel(): void

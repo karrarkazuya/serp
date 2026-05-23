@@ -40,6 +40,7 @@ return new class extends Migration
             $table->text('notes')->nullable();
             $table->string('avatar')->nullable();
             $table->boolean('active')->default(true);
+            $table->softDeletes();
             $table->timestamps();
 
             $table->index(['active', 'contact_type']);

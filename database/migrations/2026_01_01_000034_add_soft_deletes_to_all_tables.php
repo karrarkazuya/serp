@@ -6,7 +6,7 @@ use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
 {
-    // Tables that already have softDeletes: workflow_procedures, hr_employees
+    // Tables that already have softDeletes: workflow_procedures, hr_employees, contacts, workflow_procedure_templates, workflow_procedure_steps
     // Tables excluded (framework internals or pure composite-PK pivots):
     //   sessions, cache, cache_locks, jobs, job_batches, failed_jobs,
     //   password_reset_tokens, personal_access_tokens,
@@ -26,7 +26,7 @@ return new class extends Migration
         'permissions',
         // Contacts
         'tags',
-        'contacts',
+        // 'contacts' — already has softDeletes from create_contacts_tables migration
         'contact_phones',
         // Core misc
         'chatter_messages',
@@ -44,8 +44,8 @@ return new class extends Migration
         'workflow_managers',
         // Workflow templates
         'workflow_ticket_templates',
-        'workflow_procedure_templates',
-        'workflow_procedure_steps',
+        // 'workflow_procedure_templates' — already has softDeletes from migration 000015
+        // 'workflow_procedure_steps'     — already has softDeletes from migration 000015
         'workflow_procedure_step_paths',
         // Workflow instances
         'workflow_tickets',

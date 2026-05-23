@@ -17,6 +17,8 @@ class TableList extends Component
         public mixed $paginator = null,
         public string $emptyText = 'No records found.',
         public string $class = '',
+        public bool $selectable = false,
+        public int $totalCount = 0,
     ) {
         $this->isEmpty = $paginator !== null
             && method_exists($paginator, 'isEmpty')

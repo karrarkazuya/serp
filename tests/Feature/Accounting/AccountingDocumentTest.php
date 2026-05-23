@@ -488,7 +488,7 @@ class AccountingDocumentTest extends TestCase
             ->delete(route('accounting.invoices.delete', $invoice))
             ->assertRedirect(route('accounting.invoices.index'));
 
-        $this->assertDatabaseMissing('account_moves', ['id' => $invoice->id]);
+        $this->assertSoftDeleted('account_moves', ['id' => $invoice->id]);
     }
 
     public function test_legacy_document_without_payment_state_still_renders_as_not_paid(): void

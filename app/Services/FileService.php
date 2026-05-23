@@ -81,13 +81,18 @@ class FileService
 
     public function delete(File $file): void
     {
+        $file->delete();
+    }
+
+    public function forceDelete(File $file): void
+    {
         Storage::disk($file->disk)->delete($file->path);
 
         if ($file->thumbnail_path) {
             Storage::disk($file->disk)->delete($file->thumbnail_path);
         }
 
-        $file->delete();
+        $file->forceDelete();
     }
 
     public function deleteByUuid(string $uuid): void
@@ -159,8 +164,6 @@ class FileService
         Storage::disk($disk)->put($thumbPath, file_get_contents($tmpFile));
 
         @unlink($tmpFile);
-        imagedestroy($src);
-        imagedestroy($dst);
 
         return $thumbPath;
     }

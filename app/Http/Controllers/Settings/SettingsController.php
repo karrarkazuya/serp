@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Settings;
 
 use App\Http\Controllers\Controller;
+use App\Models\File;
 use App\Models\Security\Permission;
 use App\Models\Security\Role;
 use App\Models\Settings\Company;
@@ -61,19 +62,17 @@ class SettingsController extends Controller
             ->distinct('user_id')
             ->count('user_id');
 
-        // ── Storage (files table) ──────────────────────────────────────────────
-        $storageTotal = (int) DB::table('files')->sum('size');
-        $storageFiles = (int) DB::table('files')->count();
+        // ── Storage (files table — Eloquent so soft-deleted records are excluded) ──
+        $storageTotal = (int) File::sum('size');
+        $storageFiles = (int) File::count();
 
-        $storageByDisk = DB::table('files')
-            ->selectRaw('disk, COUNT(*) as cnt, SUM(size) as total')
+        $storageByDisk = File::selectRaw('disk, COUNT(*) as cnt, SUM(size) as total')
             ->groupBy('disk')
             ->orderByDesc('total')
             ->get();
 
         // Categorise by mime type prefix in PHP — avoids CASE WHEN dialect issues
-        $rawByMime = DB::table('files')
-            ->selectRaw('mime_type, COUNT(*) as cnt, SUM(size) as total')
+        $rawByMime = File::selectRaw('mime_type, COUNT(*) as cnt, SUM(size) as total')
             ->groupBy('mime_type')
             ->get();
 

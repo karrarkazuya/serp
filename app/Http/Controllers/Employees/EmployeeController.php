@@ -220,7 +220,7 @@ class EmployeeController extends Controller
             $employee->categories()->sync($categoryIds);
 
             if ($skillsData !== null) {
-                $employee->skills()->delete();
+                $employee->skills()->forceDelete();
                 foreach ((array) $skillsData as $s) {
                     if (!empty($s['skill_id'])) {
                         $employee->skills()->create([
@@ -239,7 +239,7 @@ class EmployeeController extends Controller
                     if ($doc->file_path) {
                         $this->fileService->deleteByUuid($doc->file_path);
                     }
-                    $doc->delete();
+                    $doc->forceDelete();
                 }
             }
 

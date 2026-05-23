@@ -7,7 +7,15 @@
         @csrf @method('PUT')
         <x-toolbar>
             <x-slot:breadcrumb>
-                <a href="{{ route('inventory.transfers.index') }}" class="text-xs text-purple-600 hover:text-purple-700">Transfers</a>
+                @php
+                    [$listRoute, $listLabel] = match($picking->operationType?->code) {
+                        'incoming' => [route('inventory.receipts.index'), 'Receipts'],
+                        'outgoing' => [route('inventory.deliveries.index'), 'Deliveries'],
+                        'internal' => [route('inventory.internal-transfers.index'), 'Internal Transfers'],
+                        default    => [route('inventory.transfers.index'), 'Transfers'],
+                    };
+                @endphp
+                <a href="{{ $listRoute }}" class="text-xs text-purple-600 hover:text-purple-700">{{ $listLabel }}</a>
                 <a href="{{ route('inventory.transfers.show', $picking) }}" class="text-xs text-purple-600 hover:text-purple-700">{{ $picking->name }}</a>
                 <span class="text-sm font-semibold text-gray-800">Edit</span>
             </x-slot:breadcrumb>
@@ -67,10 +75,28 @@
                         </tr>
                     </thead>
 
-                    {{-- Existing moves: Blade-rendered so each row can use <x-relation-dropdown> --}}
+                    {{-- Existing moves rendered by Blade so each row can use <x-relation-dropdown> --}}
                     <tbody>
                         @foreach($picking->moves as $idx => $move)
-                        <tr x-data="{ deleted: false }" :class="deleted ? 'opacity-40' : ''" class="border-b border-gray-50">
+                        <tr x-data="{
+                                deleted: false,
+                                uomId: {{ $move->uom_id ?? ($move->product?->uom_id ?? 'null') }},
+                                uomName: '{{ addslashes($move->product?->uom?->name ?? '') }}',
+                                uomInfoUrl: @js(route('inventory.products.uom-info')),
+                                onProductChanged(e) {
+                                    const pid = e.detail.value;
+                                    if (!pid) return;
+                                    fetch(this.uomInfoUrl + '?product_id=' + pid, {
+                                        headers: { 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' }
+                                    }).then(r => r.json()).then(d => {
+                                        this.uomId = d.uom_id;
+                                        this.uomName = d.uom_name;
+                                    });
+                                }
+                            }"
+                            :class="deleted ? 'opacity-40' : ''"
+                            @product-selected-{{ $idx }}.window="onProductChanged($event)"
+                            class="border-b border-gray-50">
                             <td class="py-1.5">
                                 <input type="hidden" name="moves[{{ $idx }}][id]" value="{{ $move->id }}">
                                 <input type="hidden" name="moves[{{ $idx }}][delete]" :value="deleted ? 1 : 0">
@@ -80,16 +106,12 @@
                                     :name="'moves[' . $idx . '][product_id]'"
                                     relation="many2one"
                                     :selected="old('moves.' . $idx . '.product_id', $move->product_id)"
+                                    :event="'product-selected-' . $idx"
                                     compact />
                             </td>
                             <td class="py-1.5 w-32">
-                                <x-relation-dropdown
-                                    table="inventory_uoms"
-                                    field="name"
-                                    :name="'moves[' . $idx . '][uom_id]'"
-                                    relation="many2one"
-                                    :selected="old('moves.' . $idx . '.uom_id', $move->uom_id)"
-                                    compact />
+                                <input type="hidden" name="moves[{{ $idx }}][uom_id]" :value="uomId">
+                                <span x-text="uomName || '-'" class="text-sm text-gray-600"></span>
                             </td>
                             <td class="py-1.5 w-24">
                                 <input type="number"
@@ -113,12 +135,12 @@
                         @endforeach
                     </tbody>
 
-                    {{-- New moves: Alpine-rendered with inline search pickers --}}
+                    {{-- New moves added client-side --}}
                     <tbody x-data="{
                         newMoves: [],
                         nextIdx: {{ $picking->moves->count() }},
                         productUrl: @js(route('relation-dropdown.lookup', ['table' => 'inventory_products'])),
-                        uomUrl: @js(route('relation-dropdown.lookup', ['table' => 'inventory_uoms'])),
+                        uomInfoUrl: @js(route('inventory.products.uom-info')),
                         async fetchProducts(m) {
                             const res = await fetch(this.productUrl + '?field=name&search=' + encodeURIComponent(m.productSearch), {
                                 headers: { 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' }
@@ -126,28 +148,22 @@
                             const data = await res.json();
                             m.productOptions = data.data || [];
                         },
-                        async fetchUoms(m) {
-                            const res = await fetch(this.uomUrl + '?field=name&search=' + encodeURIComponent(m.uomSearch), {
-                                headers: { 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' }
-                            });
-                            const data = await res.json();
-                            m.uomOptions = data.data || [];
-                        },
-                        selectProduct(m, opt) {
+                        async selectProduct(m, opt) {
                             m.productId = opt.id;
                             m.productSearch = opt.label;
                             m.productOpen = false;
-                        },
-                        selectUom(m, opt) {
-                            m.uomId = opt.id;
-                            m.uomSearch = opt.label;
-                            m.uomOpen = false;
+                            const res = await fetch(this.uomInfoUrl + '?product_id=' + opt.id, {
+                                headers: { 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' }
+                            });
+                            const d = await res.json();
+                            m.uomId = d.uom_id;
+                            m.uomName = d.uom_name;
                         },
                         addMove() {
                             this.newMoves.push({
                                 idx: this.nextIdx++,
                                 productId: '', productSearch: '', productOpen: false, productOptions: [],
-                                uomId: '', uomSearch: '', uomOpen: false, uomOptions: [],
+                                uomId: '', uomName: '',
                                 qty: 1
                             });
                         }
@@ -177,24 +193,7 @@
                                 </td>
                                 <td class="py-1.5 w-32">
                                     <input type="hidden" :name="'moves['+m.idx+'][uom_id]'" :value="m.uomId">
-                                    <div class="relative" @click.outside="m.uomOpen = false">
-                                        <input type="text" x-model="m.uomSearch"
-                                            @focus="m.uomOpen = true; fetchUoms(m)"
-                                            @input.debounce.250ms="fetchUoms(m)"
-                                            placeholder="UoM..."
-                                            class="w-full text-sm bg-transparent border-0 border-b border-dotted border-gray-300 focus:border-purple-500 focus:outline-none px-0 py-1">
-                                        <div x-show="m.uomOpen" style="display:none"
-                                            class="absolute left-0 top-full z-40 w-48 bg-white border border-gray-200 rounded-b-lg shadow-lg overflow-hidden">
-                                            <div class="max-h-48 overflow-y-auto py-1">
-                                                <template x-for="opt in m.uomOptions" :key="opt.id">
-                                                    <button type="button" @click="selectUom(m, opt)"
-                                                        class="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
-                                                        x-text="opt.label"></button>
-                                                </template>
-                                                <div x-show="m.uomOptions.length === 0" class="px-4 py-2 text-sm text-gray-400">No results</div>
-                                            </div>
-                                        </div>
-                                    </div>
+                                    <span x-text="m.uomName || '-'" class="text-sm text-gray-600"></span>
                                 </td>
                                 <td class="py-1.5 w-24">
                                     <input type="number" :name="'moves['+m.idx+'][product_qty]'" x-model="m.qty"

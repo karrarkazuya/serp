@@ -8,12 +8,25 @@ use App\Models\User;
 use App\Traits\HasChatter;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Builder;
 
 use Illuminate\Database\Eloquent\SoftDeletes;
 
 class AccountPayment extends Model
 {
     use HasChatter, SoftDeletes;
+
+    public const STATES = [
+        'draft'     => 'Draft',
+        'posted'    => 'In Process',
+        'cancelled' => 'Cancelled',
+    ];
+
+    public const PAYMENT_METHODS = [
+        'manual' => 'Manual',
+        'cheque' => 'Cheque',
+        'bank_transfer' => 'Bank Transfer',
+    ];
 
     public array $chatterTracked = [
         'payment_type' => 'Type',
@@ -72,6 +85,11 @@ class AccountPayment extends Model
         'amount',
         'currency',
         'memo',
+        'state',
+        'payment_method',
+        'bank_reference',
+        'cheque_number',
+        'destination_account_id',
         'created_by',
         'updated_by',
     ];
@@ -114,5 +132,24 @@ class AccountPayment extends Model
     public function updater(): BelongsTo
     {
         return $this->belongsTo(User::class, 'updated_by');
+    }
+
+    public function destinationAccount(): BelongsTo
+    {
+        return $this->belongsTo(Account::class, 'destination_account_id');
+    }
+
+    public function isDraft(): bool    { return $this->state === 'draft'; }
+    public function isPosted(): bool   { return $this->state === 'posted'; }
+    public function isPaid(): bool     { return $this->payment_state === 'paid'; }
+
+    public function getStateLabelAttribute(): string
+    {
+        return self::STATES[$this->state] ?? ucfirst($this->state);
+    }
+
+    public function scopeForCompanies(Builder $query, array $companyIds): Builder
+    {
+        return $query->whereIn('company_id', $companyIds);
     }
 }

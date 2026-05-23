@@ -202,9 +202,9 @@ class ProcedureTemplateController extends Controller
             'path_choice_required'  => 'boolean',
             'enabled'               => 'boolean',
             'next_step_ids'         => 'nullable|array',
-            'next_step_ids.*'       => 'exists:workflow_procedure_steps,id',
+            'next_step_ids.*'       => 'exists:workflow_procedure_steps,id,deleted_at,NULL',
             'sub_procedure_ids'     => 'nullable|array',
-            'sub_procedure_ids.*'   => 'exists:workflow_procedure_templates,id',
+            'sub_procedure_ids.*'   => 'exists:workflow_procedure_templates,id,deleted_at,NULL',
         ]);
         $nextStepIds      = $data['next_step_ids'] ?? [];
         $subProcedureIds  = $data['sub_procedure_ids'] ?? [];

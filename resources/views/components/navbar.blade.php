@@ -473,21 +473,21 @@
         {{-- Operations --}}
         <div x-data="{ open: false }" class="relative h-full shrink-0" @click.outside="open = false">
             <button type="button" @click="open = !open"
-                    class="{{ $invBtn }} {{ request()->routeIs('inventory.transfers.*', 'inventory.scrap.*', 'inventory.replenishment.*', 'inventory.adjustments.*') ? 'bg-[#5c3d55]' : '' }}">
+                    class="{{ $invBtn }} {{ request()->routeIs('inventory.receipts.*', 'inventory.deliveries.*', 'inventory.internal-transfers.*', 'inventory.transfers.*', 'inventory.scrap.*', 'inventory.replenishment.*', 'inventory.adjustments.*') ? 'bg-[#5c3d55]' : '' }}">
                 Operations {!! $caret !!}
             </button>
             <div x-show="open" x-transition class="{{ $invDD }} w-60" style="display:none">
                 <div class="{{ $invHead }}">Transfers</div>
-                <a href="{{ route('inventory.transfers.index', ['type' => 'incoming']) }}"
-                   class="{{ $invItem }} {{ request()->routeIs('inventory.transfers.*') && request()->query('type') === 'incoming' ? 'bg-gray-100 font-semibold' : '' }}">
+                <a href="{{ route('inventory.receipts.index') }}"
+                   class="{{ $invItem }} {{ request()->routeIs('inventory.receipts.*') ? 'bg-gray-100 font-semibold' : '' }}">
                     Receipts
                 </a>
-                <a href="{{ route('inventory.transfers.index', ['type' => 'outgoing']) }}"
-                   class="{{ $invItem }} {{ request()->routeIs('inventory.transfers.*') && request()->query('type') === 'outgoing' ? 'bg-gray-100 font-semibold' : '' }}">
+                <a href="{{ route('inventory.deliveries.index') }}"
+                   class="{{ $invItem }} {{ request()->routeIs('inventory.deliveries.*') ? 'bg-gray-100 font-semibold' : '' }}">
                     Deliveries
                 </a>
-                <a href="{{ route('inventory.transfers.index', ['type' => 'internal']) }}"
-                   class="{{ $invItem }} {{ request()->routeIs('inventory.transfers.*') && request()->query('type') === 'internal' ? 'bg-gray-100 font-semibold' : '' }}">
+                <a href="{{ route('inventory.internal-transfers.index') }}"
+                   class="{{ $invItem }} {{ request()->routeIs('inventory.internal-transfers.*') ? 'bg-gray-100 font-semibold' : '' }}">
                     Internal Transfers
                 </a>
                 <div class="{{ $invHead }}">Adjustments</div>

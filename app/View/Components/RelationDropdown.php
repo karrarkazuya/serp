@@ -143,6 +143,10 @@ class RelationDropdown extends Component
 
         $query = DB::table($this->actualTable);
 
+        if (Schema::hasColumn($this->actualTable, 'deleted_at')) {
+            $query->whereNull("{$this->actualTable}.deleted_at");
+        }
+
         if ($labelJoin && in_array($this->field, $labelJoin['fields'] ?? [], true)) {
             $joinTable = $labelJoin['table'];
             $query->join($joinTable, "{$this->actualTable}.{$labelJoin['local']}", '=', "{$joinTable}.{$labelJoin['foreign']}")

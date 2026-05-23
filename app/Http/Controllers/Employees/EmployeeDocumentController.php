@@ -43,10 +43,9 @@ class EmployeeDocumentController extends Controller
         $data['employee_id']   = $employee->id;
         $data['document_type'] ??= 'other';
 
-        $document = DB::transaction(function () use ($data, $fileRecord) {
+        DB::transaction(function () use ($data, $fileRecord) {
             $document = EmployeeDocument::create($data);
             $fileRecord?->update(['source_type' => $document->getTable(), 'source_id' => $document->id]);
-            return $document;
         });
 
         return redirect()->route('employees.edit', $employee)->with('success', 'Document added.');

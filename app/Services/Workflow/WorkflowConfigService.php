@@ -179,6 +179,7 @@ class WorkflowConfigService
 
     public function deleteProcedureTemplate(ProcedureTemplate $tpl): void
     {
+        $tpl->steps()->delete();
         $tpl->delete();
     }
 }

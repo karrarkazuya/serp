@@ -141,7 +141,13 @@
       "Bash(sed -n '405,420p' /Users/karrar/Projects/web/serp/tests/Feature/Inventory/InventoryPickingTest.php)",
       "Bash(sed -n '270,295p' /Users/karrar/Projects/web/serp/tests/Feature/Inventory/InventoryReorderRuleTest.php)",
       "Bash(sed -n '310,400p' /Users/karrar/Projects/web/serp/tests/Feature/Inventory/InventoryScrapTest.php)",
-      "Bash(git stash *)"
+      "Bash(git stash *)",
+      "Bash(grep -v \"^$\")",
+      "Bash(sed -i '' 's/assertDatabaseMissing\\('\\\\''account_moves'\\\\'', \\\\['\\\\''id'\\\\'' => \\\\$move->id\\\\]\\)/assertSoftDeleted\\('\\\\''account_moves'\\\\'', ['\\\\''id'\\\\'' => \\\\$move->id]\\)/g' tests/Feature/Accounting/AccountingFullSimulationTest.php)",
+      "Bash(sed -i '' 's/assertDatabaseMissing\\('\\\\''accounts'\\\\'', \\\\['\\\\''id'\\\\'' => \\\\$account->id\\\\]\\)/assertSoftDeleted\\('\\\\''accounts'\\\\'', ['\\\\''id'\\\\'' => \\\\$account->id]\\)/g' tests/Feature/Accounting/AccountingFullSimulationTest.php)",
+      "Bash(sed -i '' 's/assertDatabaseMissing\\('\\\\''account_journals'\\\\'', \\\\['\\\\''id'\\\\'' => \\\\$journal->id\\\\]\\)/assertSoftDeleted\\('\\\\''account_journals'\\\\'', ['\\\\''id'\\\\'' => \\\\$journal->id]\\)/g' tests/Feature/Accounting/AccountingFullSimulationTest.php)",
+      "Bash(sed -i '' 's/assertDatabaseMissing\\('\\\\''account_taxes'\\\\'', \\\\['\\\\''id'\\\\'' => \\\\$tax->id\\\\]\\)/assertSoftDeleted\\('\\\\''account_taxes'\\\\'', ['\\\\''id'\\\\'' => \\\\$tax->id]\\)/g' tests/Feature/Accounting/AccountingFullSimulationTest.php)",
+      "Bash(sed -i '' 's/assertDatabaseMissing\\('\\\\''currency_rates'\\\\'', \\\\['\\\\''id'\\\\'' => \\\\$rate->id\\\\]\\)/assertSoftDeleted\\('\\\\''currency_rates'\\\\'', ['\\\\''id'\\\\'' => \\\\$rate->id]\\)/g' tests/Feature/Accounting/AccountingFullSimulationTest.php)"
     ],
     "additionalDirectories": [
       "/Users/karrar/Projects/web/serp/storage/app/public/avatars/contacts"

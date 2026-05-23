@@ -12,25 +12,26 @@
 
 @section('content')
 <div class="flex min-w-0 flex-col h-full bg-white">
-    <div class="flex flex-wrap items-center gap-2 px-4 py-2 border-b border-gray-200 bg-white shrink-0">
-        <div class="flex flex-col leading-tight shrink-0">
+    <x-toolbar>
+        <x-slot:breadcrumb>
             <a href="{{ route('accounting.dashboard') }}" class="text-xs text-purple-600 hover:text-purple-700">Accounting</a>
             <span class="text-sm font-semibold text-gray-800">Journal Items</span>
-        </div>
-
-        <x-search
-            :model="\App\Models\Accounting\AccountMoveLine::class"
-            :action="route('accounting.items.index')"
-            :quick-filters="$quickFilters"
-        />
-
-        <div class="ms-auto flex items-center gap-3 text-sm text-gray-500 shrink-0">
-            <span class="text-sm font-semibold text-gray-600">
+        </x-slot:breadcrumb>
+        <x-slot:search>
+            <x-search
+                :model="\App\Models\Accounting\AccountMoveLine::class"
+                :action="route('accounting.items.index')"
+                :quick-filters="$quickFilters"
+            />
+        </x-slot:search>
+        <x-slot:actions>
+            <span class="text-sm font-semibold text-gray-600 shrink-0">
                 {{ $items->total() > 0 ? $items->firstItem().'-'.$items->lastItem() : 0 }} / {{ $items->total() }}
             </span>
-        </div>
-    </div>
+        </x-slot:actions>
+    </x-toolbar>
 
+    <div class="flex-1 overflow-y-auto">
     <div class="grid grid-cols-1 sm:grid-cols-3 border-b border-gray-200 bg-gray-50">
         <div class="px-4 py-2">
             <p class="text-[11px] font-semibold uppercase text-gray-500">Debit</p>
@@ -105,5 +106,6 @@
         </tr>
         @endforeach
     </x-list>
+    </div>
 </div>
 @endsection

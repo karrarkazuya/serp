@@ -20,14 +20,16 @@
             <a href="{{ route('accounting.dashboard') }}" class="text-xs text-purple-600 hover:text-purple-700">Accounting</a>
             <span class="text-sm font-semibold text-gray-800">Journals</span>
         </x-slot:breadcrumb>
+        <x-slot:search>
+            <x-search
+                :model="\App\Models\Accounting\AccountJournal::class"
+                :action="route('accounting.journals.index')"
+                :quick-filters="$quickFilters"
+            />
+        </x-slot:search>
     </x-toolbar>
 
     <div class="flex-1 overflow-y-auto p-4">
-    <x-search
-        :model="\App\Models\Accounting\AccountJournal::class"
-        :action="route('accounting.journals.index')"
-        :quick-filters="$quickFilters"
-    />
     <x-list :paginator="$journals" empty-text="No journals yet.">
         <x-slot:columns>
             <x-sortable-th column="code" label="Code" class="px-4 py-2" :default="true" />

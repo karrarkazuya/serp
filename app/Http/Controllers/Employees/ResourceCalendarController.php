@@ -168,7 +168,7 @@ class ResourceCalendarController extends Controller
         DB::transaction(function () use ($schedule, $data, $attendancesData) {
             $schedule->update($data);
             if ($attendancesData !== null) {
-                $schedule->attendances()->delete();
+                $schedule->attendances()->forceDelete();
                 foreach ($attendancesData as $i => $att) {
                     $schedule->attendances()->create(array_merge($att, ['sequence' => $att['sequence'] ?? $i]));
                 }

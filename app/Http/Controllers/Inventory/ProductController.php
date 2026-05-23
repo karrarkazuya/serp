@@ -81,6 +81,22 @@ class ProductController extends Controller
         ));
     }
 
+    public function uomInfo(Request $request): \Illuminate\Http\JsonResponse
+    {
+        $this->authorize('viewAny', Product::class);
+
+        $productId = (int) $request->query('product_id');
+        $product   = Product::with('uom')->findOrFail($productId);
+
+        $activeCompanyIds = $this->companyContext->getActiveCompanyIds();
+        abort_unless(in_array($product->company_id, $activeCompanyIds) || is_null($product->company_id), 403);
+
+        return response()->json([
+            'uom_id'   => $product->uom_id,
+            'uom_name' => $product->uom?->name ?? '',
+        ]);
+    }
+
     public function create(Request $_request)
     {
         $this->authorize('create', Product::class);

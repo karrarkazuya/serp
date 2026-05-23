@@ -273,7 +273,7 @@ class CoreSeeder extends Seeder
             throw new \RuntimeException("Cannot open UAS chart CSV at {$path}");
         }
         try {
-            $header = fgetcsv($fh); // discard header row
+            fgetcsv($fh); // discard header row
             while (($cols = fgetcsv($fh)) !== false) {
                 if (count($cols) < 3) continue;
                 $code = trim((string) $cols[0]);
@@ -419,6 +419,15 @@ class CoreSeeder extends Seeder
             ['name' => 'Edit Inventory Records',   'key' => 'inventory.write',  'module' => 'inventory', 'description' => 'Edit, validate, and archive inventory records.'],
             ['name' => 'Delete Inventory Records', 'key' => 'inventory.unlink', 'module' => 'inventory', 'description' => 'Permanently delete inventory records.'],
             ['name' => 'Inventory Configuration',  'key' => 'inventory.config', 'module' => 'inventory', 'description' => 'Manage warehouses, locations, routes, operation types, UoMs, and categories.'],
+
+            // Export permissions — one per module, separate from read so exports can be restricted
+            ['name' => 'Export Contacts',          'key' => 'contacts.export',              'module' => 'contacts',   'description' => 'Export contact records to XLSX or CSV.'],
+            ['name' => 'Export Users',             'key' => 'users.export',                 'module' => 'users',      'description' => 'Export user records to XLSX or CSV.'],
+            ['name' => 'Export Employees',         'key' => 'employees.export',             'module' => 'employees',  'description' => 'Export employee records to XLSX or CSV.'],
+            ['name' => 'Export Tickets',           'key' => 'workflow.tickets.export',      'module' => 'workflow',   'description' => 'Export workflow ticket records to XLSX or CSV.'],
+            ['name' => 'Export Procedures',        'key' => 'workflow.procedures.export',   'module' => 'workflow',   'description' => 'Export workflow procedure records to XLSX or CSV.'],
+            ['name' => 'Export Inventory',         'key' => 'inventory.export',             'module' => 'inventory',  'description' => 'Export inventory records to XLSX or CSV.'],
+            ['name' => 'Export Accounting',        'key' => 'accounting.export',            'module' => 'accounting', 'description' => 'Export accounting records to XLSX or CSV.'],
 
             // Accounting — Unified Accounting System
             ['name' => 'Read Accounting',      'key' => 'accounting.read',   'module' => 'accounting', 'description' => 'View chart of accounts, journals, and journal entries.'],

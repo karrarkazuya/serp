@@ -33,7 +33,7 @@ class ContractController extends Controller
 
         $fileRecord = null;
 
-        $contract = DB::transaction(function () use ($request, $employee, &$fileRecord) {
+        DB::transaction(function () use ($request, $employee, &$fileRecord) {
             $data = array_merge($request->validated(), ['employee_id' => $employee->id]);
             if ($request->hasFile('image')) {
                 $fileRecord    = $this->fileService->store($request->file('image'), 'contracts/images', 'employees.read');
@@ -42,7 +42,6 @@ class ContractController extends Controller
             $contract = Contract::create($data);
             $fileRecord?->update(['source_type' => $contract->getTable(), 'source_id' => $contract->id]);
             $this->chatterService->log($employee, "Contract created: {$contract->name}", 'log');
-            return $contract;
         });
 
         return redirect()->route('employees.show', $employee)->with('success', 'Contract created.');

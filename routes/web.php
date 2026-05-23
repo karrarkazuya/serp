@@ -44,6 +44,7 @@ use App\Http\Controllers\Api\Chatter\ChatterController;
 use App\Http\Controllers\Chatter\ChatterFileController;
 use App\Http\Controllers\Chat\ChatController;
 use App\Http\Controllers\FileController;
+use App\Http\Controllers\ExportController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -74,6 +75,9 @@ Route::middleware('auth')->group(function () {
     // Unified file serving — UUID-based, permission-aware
     Route::get('/files/{uuid}', [FileController::class, 'serve'])->name('files.serve');
     Route::get('/files/{uuid}/thumbnail', [FileController::class, 'thumbnail'])->name('files.thumbnail');
+
+    // Generic export — permission checked dynamically inside the controller
+    Route::post('/export', [ExportController::class, 'export'])->name('export');
 
     // Notifications
     Route::prefix('notifications')->name('notifications.')->group(function () {
@@ -736,6 +740,7 @@ Route::middleware('auth')->group(function () {
         Route::prefix('products')->name('products.')->group(function () {
             Route::get('/',                    [\App\Http\Controllers\Inventory\ProductController::class, 'read'])       ->middleware('permission:inventory.read')   ->name('index');
             Route::get('/create',              [\App\Http\Controllers\Inventory\ProductController::class, 'create'])     ->middleware('permission:inventory.create') ->name('create');
+            Route::get('/uom-info',            [\App\Http\Controllers\Inventory\ProductController::class, 'uomInfo'])    ->middleware('permission:inventory.read')   ->name('uom-info');
             Route::post('/',                   [\App\Http\Controllers\Inventory\ProductController::class, 'store'])      ->middleware('permission:inventory.create') ->name('store');
             Route::get('/{product}',           [\App\Http\Controllers\Inventory\ProductController::class, 'show'])       ->middleware('permission:inventory.read')   ->name('show');
             Route::get('/{product}/edit',      [\App\Http\Controllers\Inventory\ProductController::class, 'edit'])       ->middleware('permission:inventory.write')  ->name('edit');
@@ -761,6 +766,24 @@ Route::middleware('auth')->group(function () {
             Route::post('/{picking}/return',         [\App\Http\Controllers\Inventory\PickingController::class, 'returnPicking'])    ->middleware('permission:inventory.write')  ->name('return');
             Route::delete('/{picking}',              [\App\Http\Controllers\Inventory\PickingController::class, 'unlink'])           ->middleware('permission:inventory.unlink') ->name('delete');
             Route::post('/{picking}/comment',        [\App\Http\Controllers\Inventory\PickingController::class, 'addComment'])       ->middleware('permission:inventory.write')  ->name('comment');
+        });
+
+        // Receipts (incoming pickings)
+        Route::prefix('receipts')->name('receipts.')->group(function () {
+            Route::get('/',       [\App\Http\Controllers\Inventory\PickingController::class, 'readReceipts'])   ->middleware('permission:inventory.read')   ->name('index');
+            Route::get('/create', [\App\Http\Controllers\Inventory\PickingController::class, 'createReceipt'])  ->middleware('permission:inventory.create') ->name('create');
+        });
+
+        // Deliveries (outgoing pickings)
+        Route::prefix('deliveries')->name('deliveries.')->group(function () {
+            Route::get('/',       [\App\Http\Controllers\Inventory\PickingController::class, 'readDeliveries'])  ->middleware('permission:inventory.read')   ->name('index');
+            Route::get('/create', [\App\Http\Controllers\Inventory\PickingController::class, 'createDelivery']) ->middleware('permission:inventory.create') ->name('create');
+        });
+
+        // Internal Transfers
+        Route::prefix('internal-transfers')->name('internal-transfers.')->group(function () {
+            Route::get('/',       [\App\Http\Controllers\Inventory\PickingController::class, 'readInternal'])   ->middleware('permission:inventory.read')   ->name('index');
+            Route::get('/create', [\App\Http\Controllers\Inventory\PickingController::class, 'createInternal']) ->middleware('permission:inventory.create') ->name('create');
         });
 
         // Lots / Serial Numbers

@@ -3,8 +3,16 @@
 
 @section('content')
 <div class="flex flex-col h-full bg-gray-50">
+    @php
+        [$listRoute, $listLabel, $createRoute] = match($picking->operationType?->code) {
+            'incoming' => [route('inventory.receipts.index'), 'Receipts', route('inventory.receipts.create')],
+            'outgoing' => [route('inventory.deliveries.index'), 'Deliveries', route('inventory.deliveries.create')],
+            'internal' => [route('inventory.internal-transfers.index'), 'Internal Transfers', route('inventory.internal-transfers.create')],
+            default    => [route('inventory.transfers.index'), 'Transfers', route('inventory.transfers.create')],
+        };
+    @endphp
     @can('create', \App\Models\Inventory\Picking::class)
-        @php $newHref = route('inventory.transfers.create'); @endphp
+        @php $newHref = $createRoute; @endphp
     @endcan
     <x-toolbar
         :new-href="$newHref ?? null"
@@ -13,7 +21,7 @@
         :prev-href="$prevId ? route('inventory.transfers.show', $prevId) : null"
         :next-href="$nextId ? route('inventory.transfers.show', $nextId) : null">
         <x-slot:breadcrumb>
-            <a href="{{ route('inventory.transfers.index') }}" class="text-xs text-purple-600 hover:text-purple-700">Transfers</a>
+            <a href="{{ $listRoute }}" class="text-xs text-purple-600 hover:text-purple-700">{{ $listLabel }}</a>
             <span class="text-sm font-semibold text-gray-800">{{ $picking->name }}</span>
         </x-slot:breadcrumb>
         <x-slot:actions>

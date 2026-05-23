@@ -8,19 +8,20 @@
             <a href="{{ route('accounting.dashboard') }}" class="text-xs text-purple-600 hover:text-purple-700">Accounting</a>
             <span class="text-sm font-semibold text-gray-800">Taxes</span>
         </x-slot:breadcrumb>
+        <x-slot:search>
+            <x-search :model="\App\Models\Accounting\AccountTax::class"
+                :quickFilters="[
+                    ['label' => 'Sales', 'url' => route('accounting.taxes.index', ['type_tax_use' => 'sale'])],
+                    ['label' => 'Purchases', 'url' => route('accounting.taxes.index', ['type_tax_use' => 'purchase'])],
+                    ['label' => 'Archived', 'url' => route('accounting.taxes.index', ['filter' => 'archived'])],
+                ]" />
+        </x-slot:search>
     </x-toolbar>
 
     <div class="flex-1 overflow-y-auto p-4">
         @if(session('success'))
         <div class="mb-4 px-3 py-2 bg-green-50 border border-green-200 text-sm text-green-700 rounded">{{ session('success') }}</div>
         @endif
-
-        <x-search :model="\App\Models\Accounting\AccountTax::class"
-            :quickFilters="[
-                ['label' => 'Sales', 'url' => route('accounting.taxes.index', ['type_tax_use' => 'sale'])],
-                ['label' => 'Purchases', 'url' => route('accounting.taxes.index', ['type_tax_use' => 'purchase'])],
-                ['label' => 'Archived', 'url' => route('accounting.taxes.index', ['filter' => 'archived'])],
-            ]" />
 
         <x-list :paginator="$taxes" empty-text="No taxes found.">
             <x-slot:columns>

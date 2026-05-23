@@ -54,6 +54,9 @@ class RelationLookupController extends Controller
             }
         } else {
             $query = DB::table($table);
+            if (Schema::hasColumn($table, 'deleted_at')) {
+                $query->whereNull("{$table}.deleted_at");
+            }
         }
 
         if ($labelJoin && in_array($field, $labelJoin['fields'] ?? [], true)) {

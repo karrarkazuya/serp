@@ -19,6 +19,14 @@
             <a href="{{ route('accounting.dashboard') }}" class="text-xs text-purple-600 hover:text-purple-700">Accounting</a>
             <span class="text-sm font-semibold text-gray-800">Chart of Accounts</span>
         </x-slot:breadcrumb>
+        <x-slot:search>
+            <x-search
+                :model="\App\Models\Accounting\Account::class"
+                :action="route('accounting.accounts.index')"
+                :quick-filters="$quickFilters"
+                :preserve="['view' => $view]"
+            />
+        </x-slot:search>
         <x-slot:actions>
             <div class="flex items-center rounded overflow-hidden border border-gray-300">
                 <a href="{{ $listUrl }}"
@@ -36,14 +44,6 @@
     </x-toolbar>
 
     <div class="flex-1 overflow-y-auto p-4">
-    @if($view !== 'tree')
-    <x-search
-        :model="\App\Models\Accounting\Account::class"
-        :action="route('accounting.accounts.index')"
-        :quick-filters="$quickFilters"
-        :preserve="['view' => $view]"
-    />
-    @endif
 
     @if($view === 'tree')
         <x-tree :nodes="$treeNodes" empty-text="No accounts yet." />
