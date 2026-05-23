@@ -34,6 +34,8 @@
             {{-- Count / pagination --}}
             @if($view === 'tree')
                 <span class="text-sm font-semibold text-gray-600 whitespace-nowrap">{{ $total ?? 0 }}</span>
+            @elseif(isset($groups))
+                <span class="text-sm font-semibold text-gray-600 whitespace-nowrap">{{ $groups->sum('count') }}</span>
             @else
                 @if($departments->total() > 0)
                     <span class="text-sm font-semibold text-gray-600 whitespace-nowrap">
@@ -78,6 +80,53 @@
 
     @if($view === 'tree')
     <x-tree :nodes="$treeNodes" :empty-text="__('employees.no_departments')" class="flex-1" />
+    @elseif(isset($groups))
+    <x-list :grouped="true" empty-text="{{ __('employees.no_departments') }}">
+        <x-slot:columns>
+            <th class="px-4 py-2 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">{{ __('common.name') }}</th>
+            <th class="px-3 py-2 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">{{ __('common.manager') }}</th>
+            <th class="px-3 py-2 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">{{ __('common.company') }}</th>
+            <th class="px-3 py-2 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">{{ __('common.employees') }}</th>
+        </x-slot:columns>
+
+        @forelse($groups as $group)
+        <tbody x-data="{ open: {{ $loop->first ? 'true' : 'false' }} }" class="divide-y divide-gray-100">
+            <tr class="bg-gray-50 border-y border-gray-200 cursor-pointer select-none" @click="open = !open">
+                <td colspan="99" class="px-4 py-2.5">
+                    <div class="flex items-center gap-2 text-sm font-semibold text-gray-800">
+                        <svg class="w-3.5 h-3.5 transition-transform shrink-0 text-gray-400" :class="open ? 'rotate-90' : ''" fill="currentColor" viewBox="0 0 20 20">
+                            <path fill-rule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clip-rule="evenodd"/>
+                        </svg>
+                        {{ $group['label'] }}
+                        <span class="ms-1 text-xs text-gray-400 font-normal">({{ $group['count'] }})</span>
+                    </div>
+                </td>
+            </tr>
+            @foreach($group['items'] as $department)
+            <tr x-show="open" class="hover:bg-purple-50/30 cursor-pointer" onclick="window.location='{{ route('employees.departments.show', $department) }}'">
+                <td class="px-4 py-2.5 font-medium text-gray-900">
+                    <div>
+                        <p class="text-sm font-semibold text-gray-900">{{ $department->name }}</p>
+                        @if($department->parent)
+                            <p class="text-xs text-gray-400">{{ $department->parent->name }}</p>
+                        @endif
+                        @if(!$department->active)
+                            <span class="inline-block px-1.5 py-0.5 rounded text-[10px] font-semibold text-amber-700 bg-amber-50">{{ __('common.archived') }}</span>
+                        @endif
+                    </div>
+                </td>
+                <td class="px-3 py-2.5 text-sm text-gray-600">{{ $department->manager?->name }}</td>
+                <td class="px-3 py-2.5 text-sm text-gray-600">{{ $department->company?->name }}</td>
+                <td class="px-3 py-2.5 text-sm text-gray-600">{{ $department->employees_count }}</td>
+            </tr>
+            @endforeach
+        </tbody>
+        @empty
+        <tbody>
+            <tr><td colspan="99" class="px-4 py-20 text-center text-sm text-gray-400">{{ __('employees.no_departments') }}</td></tr>
+        </tbody>
+        @endforelse
+    </x-list>
     @else
     <x-list :paginator="$departments" :empty-text="__('employees.no_departments')">
         <x-slot:columns>

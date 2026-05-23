@@ -29,7 +29,52 @@
         </x-slot:search>
     </x-toolbar>
 
-    <div class="flex-1 overflow-y-auto p-4">
+    @if(isset($groups))
+    <x-list :grouped="true" empty-text="No journals yet.">
+        <x-slot:columns>
+            <x-sortable-th column="code" label="Code" class="px-4 py-2" :default="true" />
+            <x-sortable-th column="name" label="Name" class="px-3 py-2" />
+            <x-sortable-th column="type" label="Type" class="px-3 py-2" />
+            <th class="px-3 py-2 text-xs font-semibold text-gray-500 uppercase tracking-wide text-left">Default Account</th>
+            <th class="px-3 py-2 text-xs font-semibold text-gray-500 uppercase tracking-wide text-left">Currency</th>
+            <th class="px-3 py-2 text-xs font-semibold text-gray-500 uppercase tracking-wide text-left">Next #</th>
+        </x-slot:columns>
+
+        @forelse($groups as $group)
+        <tbody x-data="{ open: {{ $loop->first ? 'true' : 'false' }} }" class="divide-y divide-gray-100">
+            <tr class="bg-gray-50 border-y border-gray-200 cursor-pointer select-none" @click="open = !open">
+                <td colspan="99" class="px-4 py-2.5">
+                    <div class="flex items-center gap-2 text-sm font-semibold text-gray-800">
+                        <svg class="w-3.5 h-3.5 transition-transform shrink-0 text-gray-400" :class="open ? 'rotate-90' : ''" fill="currentColor" viewBox="0 0 20 20">
+                            <path fill-rule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clip-rule="evenodd"/>
+                        </svg>
+                        {{ $group['label'] }}
+                        <span class="ms-1 text-xs text-gray-400 font-normal">({{ $group['count'] }})</span>
+                    </div>
+                </td>
+            </tr>
+            @foreach($group['items'] as $journal)
+            <tr x-show="open" class="hover:bg-purple-50/30 cursor-pointer" onclick="window.location='{{ route('accounting.journals.show', $journal) }}'">
+                <td class="px-4 py-2 font-medium text-gray-900">{{ $journal->code }}</td>
+                <td class="px-3 py-2 text-gray-800">
+                    {{ $journal->name }}
+                    @if(!$journal->active)<span class="ms-1.5 text-[10px] text-amber-600 font-semibold uppercase">Archived</span>@endif
+                </td>
+                <td class="px-3 py-2 text-gray-600">{{ $journal->type_label }}</td>
+                <td class="px-3 py-2 text-gray-600">{{ $journal->defaultAccount ? $journal->defaultAccount->code.' '.$journal->defaultAccount->name : '—' }}</td>
+                <td class="px-3 py-2 text-gray-600">{{ $journal->currency ?: '—' }}</td>
+                <td class="px-3 py-2 text-gray-600 tabular-nums">{{ $journal->sequence_next_number }}</td>
+            </tr>
+            @endforeach
+        </tbody>
+        @empty
+        <tbody>
+            <tr><td colspan="99" class="px-4 py-20 text-center text-sm text-gray-400">No journals yet.</td></tr>
+        </tbody>
+        @endforelse
+    </x-list>
+
+    @else
     <x-list :paginator="$journals" empty-text="No journals yet.">
         <x-slot:columns>
             <x-sortable-th column="code" label="Code" class="px-4 py-2" :default="true" />
@@ -54,6 +99,6 @@
         </tr>
         @endforeach
     </x-list>
-    </div>
+    @endif
 </div>
 @endsection

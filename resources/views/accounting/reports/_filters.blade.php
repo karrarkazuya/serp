@@ -1,4 +1,4 @@
-@props(['dateFrom' => null, 'dateTo' => null, 'showJournal' => false, 'journals' => collect(), 'journalId' => null, 'showAccount' => false, 'accounts' => collect(), 'accountId' => null, 'showAsOf' => false, 'asOf' => null])
+@props(['dateFrom' => null, 'dateTo' => null, 'showJournal' => false, 'journalId' => null, 'showAccount' => false, 'accountId' => null, 'showAsOf' => false, 'asOf' => null])
 
 <form method="GET" class="mb-5 flex flex-wrap items-end gap-3 bg-white rounded-xl border border-gray-200 shadow-sm p-4">
     @if($showAsOf)
@@ -23,28 +23,26 @@
     @if($showJournal)
     <div>
         <label class="block text-xs font-medium text-gray-500 mb-1">Journal</label>
-        <select name="journal_id" class="border border-gray-300 rounded px-3 py-1.5 text-sm focus:outline-none focus:ring-1 focus:ring-purple-400">
-            <option value="">All Journals</option>
-            @foreach($journals as $journal)
-            <option value="{{ $journal->id }}" {{ $journalId == $journal->id ? 'selected' : '' }}>
-                {{ $journal->code }} – {{ $journal->name }}
-            </option>
-            @endforeach
-        </select>
+        <x-relation-dropdown
+            table="account_journals"
+            field="name"
+            name="journal_id"
+            :compact="true"
+            :selected="$journalId"
+        />
     </div>
     @endif
 
     @if($showAccount)
     <div>
         <label class="block text-xs font-medium text-gray-500 mb-1">Account</label>
-        <select name="account_id" class="border border-gray-300 rounded px-3 py-1.5 text-sm focus:outline-none focus:ring-1 focus:ring-purple-400 max-w-xs">
-            <option value="">All Accounts</option>
-            @foreach($accounts as $account)
-            <option value="{{ $account->id }}" {{ $accountId == $account->id ? 'selected' : '' }}>
-                {{ $account->code }} {{ $account->name }}
-            </option>
-            @endforeach
-        </select>
+        <x-relation-dropdown
+            table="accounts"
+            field="name"
+            name="account_id"
+            :compact="true"
+            :selected="$accountId"
+        />
     </div>
     @endif
 

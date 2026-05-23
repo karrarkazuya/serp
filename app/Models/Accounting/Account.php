@@ -77,7 +77,6 @@ class Account extends Model
     ];
 
     protected $fillable = [
-        'uuid',
         'company_id',
         'parent_id',
         'code',
@@ -89,8 +88,6 @@ class Account extends Model
         'reconcile',
         'notes',
         'active',
-        'created_by',
-        'updated_by',
     ];
 
     protected $casts = [

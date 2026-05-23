@@ -35,11 +35,8 @@
                     <div>
                         <div class="flex items-center gap-4 py-2 border-b border-gray-100">
                             <label class="w-32 shrink-0 text-sm text-gray-500">Category</label>
-                            <select name="uom_category_id" required class="flex-1 text-sm bg-transparent border-0 focus:outline-none px-0 py-0.5">
-                                @foreach($categories as $cat)
-                                <option value="{{ $cat->id }}" {{ old('uom_category_id', $uom->uom_category_id) == $cat->id ? 'selected' : '' }}>{{ $cat->name }}</option>
-                                @endforeach
-                            </select>
+                            <x-relation-dropdown table="inventory_uom_categories" field="name" name="uom_category_id" relation="many2one"
+                                :selected="old('uom_category_id', $uom->uom_category_id)" class="flex-1" compact />
                         </div>
                         <div class="flex items-center gap-4 py-2 border-b border-gray-100">
                             <label class="w-32 shrink-0 text-sm text-gray-500">Symbol</label>

@@ -42,9 +42,8 @@ class ScrapOrder extends Model
     ];
 
     protected $fillable = [
-        'uuid', 'company_id', 'product_id', 'uom_id', 'location_id', 'scrap_location_id',
+        'company_id', 'product_id', 'uom_id', 'location_id', 'scrap_location_id',
         'lot_id', 'picking_id', 'move_id', 'name', 'scrap_qty', 'state', 'origin', 'date_done',
-        'created_by', 'updated_by',
     ];
 
     protected $casts = [

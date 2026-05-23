@@ -1,5 +1,5 @@
 @extends('layouts.app')
-@section('title', 'Edit Entry')
+@section('title', 'Edit — ' . ($move->name ?: 'Draft'))
 
 @section('content')
 <div class="flex flex-col h-full bg-gray-50">
@@ -11,11 +11,11 @@
         </x-slot:breadcrumb>
         <x-slot:actions>
             <div class="flex items-center gap-2">
-                <a href="{{ route('accounting.moves.show', $move) }}" class="px-3 py-1.5 text-sm text-gray-600 bg-white border border-gray-300 rounded hover:bg-gray-50">Cancel</a>
-                <button form="move-form" type="submit" name="action" value="save" class="px-4 py-1.5 text-sm font-medium text-white bg-[#714B67] hover:bg-[#5c3d55] rounded shadow-sm">Save Draft</button>
                 @if(auth()->user()->hasPermission('accounting.post'))
-                <button form="move-form" type="submit" name="action" value="post" class="px-4 py-1.5 text-sm font-medium text-white bg-green-700 hover:bg-green-800 rounded shadow-sm">Save &amp; Post</button>
+                <button form="move-form" type="submit" name="action" value="post" class="px-4 py-1.5 text-sm font-medium text-white bg-[#71639e] hover:bg-[#5c527f] rounded shadow-sm">Post</button>
                 @endif
+                <button form="move-form" type="submit" name="action" value="save" class="px-3 py-1.5 text-sm text-gray-700 bg-white border border-gray-300 rounded hover:bg-gray-50">Save Draft</button>
+                <a href="{{ route('accounting.moves.show', $move) }}" class="px-3 py-1.5 text-sm text-gray-600 bg-white border border-gray-300 rounded hover:bg-gray-50">Discard</a>
             </div>
         </x-slot:actions>
     </x-toolbar>
@@ -24,7 +24,7 @@
         <div class="bg-white mx-4 my-4 rounded-xl border border-gray-200 shadow-sm">
             <form id="move-form" method="POST" action="{{ route('accounting.moves.update', $move) }}">
                 @csrf @method('PUT')
-                @include('accounting.moves._form', ['move' => $move, 'accounts' => []])
+                @include('accounting.moves._form', ['move' => $move])
             </form>
         </div>
     </div>

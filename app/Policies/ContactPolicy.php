@@ -36,4 +36,9 @@ class ContactPolicy
     {
         return $user->hasPermission('contacts.write');
     }
+
+    public function export(User $user): bool
+    {
+        return $user->hasPermission('contacts.export');
+    }
 }

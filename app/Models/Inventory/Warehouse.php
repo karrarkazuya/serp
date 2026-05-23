@@ -42,9 +42,9 @@ class Warehouse extends Model
     ];
 
     protected $fillable = [
-        'uuid', 'company_id', 'partner_id', 'lot_stock_id',
+        'company_id', 'partner_id', 'lot_stock_id',
         'wh_input_stock_loc_id', 'wh_output_stock_loc_id', 'wh_pack_stock_loc_id', 'view_location_id',
-        'name', 'short_name', 'reception_steps', 'delivery_steps', 'active', 'created_by', 'updated_by',
+        'name', 'short_name', 'reception_steps', 'delivery_steps', 'active',
     ];
 
     protected $casts = ['active' => 'boolean'];

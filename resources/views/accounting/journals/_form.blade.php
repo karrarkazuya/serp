@@ -1,6 +1,5 @@
 @php
     $val = fn($field, $default = '') => old($field, $journal?->{$field} ?? $default);
-    $types = \App\Models\Accounting\AccountJournal::TYPES;
 @endphp
 
 @if($errors->any())
@@ -31,7 +30,7 @@
                 <label class="w-40 shrink-0 text-sm text-gray-500">Type</label>
                 <select name="type" required class="flex-1 text-sm text-gray-800 bg-transparent border-0 focus:outline-none focus:ring-0 px-0 py-0.5">
                     <option value="">Select type…</option>
-                    @foreach($types as $key => $label)
+                    @foreach($journalTypes as $key => $label)
                         <option value="{{ $key }}" @selected($val('type') === $key)>{{ $label }}</option>
                     @endforeach
                 </select>

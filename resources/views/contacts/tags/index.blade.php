@@ -31,26 +31,32 @@
         />
 
         <div class="flex items-center gap-3 shrink-0 text-sm text-gray-500">
-            @if($tags->total() > 0)
-                <span class="text-sm font-semibold text-gray-600 whitespace-nowrap">
-                    {{ $tags->firstItem() }}-{{ $tags->lastItem() }} / {{ $tags->total() }}
-                </span>
-            @else
-                <span class="text-sm font-semibold text-gray-400">0</span>
+            @if(isset($groups))
+                <span class="text-sm font-semibold text-gray-600 whitespace-nowrap">{{ $groups->sum('count') }} records</span>
+            @elseif(isset($tags))
+                @if($tags->total() > 0)
+                    <span class="text-sm font-semibold text-gray-600 whitespace-nowrap">
+                        {{ $tags->firstItem() }}-{{ $tags->lastItem() }} / {{ $tags->total() }}
+                    </span>
+                @else
+                    <span class="text-sm font-semibold text-gray-400">0</span>
+                @endif
             @endif
 
+            @if(!isset($groups))
             <div class="flex items-center gap-1">
-                @if($tags->onFirstPage())
+                @if(!isset($tags) || $tags->onFirstPage())
                     <span class="w-10 h-10 inline-flex items-center justify-center rounded bg-gray-100 text-gray-300">‹</span>
                 @else
                     <a href="{{ $tags->previousPageUrl() }}" class="w-10 h-10 inline-flex items-center justify-center rounded bg-gray-100 text-gray-600 hover:text-gray-900">‹</a>
                 @endif
-                @if($tags->hasMorePages())
+                @if(isset($tags) && $tags->hasMorePages())
                     <a href="{{ $tags->nextPageUrl() }}" class="w-10 h-10 inline-flex items-center justify-center rounded bg-gray-100 text-gray-600 hover:text-gray-900">›</a>
                 @else
                     <span class="w-10 h-10 inline-flex items-center justify-center rounded bg-gray-100 text-gray-300">›</span>
                 @endif
             </div>
+            @endif
 
             <div class="flex items-center rounded overflow-hidden bg-gray-200">
                 <span class="w-10 h-10 inline-flex items-center justify-center border border-purple-400 bg-purple-100 text-gray-900" title="{{ __('common.list_view') }}">
@@ -62,6 +68,53 @@
         </div>
     </div>
 
+    @if(isset($groups))
+    <x-list :grouped="true" :empty-text="__('contacts.no_tags')">
+        <x-slot:columns>
+            <x-sortable-th column="name" :label="__('contacts.tag_name')" class="px-4 py-2" :default="true" />
+            <x-sortable-th column="color" :label="__('contacts.tag_color')" class="px-3 py-2" />
+            <x-sortable-th column="contacts" :label="__('contacts.title')" class="px-3 py-2" />
+            <th class="w-24 px-3 py-2 text-xs font-semibold text-gray-500 uppercase tracking-wide"></th>
+        </x-slot:columns>
+
+        @forelse($groups as $group)
+        <tbody x-data="{ open: {{ $loop->first ? 'true' : 'false' }} }" class="divide-y divide-gray-100">
+            <tr class="bg-gray-50 border-y border-gray-200 cursor-pointer select-none" @click="open = !open">
+                <td colspan="99" class="px-4 py-2.5">
+                    <div class="flex items-center gap-2 text-sm font-semibold text-gray-800">
+                        <svg class="w-3.5 h-3.5 transition-transform shrink-0 text-gray-400" :class="open ? 'rotate-90' : ''" fill="currentColor" viewBox="0 0 20 20">
+                            <path fill-rule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clip-rule="evenodd"/>
+                        </svg>
+                        {{ $group['label'] }}
+                        <span class="ms-1 text-xs text-gray-400 font-normal">({{ $group['count'] }})</span>
+                    </div>
+                </td>
+            </tr>
+            @foreach($group['items'] as $tag)
+            <tr x-show="open" class="hover:bg-purple-50/30 transition-colors cursor-pointer"
+                onclick="window.location='{{ route('contacts.tags.show', $tag) }}'">
+                <td class="px-4 py-2 font-medium text-gray-900">
+                    <a href="{{ route('contacts.tags.show', $tag) }}" class="hover:text-purple-700" onclick="event.stopPropagation()">{{ $tag->name }}</a>
+                </td>
+                <td class="px-3 py-2 text-gray-600">
+                    <span class="inline-flex items-center gap-2">
+                        <span class="w-5 h-5 rounded border border-gray-200" style="background-color: {{ $tag->color }}"></span>
+                        <span>{{ $tag->color }}</span>
+                    </span>
+                </td>
+                <td class="px-3 py-2 text-gray-600">{{ $tag->contacts_count }}</td>
+                <td class="px-3 py-2 text-end"></td>
+            </tr>
+            @endforeach
+        </tbody>
+        @empty
+        <tbody>
+            <tr><td colspan="99" class="px-4 py-20 text-center text-sm text-gray-400">{{ __('contacts.no_tags') }}</td></tr>
+        </tbody>
+        @endforelse
+    </x-list>
+
+    @else
     <x-list :paginator="$tags" :empty-text="__('contacts.no_tags')">
         <x-slot:columns>
             <x-sortable-th column="name" :label="__('contacts.tag_name')" class="px-4 py-2" :default="true" />
@@ -95,5 +148,6 @@
         </tr>
         @endforeach
     </x-list>
+    @endif
 </div>
 @endsection

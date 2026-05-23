@@ -36,7 +36,7 @@ class Uom extends Model
     ];
 
     protected $fillable = [
-        'uuid', 'uom_category_id', 'name', 'symbol', 'ratio', 'rounding', 'uom_type', 'active', 'created_by', 'updated_by',
+        'uom_category_id', 'name', 'symbol', 'ratio', 'rounding', 'uom_type', 'active',
     ];
 
     protected $casts = [

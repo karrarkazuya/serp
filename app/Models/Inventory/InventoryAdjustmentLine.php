@@ -16,8 +16,8 @@ class InventoryAdjustmentLine extends Model
     protected $table = 'inventory_adjustment_lines';
 
     protected $fillable = [
-        'uuid', 'company_id', 'adjustment_id', 'product_id', 'location_id', 'lot_id',
-        'inventory_qty', 'theoretical_qty', 'difference_qty', 'created_by', 'updated_by',
+        'company_id', 'adjustment_id', 'product_id', 'location_id', 'lot_id',
+        'inventory_qty', 'theoretical_qty', 'difference_qty',
     ];
 
     protected $casts = [

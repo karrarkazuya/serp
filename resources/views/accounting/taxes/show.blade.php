@@ -62,9 +62,9 @@
             </div>
 
             @foreach([
-                ['Tax Type',       \App\Models\Accounting\AccountTax::AMOUNT_TYPES[$tax->amount_type] ?? $tax->amount_type],
+                ['Tax Type',       $amountTypes[$tax->amount_type] ?? $tax->amount_type],
                 ['Rate / Amount',  $tax->amount_type === 'percent' ? number_format((float)$tax->amount, 2).'%' : number_format((float)$tax->amount, 2)],
-                ['Applies To',     \App\Models\Accounting\AccountTax::TYPE_TAX_USE[$tax->type_tax_use] ?? $tax->type_tax_use],
+                ['Applies To',     $typeTaxUse[$tax->type_tax_use] ?? $tax->type_tax_use],
                 ['Tax Account',    $tax->account?->display_name ?? '—'],
                 ['Price Inclusive',$tax->include_base_amount ? 'Yes (tax included in price)' : 'No (tax added on top)'],
                 ['Description',    $tax->description ?: '—'],

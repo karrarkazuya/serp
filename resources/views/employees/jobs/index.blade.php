@@ -29,7 +29,9 @@
         />
 
         <div class="ms-auto flex items-center gap-2 sm:gap-3 text-sm text-gray-500 shrink-0">
-            @if($jobs->total() > 0)
+            @if(isset($groups))
+                <span class="text-sm font-semibold text-gray-600 whitespace-nowrap">{{ $groups->sum('count') }}</span>
+            @elseif($jobs->total() > 0)
                 <span class="text-sm font-semibold text-gray-600 whitespace-nowrap">
                     {{ $jobs->firstItem() }}-{{ $jobs->lastItem() }} / {{ $jobs->total() }}
                 </span>
@@ -37,6 +39,7 @@
                 <span class="text-sm font-semibold text-gray-400">0</span>
             @endif
 
+            @if(!isset($groups))
             <div class="flex items-center gap-1">
                 @if($jobs->onFirstPage())
                     <span class="w-10 h-10 inline-flex items-center justify-center rounded bg-gray-100 text-gray-300">‹</span>
@@ -49,9 +52,61 @@
                     <span class="w-10 h-10 inline-flex items-center justify-center rounded bg-gray-100 text-gray-300">›</span>
                 @endif
             </div>
+            @endif
         </div>
     </div>
 
+    @if(isset($groups))
+    <x-list :grouped="true" empty-text="{{ __('employees.no_jobs') }}">
+        <x-slot:columns>
+            <th class="px-4 py-2 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">{{ __('employees.job_position') }}</th>
+            <th class="px-3 py-2 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">{{ __('common.department') }}</th>
+            <th class="px-3 py-2 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">{{ __('common.company') }}</th>
+            <th class="px-3 py-2 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">{{ __('common.employees') }}</th>
+            <th class="px-3 py-2 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">{{ __('employees.expected_employees') }}</th>
+            <th class="px-3 py-2 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">{{ __('common.status') }}</th>
+        </x-slot:columns>
+
+        @forelse($groups as $group)
+        <tbody x-data="{ open: {{ $loop->first ? 'true' : 'false' }} }" class="divide-y divide-gray-100">
+            <tr class="bg-gray-50 border-y border-gray-200 cursor-pointer select-none" @click="open = !open">
+                <td colspan="99" class="px-4 py-2.5">
+                    <div class="flex items-center gap-2 text-sm font-semibold text-gray-800">
+                        <svg class="w-3.5 h-3.5 transition-transform shrink-0 text-gray-400" :class="open ? 'rotate-90' : ''" fill="currentColor" viewBox="0 0 20 20">
+                            <path fill-rule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clip-rule="evenodd"/>
+                        </svg>
+                        {{ $group['label'] }}
+                        <span class="ms-1 text-xs text-gray-400 font-normal">({{ $group['count'] }})</span>
+                    </div>
+                </td>
+            </tr>
+            @foreach($group['items'] as $job)
+            <tr x-show="open" class="hover:bg-purple-50/30 cursor-pointer" onclick="window.location='{{ route('employees.jobs.show', $job) }}'">
+                <td class="px-4 py-2.5 font-medium text-gray-900">
+                    <p class="text-sm font-semibold text-gray-900">{{ $job->name }}</p>
+                    @if(!$job->active)
+                        <span class="inline-block px-1.5 py-0.5 rounded text-[10px] font-semibold text-amber-700 bg-amber-50">{{ __('common.archived') }}</span>
+                    @endif
+                </td>
+                <td class="px-3 py-2.5 text-sm text-gray-600">{{ $job->department?->name }}</td>
+                <td class="px-3 py-2.5 text-sm text-gray-600">{{ $job->company?->name }}</td>
+                <td class="px-3 py-2.5 text-sm text-gray-600">{{ $job->no_of_employee }}</td>
+                <td class="px-3 py-2.5 text-sm text-gray-600">{{ $job->expected_employees }}</td>
+                <td class="px-3 py-2.5">
+                    <span class="inline-block px-2 py-0.5 rounded text-xs font-semibold {{ $job->state === 'open' ? 'text-green-700 bg-green-50' : 'text-gray-600 bg-gray-100' }}">
+                        {{ $job->state === 'open' ? __('employees.recruiting') : __('employees.not_recruiting') }}
+                    </span>
+                </td>
+            </tr>
+            @endforeach
+        </tbody>
+        @empty
+        <tbody>
+            <tr><td colspan="99" class="px-4 py-20 text-center text-sm text-gray-400">{{ __('employees.no_jobs') }}</td></tr>
+        </tbody>
+        @endforelse
+    </x-list>
+    @else
     <x-list :paginator="$jobs" :empty-text="__('employees.no_jobs')">
         <x-slot:columns>
             <x-sortable-th column="name"       :label="__('employees.job_position')" class="px-4 py-2" :default="true" />
@@ -82,5 +137,6 @@
         </tr>
         @endforeach
     </x-list>
+    @endif
 </div>
 @endsection

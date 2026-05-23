@@ -57,7 +57,6 @@ class AccountJournal extends Model
     ];
 
     protected $fillable = [
-        'uuid',
         'company_id',
         'default_account_id',
         'suspense_account_id',
@@ -69,8 +68,6 @@ class AccountJournal extends Model
         'sequence_next_number',
         'sequence_padding',
         'active',
-        'created_by',
-        'updated_by',
     ];
 
     protected $casts = [

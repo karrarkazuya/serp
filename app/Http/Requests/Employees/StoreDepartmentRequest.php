@@ -10,7 +10,7 @@ class StoreDepartmentRequest extends FormRequest
 {
     public function authorize(): bool
     {
-        return $this->user()->hasPermission('employees.write');
+        return $this->user()->hasPermission('employees.create');
     }
 
     public function rules(): array

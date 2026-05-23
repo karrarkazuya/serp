@@ -16,6 +16,7 @@ use App\Models\Employees\WorkLocation;
 use App\Services\Company\CompanyContextService;
 use App\Services\Employees\EmployeeService;
 use App\Services\FileService;
+use App\Helpers\GroupsQuery;
 use App\Helpers\SearchFilters;
 use App\Helpers\SortsTable;
 use Illuminate\Http\Request;
@@ -73,6 +74,19 @@ class EmployeeController extends Controller
             $total     = $all->count();
 
             return view('employees.index', compact('treeNodes', 'total', 'view'));
+        }
+
+        $groupBy = $request->query('group_by');
+        if ($view === 'list' && $groupBy) {
+            $fields = SearchFilters::fieldsFor(Employee::class);
+            if (isset($fields[$groupBy])) {
+                $records = (clone $query)
+                    ->with(['company', 'department', 'job', 'categories'])
+                    ->orderBy('name')
+                    ->get();
+                $groups = GroupsQuery::apply($records, $fields[$groupBy]);
+                return view('employees.index', compact('groups', 'view'));
+            }
         }
 
         SortsTable::apply($query, $request);
@@ -146,6 +160,8 @@ class EmployeeController extends Controller
 
     public function store(StoreEmployeeRequest $request)
     {
+        $this->authorize('create', Employee::class);
+
         $data        = $request->validated();
         $categoryIds = $data['categories'] ?? [];
         unset($data['categories']);
@@ -195,6 +211,8 @@ class EmployeeController extends Controller
 
     public function write(UpdateEmployeeRequest $request, Employee $employee)
     {
+        $this->authorize('update', $employee);
+
         $activeCompanyIds = $this->companyContext->getActiveCompanyIds();
         abort_unless(empty($activeCompanyIds) || in_array($employee->company_id, $activeCompanyIds), 403);
 
@@ -309,12 +327,18 @@ class EmployeeController extends Controller
         $employee = Employee::where('uuid', $uuid)->firstOrFail();
         abort_unless($employee->avatar, 404);
 
+        $activeCompanyIds = $this->companyContext->getActiveCompanyIds();
+        abort_unless(empty($activeCompanyIds) || in_array($employee->company_id, $activeCompanyIds), 403);
+
         return redirect()->route('files.serve', $employee->avatar);
     }
 
     public function addComment(Request $request, Employee $employee)
     {
         $this->authorize('comment', $employee);
+        $activeCompanyIds = $this->companyContext->getActiveCompanyIds();
+        abort_unless(empty($activeCompanyIds) || in_array($employee->company_id, $activeCompanyIds), 403);
+
         $request->validate(['body' => 'required|string|max:5000']);
         DB::transaction(fn () => $employee->logComment($request->body));
 
@@ -333,7 +357,10 @@ class EmployeeController extends Controller
             return response()->json(['conflict' => false]);
         }
 
+        $activeCompanyIds = $this->companyContext->getActiveCompanyIds();
+
         $existing = Employee::where($field, $value)
+            ->when(!empty($activeCompanyIds), fn($q) => $q->forCompanies($activeCompanyIds))
             ->when($exclude, fn($q) => $q->where('id', '!=', (int) $exclude))
             ->first(['id', 'name', 'uuid']);
 

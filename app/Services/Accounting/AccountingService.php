@@ -429,18 +429,20 @@ class AccountingService
             throw new RuntimeException('The selected payment journal needs a default liquidity account.');
         }
 
-        $counterpartAccountId = $journal->suspense_account_id ?? $journal->default_account_id;
+        $amount = round((float) ($data['amount'] ?? 0), self::SCALE);
+        if ($amount <= 0) {
+            throw new RuntimeException('Payment amount must be greater than zero.');
+        }
+
+        $counterpartAccountId = $data['destination_account_id']
+            ?? $journal->suspense_account_id
+            ?? $journal->default_account_id;
 
         $paymentType = $data['payment_type'];
-        $amount      = round((float) $data['amount'], self::SCALE);
         $date        = $data['date'] ?? now()->toDateString();
         $memo        = $data['memo'] ?? '';
         $partnerId   = $data['partner_id'] ?? null;
         $currency    = $data['currency'] ?? null;
-
-        if ($amount <= 0) {
-            throw new RuntimeException('Payment amount must be greater than zero.');
-        }
 
         $lines = $paymentType === 'inbound'
             ? [
@@ -462,19 +464,72 @@ class AccountingService
             'ref'        => $memo,
         ], $lines);
 
-        $paymentMove = $this->postMove($paymentMove);
-
         return AccountPayment::create([
-            'company_id'   => $journal->company_id,
-            'journal_id'   => $journal->id,
-            'move_id'      => $paymentMove->id,
-            'partner_id'   => $partnerId,
-            'payment_type' => $paymentType,
-            'date'         => $date,
-            'amount'       => $amount,
-            'currency'     => $currency,
-            'memo'         => $memo,
+            'company_id'             => $journal->company_id,
+            'journal_id'             => $journal->id,
+            'move_id'                => $paymentMove->id,
+            'partner_id'             => $partnerId,
+            'payment_type'           => $paymentType,
+            'date'                   => $date,
+            'amount'                 => $amount,
+            'currency'               => $currency,
+            'memo'                   => $memo,
+            'state'                  => 'draft',
+            'payment_method'         => $data['payment_method'] ?? 'manual',
+            'bank_reference'         => $data['bank_reference'] ?? null,
+            'cheque_number'          => $data['cheque_number'] ?? null,
+            'destination_account_id' => $data['destination_account_id'] ?? null,
         ]);
+    }
+
+    public function confirmPayment(AccountPayment $payment): AccountPayment
+    {
+        if (!$payment->isDraft()) {
+            throw new RuntimeException('Only draft payments can be confirmed.');
+        }
+
+        $this->postMove($payment->move);
+
+        $payment->update(['state' => 'posted']);
+
+        $this->chatterService->log($payment, 'Payment confirmed and journal entry posted.', 'system');
+
+        return $payment;
+    }
+
+    public function cancelPayment(AccountPayment $payment): AccountPayment
+    {
+        if ($payment->state === 'cancelled') {
+            return $payment;
+        }
+
+        if ($payment->move && $payment->move->isPosted()) {
+            $this->cancelMove($payment->move);
+        }
+
+        $payment->update(['state' => 'cancelled']);
+
+        $this->chatterService->log($payment, 'Payment cancelled.', 'system');
+
+        return $payment;
+    }
+
+    public function resetPaymentToDraft(AccountPayment $payment): AccountPayment
+    {
+        if ($payment->isDraft()) {
+            return $payment;
+        }
+
+        if ($payment->move && $payment->move->state === 'posted') {
+            $this->cancelMove($payment->move);
+            $this->resetMoveToDraft($payment->move);
+        }
+
+        $payment->update(['state' => 'draft']);
+
+        $this->chatterService->log($payment, 'Payment reset to draft.', 'system');
+
+        return $payment;
     }
 
     public function createCreditNote(AccountMove $move): AccountMove
@@ -809,7 +864,8 @@ class AccountingService
     private function buildDocumentLines(array $data, array $items): array
     {
         $moveType = $data['move_type'] ?? 'entry';
-        if (!in_array($moveType, ['out_invoice', 'in_invoice'], true)) {
+        $supported = ['out_invoice', 'in_invoice', 'out_refund', 'in_refund'];
+        if (!in_array($moveType, $supported, true)) {
             throw new RuntimeException('Unsupported accounting document type.');
         }
 
@@ -822,22 +878,30 @@ class AccountingService
             throw new RuntimeException('A receivable or payable account is required.');
         }
 
-        // Determine which taxes apply (sale vs purchase)
-        $taxScope = $moveType === 'out_invoice' ? 'sale' : 'purchase';
+        // Debit/credit direction per type:
+        // out_invoice: lines → credit, control → debit
+        // in_invoice:  lines → debit,  control → credit
+        // out_refund:  lines → debit,  control → credit  (reverse of out_invoice)
+        // in_refund:   lines → credit, control → debit   (reverse of in_invoice)
+        $lineOnCredit   = in_array($moveType, ['out_invoice', 'in_refund'], true);
+        $controlOnDebit = in_array($moveType, ['out_invoice', 'in_refund'], true);
 
-        $lines         = [];
-        $subtotal      = 0.0;
-        $taxTotals     = []; // account_id => amount for merging same-account tax lines
-        $sequence      = 10;
+        // Tax scope: sale for customer-side, purchase for vendor-side
+        $taxScope = in_array($moveType, ['out_invoice', 'out_refund'], true) ? 'sale' : 'purchase';
+
+        $lines     = [];
+        $subtotal  = 0.0;
+        $taxTotals = [];
+        $sequence  = 10;
 
         foreach ($items as $item) {
             $quantity  = round((float) ($item['quantity']   ?? 0), self::SCALE);
             $priceUnit = round((float) ($item['price_unit'] ?? 0), self::SCALE);
+            $discount  = min(100.0, max(0.0, (float) ($item['discount'] ?? 0)));
             $taxIds    = array_filter((array) ($item['tax_ids'] ?? []));
             $productId = $item['product_id'] ?? null;
             $uomId     = $item['uom_id']     ?? null;
 
-            // Load applicable taxes once (company-scoped, matching sale/purchase scope)
             $taxes = $taxIds
                 ? AccountTax::whereIn('id', $taxIds)
                     ->where('company_id', $companyId)
@@ -846,8 +910,7 @@ class AccountingService
                     ->get()
                 : collect();
 
-            // For price-inclusive taxes, the price_unit is gross; extract net base
-            $grossAmount = round($quantity * $priceUnit, self::SCALE);
+            $grossAmount = round($quantity * $priceUnit * (1 - $discount / 100), self::SCALE);
             if ($grossAmount <= 0) {
                 continue;
             }
@@ -863,7 +926,6 @@ class AccountingService
 
             $subtotal = round($subtotal + $netAmount, self::SCALE);
 
-            // Auto-derive label: use item name if set, fall back to product name
             $label = (string) ($item['name'] ?? '');
             if ($label === '' && $productId) {
                 $product = \App\Models\Inventory\Product::find($productId);
@@ -876,20 +938,18 @@ class AccountingService
                 'product_id'      => $productId ?: null,
                 'uom_id'          => $uomId ?: null,
                 'name'            => $label,
-                'debit'           => $moveType === 'in_invoice' ? $netAmount : 0,
-                'credit'          => $moveType === 'out_invoice' ? $netAmount : 0,
+                'debit'           => $lineOnCredit ? 0 : $netAmount,
+                'credit'          => $lineOnCredit ? $netAmount : 0,
                 'currency'        => $currency,
                 'amount_currency' => $netAmount,
+                'discount'        => $discount,
                 'sequence'        => $sequence,
                 'tax_ids'         => $taxes->pluck('id')->all(),
                 'tax_base_amount' => $netAmount,
             ];
             $sequence += 10;
 
-            // Accumulate tax amounts grouped by tax account
             foreach ($taxes as $tax) {
-                // Inclusive taxes: computeAmount expects the gross (price_unit×qty) so it can extract
-                // the embedded portion correctly. Exclusive taxes operate on the net base.
                 $baseForCompute = $tax->include_base_amount ? $grossAmount : $netAmount;
                 $taxAmount = $tax->computeAmount($baseForCompute);
                 if ($taxAmount <= 0) {
@@ -897,7 +957,7 @@ class AccountingService
                 }
                 $taxAccountId = $tax->account_id;
                 if (!$taxAccountId) {
-                    continue; // no account configured — skip
+                    continue;
                 }
                 $key = $taxAccountId . ':' . $tax->id;
                 if (!isset($taxTotals[$key])) {
@@ -911,8 +971,8 @@ class AccountingService
                         'currency'        => $currency,
                     ];
                 }
-                $taxTotals[$key]['amount']          = round($taxTotals[$key]['amount']          + $taxAmount, self::SCALE);
-                $taxTotals[$key]['tax_base_amount']  = round($taxTotals[$key]['tax_base_amount'] + $netAmount, self::SCALE);
+                $taxTotals[$key]['amount']         = round($taxTotals[$key]['amount']         + $taxAmount, self::SCALE);
+                $taxTotals[$key]['tax_base_amount'] = round($taxTotals[$key]['tax_base_amount'] + $netAmount, self::SCALE);
             }
         }
 
@@ -920,7 +980,6 @@ class AccountingService
             throw new RuntimeException('Invoice total must be greater than zero.');
         }
 
-        // Emit one line per tax group
         $totalTaxes = 0.0;
         foreach ($taxTotals as $taxLine) {
             $amount = $taxLine['amount'];
@@ -929,8 +988,8 @@ class AccountingService
                 'account_id'      => $taxLine['account_id'],
                 'partner_id'      => $taxLine['partner_id'],
                 'name'            => $taxLine['name'],
-                'debit'           => $moveType === 'in_invoice' ? $amount : 0,
-                'credit'          => $moveType === 'out_invoice' ? $amount : 0,
+                'debit'           => $lineOnCredit ? 0 : $amount,
+                'credit'          => $lineOnCredit ? $amount : 0,
                 'currency'        => $taxLine['currency'],
                 'amount_currency' => $amount,
                 'sequence'        => $sequence,
@@ -942,12 +1001,19 @@ class AccountingService
 
         $grandTotal = round($subtotal + $totalTaxes, self::SCALE);
 
+        $controlLabels = [
+            'out_invoice' => 'Customer balance',
+            'in_invoice'  => 'Vendor balance',
+            'out_refund'  => 'Customer credit',
+            'in_refund'   => 'Vendor refund',
+        ];
+
         $lines[] = [
             'account_id'      => $controlAccountId,
             'partner_id'      => $partnerId,
-            'name'            => $moveType === 'out_invoice' ? 'Customer balance' : 'Vendor balance',
-            'debit'           => $moveType === 'out_invoice' ? $grandTotal : 0,
-            'credit'          => $moveType === 'in_invoice'  ? $grandTotal : 0,
+            'name'            => $controlLabels[$moveType],
+            'debit'           => $controlOnDebit ? $grandTotal : 0,
+            'credit'          => $controlOnDebit ? 0 : $grandTotal,
             'currency'        => $currency,
             'amount_currency' => $grandTotal,
             'sequence'        => 9999,
@@ -1096,7 +1162,9 @@ class AccountingService
 
         if ($company->accounting_period_lock_date) {
             if ($date->lte(Carbon::parse($company->accounting_period_lock_date))) {
-                if (!Auth::user()?->hasPermission('accounting.lock')) {
+                $authUser = Auth::user();
+                $canBypass = $authUser instanceof \App\Models\User && $authUser->hasPermission('accounting.lock');
+                if (!$canBypass) {
                     throw new RuntimeException(sprintf(
                         'The entry date %s falls within a locked period (locked through %s). Only users with lock-bypass permission can post in this period.',
                         $date->format('Y-m-d'),

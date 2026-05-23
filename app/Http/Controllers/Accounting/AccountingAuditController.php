@@ -21,6 +21,8 @@ class AccountingAuditController extends Controller
     {
         abort_unless(auth()->user()->hasPermission('accounting.read'), 403);
 
+        $activeCompanyIds = $this->companyContext->getActiveCompanyIds();
+
         $accountingModelTypes = [
             AccountMove::class,
             Account::class,
@@ -31,6 +33,21 @@ class AccountingAuditController extends Controller
         $query = ChatterMessage::query()
             ->with(['user', 'creator'])
             ->whereIn('model_type', $accountingModelTypes)
+            ->where(function ($q) use ($activeCompanyIds) {
+                $q->where(function ($q2) use ($activeCompanyIds) {
+                    $q2->where('model_type', AccountMove::class)
+                       ->whereIn('model_id', AccountMove::whereIn('company_id', $activeCompanyIds)->select('id'));
+                })->orWhere(function ($q2) use ($activeCompanyIds) {
+                    $q2->where('model_type', Account::class)
+                       ->whereIn('model_id', Account::whereIn('company_id', $activeCompanyIds)->select('id'));
+                })->orWhere(function ($q2) use ($activeCompanyIds) {
+                    $q2->where('model_type', AccountJournal::class)
+                       ->whereIn('model_id', AccountJournal::whereIn('company_id', $activeCompanyIds)->select('id'));
+                })->orWhere(function ($q2) use ($activeCompanyIds) {
+                    $q2->where('model_type', AccountTax::class)
+                       ->whereIn('model_id', AccountTax::whereIn('company_id', $activeCompanyIds)->select('id'));
+                });
+            })
             ->orderByDesc('created_at');
 
         // Filter by model type

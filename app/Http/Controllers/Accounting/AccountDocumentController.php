@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Accounting;
 
+use App\Helpers\GroupsQuery;
 use App\Helpers\SearchFilters;
 use App\Helpers\SortsTable;
 use App\Http\Controllers\Controller;
@@ -10,6 +11,7 @@ use App\Http\Requests\Accounting\UpdateDocumentRequest;
 use App\Models\Accounting\Account;
 use App\Models\Accounting\AccountJournal;
 use App\Models\Accounting\AccountMove;
+use App\Models\Accounting\AccountTax;
 use App\Services\Accounting\AccountingService;
 use Illuminate\Validation\Rule;
 use App\Services\Company\CompanyContextService;
@@ -273,6 +275,17 @@ class AccountDocumentController extends Controller
             $query->where('state', $stateFilter);
         }
 
+        $groupBy = $request->query('group_by');
+        if ($groupBy) {
+            $fields = SearchFilters::fieldsFor(AccountMove::class);
+            if (isset($fields[$groupBy])) {
+                $records = (clone $query)->with(['journal', 'partner'])->orderBy('id')->get();
+                $groups  = GroupsQuery::apply($records, $fields[$groupBy]);
+                $config  = $this->config($moveType);
+                return view('accounting.documents.index', compact('groups', 'config'));
+            }
+        }
+
         SortsTable::apply($query, $request, defaultColumn: 'date', defaultDirection: 'desc');
         $query->orderByDesc('id');
 
@@ -290,8 +303,9 @@ class AccountDocumentController extends Controller
         $defaultCompanyId = count($activeCompanyIds) === 1 ? $activeCompanyIds[0] : null;
         $config = $this->config($moveType);
         $defaults = $this->defaults($defaultCompanyId, $moveType);
+        $availableTaxes = $this->taxesForCompany($defaults['company_id'] ?? $defaultCompanyId, $moveType);
 
-        return view('accounting.documents.create', compact('config', 'defaultCompanyId', 'defaults'));
+        return view('accounting.documents.create', compact('config', 'defaultCompanyId', 'defaults', 'availableTaxes'));
     }
 
     private function store(StoreDocumentRequest $request, string $moveType)
@@ -356,8 +370,9 @@ class AccountDocumentController extends Controller
         $config = $this->config($moveType);
         $defaultCompanyId = $document->company_id;
         $defaults = ['journal_id' => $document->journal_id, 'control_account_id' => $this->controlLine($document)?->account_id];
+        $availableTaxes = $this->taxesForCompany($document->company_id, $moveType);
 
-        return view('accounting.documents.edit', compact('document', 'config', 'defaultCompanyId', 'defaults'));
+        return view('accounting.documents.edit', compact('document', 'config', 'defaultCompanyId', 'defaults', 'availableTaxes'));
     }
 
     private function write(UpdateDocumentRequest $request, AccountMove $document, string $moveType)
@@ -541,6 +556,23 @@ class AccountDocumentController extends Controller
         return $document->lines
             ->reject(fn ($line) => ($controlLine && $line->id === $controlLine->id) || $line->tax_line_id)
             ->values();
+    }
+
+    private function taxesForCompany(?int $companyId, string $moveType): array
+    {
+        if (!$companyId) {
+            return [];
+        }
+
+        $taxScope = in_array($moveType, ['out_invoice', 'out_refund'], true) ? 'sale' : 'purchase';
+
+        return AccountTax::where('company_id', $companyId)
+            ->whereIn('type_tax_use', [$taxScope, 'none'])
+            ->where('active', true)
+            ->orderBy('name')
+            ->get(['id', 'name', 'amount_type', 'amount'])
+            ->map(fn ($t) => ['id' => $t->id, 'label' => $t->display_name])
+            ->all();
     }
 
     private function config(string $moveType): array

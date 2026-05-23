@@ -17,6 +17,8 @@ class StoreEmployeeRequest extends FormRequest
     {
         $activeCompanyIds = app(CompanyContextService::class)->getActiveCompanyIds();
         $companyRule      = Rule::exists('companies', 'id')->whereIn('id', $activeCompanyIds);
+        $deptRule         = Rule::exists('hr_departments', 'id')->whereIn('company_id', $activeCompanyIds);
+        $jobRule          = Rule::exists('hr_jobs', 'id')->whereIn('company_id', $activeCompanyIds);
         $empRule          = Rule::exists('hr_employees', 'id');
 
         return [
@@ -38,8 +40,8 @@ class StoreEmployeeRequest extends FormRequest
             'work_mobile'       => 'nullable|string|max:50',
             'job_title'         => 'nullable|string|max:255',
             'company_id'        => ['nullable', $companyRule],
-            'department_id'     => 'nullable|exists:hr_departments,id',
-            'job_id'            => 'nullable|exists:hr_jobs,id',
+            'department_id'     => ['nullable', $deptRule],
+            'job_id'            => ['nullable', $jobRule],
             'work_location_id'  => 'nullable|exists:hr_work_locations,id',
             'resource_calendar_id' => 'nullable|exists:hr_resource_calendars,id',
             'timezone'          => 'nullable|string|max:100',

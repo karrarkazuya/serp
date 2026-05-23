@@ -47,7 +47,7 @@ class StoreDocumentRequest extends FormRequest
             'incoterm_id' => ['nullable', Rule::exists('accounting_incoterms', 'id')],
             'invoice_origin' => ['nullable', 'string', 'max:128'],
             'ref' => ['nullable', 'string', 'max:128'],
-            'move_type' => ['required', Rule::in(['out_invoice', 'in_invoice'])],
+            'move_type' => ['required', Rule::in(['out_invoice', 'in_invoice', 'out_refund', 'in_refund'])],
             'currency' => ['nullable', 'string', 'max:10'],
             'narration' => ['nullable', 'string', 'max:10000'],
             'action' => ['nullable', 'string', Rule::in(['save', 'post'])],
@@ -65,6 +65,7 @@ class StoreDocumentRequest extends FormRequest
             'items.*.name' => ['nullable', 'string', 'max:255'],
             'items.*.quantity' => ['required', 'numeric', 'gt:0'],
             'items.*.price_unit' => ['required', 'numeric', 'min:0'],
+            'items.*.discount' => ['nullable', 'numeric', 'min:0', 'max:100'],
             'items.*.tax_ids' => ['nullable', 'array'],
             'items.*.tax_ids.*' => ['nullable', 'integer', Rule::exists('account_taxes', 'id')->where('company_id', $companyId)->where('active', true)],
         ];

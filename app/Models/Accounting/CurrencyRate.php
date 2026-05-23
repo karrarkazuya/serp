@@ -45,14 +45,11 @@ class CurrencyRate extends Model
     ];
 
     protected $fillable = [
-        'uuid',
         'company_id',
         'currency',
         'rate',
         'date',
         'active',
-        'created_by',
-        'updated_by',
     ];
 
     protected $casts = [

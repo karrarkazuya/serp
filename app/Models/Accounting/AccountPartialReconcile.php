@@ -19,7 +19,6 @@ class AccountPartialReconcile extends Model
         'credit_move_line_id',
         'amount',
         'date',
-        'created_by',
     ];
 
     protected $casts = [

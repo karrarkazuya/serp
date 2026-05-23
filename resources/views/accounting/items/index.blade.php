@@ -25,14 +25,17 @@
             />
         </x-slot:search>
         <x-slot:actions>
+            @if(isset($groups))
+            <span class="text-sm font-semibold text-gray-600 shrink-0">{{ $groups->sum('count') }} records</span>
+            @elseif(isset($items))
             <span class="text-sm font-semibold text-gray-600 shrink-0">
                 {{ $items->total() > 0 ? $items->firstItem().'-'.$items->lastItem() : 0 }} / {{ $items->total() }}
             </span>
+            @endif
         </x-slot:actions>
     </x-toolbar>
 
-    <div class="flex-1 overflow-y-auto">
-    <div class="grid grid-cols-1 sm:grid-cols-3 border-b border-gray-200 bg-gray-50">
+    <div class="shrink-0 grid grid-cols-1 sm:grid-cols-3 border-b border-gray-200 bg-gray-50">
         <div class="px-4 py-2">
             <p class="text-[11px] font-semibold uppercase text-gray-500">Debit</p>
             <p class="text-sm font-semibold text-gray-900 tabular-nums">{{ number_format($totalDebit, 2) }}</p>
@@ -49,6 +52,85 @@
         </div>
     </div>
 
+    @if(isset($groups))
+    <x-list :grouped="true" empty-text="No journal items yet.">
+        <x-slot:columns>
+            <x-sortable-th column="date" label="Date" class="px-4 py-2" :default="true" />
+            <th class="px-3 py-2 text-xs font-semibold text-gray-500 uppercase tracking-wide text-left">Journal Entry</th>
+            <th class="px-3 py-2 text-xs font-semibold text-gray-500 uppercase tracking-wide text-left">Journal</th>
+            <th class="px-3 py-2 text-xs font-semibold text-gray-500 uppercase tracking-wide text-left">Account</th>
+            <th class="px-3 py-2 text-xs font-semibold text-gray-500 uppercase tracking-wide text-left">Partner</th>
+            <th class="px-3 py-2 text-xs font-semibold text-gray-500 uppercase tracking-wide text-left">Label</th>
+            <x-sortable-th column="debit" label="Debit" class="px-3 py-2 text-right" />
+            <x-sortable-th column="credit" label="Credit" class="px-3 py-2 text-right" />
+            <th class="px-3 py-2 text-xs font-semibold text-gray-500 uppercase tracking-wide text-right">Balance</th>
+            <x-sortable-th column="state" label="State" class="px-3 py-2" />
+        </x-slot:columns>
+
+        @forelse($groups as $group)
+        <tbody x-data="{ open: {{ $loop->first ? 'true' : 'false' }} }" class="divide-y divide-gray-100">
+            <tr class="bg-gray-50 border-y border-gray-200 cursor-pointer select-none" @click="open = !open">
+                <td colspan="99" class="px-4 py-2.5">
+                    <div class="flex items-center gap-2 text-sm font-semibold text-gray-800">
+                        <svg class="w-3.5 h-3.5 transition-transform shrink-0 text-gray-400" :class="open ? 'rotate-90' : ''" fill="currentColor" viewBox="0 0 20 20">
+                            <path fill-rule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clip-rule="evenodd"/>
+                        </svg>
+                        {{ $group['label'] }}
+                        <span class="ms-1 text-xs text-gray-400 font-normal">({{ $group['count'] }})</span>
+                    </div>
+                </td>
+            </tr>
+            @foreach($group['items'] as $item)
+            @php
+                $itemMoveUrl = match($item->move?->move_type) {
+                    'out_invoice' => route('accounting.invoices.show', $item->move),
+                    'in_invoice'  => route('accounting.bills.show', $item->move),
+                    'out_refund'  => route('accounting.credit-notes.show', $item->move),
+                    'in_refund'   => route('accounting.refunds.show', $item->move),
+                    default       => route('accounting.moves.show', $item->move),
+                };
+            @endphp
+            <tr x-show="open" class="hover:bg-purple-50/30 cursor-pointer" onclick="window.location='{{ $itemMoveUrl }}'">
+                <td class="px-4 py-2 text-gray-700 tabular-nums">{{ optional($item->date)->format('Y-m-d') }}</td>
+                <td class="px-3 py-2 font-medium text-gray-900">{{ $item->move?->name ?: '(Draft)' }}</td>
+                <td class="px-3 py-2 text-gray-600">{{ $item->journal?->code ?: '—' }}</td>
+                <td class="px-3 py-2 text-gray-700">
+                    @if($item->account)
+                        <span class="font-medium tabular-nums">{{ $item->account->code }}</span>
+                        <span class="text-gray-500">{{ $item->account->name }}</span>
+                    @else
+                        —
+                    @endif
+                </td>
+                <td class="px-3 py-2 text-gray-600">{{ $item->partner?->name ?: '—' }}</td>
+                <td class="px-3 py-2 text-gray-600">{{ $item->name }}</td>
+                <td class="px-3 py-2 text-right tabular-nums text-gray-800">{{ number_format((float) $item->debit, 2) }}</td>
+                <td class="px-3 py-2 text-right tabular-nums text-gray-800">{{ number_format((float) $item->credit, 2) }}</td>
+                <td class="px-3 py-2 text-right tabular-nums {{ $item->balance < 0 ? 'text-red-700' : 'text-gray-800' }}">
+                    {{ number_format($item->balance, 2) }}
+                </td>
+                <td class="px-3 py-2">
+                    @php
+                        $color = match($item->state) {
+                            'posted'    => 'bg-green-100 text-green-700',
+                            'draft'     => 'bg-amber-100 text-amber-700',
+                            'cancelled' => 'bg-gray-200 text-gray-600',
+                            default     => 'bg-gray-100 text-gray-600',
+                        };
+                    @endphp
+                    <span class="inline-block px-2 py-0.5 rounded text-[11px] font-medium {{ $color }}">{{ ucfirst($item->state) }}</span>
+                </td>
+            </tr>
+            @endforeach
+        </tbody>
+        @empty
+        <tbody>
+            <tr><td colspan="99" class="px-4 py-20 text-center text-sm text-gray-400">No journal items yet.</td></tr>
+        </tbody>
+        @endforelse
+    </x-list>
+
+    @else
     <x-list :paginator="$items" empty-text="No journal items yet.">
         <x-slot:columns>
             <x-sortable-th column="date" label="Date" class="px-4 py-2" :default="true" />
@@ -106,6 +188,6 @@
         </tr>
         @endforeach
     </x-list>
-    </div>
+    @endif
 </div>
 @endsection

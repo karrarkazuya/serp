@@ -1,4 +1,18 @@
-@if($selectable)
+@if($grouped)
+{{-- Grouped mode: slot provides <tbody x-data="{ open }"> blocks; no pagination --}}
+<div class="flex-1 overflow-auto {{ $class }}">
+    <table class="w-full text-sm border-collapse">
+        @isset($columns)
+        <thead>
+            <tr class="border-b border-gray-200 bg-gray-50">
+                {{ $columns }}
+            </tr>
+        </thead>
+        @endisset
+        {{ $slot }}
+    </table>
+</div>
+@elseif($selectable)
 {{-- Selectable wrapper — provides Alpine selection state shared with row checkboxes --}}
 <div class="flex flex-col flex-1 min-h-0"
      x-data="{

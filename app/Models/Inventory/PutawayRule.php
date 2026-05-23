@@ -37,8 +37,8 @@ class PutawayRule extends Model
     ];
 
     protected $fillable = [
-        'uuid', 'company_id', 'location_id', 'fixed_location_id', 'product_id', 'product_category_id',
-        'sequence', 'active', 'created_by', 'updated_by',
+        'company_id', 'location_id', 'fixed_location_id', 'product_id', 'product_category_id',
+        'sequence', 'active',
     ];
 
     protected $casts = ['active' => 'boolean'];

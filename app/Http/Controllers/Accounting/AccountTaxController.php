@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Accounting;
 
+use App\Helpers\GroupsQuery;
 use App\Helpers\SearchFilters;
 use App\Helpers\SortsTable;
 use App\Http\Controllers\Controller;
@@ -26,9 +27,9 @@ class AccountTaxController extends Controller
 
         $query = AccountTax::query()->with(['account', 'company']);
 
-        if (!empty($activeCompanyIds)) {
-            $query->forCompanies($activeCompanyIds);
-        }
+        empty($activeCompanyIds)
+            ? $query->whereRaw('1 = 0')
+            : $query->forCompanies($activeCompanyIds);
 
         SearchFilters::apply($query, $request);
 
@@ -44,11 +45,24 @@ class AccountTaxController extends Controller
             $query->where('type_tax_use', $use);
         }
 
+        $amountTypes = AccountTax::AMOUNT_TYPES;
+        $typeTaxUse  = AccountTax::TYPE_TAX_USE;
+
+        $groupBy = $request->query('group_by');
+        if ($groupBy) {
+            $fields = SearchFilters::fieldsFor(AccountTax::class);
+            if (isset($fields[$groupBy])) {
+                $records = (clone $query)->with(['account', 'company'])->orderBy('id')->get();
+                $groups  = GroupsQuery::apply($records, $fields[$groupBy]);
+                return view('accounting.taxes.index', compact('groups', 'amountTypes', 'typeTaxUse'));
+            }
+        }
+
         SortsTable::apply($query, $request, defaultColumn: 'name', defaultDirection: 'asc');
 
         $taxes = $query->paginate(40)->withQueryString();
 
-        return view('accounting.taxes.index', compact('taxes'));
+        return view('accounting.taxes.index', compact('taxes', 'amountTypes', 'typeTaxUse'));
     }
 
     public function show(AccountTax $tax)
@@ -69,8 +83,11 @@ class AccountTaxController extends Controller
         $recordPosition = $currentIndex !== false ? $currentIndex + 1 : null;
         $recordTotal    = $allIds->count();
 
+        $amountTypes = AccountTax::AMOUNT_TYPES;
+        $typeTaxUse  = AccountTax::TYPE_TAX_USE;
+
         return view('accounting.taxes.show', compact(
-            'tax', 'prevId', 'nextId', 'recordPosition', 'recordTotal'
+            'tax', 'prevId', 'nextId', 'recordPosition', 'recordTotal', 'amountTypes', 'typeTaxUse'
         ));
     }
 
@@ -81,7 +98,10 @@ class AccountTaxController extends Controller
         $activeCompanyIds = $this->companyContext->getActiveCompanyIds();
         $defaultCompanyId = count($activeCompanyIds) === 1 ? $activeCompanyIds[0] : null;
 
-        return view('accounting.taxes.create', compact('defaultCompanyId'));
+        $amountTypes = AccountTax::AMOUNT_TYPES;
+        $typeTaxUse  = AccountTax::TYPE_TAX_USE;
+
+        return view('accounting.taxes.create', compact('defaultCompanyId', 'amountTypes', 'typeTaxUse'));
     }
 
     public function store(StoreTaxRequest $request)
@@ -103,7 +123,10 @@ class AccountTaxController extends Controller
 
         $tax->load(['account']);
 
-        return view('accounting.taxes.edit', compact('tax'));
+        $amountTypes = AccountTax::AMOUNT_TYPES;
+        $typeTaxUse  = AccountTax::TYPE_TAX_USE;
+
+        return view('accounting.taxes.edit', compact('tax', 'amountTypes', 'typeTaxUse'));
     }
 
     public function write(UpdateTaxRequest $request, AccountTax $tax)

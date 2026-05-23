@@ -9,6 +9,7 @@ use App\Models\Contacts\Contact;
 use App\Services\Company\CompanyContextService;
 use App\Services\Contacts\ContactService;
 use App\Services\FileService;
+use App\Helpers\GroupsQuery;
 use App\Helpers\SearchFilters;
 use App\Helpers\SortsTable;
 use Illuminate\Http\Request;
@@ -48,11 +49,25 @@ class ContactController extends Controller
             $query->where('contact_type', $type);
         }
 
+        $view = $request->query('view', 'kanban');
+
+        if ($view === 'list') {
+            $groupBy = $request->query('group_by');
+            if ($groupBy) {
+                $fields = SearchFilters::fieldsFor(Contact::class);
+                if (isset($fields[$groupBy])) {
+                    $records = (clone $query)->with(['creator', 'company', 'tags', 'phones'])->orderBy('id')->get();
+                    $groups  = GroupsQuery::apply($records, $fields[$groupBy]);
+                    return view('contacts.index', compact('groups', 'view'));
+                }
+            }
+        }
+
         SortsTable::apply($query, $request);
 
         $contacts = $query->paginate(24)->withQueryString();
 
-        return view('contacts.index', compact('contacts'));
+        return view('contacts.index', compact('contacts', 'view'));
     }
 
     public function show(Contact $contact)

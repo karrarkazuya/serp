@@ -68,6 +68,11 @@ class TicketPolicy
         return false;
     }
 
+    public function export(User $user): bool
+    {
+        return $user->hasPermission('workflow.tickets.export');
+    }
+
     /**
      * Chat comments are also locked when the procedure is no longer active
      * or when a next ticket has already started.

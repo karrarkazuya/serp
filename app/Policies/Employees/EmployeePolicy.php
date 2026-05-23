@@ -36,4 +36,9 @@ class EmployeePolicy
     {
         return $user->hasPermission('employees.write');
     }
+
+    public function export(User $user): bool
+    {
+        return $user->hasPermission('employees.export');
+    }
 }

@@ -187,6 +187,13 @@ class PickingController extends Controller
         return view($viewMap[$typeCode], compact('defaultCompanyId', 'defaultOperationTypeId'));
     }
 
+    public function newMoveRow(Request $request): \Illuminate\View\View
+    {
+        $this->authorize('create', Picking::class);
+        $idx = max(0, (int) $request->query('idx', 0));
+        return view('inventory.transfers._move-row', compact('idx'));
+    }
+
     public function store(StorePickingRequest $request)
     {
         $data      = $request->validated();

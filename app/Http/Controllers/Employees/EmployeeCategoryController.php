@@ -4,6 +4,8 @@ namespace App\Http\Controllers\Employees;
 
 use App\Http\Controllers\Controller;
 use App\Models\Employees\EmployeeCategory;
+use App\Helpers\GroupsQuery;
+use App\Helpers\SearchFilters;
 use App\Helpers\SortsTable;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -22,6 +24,16 @@ class EmployeeCategoryController extends Controller
             // no filter
         } else {
             $query->active();
+        }
+
+        $groupBy = $request->query('group_by');
+        if ($groupBy) {
+            $fields = SearchFilters::fieldsFor(EmployeeCategory::class);
+            if (isset($fields[$groupBy])) {
+                $records = (clone $query)->withCount('employees')->orderBy('id')->get();
+                $groups  = GroupsQuery::apply($records, $fields[$groupBy]);
+                return view('employees.categories.index', compact('groups'));
+            }
         }
 
         SortsTable::apply($query, $request);

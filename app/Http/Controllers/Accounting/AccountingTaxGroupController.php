@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Accounting;
 
+use App\Helpers\GroupsQuery;
 use App\Helpers\SearchFilters;
 use App\Helpers\SortsTable;
 use App\Http\Controllers\Controller;
@@ -24,16 +25,27 @@ class AccountingTaxGroupController extends Controller
 
         $query = AccountingTaxGroup::query()->with('company');
 
-        if (!empty($activeCompanyIds)) {
-            $query->forCompanies($activeCompanyIds);
-        }
+        empty($activeCompanyIds)
+            ? $query->whereRaw('1 = 0')
+            : $query->forCompanies($activeCompanyIds);
 
         SearchFilters::apply($query, $request);
+
+        $groupBy = $request->query('group_by');
+        if ($groupBy) {
+            $fields = SearchFilters::fieldsFor(AccountingTaxGroup::class);
+            if (isset($fields[$groupBy])) {
+                $records = (clone $query)->with('company')->orderBy('id')->get();
+                $groups  = GroupsQuery::apply($records, $fields[$groupBy]);
+                return view('accounting.tax-groups.index', compact('groups'));
+            }
+        }
+
         SortsTable::apply($query, $request, defaultColumn: 'sequence', defaultDirection: 'asc');
 
-        $groups = $query->paginate(40)->withQueryString();
+        $taxGroups = $query->paginate(40)->withQueryString();
 
-        return view('accounting.tax-groups.index', compact('groups'));
+        return view('accounting.tax-groups.index', compact('taxGroups'));
     }
 
     public function show(AccountingTaxGroup $taxGroup)

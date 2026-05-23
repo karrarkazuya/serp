@@ -50,10 +50,9 @@ class Product extends Model
     ];
 
     protected $fillable = [
-        'uuid', 'company_id', 'category_id', 'uom_id', 'uom_po_id',
+        'company_id', 'category_id', 'uom_id', 'uom_po_id',
         'name', 'internal_reference', 'barcode', 'description', 'description_picking',
         'product_type', 'tracking', 'cost', 'sale_price', 'weight', 'volume', 'image_uuid', 'active',
-        'created_by', 'updated_by',
     ];
 
     protected $casts = [

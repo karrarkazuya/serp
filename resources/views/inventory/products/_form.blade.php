@@ -4,7 +4,8 @@
     $suppliers = old('suppliers', $product ? $product->suppliers->map(fn($s) => [
         'partner_id' => $s->partner_id, 'partner_name' => $s->partner?->name ?? '',
         'price' => $s->price, 'min_qty' => $s->min_qty, 'delay' => $s->delay,
-    ])->toArray() : [['partner_id' => '', 'partner_name' => '', 'price' => '', 'min_qty' => 0, 'lead_time' => 0]]);
+        'partnerOpen' => false, 'partnerOptions' => [],
+    ])->toArray() : [['partner_id' => '', 'partner_name' => '', 'price' => '', 'min_qty' => 0, 'delay' => 0, 'partnerOpen' => false, 'partnerOptions' => []]]);
 @endphp
 
 @if($errors->any())
@@ -20,7 +21,19 @@
 <div class="p-6" x-data="{
     imagePreview: '{{ $product && $product->image_uuid ? route('files.serve', $product->image_uuid) : '' }}',
     suppliers: {{ Js::from($suppliers) }},
-    addSupplier() { this.suppliers.push({ partner_id: '', partner_name: '', price: '', min_qty: 0, delay: 0 }); },
+    vendorUrl: @js(route('relation-dropdown.lookup', ['table' => 'contacts'])),
+    async fetchVendors(s) {
+        const res = await fetch(this.vendorUrl + '?field=name&search=' + encodeURIComponent(s.partner_name || ''), {
+            headers: { 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' }
+        });
+        s.partnerOptions = (await res.json()).data || [];
+    },
+    selectVendor(s, opt) {
+        s.partner_id = opt.id;
+        s.partner_name = opt.label;
+        s.partnerOpen = false;
+    },
+    addSupplier() { this.suppliers.push({ partner_id: '', partner_name: '', price: '', min_qty: 0, delay: 0, partnerOpen: false, partnerOptions: [] }); },
     removeSupplier(i) { this.suppliers.splice(i, 1); }
 }">
     {{-- Title --}}
@@ -149,7 +162,24 @@
                             <tr class="border-b border-gray-50">
                                 <td class="py-1.5">
                                     <input type="hidden" :name="'suppliers['+i+'][partner_id]'" :value="s.partner_id">
-                                    <input type="text" :name="'suppliers['+i+'][partner_name]'" x-model="s.partner_name" placeholder="Vendor name" class="w-full text-sm bg-transparent border-0 focus:outline-none focus:ring-0 px-0">
+                                    <div class="relative" @click.outside="s.partnerOpen = false">
+                                        <input type="text" x-model="s.partner_name"
+                                            @focus="s.partnerOpen = true; fetchVendors(s)"
+                                            @input.debounce.250ms="fetchVendors(s)"
+                                            placeholder="Search vendor..."
+                                            class="w-full text-sm bg-transparent border-0 border-b border-dotted border-gray-300 focus:border-purple-500 focus:outline-none px-0 py-1">
+                                        <div x-show="s.partnerOpen" style="display:none"
+                                            class="absolute left-0 top-full z-40 w-full max-w-xs bg-white border border-gray-200 rounded-b-lg shadow-lg overflow-hidden">
+                                            <div class="max-h-48 overflow-y-auto py-1">
+                                                <template x-for="opt in s.partnerOptions" :key="opt.id">
+                                                    <button type="button" @click="selectVendor(s, opt)"
+                                                        class="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                                                        x-text="opt.label"></button>
+                                                </template>
+                                                <div x-show="s.partnerOptions.length === 0" class="px-4 py-2 text-sm text-gray-400">No results</div>
+                                            </div>
+                                        </div>
+                                    </div>
                                 </td>
                                 <td class="py-1.5"><input type="number" :name="'suppliers['+i+'][price]'" x-model="s.price" step="0.01" min="0" class="w-full text-sm bg-transparent border-0 focus:outline-none focus:ring-0 px-0 text-right"></td>
                                 <td class="py-1.5"><input type="number" :name="'suppliers['+i+'][min_qty]'" x-model="s.min_qty" min="0" class="w-full text-sm bg-transparent border-0 focus:outline-none focus:ring-0 px-0 text-right"></td>

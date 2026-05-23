@@ -4,14 +4,13 @@
   Usage:
     <x-export
         :fields="$exportFields"
-        :preset="[['key'=>'name','label'=>'Name'],...]"   {{-- optional pre-selected --}}
         :export-url="route('export')"
         model-key="contacts"
     />
 
-  Opened by dispatching the `export:open` Alpine event from anywhere:
+  Opened by dispatching the export:open Alpine event:
     $dispatch('export:open', { mode: 'selected', ids: [1,2,3], selectAllPages: false })
-    $dispatch('export:open', { mode: 'all',      ids: [],      selectAllPages: false })
+    $dispatch('export:open', { mode: 'all', ids: [], selectAllPages: false })
 --}}
 <div
     x-data="{
@@ -84,7 +83,7 @@
         @csrf
         <input type="hidden" name="model" value="{{ $modelKey }}">
         <input type="hidden" name="format" :value="format">
-        <input type="hidden" name="import_compatible" :value="importCompatible ? '1' : '0'">
+        <input type="hidden" name="import_compatible" value="0">
         <input type="hidden" name="select_all" :value="selectAllPages ? '1' : '0'">
         <input type="hidden" name="query_string" :value="queryString">
         <template x-for="id in (mode === 'selected' && !selectAllPages ? ids : [])">
@@ -98,7 +97,7 @@
     {{-- Modal overlay --}}
     <div x-show="open"
          x-transition.opacity
-         class="fixed inset-0 z-[200] bg-black/40 flex items-start justify-center p-4 pt-16"
+         class="fixed inset-0 z-200 bg-black/40 flex items-start justify-center p-4 pt-16"
          style="display:none"
          @click.self="open = false">
 
@@ -118,13 +117,7 @@
 
             {{-- Options bar --}}
             <div class="flex flex-wrap items-center gap-4 px-5 py-3 bg-gray-50 border-b border-gray-200 shrink-0">
-                <label class="flex items-center gap-2 text-sm text-gray-700 cursor-pointer">
-                    <input type="checkbox" x-model="importCompatible"
-                           class="rounded border-gray-300 text-purple-600 focus:ring-purple-500">
-                    <span>I want to update data (import-compatible export)</span>
-                </label>
-
-                <div class="ms-auto flex items-center gap-1.5 text-sm">
+                <div class="flex items-center gap-1.5 text-sm">
                     <span class="text-gray-500 font-medium me-1">Export Format:</span>
                     <label class="flex items-center gap-1.5 cursor-pointer">
                         <input type="radio" x-model="format" value="xlsx"

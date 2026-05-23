@@ -86,7 +86,6 @@ class AccountMove extends Model
     ];
 
     protected $fillable = [
-        'uuid',
         'company_id',
         'journal_id',
         'partner_id',
@@ -106,8 +105,6 @@ class AccountMove extends Model
         'narration',
         'posted_at',
         'posted_by',
-        'created_by',
-        'updated_by',
     ];
 
     protected $casts = [

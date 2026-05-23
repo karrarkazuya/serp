@@ -74,7 +74,6 @@ class AccountPayment extends Model
     ];
 
     protected $fillable = [
-        'uuid',
         'company_id',
         'journal_id',
         'move_id',
@@ -90,8 +89,6 @@ class AccountPayment extends Model
         'bank_reference',
         'cheque_number',
         'destination_account_id',
-        'created_by',
-        'updated_by',
     ];
 
     protected $casts = [

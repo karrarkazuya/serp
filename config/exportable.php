@@ -86,6 +86,9 @@ return [
         'permission'     => 'workflow.tickets.export',
         'company_scoped' => true,
         'filename'       => 'tickets',
+        'extra_params'   => [
+            'state' => 'state',
+        ],
         'fields'         => [
             ['key' => 'id',               'label' => 'ID',               'column' => 'id'],
             ['key' => 'name',             'label' => 'Name',             'column' => 'name'],
@@ -97,6 +100,32 @@ return [
             ['key' => 'active',           'label' => 'Active',           'column' => 'active'],
             ['key' => 'created_at',       'label' => 'Created On',       'column' => 'created_at'],
             ['key' => 'updated_at',       'label' => 'Updated On',       'column' => 'updated_at'],
+        ],
+    ],
+
+    'accounting.moves' => [
+        'class'          => \App\Models\Accounting\AccountMove::class,
+        'permission'     => 'accounting.export',
+        'company_scoped' => true,
+        'filename'       => 'journal-entries',
+        'extra_params'   => [
+            'state'      => 'state',
+            'journal_id' => 'journal_id',
+        ],
+        'fields'         => [
+            ['key' => 'id',            'label' => 'ID',            'column' => 'id'],
+            ['key' => 'name',          'label' => 'Number',        'column' => 'name'],
+            ['key' => 'date',          'label' => 'Date',          'column' => 'date'],
+            ['key' => 'ref',           'label' => 'Reference',     'column' => 'ref'],
+            ['key' => 'state',         'label' => 'State',         'column' => 'state'],
+            ['key' => 'payment_state', 'label' => 'Payment State', 'column' => 'payment_state'],
+            ['key' => 'currency',      'label' => 'Currency',      'column' => 'currency'],
+            ['key' => 'amount_total',  'label' => 'Amount',        'column' => 'amount_total'],
+            ['key' => 'narration',     'label' => 'Notes',         'column' => 'narration'],
+            ['key' => 'invoice_date_due',   'label' => 'Due Date',        'column' => 'invoice_date_due'],
+            ['key' => 'invoice_origin',     'label' => 'Source Document', 'column' => 'invoice_origin'],
+            ['key' => 'created_at',    'label' => 'Created On',    'column' => 'created_at'],
+            ['key' => 'updated_at',    'label' => 'Updated On',    'column' => 'updated_at'],
         ],
     ],
 

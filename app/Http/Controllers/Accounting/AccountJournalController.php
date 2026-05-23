@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Accounting;
 
+use App\Helpers\GroupsQuery;
 use App\Helpers\SearchFilters;
 use App\Helpers\SortsTable;
 use App\Http\Controllers\Controller;
@@ -27,9 +28,9 @@ class AccountJournalController extends Controller
         $activeCompanyIds = $this->companyContext->getActiveCompanyIds();
         $query = AccountJournal::query()->with(['company', 'defaultAccount']);
 
-        if (!empty($activeCompanyIds)) {
-            $query->forCompanies($activeCompanyIds);
-        }
+        empty($activeCompanyIds)
+            ? $query->whereRaw('1 = 0')
+            : $query->forCompanies($activeCompanyIds);
 
         SearchFilters::apply($query, $request);
 
@@ -43,6 +44,16 @@ class AccountJournalController extends Controller
 
         if ($type = $request->query('type')) {
             $query->where('type', $type);
+        }
+
+        $groupBy = $request->query('group_by');
+        if ($groupBy) {
+            $fields = SearchFilters::fieldsFor(AccountJournal::class);
+            if (isset($fields[$groupBy])) {
+                $records = (clone $query)->with(['company', 'defaultAccount'])->orderBy('id')->get();
+                $groups  = GroupsQuery::apply($records, $fields[$groupBy]);
+                return view('accounting.journals.index', compact('groups'));
+            }
         }
 
         SortsTable::apply($query, $request, defaultColumn: 'code', defaultDirection: 'asc');
@@ -89,7 +100,9 @@ class AccountJournalController extends Controller
         $activeCompanyIds = $this->companyContext->getActiveCompanyIds();
         $defaultCompanyId = count($activeCompanyIds) === 1 ? $activeCompanyIds[0] : null;
 
-        return view('accounting.journals.create', compact('defaultCompanyId'));
+        $journalTypes = AccountJournal::TYPES;
+
+        return view('accounting.journals.create', compact('defaultCompanyId', 'journalTypes'));
     }
 
     public function store(StoreJournalRequest $request)
@@ -107,7 +120,9 @@ class AccountJournalController extends Controller
         $activeCompanyIds = $this->companyContext->getActiveCompanyIds();
         abort_unless(in_array($journal->company_id, $activeCompanyIds), 403);
 
-        return view('accounting.journals.edit', compact('journal'));
+        $journalTypes = AccountJournal::TYPES;
+
+        return view('accounting.journals.edit', compact('journal', 'journalTypes'));
     }
 
     public function write(UpdateJournalRequest $request, AccountJournal $journal)

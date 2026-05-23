@@ -3,7 +3,6 @@
 namespace App\Http\Controllers\Accounting;
 
 use App\Http\Controllers\Controller;
-use App\Models\Accounting\Account;
 use App\Models\Accounting\AccountJournal;
 use App\Models\Accounting\AccountMove;
 use App\Models\Accounting\AccountMoveLine;
@@ -39,11 +38,8 @@ class AccountingReportController extends Controller
 
         $lines = $query->paginate(100)->withQueryString();
 
-        $journals = $this->journals($activeCompanyIds);
-        $accounts = $this->accounts($activeCompanyIds);
-
         return view('accounting.reports.general-ledger', compact(
-            'lines', 'journals', 'accounts', 'dateFrom', 'dateTo', 'accountId', 'journalId'
+            'lines', 'dateFrom', 'dateTo', 'accountId', 'journalId'
         ));
     }
 
@@ -284,9 +280,7 @@ class AccountingReportController extends Controller
             ->orderBy('name')
             ->paginate(100)->withQueryString();
 
-        $journals = $this->journals($activeCompanyIds);
-
-        return view('accounting.reports.journal-audit', compact('moves', 'journals', 'dateFrom', 'dateTo', 'journalId'));
+        return view('accounting.reports.journal-audit', compact('moves', 'dateFrom', 'dateTo', 'journalId'));
     }
 
     // ── Bank Reconciliation ─────────────────────────────────────────────────
@@ -375,24 +369,6 @@ class AccountingReportController extends Controller
         $journalId = $request->query('journal_id');
         $partnerId = $request->query('partner_id');
         return [$dateFrom, $dateTo, $accountId, $journalId, $partnerId];
-    }
-
-    private function journals(array $activeCompanyIds): \Illuminate\Database\Eloquent\Collection
-    {
-        return AccountJournal::query()
-            ->when(!empty($activeCompanyIds), fn ($q) => $q->whereIn('company_id', $activeCompanyIds))
-            ->where('active', true)
-            ->orderBy('name')
-            ->get(['id', 'name', 'code', 'type']);
-    }
-
-    private function accounts(array $activeCompanyIds): \Illuminate\Database\Eloquent\Collection
-    {
-        return Account::query()
-            ->when(!empty($activeCompanyIds), fn ($q) => $q->whereIn('company_id', $activeCompanyIds))
-            ->where('active', true)
-            ->orderBy('code')
-            ->get(['id', 'code', 'name']);
     }
 
     private function sumByAccountType(array $companyIds, array $types, ?string $dateFrom, ?string $dateTo): \Illuminate\Support\Collection

@@ -135,83 +135,19 @@
                         @endforeach
                     </tbody>
 
-                    {{-- New moves added client-side --}}
-                    <tbody x-data="{
-                        newMoves: [],
-                        nextIdx: {{ $picking->moves->count() }},
-                        productUrl: @js(route('relation-dropdown.lookup', ['table' => 'inventory_products'])),
-                        uomInfoUrl: @js(route('inventory.products.uom-info')),
-                        async fetchProducts(m) {
-                            const res = await fetch(this.productUrl + '?field=name&search=' + encodeURIComponent(m.productSearch), {
-                                headers: { 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' }
-                            });
-                            const data = await res.json();
-                            m.productOptions = data.data || [];
-                        },
-                        async selectProduct(m, opt) {
-                            m.productId = opt.id;
-                            m.productSearch = opt.label;
-                            m.productOpen = false;
-                            const res = await fetch(this.uomInfoUrl + '?product_id=' + opt.id, {
-                                headers: { 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' }
-                            });
-                            const d = await res.json();
-                            m.uomId = d.uom_id;
-                            m.uomName = d.uom_name;
-                        },
-                        addMove() {
-                            this.newMoves.push({
-                                idx: this.nextIdx++,
-                                productId: '', productSearch: '', productOpen: false, productOptions: [],
-                                uomId: '', uomName: '',
-                                qty: 1
-                            });
-                        }
-                    }">
-                        <template x-for="(m, j) in newMoves" :key="m.idx">
-                            <tr class="border-b border-gray-50">
-                                <td class="py-1.5">
-                                    <input type="hidden" :name="'moves['+m.idx+'][product_id]'" :value="m.productId">
-                                    <div class="relative" @click.outside="m.productOpen = false">
-                                        <input type="text" x-model="m.productSearch"
-                                            @focus="m.productOpen = true; fetchProducts(m)"
-                                            @input.debounce.250ms="fetchProducts(m)"
-                                            placeholder="Search product..."
-                                            class="w-full text-sm bg-transparent border-0 border-b border-dotted border-gray-300 focus:border-purple-500 focus:outline-none px-0 py-1">
-                                        <div x-show="m.productOpen" style="display:none"
-                                            class="absolute left-0 top-full z-40 w-full max-w-xs bg-white border border-gray-200 rounded-b-lg shadow-lg overflow-hidden">
-                                            <div class="max-h-48 overflow-y-auto py-1">
-                                                <template x-for="opt in m.productOptions" :key="opt.id">
-                                                    <button type="button" @click="selectProduct(m, opt)"
-                                                        class="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
-                                                        x-text="opt.label"></button>
-                                                </template>
-                                                <div x-show="m.productOptions.length === 0" class="px-4 py-2 text-sm text-gray-400">No results</div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </td>
-                                <td class="py-1.5 w-32">
-                                    <input type="hidden" :name="'moves['+m.idx+'][uom_id]'" :value="m.uomId">
-                                    <span x-text="m.uomName || '-'" class="text-sm text-gray-600"></span>
-                                </td>
-                                <td class="py-1.5 w-24">
-                                    <input type="number" :name="'moves['+m.idx+'][product_qty]'" x-model="m.qty"
-                                        step="0.001" min="0.001"
-                                        class="w-full text-sm bg-transparent border-0 focus:outline-none px-0 text-right">
-                                </td>
-                                <td class="py-1.5 text-center w-8">
-                                    <button type="button" @click="newMoves.splice(j, 1)" class="text-gray-300 hover:text-red-500">
-                                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
-                                        </svg>
-                                    </button>
-                                </td>
-                            </tr>
-                        </template>
+                    {{-- New moves added client-side via server-rendered partial --}}
+                    <tbody x-data="{ nextIdx: {{ $picking->moves->count() }}, newMoveRowUrl: @js(route('inventory.transfers.new-move-row')) }">
                         <tr>
                             <td colspan="4" class="pt-2">
-                                <button type="button" @click="addMove()" class="text-xs font-medium text-purple-600 hover:text-purple-700">+ Add a product</button>
+                                <button type="button" class="text-xs font-medium text-purple-600 hover:text-purple-700"
+                                    @click="fetch(newMoveRowUrl + '?idx=' + nextIdx, { headers: { 'X-Requested-With': 'XMLHttpRequest' } })
+                                        .then(r => r.text())
+                                        .then(html => {
+                                            const addRow = $el.closest('tr');
+                                            addRow.insertAdjacentHTML('beforebegin', html);
+                                            Alpine.initTree(addRow.previousElementSibling);
+                                            nextIdx++;
+                                        })">+ Add a product</button>
                             </td>
                         </tr>
                     </tbody>

@@ -55,7 +55,6 @@ class AccountMoveLine extends Model
     ];
 
     protected $fillable = [
-        'uuid',
         'company_id',
         'move_id',
         'account_id',
@@ -72,9 +71,8 @@ class AccountMoveLine extends Model
         'credit',
         'currency',
         'amount_currency',
+        'discount',
         'sequence',
-        'created_by',
-        'updated_by',
     ];
 
     protected $casts = [
@@ -83,6 +81,7 @@ class AccountMoveLine extends Model
         'credit'          => 'decimal:4',
         'amount_currency' => 'decimal:4',
         'tax_base_amount' => 'decimal:4',
+        'discount'        => 'decimal:2',
         'sequence'        => 'integer',
     ];
 

@@ -65,7 +65,7 @@
                 <span class="w-28 text-sm text-gray-500 shrink-0">{{ __('common.company') }}</span>
                 <div class="flex-1">
                     <x-relation-dropdown name="company_id" table="companies" field="name" relation="many2one"
-                        :selected="old('company_id', $schedule?->company_id)" />
+                        :selected="old('company_id', $schedule?->company_id ?? ($defaultCompanyId ?? null))" />
                 </div>
             </div>
             <div class="flex items-center py-2.5">

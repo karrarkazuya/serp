@@ -44,14 +44,11 @@ class AccountingAccountGroup extends Model
     ];
 
     protected $fillable = [
-        'uuid',
         'company_id',
         'parent_id',
         'name',
         'code_prefix_start',
         'code_prefix_end',
-        'created_by',
-        'updated_by',
     ];
 
     public function company(): BelongsTo

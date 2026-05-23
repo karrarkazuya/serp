@@ -596,8 +596,11 @@ Route::middleware('auth')->group(function () {
             Route::get('/',        [\App\Http\Controllers\Accounting\AccountPaymentController::class, 'read'])       ->middleware('permission:accounting.read')   ->name('index');
             Route::get('/create',  [\App\Http\Controllers\Accounting\AccountPaymentController::class, 'create'])     ->middleware('permission:accounting.create') ->name('create');
             Route::post('/',       [\App\Http\Controllers\Accounting\AccountPaymentController::class, 'store'])      ->middleware('permission:accounting.create') ->name('store');
-            Route::get('/{payment}',          [\App\Http\Controllers\Accounting\AccountPaymentController::class, 'show'])       ->middleware('permission:accounting.read')   ->name('show');
-            Route::post('/{payment}/comment', [\App\Http\Controllers\Accounting\AccountPaymentController::class, 'addComment']) ->middleware('permission:accounting.write')  ->name('comment');
+            Route::get('/{payment}',               [\App\Http\Controllers\Accounting\AccountPaymentController::class, 'show'])       ->middleware('permission:accounting.read')   ->name('show');
+            Route::patch('/{payment}/confirm',     [\App\Http\Controllers\Accounting\AccountPaymentController::class, 'confirm'])    ->middleware('permission:accounting.write')  ->name('confirm');
+            Route::patch('/{payment}/reset-draft', [\App\Http\Controllers\Accounting\AccountPaymentController::class, 'resetDraft']) ->middleware('permission:accounting.write')  ->name('reset-draft');
+            Route::patch('/{payment}/cancel',      [\App\Http\Controllers\Accounting\AccountPaymentController::class, 'cancel'])     ->middleware('permission:accounting.write')  ->name('cancel');
+            Route::post('/{payment}/comment',      [\App\Http\Controllers\Accounting\AccountPaymentController::class, 'addComment']) ->middleware('permission:accounting.write')  ->name('comment');
         });
 
         // Journal Entries (manual moves in Phase 1)
@@ -755,6 +758,7 @@ Route::middleware('auth')->group(function () {
         Route::prefix('transfers')->name('transfers.')->group(function () {
             Route::get('/',                          [\App\Http\Controllers\Inventory\PickingController::class, 'read'])             ->middleware('permission:inventory.read')   ->name('index');
             Route::get('/create',                    [\App\Http\Controllers\Inventory\PickingController::class, 'create'])           ->middleware('permission:inventory.create') ->name('create');
+            Route::get('/new-move-row',              [\App\Http\Controllers\Inventory\PickingController::class, 'newMoveRow'])       ->middleware('permission:inventory.create') ->name('new-move-row');
             Route::post('/',                         [\App\Http\Controllers\Inventory\PickingController::class, 'store'])            ->middleware('permission:inventory.create') ->name('store');
             Route::get('/{picking}',                 [\App\Http\Controllers\Inventory\PickingController::class, 'show'])             ->middleware('permission:inventory.read')   ->name('show');
             Route::get('/{picking}/edit',            [\App\Http\Controllers\Inventory\PickingController::class, 'edit'])             ->middleware('permission:inventory.write')  ->name('edit');
@@ -801,8 +805,8 @@ Route::middleware('auth')->group(function () {
         // Scrap
         Route::prefix('scrap')->name('scrap.')->group(function () {
             Route::get('/',                    [\App\Http\Controllers\Inventory\ScrapOrderController::class, 'read'])         ->middleware('permission:inventory.read')   ->name('index');
-            Route::get('/create',              [\App\Http\Controllers\Inventory\ScrapOrderController::class, 'create'])       ->middleware('permission:inventory.write')  ->name('create');
-            Route::post('/',                   [\App\Http\Controllers\Inventory\ScrapOrderController::class, 'store'])        ->middleware('permission:inventory.write')  ->name('store');
+            Route::get('/create',              [\App\Http\Controllers\Inventory\ScrapOrderController::class, 'create'])       ->middleware('permission:inventory.create') ->name('create');
+            Route::post('/',                   [\App\Http\Controllers\Inventory\ScrapOrderController::class, 'store'])        ->middleware('permission:inventory.create') ->name('store');
             Route::get('/{scrapOrder}',        [\App\Http\Controllers\Inventory\ScrapOrderController::class, 'show'])         ->middleware('permission:inventory.read')   ->name('show');
             Route::post('/{scrapOrder}/validate', [\App\Http\Controllers\Inventory\ScrapOrderController::class, 'validateScrap'])->middleware('permission:inventory.write')->name('validate');
             Route::delete('/{scrapOrder}',     [\App\Http\Controllers\Inventory\ScrapOrderController::class, 'unlink'])       ->middleware('permission:inventory.unlink') ->name('delete');
@@ -812,8 +816,8 @@ Route::middleware('auth')->group(function () {
         // Replenishment (Reorder Rules)
         Route::prefix('replenishment')->name('replenishment.')->group(function () {
             Route::get('/',               [\App\Http\Controllers\Inventory\ReorderRuleController::class, 'read'])        ->middleware('permission:inventory.read')   ->name('index');
-            Route::get('/create',         [\App\Http\Controllers\Inventory\ReorderRuleController::class, 'create'])      ->middleware('permission:inventory.write')  ->name('create');
-            Route::post('/',              [\App\Http\Controllers\Inventory\ReorderRuleController::class, 'store'])       ->middleware('permission:inventory.write')  ->name('store');
+            Route::get('/create',         [\App\Http\Controllers\Inventory\ReorderRuleController::class, 'create'])      ->middleware('permission:inventory.create') ->name('create');
+            Route::post('/',              [\App\Http\Controllers\Inventory\ReorderRuleController::class, 'store'])       ->middleware('permission:inventory.create') ->name('store');
             Route::get('/{reorderRule}/edit',    [\App\Http\Controllers\Inventory\ReorderRuleController::class, 'edit'])        ->middleware('permission:inventory.write')  ->name('edit');
             Route::put('/{reorderRule}',         [\App\Http\Controllers\Inventory\ReorderRuleController::class, 'write'])       ->middleware('permission:inventory.write')  ->name('update');
             Route::post('/{reorderRule}/replenish', [\App\Http\Controllers\Inventory\ReorderRuleController::class, 'replenish'])->middleware('permission:inventory.write')  ->name('replenish');
@@ -823,8 +827,8 @@ Route::middleware('auth')->group(function () {
         // Physical Inventory (Adjustments)
         Route::prefix('adjustments')->name('adjustments.')->group(function () {
             Route::get('/',                             [\App\Http\Controllers\Inventory\InventoryAdjustmentController::class, 'read'])             ->middleware('permission:inventory.read')  ->name('index');
-            Route::get('/create',                       [\App\Http\Controllers\Inventory\InventoryAdjustmentController::class, 'create'])           ->middleware('permission:inventory.write') ->name('create');
-            Route::post('/',                            [\App\Http\Controllers\Inventory\InventoryAdjustmentController::class, 'store'])            ->middleware('permission:inventory.write') ->name('store');
+            Route::get('/create',                       [\App\Http\Controllers\Inventory\InventoryAdjustmentController::class, 'create'])           ->middleware('permission:inventory.create') ->name('create');
+            Route::post('/',                            [\App\Http\Controllers\Inventory\InventoryAdjustmentController::class, 'store'])            ->middleware('permission:inventory.create') ->name('store');
             Route::get('/{inventoryAdjustment}',        [\App\Http\Controllers\Inventory\InventoryAdjustmentController::class, 'show'])             ->middleware('permission:inventory.read')  ->name('show');
             Route::post('/{inventoryAdjustment}/start', [\App\Http\Controllers\Inventory\InventoryAdjustmentController::class, 'startCount'])       ->middleware('permission:inventory.write') ->name('start');
             Route::post('/{inventoryAdjustment}/lines/{line}', [\App\Http\Controllers\Inventory\InventoryAdjustmentController::class, 'updateLine'])->middleware('permission:inventory.write') ->name('update-line');
@@ -909,6 +913,7 @@ Route::middleware('auth')->group(function () {
                 Route::get('/',                 [\App\Http\Controllers\Inventory\Configuration\RouteController::class, 'read'])       ->middleware('permission:inventory.config') ->name('index');
                 Route::get('/create',           [\App\Http\Controllers\Inventory\Configuration\RouteController::class, 'create'])     ->middleware('permission:inventory.config') ->name('create');
                 Route::post('/',                [\App\Http\Controllers\Inventory\Configuration\RouteController::class, 'store'])      ->middleware('permission:inventory.config') ->name('store');
+                Route::get('/new-rule-row',     [\App\Http\Controllers\Inventory\Configuration\RouteController::class, 'newRuleRow'])->middleware('permission:inventory.config') ->name('new-rule-row');
                 Route::get('/{route}',          [\App\Http\Controllers\Inventory\Configuration\RouteController::class, 'show'])       ->middleware('permission:inventory.config') ->name('show');
                 Route::get('/{route}/edit',     [\App\Http\Controllers\Inventory\Configuration\RouteController::class, 'edit'])       ->middleware('permission:inventory.config') ->name('edit');
                 Route::put('/{route}',          [\App\Http\Controllers\Inventory\Configuration\RouteController::class, 'write'])      ->middleware('permission:inventory.config') ->name('update');

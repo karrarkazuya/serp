@@ -44,8 +44,7 @@ class UomController extends Controller
     public function create()
     {
         abort_unless(request()->user()->hasPermission('inventory.config'), 403);
-        $categories = UomCategory::active()->orderBy('name')->get();
-        return view('inventory.configuration.uoms.create', compact('categories'));
+        return view('inventory.configuration.uoms.create');
     }
 
     public function store(Request $request)
@@ -73,8 +72,7 @@ class UomController extends Controller
     public function edit(Uom $uom)
     {
         abort_unless(request()->user()->hasPermission('inventory.config'), 403);
-        $categories = UomCategory::active()->orderBy('name')->get();
-        return view('inventory.configuration.uoms.edit', compact('uom', 'categories'));
+        return view('inventory.configuration.uoms.edit', compact('uom'));
     }
 
     public function write(Request $request, Uom $uom)

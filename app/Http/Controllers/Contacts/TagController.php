@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Contacts;
 
 use App\Http\Controllers\Controller;
 use App\Models\Contacts\Tag;
+use App\Helpers\GroupsQuery;
 use App\Helpers\SearchFilters;
 use App\Helpers\SortsTable;
 use Illuminate\Http\Request;
@@ -18,6 +19,16 @@ class TagController extends Controller
         $query = Tag::query()->withCount('contacts');
 
         SearchFilters::apply($query, $request);
+
+        $groupBy = $request->query('group_by');
+        if ($groupBy) {
+            $fields = SearchFilters::fieldsFor(Tag::class);
+            if (isset($fields[$groupBy])) {
+                $records = (clone $query)->withCount('contacts')->orderBy('id')->get();
+                $groups  = GroupsQuery::apply($records, $fields[$groupBy]);
+                return view('contacts.tags.index', compact('groups'));
+            }
+        }
 
         SortsTable::apply($query, $request);
 

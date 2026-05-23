@@ -481,21 +481,23 @@ class CoreSeeder extends Seeder
 
     private function seedSystemUser(): void
     {
-        User::withoutEvents(function () {
-            User::updateOrCreate(
-                ['id' => 0],
-                [
-                    'uuid'         => '00000000-0000-0000-0000-000000000000',
-                    'name'         => 'System',
-                    'email'        => 'system@example.com',
-                    'password'     => Hash::make(Str::random(64)),
-                    'active'       => false,
-                    'job_position' => 'System User',
-                    'created_by'   => 0,
-                    'updated_by'   => 0,
-                ]
-            );
-        });
+        // Use raw DB insert so id=0 is preserved — Eloquent strips primary keys
+        // not in $fillable, causing the self-referential created_by=0 FK to fail.
+        \Illuminate\Support\Facades\DB::table('users')->updateOrInsert(
+            ['id' => 0],
+            [
+                'uuid'         => '00000000-0000-0000-0000-000000000000',
+                'name'         => 'System',
+                'email'        => 'system@example.com',
+                'password'     => Hash::make(Str::random(64)),
+                'active'       => false,
+                'job_position' => 'System User',
+                'created_by'   => 0,
+                'updated_by'   => 0,
+                'created_at'   => now(),
+                'updated_at'   => now(),
+            ]
+        );
     }
 
     private function seedUsers(): void

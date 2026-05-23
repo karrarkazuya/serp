@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Employees;
 use App\Http\Controllers\Controller;
 use App\Models\Employees\WorkLocation;
 use App\Services\Company\CompanyContextService;
+use App\Helpers\GroupsQuery;
 use App\Helpers\SearchFilters;
 use App\Helpers\SortsTable;
 use Illuminate\Http\Request;
@@ -36,6 +37,16 @@ class WorkLocationController extends Controller
             // no filter
         } else {
             $query->active();
+        }
+
+        $groupBy = $request->query('group_by');
+        if ($groupBy) {
+            $fields = SearchFilters::fieldsFor(WorkLocation::class);
+            if (isset($fields[$groupBy])) {
+                $records = (clone $query)->with('company')->withCount('employees')->orderBy('id')->get();
+                $groups  = GroupsQuery::apply($records, $fields[$groupBy]);
+                return view('employees.work-locations.index', compact('groups'));
+            }
         }
 
         SortsTable::apply($query, $request);

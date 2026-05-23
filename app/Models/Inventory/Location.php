@@ -38,10 +38,10 @@ class Location extends Model
     ];
 
     protected $fillable = [
-        'uuid', 'company_id', 'warehouse_id', 'parent_id',
+        'company_id', 'warehouse_id', 'parent_id',
         'name', 'complete_name', 'usage', 'removal_strategy',
         'scrap_location', 'return_location', 'barcode', 'notes',
-        'posx', 'posy', 'posz', 'active', 'created_by', 'updated_by',
+        'posx', 'posy', 'posz', 'active',
     ];
 
     protected $casts = [

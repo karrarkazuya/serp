@@ -39,26 +39,30 @@
         />
 
         <div class="ms-auto flex items-center gap-2 sm:gap-3 text-sm text-gray-500 shrink-0">
-            @if($tickets->total() > 0)
-                <span class="text-sm font-semibold text-gray-600 whitespace-nowrap">
-                    {{ $tickets->firstItem() }}-{{ $tickets->lastItem() }} / {{ $tickets->total() }}
-                </span>
-            @else
-                <span class="text-sm font-semibold text-gray-400">{{ __('workflow.zero_records') }}</span>
-            @endif
+            @if(isset($groups))
+                <span class="text-sm font-semibold text-gray-600 whitespace-nowrap">{{ $groups->sum('count') }} {{ __('workflow.zero_records') }}</span>
+            @elseif(isset($tickets))
+                @if($tickets->total() > 0)
+                    <span class="text-sm font-semibold text-gray-600 whitespace-nowrap">
+                        {{ $tickets->firstItem() }}-{{ $tickets->lastItem() }} / {{ $tickets->total() }}
+                    </span>
+                @else
+                    <span class="text-sm font-semibold text-gray-400">{{ __('workflow.zero_records') }}</span>
+                @endif
 
-            <div class="flex items-center gap-1">
-                @if($tickets->onFirstPage())
-                    <span class="w-10 h-10 inline-flex items-center justify-center rounded bg-gray-100 text-gray-300">‹</span>
-                @else
-                    <a href="{{ $tickets->previousPageUrl() }}" class="w-10 h-10 inline-flex items-center justify-center rounded bg-gray-100 text-gray-600 hover:text-gray-900">‹</a>
-                @endif
-                @if($tickets->hasMorePages())
-                    <a href="{{ $tickets->nextPageUrl() }}" class="w-10 h-10 inline-flex items-center justify-center rounded bg-gray-100 text-gray-600 hover:text-gray-900">›</a>
-                @else
-                    <span class="w-10 h-10 inline-flex items-center justify-center rounded bg-gray-100 text-gray-300">›</span>
-                @endif
-            </div>
+                <div class="flex items-center gap-1">
+                    @if($tickets->onFirstPage())
+                        <span class="w-10 h-10 inline-flex items-center justify-center rounded bg-gray-100 text-gray-300">‹</span>
+                    @else
+                        <a href="{{ $tickets->previousPageUrl() }}" class="w-10 h-10 inline-flex items-center justify-center rounded bg-gray-100 text-gray-600 hover:text-gray-900">‹</a>
+                    @endif
+                    @if($tickets->hasMorePages())
+                        <a href="{{ $tickets->nextPageUrl() }}" class="w-10 h-10 inline-flex items-center justify-center rounded bg-gray-100 text-gray-600 hover:text-gray-900">›</a>
+                    @else
+                        <span class="w-10 h-10 inline-flex items-center justify-center rounded bg-gray-100 text-gray-300">›</span>
+                    @endif
+                </div>
+            @endif
 
             <div class="hidden sm:flex items-center rounded overflow-hidden bg-gray-200">
                 <a href="{{ route('workflow.tickets.index', array_merge(request()->except('view','page'), ['view' => 'kanban'])) }}"
@@ -114,11 +118,76 @@
         @endif
     </div>
     @else
-    <x-list :paginator="$tickets" :empty-text="__('workflow.no_tickets_found')">
+    @can('export', \App\Models\Workflow\Ticket::class)
+    <x-export
+        :fields="config('exportable')['workflow.tickets']['fields'] ?? []"
+        :export-url="route('export')"
+        model-key="workflow.tickets"
+    />
+    @endcan
+
+    @if(isset($groups))
+    <x-list :grouped="true" empty-text="{{ __('workflow.no_tickets_found') }}">
         <x-slot:columns>
-            <x-sortable-th column="id"         label="ID"                            class="px-4 py-2" />
-            <x-sortable-th column="name"       :label="__('common.name')"             class="px-3 py-2" :default="true" />
-            <x-sortable-th column="state"      :label="__('common.status')"           class="px-3 py-2" />
+            <x-sortable-th column="id"         label="ID"                              class="px-4 py-2" />
+            <x-sortable-th column="name"       :label="__('common.name')"               class="px-3 py-2" :default="true" />
+            <x-sortable-th column="state"      :label="__('common.status')"             class="px-3 py-2" />
+            <th class="px-3 py-2 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">{{ __('workflow.assigned_to_label') }}</th>
+            <th class="px-3 py-2 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">{{ __('workflow.department_label') }}</th>
+            <th class="px-3 py-2 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">{{ __('workflow.template_label') }}</th>
+            <x-sortable-th column="deadline"   :label="__('workflow.deadline_label')"   class="px-3 py-2" />
+            <x-sortable-th column="created_at" :label="__('workflow.created_label')"    class="px-3 py-2" />
+        </x-slot:columns>
+
+        @forelse($groups as $group)
+        <tbody x-data="{ open: {{ $loop->first ? 'true' : 'false' }} }" class="divide-y divide-gray-100">
+            <tr class="bg-gray-50 border-y border-gray-200 cursor-pointer select-none" @click="open = !open">
+                <td colspan="99" class="px-4 py-2.5">
+                    <div class="flex items-center gap-2 text-sm font-semibold text-gray-800">
+                        <svg class="w-3.5 h-3.5 transition-transform shrink-0 text-gray-400" :class="open ? 'rotate-90' : ''" fill="currentColor" viewBox="0 0 20 20">
+                            <path fill-rule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clip-rule="evenodd"/>
+                        </svg>
+                        {{ $group['label'] }}
+                        <span class="ms-1 text-xs text-gray-400 font-normal">({{ $group['count'] }})</span>
+                    </div>
+                </td>
+            </tr>
+            @foreach($group['items'] as $ticket)
+            <tr x-show="open" class="hover:bg-purple-50/30 cursor-pointer" onclick="window.location='{{ route('workflow.tickets.show', $ticket) }}'">
+                <td class="px-4 py-2 text-gray-500">{{ $ticket->id }}</td>
+                <td class="px-3 py-2 font-medium text-gray-900">
+                    {{ $ticket->name }}
+                    @if(!$ticket->active)
+                        <span class="ml-1.5 text-[10px] text-amber-600 font-semibold uppercase">{{ __('common.archived') }}</span>
+                    @endif
+                    @if($ticket->isOverdue())
+                        <span class="ml-1.5 text-[10px] text-red-600 font-semibold uppercase">{{ __('workflow.overdue_label') }}</span>
+                    @endif
+                </td>
+                <td class="px-3 py-2">
+                    <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium {{ $ticket->stateColor() }}">{{ $ticket->stateLabel() }}</span>
+                </td>
+                <td class="px-3 py-2 text-gray-600">{{ $ticket->assignedUser?->name ?? '—' }}</td>
+                <td class="px-3 py-2 text-gray-600">{{ $ticket->assignedDepartment?->name ?? '—' }}</td>
+                <td class="px-3 py-2 text-gray-600">{{ $ticket->template?->name ?? '—' }}</td>
+                <td class="px-3 py-2 text-gray-500 text-xs">{{ $ticket->resolve_deadline?->format('M j, Y H:i') ?? '—' }}</td>
+                <td class="px-3 py-2 text-gray-500 text-xs">{{ $ticket->created_at->format('M j, Y') }}</td>
+            </tr>
+            @endforeach
+        </tbody>
+        @empty
+        <tbody>
+            <tr><td colspan="99" class="px-4 py-20 text-center text-sm text-gray-400">{{ __('workflow.no_tickets_found') }}</td></tr>
+        </tbody>
+        @endforelse
+    </x-list>
+
+    @else
+    <x-list :paginator="$tickets" :empty-text="__('workflow.no_tickets_found')" :selectable="true" :total-count="$tickets->total()">
+        <x-slot:columns>
+            <x-sortable-th column="id"         label="ID"                              class="px-4 py-2" />
+            <x-sortable-th column="name"       :label="__('common.name')"               class="px-3 py-2" :default="true" />
+            <x-sortable-th column="state"      :label="__('common.status')"             class="px-3 py-2" />
             <th class="px-3 py-2 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">{{ __('workflow.assigned_to_label') }}</th>
             <th class="px-3 py-2 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">{{ __('workflow.department_label') }}</th>
             <th class="px-3 py-2 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">{{ __('workflow.template_label') }}</th>
@@ -131,6 +200,12 @@
 
         @foreach($tickets as $ticket)
         <tr class="hover:bg-purple-50/30 cursor-pointer" onclick="window.location='{{ route('workflow.tickets.show', $ticket) }}'">
+            <td class="w-10 px-3 py-2 text-center" @click.stop>
+                <input type="checkbox"
+                       class="list-checkbox rounded border-gray-300 text-purple-600 focus:ring-purple-500 cursor-pointer"
+                       x-model="selected"
+                       value="{{ $ticket->id }}">
+            </td>
             <td class="px-4 py-2 text-gray-500">{{ $ticket->id }}</td>
             <td class="px-3 py-2 font-medium text-gray-900">
                 {{ $ticket->name }}
@@ -155,6 +230,7 @@
         </tr>
         @endforeach
     </x-list>
+    @endif
     @endif
 </div>
 @endsection

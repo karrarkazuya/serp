@@ -18,7 +18,7 @@ class ExportController extends Controller
     public function export(Request $request): StreamedResponse
     {
         $modelKey = (string) $request->input('model', '');
-        $config   = config("exportable.{$modelKey}");
+        $config   = config('exportable')[$modelKey] ?? null;
 
         abort_unless($config !== null, 404, 'Unknown export model.');
 
@@ -50,11 +50,30 @@ class ExportController extends Controller
         }
 
         if ($request->boolean('select_all')) {
-            // Reconstruct search/filter state from the serialised query string
+            $extra = [];
             if ($request->filled('query_string')) {
                 parse_str((string) $request->input('query_string'), $extra);
                 $fakeRequest = Request::create('', 'GET', $extra);
                 SearchFilters::apply($query, $fakeRequest);
+            }
+            // Mirror the active/archived scope that module controllers apply
+            $filterParam = $extra['filter'] ?? null;
+            if (method_exists($model, 'scopeActive')) {
+                if ($filterParam === 'archived') {
+                    if (method_exists($model, 'scopeInactive')) {
+                        $query->inactive();
+                    }
+                } elseif ($filterParam !== 'all') {
+                    $query->active();
+                }
+            }
+
+            // Apply module-specific extra URL params declared in config (e.g. state, journal_id)
+            foreach ($config['extra_params'] ?? [] as $param => $column) {
+                $value = $extra[$param] ?? null;
+                if ($value !== null && $value !== '') {
+                    $query->where($column, $value);
+                }
             }
         } else {
             $ids = array_values(array_filter(

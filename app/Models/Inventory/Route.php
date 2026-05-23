@@ -32,9 +32,8 @@ class Route extends Model
     ];
 
     protected $fillable = [
-        'uuid', 'company_id', 'supplied_wh_id', 'supplier_wh_id', 'name', 'sequence',
+        'company_id', 'supplied_wh_id', 'supplier_wh_id', 'name', 'sequence',
         'product_category_selectable', 'product_selectable', 'warehouse_selectable', 'active',
-        'created_by', 'updated_by',
     ];
 
     protected $casts = [

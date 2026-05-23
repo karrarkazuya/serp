@@ -17,7 +17,7 @@ class ProductSupplier extends Model
 
     protected $fillable = [
         'product_id', 'partner_id', 'partner_name', 'partner_product_name',
-        'partner_product_code', 'min_qty', 'price', 'delay', 'active', 'created_by', 'updated_by',
+        'partner_product_code', 'min_qty', 'price', 'delay', 'active',
     ];
 
     protected $casts = [

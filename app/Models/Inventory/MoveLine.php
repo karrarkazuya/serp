@@ -16,9 +16,9 @@ class MoveLine extends Model
     protected $table = 'inventory_move_lines';
 
     protected $fillable = [
-        'uuid', 'company_id', 'move_id', 'picking_id', 'product_id', 'uom_id',
+        'company_id', 'move_id', 'picking_id', 'product_id', 'uom_id',
         'location_id', 'location_dest_id', 'lot_id', 'lot_name',
-        'reserved_qty', 'qty_done', 'date', 'created_by', 'updated_by',
+        'reserved_qty', 'qty_done', 'date',
     ];
 
     protected $casts = [

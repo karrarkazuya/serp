@@ -27,8 +27,8 @@ class Quant extends Model
     ];
 
     protected $fillable = [
-        'uuid', 'company_id', 'product_id', 'location_id', 'lot_id',
-        'quantity', 'reserved_quantity', 'in_date', 'created_by', 'updated_by',
+        'company_id', 'product_id', 'location_id', 'lot_id',
+        'quantity', 'reserved_quantity', 'in_date',
     ];
 
     protected $casts = [

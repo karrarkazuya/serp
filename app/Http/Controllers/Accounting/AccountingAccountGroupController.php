@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Accounting;
 
+use App\Helpers\GroupsQuery;
 use App\Helpers\SearchFilters;
 use App\Helpers\SortsTable;
 use App\Http\Controllers\Controller;
@@ -24,11 +25,22 @@ class AccountingAccountGroupController extends Controller
 
         $query = AccountingAccountGroup::query()->with(['company', 'parent']);
 
-        if (!empty($activeCompanyIds)) {
-            $query->forCompanies($activeCompanyIds);
-        }
+        empty($activeCompanyIds)
+            ? $query->whereRaw('1 = 0')
+            : $query->forCompanies($activeCompanyIds);
 
         SearchFilters::apply($query, $request);
+
+        $groupBy = $request->query('group_by');
+        if ($groupBy) {
+            $fields = SearchFilters::fieldsFor(AccountingAccountGroup::class);
+            if (isset($fields[$groupBy])) {
+                $records = (clone $query)->with(['company', 'parent'])->orderBy('id')->get();
+                $groups  = GroupsQuery::apply($records, $fields[$groupBy]);
+                return view('accounting.account-groups.index', compact('groups'));
+            }
+        }
+
         SortsTable::apply($query, $request, defaultColumn: 'name', defaultDirection: 'asc');
 
         $accountGroups = $query->paginate(40)->withQueryString();

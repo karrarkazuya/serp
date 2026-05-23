@@ -22,13 +22,14 @@
                     'name'          => $line->name,
                     'quantity'      => 1,
                     'price_unit'    => $amount,
+                    'discount'      => (float) $line->discount,
                     'tax_ids'       => $line->taxes->pluck('id')->all(),
                     'tax_labels'    => $line->taxes->map(fn($t) => ['id' => $t->id, 'label' => $t->display_name])->all(),
                 ];
             })->values()->all();
     }
 
-    $existingItems = $existingItems ?: [['product_id' => null, 'product_label' => '', 'uom_id' => null, 'uom_label' => '', 'account_id' => null, 'account_label' => '', 'name' => '', 'quantity' => '', 'price_unit' => '', 'tax_ids' => [], 'tax_labels' => []]];
+    $existingItems = $existingItems ?: [['product_id' => null, 'product_label' => '', 'uom_id' => null, 'uom_label' => '', 'account_id' => null, 'account_label' => '', 'name' => '', 'quantity' => '', 'price_unit' => '', 'discount' => '', 'tax_ids' => [], 'tax_labels' => []]];
 
     $lines = collect($existingItems)->map(fn($item) => [
         'product_id'    => $item['product_id'] ?? '',
@@ -40,22 +41,12 @@
         'name'          => $item['name'] ?? '',
         'quantity'      => $item['quantity'] ?? '',
         'price_unit'    => $item['price_unit'] ?? '',
+        'discount'      => $item['discount'] ?? '',
         'tax_ids'       => $item['tax_ids'] ?? [],
         'tax_labels'    => $item['tax_labels'] ?? [],
     ])->values()->all();
 
-    // Taxes available for selection (scoped to move type and company)
-    $companyId = old('company_id', $document?->company_id ?? ($defaults['company_id'] ?? null));
-    $taxScope  = $config['move_type'] === 'out_invoice' ? 'sale' : 'purchase';
-    $availableTaxes = $companyId
-        ? \App\Models\Accounting\AccountTax::where('company_id', $companyId)
-            ->whereIn('type_tax_use', [$taxScope, 'none'])
-            ->where('active', true)
-            ->orderBy('name')
-            ->get(['id', 'name', 'amount_type', 'amount'])
-            ->map(fn($t) => ['id' => $t->id, 'label' => $t->display_name])
-            ->all()
-        : [];
+    $availableTaxes = $availableTaxes ?? [];
 @endphp
 
 @if($errors->any())
@@ -89,7 +80,7 @@ window._docFormData = {
         currency: window._docFormData.currency,
         availableTaxes: window._docFormData.availableTaxes,
         emptyLine() {
-            return { product_id: '', product_label: '', product_open: false, product_results: [], uom_id: '', uom_label: '', uom_open: false, uom_results: [], account_id: '', account_label: '', account_open: false, account_results: [], name: '', quantity: '', price_unit: '', tax_ids: [], tax_labels: [], tax_open: false };
+            return { product_id: '', product_label: '', product_open: false, product_results: [], uom_id: '', uom_label: '', uom_open: false, uom_results: [], account_id: '', account_label: '', account_open: false, account_results: [], name: '', quantity: '', price_unit: '', discount: '', tax_ids: [], tax_labels: [], tax_open: false };
         },
         init() {
             this.lines = this.lines.map(l => Object.assign(this.emptyLine(), l));
@@ -124,7 +115,9 @@ window._docFormData = {
         f(n) { return (Number(n) || 0).toFixed(2); },
         lineNet(i) {
             const line = this.lines[i] || {};
-            return (parseFloat(line.quantity) || 0) * (parseFloat(line.price_unit) || 0);
+            const gross = (parseFloat(line.quantity) || 0) * (parseFloat(line.price_unit) || 0);
+            const disc  = Math.min(100, Math.max(0, parseFloat(line.discount) || 0));
+            return gross * (1 - disc / 100);
         },
         lineTax(i) {
             const net = this.lineNet(i);
@@ -136,7 +129,7 @@ window._docFormData = {
             return tax; // detailed tax math handled server-side; UI shows zero for now
         },
         get subtotal() {
-            return this.lines.reduce((sum, line) => sum + ((parseFloat(line.quantity) || 0) * (parseFloat(line.price_unit) || 0)), 0);
+            return this.lines.reduce((sum, _l, i) => sum + this.lineNet(i), 0);
         },
         get total() { return this.subtotal; },
         lineTotal(i) { return this.lineNet(i); },
@@ -290,6 +283,7 @@ window._docFormData = {
                         <th class="px-4 py-3 text-right w-28">Quantity</th>
                         <th class="px-4 py-3 text-left w-24">UoM</th>
                         <th class="px-4 py-3 text-right w-28">Price</th>
+                        <th class="px-4 py-3 text-right w-20">Disc %</th>
                         <th class="px-4 py-3 text-left w-28">Taxes</th>
                         <th class="px-4 py-3 text-right w-36">Amount</th>
                     </tr>
@@ -366,6 +360,9 @@ window._docFormData = {
                         <td class="px-4 py-2 text-right">
                             <input type="number" step="0.0001" min="0" :name="'items[' + i + '][price_unit]'" x-model="line.price_unit" class="w-full text-right text-sm tabular-nums border-0 border-b border-dotted border-gray-300 focus:border-purple-500 focus:outline-none focus:ring-0 px-0 py-1" placeholder="0.00">
                         </td>
+                        <td class="px-4 py-2 text-right">
+                            <input type="number" step="0.01" min="0" max="100" :name="'items[' + i + '][discount]'" x-model="line.discount" class="w-full text-right text-sm tabular-nums border-0 border-b border-dotted border-gray-300 focus:border-purple-500 focus:outline-none focus:ring-0 px-0 py-1" placeholder="0">
+                        </td>
                         {{-- Taxes column --}}
                         <td class="px-4 py-2 relative" @click.outside="line.tax_open = false">
                             <template x-for="(tl, ti) in (line.tax_labels || [])" :key="'tl-' + ti">
@@ -406,7 +403,7 @@ window._docFormData = {
                     </tr>
                     </template>
                     <tr class="bg-gray-50">
-                        <td colspan="8" class="px-8 py-3">
+                        <td colspan="9" class="px-8 py-3">
                             <div class="flex items-center gap-5 text-sm font-semibold text-[#71639e]">
                                 <button type="button" @click="addLine()" class="hover:text-[#5c3d55]">Add a line</button>
                                 <button type="button" @click="addLine()" class="hover:text-[#5c3d55]">Add a section</button>

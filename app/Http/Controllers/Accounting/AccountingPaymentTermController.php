@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Accounting;
 
+use App\Helpers\GroupsQuery;
 use App\Helpers\SearchFilters;
 use App\Helpers\SortsTable;
 use App\Http\Controllers\Controller;
@@ -25,9 +26,9 @@ class AccountingPaymentTermController extends Controller
 
         $query = AccountingPaymentTerm::query()->with('company')->withCount('lines');
 
-        if (!empty($activeCompanyIds)) {
-            $query->forCompanies($activeCompanyIds);
-        }
+        empty($activeCompanyIds)
+            ? $query->whereRaw('1 = 0')
+            : $query->forCompanies($activeCompanyIds);
 
         SearchFilters::apply($query, $request);
 
@@ -37,6 +38,16 @@ class AccountingPaymentTermController extends Controller
             // no filter
         } else {
             $query->active();
+        }
+
+        $groupBy = $request->query('group_by');
+        if ($groupBy) {
+            $fields = SearchFilters::fieldsFor(AccountingPaymentTerm::class);
+            if (isset($fields[$groupBy])) {
+                $records = (clone $query)->with('company')->withCount('lines')->orderBy('id')->get();
+                $groups  = GroupsQuery::apply($records, $fields[$groupBy]);
+                return view('accounting.payment-terms.index', compact('groups'));
+            }
         }
 
         SortsTable::apply($query, $request, defaultColumn: 'name', defaultDirection: 'asc');

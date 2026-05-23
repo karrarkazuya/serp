@@ -17,8 +17,8 @@ class RouteRule extends Model
     protected $table = 'inventory_route_rules';
 
     protected $fillable = [
-        'uuid', 'company_id', 'route_id', 'operation_type_id', 'location_src_id', 'location_dest_id',
-        'name', 'action', 'sequence', 'delay', 'group_propagation_option', 'active', 'created_by', 'updated_by',
+        'company_id', 'route_id', 'operation_type_id', 'location_src_id', 'location_dest_id',
+        'name', 'action', 'sequence', 'delay', 'group_propagation_option', 'active',
     ];
 
     protected $casts = ['active' => 'boolean'];

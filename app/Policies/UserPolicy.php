@@ -30,4 +30,9 @@ class UserPolicy
     {
         return $user->hasPermission('users.unlink') && $user->id !== $model->id;
     }
+
+    public function export(User $user): bool
+    {
+        return $user->hasPermission('users.export');
+    }
 }

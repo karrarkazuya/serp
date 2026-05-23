@@ -8,6 +8,7 @@ use App\Http\Requests\Employees\UpdateDepartmentRequest;
 use App\Models\Employees\Department;
 use App\Services\Company\CompanyContextService;
 use App\Services\Employees\DepartmentService;
+use App\Helpers\GroupsQuery;
 use App\Helpers\SearchFilters;
 use App\Helpers\SortsTable;
 use Illuminate\Http\Request;
@@ -56,6 +57,16 @@ class DepartmentController extends Controller
             $total     = $all->count();
 
             return view('employees.departments.index', compact('treeNodes', 'total', 'view'));
+        }
+
+        $groupBy = $request->query('group_by');
+        if ($view === 'list' && $groupBy) {
+            $fields = SearchFilters::fieldsFor(Department::class);
+            if (isset($fields[$groupBy])) {
+                $records = (clone $query)->with(['company', 'manager', 'parent'])->withCount('employees')->orderBy('id')->get();
+                $groups  = GroupsQuery::apply($records, $fields[$groupBy]);
+                return view('employees.departments.index', compact('groups', 'view'));
+            }
         }
 
         SortsTable::apply($query, $request);
@@ -152,6 +163,9 @@ class DepartmentController extends Controller
     public function addComment(Request $request, Department $department)
     {
         $this->authorize('comment', $department);
+        $activeCompanyIds = $this->companyContext->getActiveCompanyIds();
+        abort_unless(empty($activeCompanyIds) || in_array($department->company_id, $activeCompanyIds), 403);
+
         $request->validate(['body' => 'required|string|max:5000']);
         DB::transaction(fn () => $department->logComment($request->body));
 

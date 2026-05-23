@@ -25,6 +25,8 @@
         activeQuickFilters: @js($activeQuickFilters),
         groupBy: @js($activeGroupBy),
         groupLabel: @js($activeGroupLabel),
+        customGroupOpen: false,
+        customGroupSearch: '',
         fields: @js($fields),
         fieldList: @js($fieldList),
         operatorLabels: @js($operatorLabels),
@@ -272,12 +274,42 @@
                     @forelse($groupOptions as $group)
                         <button type="button"
                                 @click="setGroup(@js($group['key']), @js($group['label']))"
-                                class="block w-full px-2 py-1.5 text-left text-sm font-medium text-gray-700 hover:bg-gray-100 rounded">
+                                class="block w-full px-2 py-1.5 text-left text-sm font-medium text-gray-700 hover:bg-gray-100 rounded"
+                                :class="groupBy === @js($group['key']) ? 'text-[#714B67] font-semibold' : ''">
                             {{ $group['label'] }}
                         </button>
                     @empty
-                        <div class="px-2 py-1.5 text-sm text-gray-400">{{ __('common.no_groups') }}</div>
                     @endforelse
+
+                    <div class="border-t border-gray-200 my-1"></div>
+                    <div class="relative">
+                        <button type="button"
+                                @click="customGroupOpen = !customGroupOpen; customGroupSearch = ''"
+                                class="block w-full px-2 py-1.5 text-left text-sm font-medium text-[#714B67] hover:bg-gray-100 rounded">
+                            Add Custom Group
+                        </button>
+                        <div x-show="customGroupOpen"
+                             x-transition.opacity.duration.100ms
+                             @click.outside="customGroupOpen = false"
+                             class="absolute inset-s-0 top-full mt-1 w-52 bg-white border border-gray-200 rounded-lg shadow-lg z-50"
+                             style="display:none">
+                            <div class="p-2 border-b border-gray-100">
+                                <input type="text"
+                                       x-model="customGroupSearch"
+                                       placeholder="Search fields..."
+                                       class="w-full px-2 py-1 text-xs border border-gray-200 rounded focus:outline-none focus:ring-1 focus:ring-purple-400">
+                            </div>
+                            <div class="max-h-52 overflow-y-auto py-1">
+                                <template x-for="field in fieldList.filter(f => customGroupSearch === '' || f.label.toLowerCase().includes(customGroupSearch.toLowerCase()))" :key="field.key">
+                                    <button type="button"
+                                            @click="setGroup(field.key, field.label); customGroupOpen = false; customGroupSearch = ''"
+                                            class="block w-full px-2 py-1.5 text-start text-xs text-gray-700 hover:bg-gray-50">
+                                        <span x-text="field.label"></span>
+                                    </button>
+                                </template>
+                            </div>
+                        </div>
+                    </div>
                 </div>
 
                 <div class="px-4">
@@ -295,7 +327,7 @@
 
     <div x-show="modalOpen"
          x-transition.opacity
-         class="fixed inset-0 z-[100] bg-black/45 flex items-start justify-center p-4 pt-16"
+         class="fixed inset-0 z-100 bg-black/45 flex items-start justify-center p-4 pt-16"
          style="display:none">
         <div class="bg-white w-full max-w-5xl rounded shadow-2xl border border-gray-300 overflow-visible" @click.outside="modalOpen = false">
             <div class="flex items-center px-4 py-3 border-b border-gray-200">

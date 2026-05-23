@@ -5,7 +5,6 @@ namespace App\Http\Controllers\Settings;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Settings\StoreUserRequest;
 use App\Http\Requests\Settings\UpdateUserRequest;
-use App\Models\Security\Role;
 use App\Models\User;
 use App\Services\Settings\UserService;
 use App\Helpers\SearchFilters;
@@ -36,15 +35,13 @@ class UserController extends Controller
     {
         $this->authorize('view', $user);
         $user->load('roles');
-        $roles = Role::where('active', true)->get();
-        return view('settings.users.show', compact('user', 'roles'));
+        return view('settings.users.show', compact('user'));
     }
 
     public function create()
     {
         $this->authorize('create', User::class);
-        $roles = Role::where('active', true)->get();
-        return view('settings.users.create', compact('roles'));
+        return view('settings.users.create');
     }
 
     public function store(StoreUserRequest $request)
@@ -63,8 +60,7 @@ class UserController extends Controller
     {
         $this->authorize('update', $user);
         $user->load('roles');
-        $roles = Role::where('active', true)->get();
-        return view('settings.users.edit', compact('user', 'roles'));
+        return view('settings.users.edit', compact('user'));
     }
 
     public function write(UpdateUserRequest $request, User $user)

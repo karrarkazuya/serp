@@ -53,4 +53,9 @@ class AccountMovePolicy
     {
         return $user->hasPermission('accounting.write');
     }
+
+    public function export(User $user): bool
+    {
+        return $user->hasPermission('accounting.export');
+    }
 }

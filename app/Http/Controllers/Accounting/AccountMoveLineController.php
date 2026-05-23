@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Accounting;
 
+use App\Helpers\GroupsQuery;
 use App\Helpers\SearchFilters;
 use App\Helpers\SortsTable;
 use App\Http\Controllers\Controller;
@@ -47,6 +48,16 @@ class AccountMoveLineController extends Controller
         $totalDebit = round((float) $totalsQuery->sum('debit'), 2);
         $totalCredit = round((float) (clone $query)->sum('credit'), 2);
         $totalBalance = round($totalDebit - $totalCredit, 2);
+
+        $groupBy = $request->query('group_by');
+        if ($groupBy) {
+            $fields = SearchFilters::fieldsFor(AccountMoveLine::class);
+            if (isset($fields[$groupBy])) {
+                $records = (clone $query)->with(['move', 'journal', 'account', 'partner', 'company'])->orderBy('id')->get();
+                $groups  = GroupsQuery::apply($records, $fields[$groupBy]);
+                return view('accounting.items.index', compact('groups', 'totalDebit', 'totalCredit', 'totalBalance'));
+            }
+        }
 
         SortsTable::apply($query, $request, defaultColumn: 'date', defaultDirection: 'desc');
         $query->orderByDesc('id');

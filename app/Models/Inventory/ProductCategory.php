@@ -37,7 +37,7 @@ class ProductCategory extends Model
     ];
 
     protected $fillable = [
-        'uuid', 'parent_id', 'name', 'complete_name', 'removal_strategy', 'costing_method', 'active', 'created_by', 'updated_by',
+        'parent_id', 'name', 'complete_name', 'removal_strategy', 'costing_method', 'active',
     ];
 
     protected $casts = ['active' => 'boolean'];

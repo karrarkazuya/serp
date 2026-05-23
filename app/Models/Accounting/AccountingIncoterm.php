@@ -34,11 +34,8 @@ class AccountingIncoterm extends Model
     ];
 
     protected $fillable = [
-        'uuid',
         'code',
         'name',
-        'created_by',
-        'updated_by',
     ];
 
     public function creator(): BelongsTo

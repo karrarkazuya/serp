@@ -55,7 +55,15 @@
         </div>
     </div>
 
-    <x-list :paginator="$users" :empty-text="__('settings.no_users')">
+    @can('export', \App\Models\User::class)
+    <x-export
+        :fields="config('exportable')['users']['fields'] ?? []"
+        :export-url="route('export')"
+        model-key="users"
+    />
+    @endcan
+
+    <x-list :paginator="$users" :empty-text="__('settings.no_users')" :selectable="true" :total-count="$users->total()">
         <x-slot:columns>
             <x-sortable-th column="name" :label="__('common.name')" class="px-6" :default="true" />
             <x-sortable-th column="email" :label="__('common.email')" />
@@ -66,6 +74,12 @@
 
         @foreach($users as $user)
         <tr class="hover:bg-[#714B67]/5 transition-colors cursor-pointer" onclick="window.location='{{ route('settings.users.show', $user) }}'">
+            <td class="w-10 px-3 py-2 text-center" @click.stop>
+                <input type="checkbox"
+                       class="list-checkbox rounded border-gray-300 text-purple-600 focus:ring-purple-500 cursor-pointer"
+                       x-model="selected"
+                       value="{{ $user->id }}">
+            </td>
             <td class="px-6 py-3">
                 <div class="flex items-center gap-3">
                     <div class="w-8 h-8 rounded-full bg-[#714B67]/10 flex items-center justify-center text-xs font-bold text-[#714B67]">

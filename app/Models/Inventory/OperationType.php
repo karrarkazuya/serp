@@ -33,10 +33,10 @@ class OperationType extends Model
     ];
 
     protected $fillable = [
-        'uuid', 'company_id', 'warehouse_id', 'default_location_src_id', 'default_location_dest_id',
+        'company_id', 'warehouse_id', 'default_location_src_id', 'default_location_dest_id',
         'return_picking_type_id', 'name', 'code', 'use_existing_lots', 'use_create_lots',
         'show_entire_packs', 'sequence_prefix', 'sequence_next_number', 'sequence_padding',
-        'active', 'created_by', 'updated_by',
+        'active',
     ];
 
     protected $casts = [

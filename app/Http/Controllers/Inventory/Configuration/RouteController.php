@@ -80,6 +80,13 @@ class RouteController extends Controller
         return redirect()->route('inventory.config.routes.show', $route)->with('success', 'Route created.');
     }
 
+    public function newRuleRow(Request $request): \Illuminate\View\View
+    {
+        $this->authorize('update', Route::class);
+        $idx = max(0, (int) $request->query('idx', 0));
+        return view('inventory.configuration.routes._rule-row', compact('idx'));
+    }
+
     public function edit(Route $route)
     {
         $this->authorize('update', $route);

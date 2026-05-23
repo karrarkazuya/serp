@@ -8,7 +8,7 @@ use Illuminate\Validation\Rule;
 
 class StoreReorderRuleRequest extends FormRequest
 {
-    public function authorize(): bool { return $this->user()->hasPermission('inventory.write'); }
+    public function authorize(): bool { return $this->user()->hasPermission('inventory.create'); }
 
     public function rules(): array
     {

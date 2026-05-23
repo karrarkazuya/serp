@@ -14,6 +14,7 @@ use App\Models\Workflow\TicketTemplate;
 use App\Models\Workflow\WorkflowTemplateInput;
 use App\Models\Workflow\TicketProcedureLine;
 use App\Models\Workflow\WorkflowUser;
+use App\Helpers\GroupsQuery;
 use App\Helpers\SearchFilters;
 use App\Helpers\SortsTable;
 use App\Services\Company\CompanyContextService;
@@ -90,11 +91,24 @@ class TicketController extends Controller
             $query->where('state', $state);
         }
 
+        $groupBy = $request->query('group_by');
+        if ($view === 'list' && $groupBy) {
+            $fields = SearchFilters::fieldsFor(Ticket::class);
+            if (isset($fields[$groupBy])) {
+                $records = (clone $query)
+                    ->with(['template', 'assignedDepartment', 'assignedUser'])
+                    ->orderBy('name')
+                    ->get();
+                $groups = GroupsQuery::apply($records, $fields[$groupBy]);
+                return view('workflow.tickets.index', compact('groups', 'view'));
+            }
+        }
+
         SortsTable::apply($query, $request);
 
         $tickets = $query->paginate(24)->withQueryString();
 
-        return view('workflow.tickets.index', compact('tickets'));
+        return view('workflow.tickets.index', compact('tickets', 'view'));
     }
 
     public function show(Ticket $ticket)

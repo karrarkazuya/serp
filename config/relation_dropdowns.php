@@ -55,6 +55,17 @@ return [
         'fields' => ['name', 'email'],
     ],
 
+    'roles' => [
+        'read' => 'roles.read',
+        'write' => 'roles.write',
+        'create_permission' => 'roles.create',
+        'route' => 'settings.roles.index',
+        'create' => 'settings.roles.create',
+        'color' => null,
+        'fields' => ['name'],
+        'active_only' => true,
+    ],
+
     'users' => [
         'read' => 'users.read',
         'write' => 'users.write',

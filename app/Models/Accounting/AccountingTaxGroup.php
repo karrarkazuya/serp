@@ -40,12 +40,9 @@ class AccountingTaxGroup extends Model
     ];
 
     protected $fillable = [
-        'uuid',
         'company_id',
         'name',
         'sequence',
-        'created_by',
-        'updated_by',
     ];
 
     protected $casts = [

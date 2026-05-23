@@ -39,7 +39,7 @@
     <div class="flex-1">
         <select name="amount_type" required
                 class="w-full border border-gray-300 rounded px-3 py-1.5 text-sm focus:outline-none focus:ring-1 focus:ring-purple-400 bg-white">
-            @foreach(\App\Models\Accounting\AccountTax::AMOUNT_TYPES as $key => $label)
+            @foreach($amountTypes as $key => $label)
             <option value="{{ $key }}" @selected($val('amount_type', 'percent') === $key)>{{ $label }}</option>
             @endforeach
         </select>
@@ -61,7 +61,7 @@
     <div class="flex-1">
         <select name="type_tax_use" required
                 class="w-full border border-gray-300 rounded px-3 py-1.5 text-sm focus:outline-none focus:ring-1 focus:ring-purple-400 bg-white">
-            @foreach(\App\Models\Accounting\AccountTax::TYPE_TAX_USE as $key => $label)
+            @foreach($typeTaxUse as $key => $label)
             <option value="{{ $key }}" @selected($val('type_tax_use', 'sale') === $key)>{{ $label }}</option>
             @endforeach
         </select>

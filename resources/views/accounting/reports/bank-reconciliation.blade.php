@@ -14,14 +14,13 @@
         <form method="GET" class="mb-5 flex flex-wrap items-end gap-3 bg-white rounded-xl border border-gray-200 shadow-sm p-4">
             <div>
                 <label class="block text-xs font-medium text-gray-500 mb-1">Bank / Cash Journal</label>
-                <select name="journal_id" class="border border-gray-300 rounded px-3 py-1.5 text-sm focus:outline-none focus:ring-1 focus:ring-purple-400">
-                    <option value="">Select journal…</option>
-                    @foreach($bankJournals as $journal)
-                    <option value="{{ $journal->id }}" {{ $journalId == $journal->id ? 'selected' : '' }}>
-                        {{ $journal->code }} – {{ $journal->name }} ({{ ucfirst($journal->type) }})
-                    </option>
-                    @endforeach
-                </select>
+                <x-relation-dropdown
+                    table="account_journals"
+                    field="name"
+                    name="journal_id"
+                    :compact="true"
+                    :selected="$journalId"
+                />
             </div>
             <div>
                 <label class="block text-xs font-medium text-gray-500 mb-1">From</label>

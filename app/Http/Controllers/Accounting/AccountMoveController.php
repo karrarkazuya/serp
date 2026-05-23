@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Accounting;
 
+use App\Helpers\GroupsQuery;
 use App\Helpers\SearchFilters;
 use App\Helpers\SortsTable;
 use App\Http\Controllers\Controller;
@@ -28,9 +29,9 @@ class AccountMoveController extends Controller
         $activeCompanyIds = $this->companyContext->getActiveCompanyIds();
         $query = AccountMove::query()->with(['journal', 'partner'])->where('move_type', 'entry');
 
-        if (!empty($activeCompanyIds)) {
-            $query->forCompanies($activeCompanyIds);
-        }
+        empty($activeCompanyIds)
+            ? $query->whereRaw('1 = 0')
+            : $query->forCompanies($activeCompanyIds);
 
         SearchFilters::apply($query, $request);
 
@@ -41,6 +42,16 @@ class AccountMoveController extends Controller
 
         if ($journalId = $request->query('journal_id')) {
             $query->where('journal_id', (int) $journalId);
+        }
+
+        $groupBy = $request->query('group_by');
+        if ($groupBy) {
+            $fields = SearchFilters::fieldsFor(AccountMove::class);
+            if (isset($fields[$groupBy])) {
+                $records = (clone $query)->with(['journal', 'partner'])->orderBy('date', 'desc')->get();
+                $groups  = GroupsQuery::apply($records, $fields[$groupBy]);
+                return view('accounting.moves.index', compact('groups'));
+            }
         }
 
         SortsTable::apply($query, $request, defaultColumn: 'date', defaultDirection: 'desc');
@@ -83,8 +94,10 @@ class AccountMoveController extends Controller
         $recordPosition = $currentIndex !== false ? $currentIndex + 1 : null;
         $recordTotal = $allIds->count();
 
+        $moveTypes = AccountMove::MOVE_TYPES;
+
         return view('accounting.moves.show', compact(
-            'move', 'balance', 'prevId', 'nextId', 'recordPosition', 'recordTotal'
+            'move', 'balance', 'prevId', 'nextId', 'recordPosition', 'recordTotal', 'moveTypes'
         ));
     }
 
@@ -97,7 +110,9 @@ class AccountMoveController extends Controller
 
         $preselectedJournalId = $request->query('journal_id') ? (int) $request->query('journal_id') : null;
 
-        return view('accounting.moves.create', compact('defaultCompanyId', 'preselectedJournalId'));
+        $moveTypes = AccountMove::MOVE_TYPES;
+
+        return view('accounting.moves.create', compact('defaultCompanyId', 'preselectedJournalId', 'moveTypes'));
     }
 
     public function store(StoreMoveRequest $request)
@@ -141,7 +156,9 @@ class AccountMoveController extends Controller
 
         $move->load(['lines.account', 'lines.partner', 'journal', 'partner']);
 
-        return view('accounting.moves.edit', compact('move'));
+        $moveTypes = AccountMove::MOVE_TYPES;
+
+        return view('accounting.moves.edit', compact('move', 'moveTypes'));
     }
 
     public function write(UpdateMoveRequest $request, AccountMove $move)

@@ -40,9 +40,9 @@ class ReorderRule extends Model
     ];
 
     protected $fillable = [
-        'uuid', 'company_id', 'product_id', 'location_id', 'warehouse_id', 'route_id',
+        'company_id', 'product_id', 'location_id', 'warehouse_id', 'route_id',
         'qty_min', 'qty_max', 'qty_multiple', 'qty_on_hand', 'qty_forecast', 'lead_days',
-        'active', 'created_by', 'updated_by',
+        'active',
     ];
 
     protected $casts = [

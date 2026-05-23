@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Accounting;
 
+use App\Helpers\GroupsQuery;
 use App\Helpers\SearchFilters;
 use App\Helpers\SortsTable;
 use App\Http\Controllers\Controller;
@@ -19,6 +20,17 @@ class AccountingIncotermController extends Controller
         $query = AccountingIncoterm::query();
 
         SearchFilters::apply($query, $request);
+
+        $groupBy = $request->query('group_by');
+        if ($groupBy) {
+            $fields = SearchFilters::fieldsFor(AccountingIncoterm::class);
+            if (isset($fields[$groupBy])) {
+                $records = (clone $query)->orderBy('id')->get();
+                $groups  = GroupsQuery::apply($records, $fields[$groupBy]);
+                return view('accounting.incoterms.index', compact('groups'));
+            }
+        }
+
         SortsTable::apply($query, $request, defaultColumn: 'code', defaultDirection: 'asc');
 
         $incoterms = $query->paginate(40)->withQueryString();

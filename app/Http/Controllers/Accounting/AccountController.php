@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Accounting;
 
+use App\Helpers\GroupsQuery;
 use App\Helpers\SearchFilters;
 use App\Helpers\SortsTable;
 use App\Http\Controllers\Controller;
@@ -30,6 +31,7 @@ class AccountController extends Controller
         // ── Tree view: no pagination, full hierarchy ──
         if ($view === 'tree') {
             $records = Account::query()
+                ->when(empty($activeCompanyIds), fn ($q) => $q->whereRaw('1 = 0'))
                 ->when(!empty($activeCompanyIds), fn ($q) => $q->forCompanies($activeCompanyIds))
                 ->when($request->query('filter') !== 'all', function ($q) use ($request) {
                     $request->query('filter') === 'archived' ? $q->inactive() : $q->active();
@@ -47,9 +49,9 @@ class AccountController extends Controller
         // ── List view (default) ──
         $query = Account::query()->with(['company', 'parent']);
 
-        if (!empty($activeCompanyIds)) {
-            $query->forCompanies($activeCompanyIds);
-        }
+        empty($activeCompanyIds)
+            ? $query->whereRaw('1 = 0')
+            : $query->forCompanies($activeCompanyIds);
 
         SearchFilters::apply($query, $request);
 
@@ -63,6 +65,18 @@ class AccountController extends Controller
 
         if ($type = $request->query('account_type')) {
             $query->where('account_type', $type);
+        }
+
+        if ($view === 'list') {
+            $groupBy = $request->query('group_by');
+            if ($groupBy) {
+                $fields = SearchFilters::fieldsFor(Account::class);
+                if (isset($fields[$groupBy])) {
+                    $records = (clone $query)->with(['company', 'parent'])->orderBy('id')->get();
+                    $groups  = GroupsQuery::apply($records, $fields[$groupBy]);
+                    return view('accounting.accounts.index', compact('groups', 'view'));
+                }
+            }
         }
 
         SortsTable::apply($query, $request, defaultColumn: 'code', defaultDirection: 'asc');
@@ -147,7 +161,9 @@ class AccountController extends Controller
         $activeCompanyIds = $this->companyContext->getActiveCompanyIds();
         $defaultCompanyId = count($activeCompanyIds) === 1 ? $activeCompanyIds[0] : null;
 
-        return view('accounting.accounts.create', compact('defaultCompanyId'));
+        $accountTypes = Account::TYPES;
+
+        return view('accounting.accounts.create', compact('defaultCompanyId', 'accountTypes'));
     }
 
     public function store(StoreAccountRequest $request)
@@ -165,7 +181,9 @@ class AccountController extends Controller
         $activeCompanyIds = $this->companyContext->getActiveCompanyIds();
         abort_unless(in_array($account->company_id, $activeCompanyIds), 403);
 
-        return view('accounting.accounts.edit', compact('account'));
+        $accountTypes = Account::TYPES;
+
+        return view('accounting.accounts.edit', compact('account', 'accountTypes'));
     }
 
     public function write(UpdateAccountRequest $request, Account $account)

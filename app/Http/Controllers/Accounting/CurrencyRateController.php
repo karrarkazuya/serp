@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Accounting;
 
+use App\Helpers\GroupsQuery;
 use App\Helpers\SearchFilters;
 use App\Helpers\SortsTable;
 use App\Http\Controllers\Controller;
@@ -26,14 +27,24 @@ class CurrencyRateController extends Controller
 
         $query = CurrencyRate::query()->with('company');
 
-        if (!empty($activeCompanyIds)) {
-            $query->forCompanies($activeCompanyIds);
-        }
+        empty($activeCompanyIds)
+            ? $query->whereRaw('1 = 0')
+            : $query->forCompanies($activeCompanyIds);
 
         SearchFilters::apply($query, $request);
 
         if ($currency = $request->query('currency')) {
             $query->where('currency', $currency);
+        }
+
+        $groupBy = $request->query('group_by');
+        if ($groupBy) {
+            $fields = SearchFilters::fieldsFor(CurrencyRate::class);
+            if (isset($fields[$groupBy])) {
+                $records = (clone $query)->with('company')->orderBy('id')->get();
+                $groups  = GroupsQuery::apply($records, $fields[$groupBy]);
+                return view('accounting.currencies.index', compact('groups'));
+            }
         }
 
         SortsTable::apply($query, $request, defaultColumn: 'date', defaultDirection: 'desc');

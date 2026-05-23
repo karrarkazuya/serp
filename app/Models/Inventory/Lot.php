@@ -40,8 +40,8 @@ class Lot extends Model
     ];
 
     protected $fillable = [
-        'uuid', 'company_id', 'product_id', 'name', 'ref',
-        'expiration_date', 'use_date', 'removal_date', 'note', 'active', 'created_by', 'updated_by',
+        'company_id', 'product_id', 'name', 'ref',
+        'expiration_date', 'use_date', 'removal_date', 'note', 'active',
     ];
 
     protected $casts = [

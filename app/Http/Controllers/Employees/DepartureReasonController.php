@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Employees;
 
 use App\Http\Controllers\Controller;
 use App\Models\Employees\DepartureReason;
+use App\Helpers\GroupsQuery;
 use App\Helpers\SearchFilters;
 use App\Helpers\SortsTable;
 use Illuminate\Http\Request;
@@ -25,6 +26,16 @@ class DepartureReasonController extends Controller
             // no filter
         } else {
             $query->active();
+        }
+
+        $groupBy = $request->query('group_by');
+        if ($groupBy) {
+            $fields = SearchFilters::fieldsFor(DepartureReason::class);
+            if (isset($fields[$groupBy])) {
+                $records = (clone $query)->orderBy('id')->get();
+                $groups  = GroupsQuery::apply($records, $fields[$groupBy]);
+                return view('employees.departure-reasons.index', compact('groups'));
+            }
         }
 
         SortsTable::apply($query, $request);

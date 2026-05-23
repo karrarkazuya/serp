@@ -27,7 +27,7 @@ Register every new model with `AuditableObserver` in `AppServiceProvider`.
 
 ---
 
-## The 8 Non-Negotiable Rules
+## The 10 Non-Negotiable Rules
 
 Violating any of these is a bug, not a style issue.
 
@@ -159,7 +159,90 @@ class MyModel extends Model
 
 When adding a new table, always add `$table->softDeletes()` in the migration and `use SoftDeletes;` in the model. This is non-negotiable — missing it is a data-loss bug.
 
-### 9. All file uploads — `FileService` only. All file serving — `/files/{uuid}` only.
+### 9. Export — `<x-export>` + `<x-list :selectable>` + `config/exportable.php`
+
+Every list view that supports export must use the three-piece export system. Never hand-roll export logic in controllers or build custom download endpoints.
+
+#### Pieces
+
+| Piece | Role |
+|---|---|
+| `<x-list :selectable="true" :total-count="$paginator->total()">` | Adds checkbox column, selection action bar, and "Actions → Export" dispatch |
+| `<x-export :fields="..." :export-url="route('export')" model-key="...">` | Alpine modal: field picker, format toggle, hidden POST form |
+| `config/exportable.php` | Server-side whitelist — defines allowed columns and permission key per model |
+| `POST /export` (`ExportController`) | Generic endpoint: validates model key, checks permission, builds query, returns file download |
+
+#### Adding export to a list view
+
+**1. Add entry to `config/exportable.php`:**
+```php
+'contacts' => [
+    'class'          => \App\Models\Contacts\Contact::class,
+    'permission'     => 'contacts.export',
+    'company_scoped' => true,
+    'filename'       => 'contacts',
+    'fields'         => [
+        ['key' => 'name',  'label' => 'Name',  'column' => 'name'],
+        ['key' => 'email', 'label' => 'Email', 'column' => 'email'],
+        // ...
+    ],
+],
+```
+
+**2. Add `export` policy method:**
+```php
+public function export(User $user): bool
+{
+    return $user->hasPermission('contacts.export');
+}
+```
+
+**3. Seed the permission** in `CoreSeeder::seedPermissions()`:
+```php
+['name' => 'Export Contacts', 'key' => 'contacts.export', 'module' => 'contacts', 'description' => '...'],
+```
+
+**4. In the index Blade view:**
+```blade
+@can('export', \App\Models\Contacts\Contact::class)
+<x-export
+    :fields="config('exportable.contacts.fields', [])"
+    :export-url="route('export')"
+    model-key="contacts"
+/>
+@endcan
+
+<x-list :paginator="$records"
+        :selectable="true"
+        :total-count="$records->total()">
+    <x-slot:columns>
+        {{-- your <th> columns here --}}
+    </x-slot:columns>
+
+    @foreach($records as $record)
+    <tr ... onclick="window.location='...'">
+        <td class="w-10 px-3 py-2 text-center" @click.stop>
+            <input type="checkbox"
+                   class="list-checkbox rounded border-gray-300 text-purple-600"
+                   x-model="selected"
+                   value="{{ $record->id }}">
+        </td>
+        {{-- your <td> cells here --}}
+    </tr>
+    @endforeach
+</x-list>
+```
+
+Key rules:
+- Checkbox `<td>` must come first in every row, with `@click.stop` to prevent row-click firing.
+- Checkbox must have class `list-checkbox` (used by the select-all logic in the component).
+- `x-model="selected"` works because the checkbox is a descendant of the `x-data` wrapper rendered by `<x-list :selectable>`.
+- Never expose unlisted columns: the ExportController validates every field key against `config/exportable.php`.
+- `company_scoped: true` means the controller applies `whereIn('company_id', $activeCompanyIds)` automatically.
+
+See `docs/components/export.md` for the full component reference.
+
+### 10. All file uploads — `FileService` only. All file serving — `/files/{uuid}` only.
 
 **Never** store uploaded files directly in controllers or hand-roll file-serving routes. Every file upload in the application must go through `App\Services\FileService::store()`. Every file is served through the single route `GET /files/{uuid}` (`files.serve`) handled by `App\Http\Controllers\FileController`.
 
@@ -345,15 +428,17 @@ When building a new module, follow `docs/implement_new_module.md` using Contacts
 - [ ] Model: fillable, casts, relationships, `scopeActive`, `scopeForCompanies` (if company-scoped), **`use SoftDeletes`**
 - [ ] Register model with `AuditableObserver` in `AppServiceProvider`
 - [ ] Permissions seeded in `PermissionSeeder` and assigned in `RoleSeeder`
-- [ ] Policy: `viewAny`, `view`, `create`, `update`, `delete`, `comment`
+- [ ] Policy: `viewAny`, `view`, `create`, `update`, `delete`, `comment`, **`export`**
 - [ ] Form requests: authorize + validate; validate company-scoped IDs against `getActiveCompanyIds()`
 - [ ] Service: create, update, archive, unarchive — business logic + chatter, no transactions
 - [ ] Controller: follows naming above, wraps in `DB::transaction`, applies company gate
 - [ ] Routes: permission middleware on every route, fixed sub-routes before `/{model}` to avoid binding conflicts
-- [ ] Views: `<x-list>` + `<x-search>` on index, `<x-chatter>` on show, Odoo form style, `<x-relation-dropdown>` for relations
+- [ ] Views: `<x-list :selectable="true">` + `<x-search>` on index, `<x-chatter>` on show, Odoo form style, `<x-relation-dropdown>` for relations
 - [ ] Navigation: update `resources/views/components/navbar.blade.php`
 - [ ] Register target tables in `config/relation_dropdowns.php` for any relation dropdown
 - [ ] make sure you added $sortable, $searchable, $chatterTracked, $fillable and make sure they are linked and used
+- [ ] Export: add entry to `config/exportable.php`, seed `module.export` permission, add `export()` to policy, add `<x-export>` + row checkboxes to index view
+- [ ] Group By: add `GroupsQuery` import + group-by detection block to `read()` (before `SortsTable::apply()`), add `@if(isset($groups))` / `@else` branching in the index view with `<x-list :grouped="true">` and `<tbody x-data>` blocks
 
 ---
 
@@ -377,7 +462,7 @@ The Workflow module is the most complex. Key specifics:
 
 ## Key Files
 
-- `docs/implement_rules.md` — full detail on the 7 rules with code examples
+- `docs/implement_rules.md` — full detail on the rules with code examples
 - `docs/implement_new_module.md` — step-by-step new module guide (Contacts as reference)
 - `docs/getting_started.md` — stack, setup, project layout
 - `docs/components/dynamic_relation_lookup.md` — relation dropdown docs
@@ -387,6 +472,94 @@ The Workflow module is the most complex. Key specifics:
 - `app/Services/Company/CompanyContextService.php` — active company IDs
 - `app/Services/FileService.php` — **all** file uploads and deletions go through here
 - `app/Http/Controllers/FileController.php` — single unified file-serving endpoint (`GET /files/{uuid}`)
+- `config/exportable.php` — export model whitelist (class, permission, fields per module)
+- `app/Http/Controllers/ExportController.php` — generic `POST /export` endpoint
+- `app/Services/ExportService.php` — XLSX / CSV file generation via PhpSpreadsheet
+- `docs/components/export.md` — export component usage guide
+
+---
+
+## Group By — `GroupsQuery` helper + `<x-list :grouped>` mode
+
+Every list controller that supports group-by must use `App\Helpers\GroupsQuery` and the `<x-list :grouped="true">` component. Never hand-build grouping logic in a controller or view.
+
+### Controller pattern (8 lines)
+
+Add this block **after** any active/state filters and **before** `SortsTable::apply()`. For multi-view controllers (list + kanban / tree), gate it with `$view === 'list'`:
+
+```php
+use App\Helpers\GroupsQuery;
+
+$groupBy = $request->query('group_by');
+if ($groupBy) {                                     // add && $view === 'list' for multi-view controllers
+    $fields = SearchFilters::fieldsFor(MyModel::class);
+    if (isset($fields[$groupBy])) {
+        $records = (clone $query)->with([...])->orderBy('name')->get();
+        $groups  = GroupsQuery::apply($records, $fields[$groupBy]);
+        return view('module.index', compact('groups', 'view'));   // always pass $view
+    }
+}
+```
+
+### View pattern
+
+Use `@if(isset($groups))` / `@else` inside the list branch. Guard any toolbar count/pagination that references `$paginator` the same way:
+
+```blade
+{{-- Toolbar count --}}
+@if(isset($groups))
+    <span>{{ $groups->sum('count') }} records</span>
+@elseif(isset($records))
+    <span>{{ $records->firstItem() }}-{{ $records->lastItem() }} / {{ $records->total() }}</span>
+@endif
+
+{{-- List area --}}
+@if(isset($groups))
+<x-list :grouped="true" empty-text="No records found.">
+    <x-slot:columns>
+        {{-- same <th>/<x-sortable-th> columns as normal list --}}
+    </x-slot:columns>
+
+    @forelse($groups as $group)
+    <tbody x-data="{ open: {{ $loop->first ? 'true' : 'false' }} }" class="divide-y divide-gray-100">
+        <tr class="bg-gray-50 border-y border-gray-200 cursor-pointer select-none" @click="open = !open">
+            <td colspan="99" class="px-4 py-2.5">
+                <div class="flex items-center gap-2 text-sm font-semibold text-gray-800">
+                    <svg class="w-3.5 h-3.5 transition-transform shrink-0 text-gray-400" :class="open ? 'rotate-90' : ''" fill="currentColor" viewBox="0 0 20 20">
+                        <path fill-rule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clip-rule="evenodd"/>
+                    </svg>
+                    {{ $group['label'] }}
+                    <span class="ms-1 text-xs text-gray-400 font-normal">({{ $group['count'] }})</span>
+                </div>
+            </td>
+        </tr>
+        @foreach($group['items'] as $record)
+        <tr x-show="open" class="hover:bg-purple-50/30 cursor-pointer" onclick="window.location='{{ route('module.show', $record) }}'">
+            {{-- your <td> cells here — NO checkbox column in grouped mode --}}
+        </tr>
+        @endforeach
+    </tbody>
+    @empty
+    <tbody>
+        <tr><td colspan="99" class="px-4 py-20 text-center text-sm text-gray-400">No records found.</td></tr>
+    </tbody>
+    @endforelse
+</x-list>
+
+@else
+<x-list :paginator="$records" ...>
+    {{-- normal paginated rows with checkboxes --}}
+</x-list>
+@endif
+```
+
+Key rules:
+- `<x-list :grouped="true">` renders a bare `<table>` with no `<tbody>` wrapper — the slot injects multiple `<tbody x-data>` blocks (one per group). This is valid HTML and required for Alpine scope per group.
+- Each group header `<tr>` and its record `<tr>` rows must be siblings inside the **same** `<tbody x-data="{ open: ... }">`. Sibling `<tr>` elements cannot share Alpine scope across `<tbody>` boundaries.
+- Grouped mode has no checkboxes / export selection. The export `<x-export>` block can stay visible above (it reads selected IDs from the non-grouped path, so it's safe to leave in place).
+- `GroupsQuery::apply()` sorts groups alphabetically by label; the `(No Value)` bucket always sorts last.
+- The label for a group is resolved from: relation table lookup (for `type: relation`), options array (for select fields), boolean → Yes/No, or raw string. This is handled inside `GroupsQuery` — controllers never need to resolve labels.
+- Always pass `$view` in the `compact()` return even when returning groups, so the view's view-switcher buttons render correctly.
 
 ---
 

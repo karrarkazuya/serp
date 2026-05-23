@@ -15,6 +15,7 @@ use App\Services\Chatter\ChatterService;
 use App\Services\FileService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\Rule;
 
 class ContractController extends Controller
 {
@@ -54,11 +55,13 @@ class ContractController extends Controller
         $activeCompanyIds = $this->companyContext->getActiveCompanyIds();
         abort_unless(empty($activeCompanyIds) || in_array($employee->company_id, $activeCompanyIds), 403);
 
+        $companyRule = Rule::exists('companies', 'id')->whereIn('id', $activeCompanyIds);
+
         $data = $request->validate([
             'name'                 => 'required|string|max:255',
             'department_id'        => 'nullable|exists:hr_departments,id',
             'job_id'               => 'nullable|exists:hr_jobs,id',
-            'company_id'           => 'nullable|exists:companies,id',
+            'company_id'           => ['nullable', $companyRule],
             'resource_calendar_id' => 'nullable|exists:hr_resource_calendars,id',
             'date_start'           => 'nullable|date',
             'date_end'             => 'nullable|date|after_or_equal:date_start',

@@ -26,7 +26,74 @@
         </x-slot:search>
     </x-toolbar>
 
-    <div class="flex-1 overflow-y-auto p-4">
+    @if(isset($groups))
+    <x-list :grouped="true" :empty-text="'No ' . strtolower($config['title']) . ' yet.'">
+        <x-slot:columns>
+            <x-sortable-th column="date" label="Date" class="px-4 py-2" :default="true" />
+            <x-sortable-th column="name" label="Number" class="px-3 py-2" />
+            <th class="px-3 py-2 text-xs font-semibold text-gray-500 uppercase tracking-wide text-left">{{ $config['partner_label'] }}</th>
+            <th class="px-3 py-2 text-xs font-semibold text-gray-500 uppercase tracking-wide text-left">Due Date</th>
+            <th class="px-3 py-2 text-xs font-semibold text-gray-500 uppercase tracking-wide text-left">Reference</th>
+            <x-sortable-th column="amount_total" label="Total" class="px-3 py-2 text-right" />
+            <x-sortable-th column="state" label="State" class="px-3 py-2" />
+            <th class="px-3 py-2 text-xs font-semibold text-gray-500 uppercase tracking-wide text-left">Payment</th>
+        </x-slot:columns>
+
+        @forelse($groups as $group)
+        <tbody x-data="{ open: {{ $loop->first ? 'true' : 'false' }} }" class="divide-y divide-gray-100">
+            <tr class="bg-gray-50 border-y border-gray-200 cursor-pointer select-none" @click="open = !open">
+                <td colspan="99" class="px-4 py-2.5">
+                    <div class="flex items-center gap-2 text-sm font-semibold text-gray-800">
+                        <svg class="w-3.5 h-3.5 transition-transform shrink-0 text-gray-400" :class="open ? 'rotate-90' : ''" fill="currentColor" viewBox="0 0 20 20">
+                            <path fill-rule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clip-rule="evenodd"/>
+                        </svg>
+                        {{ $group['label'] }}
+                        <span class="ms-1 text-xs text-gray-400 font-normal">({{ $group['count'] }})</span>
+                    </div>
+                </td>
+            </tr>
+            @foreach($group['items'] as $document)
+            <tr x-show="open" class="hover:bg-purple-50/30 cursor-pointer" onclick="window.location='{{ route($config['routes']['show'], $document) }}'">
+                <td class="px-4 py-2 text-gray-700 tabular-nums">{{ optional($document->date)->format('Y-m-d') }}</td>
+                <td class="px-3 py-2 font-medium text-gray-900">{{ $document->name ?: '(Draft)' }}</td>
+                <td class="px-3 py-2 text-gray-600">{{ $document->partner?->name ?: '—' }}</td>
+                <td class="px-3 py-2 tabular-nums {{ $document->invoice_date_due && $document->invoice_date_due->isPast() && !$document->isPaid() ? 'text-red-600 font-medium' : 'text-gray-600' }}">{{ optional($document->invoice_date_due)->format('Y-m-d') ?: '—' }}</td>
+                <td class="px-3 py-2 text-gray-600">{{ $document->ref ?: '—' }}</td>
+                <td class="px-3 py-2 text-right tabular-nums text-gray-800">{{ number_format((float) $document->amount_total, 2) }}</td>
+                <td class="px-3 py-2">
+                    @php
+                        $color = match($document->state) {
+                            'posted'    => 'bg-green-100 text-green-700',
+                            'draft'     => 'bg-amber-100 text-amber-700',
+                            'cancelled' => 'bg-gray-200 text-gray-600',
+                            default     => 'bg-gray-100 text-gray-600',
+                        };
+                    @endphp
+                    <span class="inline-block px-2 py-0.5 rounded text-[11px] font-medium {{ $color }}">{{ $document->state_label }}</span>
+                </td>
+                <td class="px-3 py-2">
+                    @if($document->isPosted())
+                    @php
+                        $payColor = match($document->payment_state ?? 'not_paid') {
+                            'paid'     => 'bg-green-100 text-green-700',
+                            'partial'  => 'bg-blue-100 text-blue-700',
+                            default    => 'bg-orange-100 text-orange-700',
+                        };
+                    @endphp
+                    <span class="inline-block px-2 py-0.5 rounded text-[11px] font-medium {{ $payColor }}">{{ $document->payment_state_label }}</span>
+                    @endif
+                </td>
+            </tr>
+            @endforeach
+        </tbody>
+        @empty
+        <tbody>
+            <tr><td colspan="99" class="px-4 py-20 text-center text-sm text-gray-400">No records found.</td></tr>
+        </tbody>
+        @endforelse
+    </x-list>
+
+    @else
     <x-list :paginator="$documents" :empty-text="'No ' . strtolower($config['title']) . ' yet.'">
         <x-slot:columns>
             <x-sortable-th column="date" label="Date" class="px-4 py-2" :default="true" />
@@ -73,6 +140,6 @@
         </tr>
         @endforeach
     </x-list>
-    </div>
+    @endif
 </div>
 @endsection

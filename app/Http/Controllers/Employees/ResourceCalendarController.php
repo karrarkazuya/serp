@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Employees;
 use App\Http\Controllers\Controller;
 use App\Models\Employees\ResourceCalendar;
 use App\Services\Company\CompanyContextService;
+use App\Helpers\GroupsQuery;
 use App\Helpers\SearchFilters;
 use App\Helpers\SortsTable;
 use Illuminate\Http\Request;
@@ -38,6 +39,16 @@ class ResourceCalendarController extends Controller
             $query->active();
         }
 
+        $groupBy = $request->query('group_by');
+        if ($groupBy) {
+            $fields = SearchFilters::fieldsFor(ResourceCalendar::class);
+            if (isset($fields[$groupBy])) {
+                $records = (clone $query)->with('company')->withCount('employees')->orderBy('id')->get();
+                $groups  = GroupsQuery::apply($records, $fields[$groupBy]);
+                return view('employees.schedules.index', compact('groups'));
+            }
+        }
+
         SortsTable::apply($query, $request);
 
         $schedules = $query->withCount('employees')->paginate(50)->withQueryString();
@@ -61,7 +72,10 @@ class ResourceCalendarController extends Controller
     {
         $this->authorize('create', \App\Models\Employees\Employee::class);
 
-        return view('employees.schedules.create');
+        $activeCompanyIds = $this->companyContext->getActiveCompanyIds();
+        $defaultCompanyId = count($activeCompanyIds) === 1 ? $activeCompanyIds[0] : null;
+
+        return view('employees.schedules.create', compact('defaultCompanyId'));
     }
 
     public function store(Request $request)

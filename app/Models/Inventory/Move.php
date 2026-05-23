@@ -24,9 +24,9 @@ class Move extends Model
     ];
 
     protected $fillable = [
-        'uuid', 'company_id', 'picking_id', 'product_id', 'uom_id', 'location_src_id', 'location_dest_id',
+        'company_id', 'picking_id', 'product_id', 'uom_id', 'location_src_id', 'location_dest_id',
         'origin_returned_move_id', 'name', 'origin', 'product_qty', 'qty_done', 'reserved_qty',
-        'state', 'sequence', 'date', 'created_by', 'updated_by',
+        'state', 'sequence', 'date',
     ];
 
     protected $casts = [

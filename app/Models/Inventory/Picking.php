@@ -48,9 +48,8 @@ class Picking extends Model
     ];
 
     protected $fillable = [
-        'uuid', 'company_id', 'operation_type_id', 'partner_id', 'location_src_id', 'location_dest_id',
+        'company_id', 'operation_type_id', 'partner_id', 'location_src_id', 'location_dest_id',
         'origin_picking_id', 'name', 'origin', 'note', 'state', 'scheduled_date', 'date_done', 'active',
-        'created_by', 'updated_by',
     ];
 
     protected $casts = [

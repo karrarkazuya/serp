@@ -8,6 +8,7 @@ use App\Http\Requests\Employees\UpdateJobRequest;
 use App\Models\Employees\Job;
 use App\Services\Company\CompanyContextService;
 use App\Services\Employees\JobService;
+use App\Helpers\GroupsQuery;
 use App\Helpers\SearchFilters;
 use App\Helpers\SortsTable;
 use Illuminate\Http\Request;
@@ -39,6 +40,16 @@ class JobController extends Controller
             // no filter
         } else {
             $query->active();
+        }
+
+        $groupBy = $request->query('group_by');
+        if ($groupBy) {
+            $fields = SearchFilters::fieldsFor(Job::class);
+            if (isset($fields[$groupBy])) {
+                $records = (clone $query)->with(['company', 'department'])->withCount('employees')->orderBy('id')->get();
+                $groups  = GroupsQuery::apply($records, $fields[$groupBy]);
+                return view('employees.jobs.index', compact('groups'));
+            }
         }
 
         SortsTable::apply($query, $request);

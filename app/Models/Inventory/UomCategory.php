@@ -33,7 +33,7 @@ class UomCategory extends Model
         'created_at' => ['label' => 'Created on',  'column' => 'created_at', 'type' => 'datetime'],
     ];
 
-    protected $fillable = ['uuid', 'name', 'active', 'created_by', 'updated_by'];
+    protected $fillable = ['name', 'active'];
 
     protected $casts = ['active' => 'boolean'];
 

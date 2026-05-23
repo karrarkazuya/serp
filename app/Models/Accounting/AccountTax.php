@@ -16,8 +16,9 @@ class AccountTax extends Model
 {
     use HasChatter, SoftDeletes;
     public const AMOUNT_TYPES = [
-        'percent' => 'Percentage (%)',
-        'fixed'   => 'Fixed Amount',
+        'percent'  => 'Percentage (%)',
+        'fixed'    => 'Fixed Amount',
+        'division' => 'Division',
     ];
 
     public const TYPE_TAX_USE = [
@@ -62,7 +63,6 @@ class AccountTax extends Model
     ];
 
     protected $fillable = [
-        'uuid',
         'company_id',
         'name',
         'amount_type',
@@ -72,8 +72,6 @@ class AccountTax extends Model
         'description',
         'include_base_amount',
         'active',
-        'created_by',
-        'updated_by',
     ];
 
     protected $casts = [
@@ -138,19 +136,23 @@ class AccountTax extends Model
      */
     public function computeAmount(float $base): float
     {
+        $rate = (float) $this->amount;
+
         if ($this->include_base_amount) {
-            // price-inclusive: extract tax from gross
+            // price-inclusive: extract embedded tax from the gross amount
             return match ($this->amount_type) {
-                'percent' => round($base - $base / (1 + (float) $this->amount / 100), 4),
-                'fixed'   => round((float) $this->amount, 4),
-                default   => 0.0,
+                'percent'  => round($base - $base / (1 + $rate / 100), 4),
+                'division' => round($base * $rate / 100, 4),
+                'fixed'    => round($rate, 4),
+                default    => 0.0,
             };
         }
 
         return match ($this->amount_type) {
-            'percent' => round($base * (float) $this->amount / 100, 4),
-            'fixed'   => round((float) $this->amount, 4),
-            default   => 0.0,
+            'percent'  => round($base * $rate / 100, 4),
+            'division' => round($base * $rate / (100 - $rate), 4),
+            'fixed'    => round($rate, 4),
+            default    => 0.0,
         };
     }
 
@@ -159,17 +161,25 @@ class AccountTax extends Model
      */
     public function extractBase(float $gross): float
     {
-        if (!$this->include_base_amount || $this->amount_type !== 'percent') {
+        if (!$this->include_base_amount) {
             return $gross;
         }
-        return round($gross / (1 + (float) $this->amount / 100), 4);
+
+        $rate = (float) $this->amount;
+
+        return match ($this->amount_type) {
+            'percent'  => round($gross / (1 + $rate / 100), 4),
+            'division' => round($gross * (100 - $rate) / 100, 4),
+            default    => $gross,
+        };
     }
 
     public function getDisplayNameAttribute(): string
     {
-        $amount = $this->amount_type === 'percent'
-            ? number_format((float) $this->amount, 2) . '%'
-            : number_format((float) $this->amount, 2);
-        return "{$this->name} ({$amount})";
+        $rate = (float) $this->amount;
+        $formatted = in_array($this->amount_type, ['percent', 'division'], true)
+            ? number_format($rate, 2) . '%'
+            : number_format($rate, 2);
+        return "{$this->name} ({$formatted})";
     }
 }

@@ -107,6 +107,11 @@ class Search extends Component
 
             $this->groupOptions[] = $option;
         }
+
+        // Fallback: resolve label from model's searchable fields for custom group-by
+        if ($this->activeGroupBy && $this->activeGroupLabel === null) {
+            $this->activeGroupLabel = $this->fields[$this->activeGroupBy]['label'] ?? $this->activeGroupBy;
+        }
     }
 
     public function render(): View|Closure|string

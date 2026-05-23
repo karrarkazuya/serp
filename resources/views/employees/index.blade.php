@@ -43,6 +43,8 @@
             {{-- Count / pagination --}}
             @if($view === 'tree')
                 <span class="text-sm font-semibold text-gray-600 whitespace-nowrap">{{ $total ?? 0 }}</span>
+            @elseif(isset($groups))
+                <span class="text-sm font-semibold text-gray-600 whitespace-nowrap">{{ $groups->sum('count') }}</span>
             @else
                 @if($employees->total() > 0)
                     <span class="text-sm font-semibold text-gray-600 whitespace-nowrap">
@@ -152,7 +154,82 @@
     </div>
     @else
     {{-- list view --}}
-    <x-list :paginator="$employees" :empty-text="__('employees.no_employees')">
+    @can('export', \App\Models\Employees\Employee::class)
+    <x-export
+        :fields="config('exportable')['employees']['fields'] ?? []"
+        :export-url="route('export')"
+        model-key="employees"
+    />
+    @endcan
+
+    @if(isset($groups))
+    {{-- Grouped list --}}
+    <x-list :grouped="true" :empty-text="__('employees.no_employees')">
+        <x-slot:columns>
+            <x-sortable-th column="name"       :label="__('common.name')"             class="px-4 py-2" :default="true" />
+            <x-sortable-th column="department"  :label="__('common.department')"       class="px-3 py-2" />
+            <x-sortable-th column="job"         :label="__('employees.job_position')"  class="px-3 py-2" />
+            <th class="px-3 py-2 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">{{ __('employees.work_email') }}</th>
+            <th class="px-3 py-2 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">{{ __('employees.work_phone') }}</th>
+            <x-sortable-th column="status"      :label="__('common.status')"           class="px-3 py-2" />
+            <x-sortable-th column="company"     :label="__('common.company')"          class="px-3 py-2" />
+        </x-slot:columns>
+
+        @forelse($groups as $group)
+        <tbody x-data="{ open: {{ $loop->first ? 'true' : 'false' }} }" class="divide-y divide-gray-100">
+            <tr class="bg-gray-50 border-y border-gray-200 cursor-pointer select-none" @click="open = !open">
+                <td colspan="99" class="px-4 py-2.5">
+                    <div class="flex items-center gap-2 text-sm font-semibold text-gray-800">
+                        <svg class="w-3.5 h-3.5 transition-transform shrink-0 text-gray-400" :class="open ? 'rotate-90' : ''" fill="currentColor" viewBox="0 0 20 20">
+                            <path fill-rule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clip-rule="evenodd"/>
+                        </svg>
+                        {{ $group['label'] }}
+                        <span class="ms-1 text-xs text-gray-400 font-normal">({{ $group['count'] }})</span>
+                    </div>
+                </td>
+            </tr>
+            @foreach($group['items'] as $employee)
+            @php $statusColor = \App\Models\Employees\Employee::employmentStatusColor($employee->employment_status); @endphp
+            <tr x-show="open" class="hover:bg-purple-50/30 cursor-pointer" onclick="window.location='{{ route('employees.show', $employee) }}'">
+                <td class="px-4 py-2.5 font-medium text-gray-900">
+                    <div class="flex items-center gap-2.5">
+                        @if($employee->avatar_url)
+                            <img src="{{ $employee->avatar_url }}" alt="{{ $employee->name }}" class="w-8 h-8 rounded-full object-cover">
+                        @else
+                            <div class="w-8 h-8 rounded-full bg-purple-100 flex items-center justify-center text-xs font-bold text-purple-700">{{ strtoupper(substr($employee->name, 0, 2)) }}</div>
+                        @endif
+                        <div>
+                            <p class="text-sm font-semibold text-gray-900">{{ $employee->name }}</p>
+                            @if($employee->employee_code)<p class="text-xs text-gray-400">{{ $employee->employee_code }}</p>@endif
+                        </div>
+                    </div>
+                </td>
+                <td class="px-3 py-2.5 text-sm text-gray-600">{{ $employee->department?->name }}</td>
+                <td class="px-3 py-2.5 text-sm text-gray-600">{{ $employee->job_title ?? $employee->job?->name }}</td>
+                <td class="px-3 py-2.5 text-sm text-gray-600">{{ $employee->work_email }}</td>
+                <td class="px-3 py-2.5 text-sm text-gray-600">{{ $employee->work_phone }}</td>
+                <td class="px-3 py-2.5">
+                    @php $statusColors = ['green' => 'text-green-700 bg-green-50', 'blue' => 'text-blue-700 bg-blue-50', 'orange' => 'text-orange-700 bg-orange-50', 'red' => 'text-red-700 bg-red-50', 'gray' => 'text-gray-700 bg-gray-50']; @endphp
+                    <span class="inline-block px-2 py-0.5 rounded text-xs font-semibold {{ $statusColors[$statusColor] ?? $statusColors['gray'] }}">
+                        {{ \App\Models\Employees\Employee::employmentStatusLabel($employee->employment_status) }}
+                    </span>
+                </td>
+                <td class="px-3 py-2.5 text-sm text-gray-600">{{ $employee->company?->name }}</td>
+            </tr>
+            @endforeach
+        </tbody>
+        @empty
+        <tbody>
+            <tr>
+                <td colspan="99" class="px-4 py-20 text-center text-sm text-gray-400">{{ __('employees.no_employees') }}</td>
+            </tr>
+        </tbody>
+        @endforelse
+    </x-list>
+
+    @else
+    {{-- Paginated list --}}
+    <x-list :paginator="$employees" :empty-text="__('employees.no_employees')" :selectable="true" :total-count="$employees->total()">
         <x-slot:columns>
             <x-sortable-th column="name"       :label="__('common.name')"             class="px-4 py-2" :default="true" />
             <x-sortable-th column="department"  :label="__('common.department')"       class="px-3 py-2" />
@@ -166,6 +243,12 @@
         @foreach($employees as $employee)
         @php $statusColor = \App\Models\Employees\Employee::employmentStatusColor($employee->employment_status); @endphp
         <tr class="hover:bg-purple-50/30 cursor-pointer" onclick="window.location='{{ route('employees.show', $employee) }}'">
+            <td class="w-10 px-3 py-2 text-center" @click.stop>
+                <input type="checkbox"
+                       class="list-checkbox rounded border-gray-300 text-purple-600 focus:ring-purple-500 cursor-pointer"
+                       x-model="selected"
+                       value="{{ $employee->id }}">
+            </td>
             <td class="px-4 py-2.5 font-medium text-gray-900">
                 <div class="flex items-center gap-2.5">
                     @if($employee->avatar_url)
@@ -193,6 +276,7 @@
         </tr>
         @endforeach
     </x-list>
+    @endif
     @endif
 </div>
 @endsection

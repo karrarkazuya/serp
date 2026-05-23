@@ -71,26 +71,32 @@
         />
 
         <div class="ms-auto flex items-center gap-2 sm:gap-3 text-sm text-gray-500 shrink-0">
-            @if($contacts->total() > 0)
-                <span class="text-sm font-semibold text-gray-600 whitespace-nowrap">
-                    {{ $contacts->firstItem() }}-{{ $contacts->lastItem() }} / {{ $contacts->total() }}
-                </span>
-            @else
-                <span class="text-sm font-semibold text-gray-400">0</span>
+            @if(isset($groups))
+                <span class="text-sm font-semibold text-gray-600 whitespace-nowrap">{{ $groups->sum('count') }} records</span>
+            @elseif(isset($contacts))
+                @if($contacts->total() > 0)
+                    <span class="text-sm font-semibold text-gray-600 whitespace-nowrap">
+                        {{ $contacts->firstItem() }}-{{ $contacts->lastItem() }} / {{ $contacts->total() }}
+                    </span>
+                @else
+                    <span class="text-sm font-semibold text-gray-400">0</span>
+                @endif
             @endif
 
+            @if(!isset($groups))
             <div class="flex items-center gap-1">
-                @if($contacts->onFirstPage())
+                @if(!isset($contacts) || $contacts->onFirstPage())
                     <span class="w-10 h-10 inline-flex items-center justify-center rounded bg-gray-100 text-gray-300">‹</span>
                 @else
                     <a href="{{ $contacts->previousPageUrl() }}" class="w-10 h-10 inline-flex items-center justify-center rounded bg-gray-100 text-gray-600 hover:text-gray-900">‹</a>
                 @endif
-                @if($contacts->hasMorePages())
+                @if(isset($contacts) && $contacts->hasMorePages())
                     <a href="{{ $contacts->nextPageUrl() }}" class="w-10 h-10 inline-flex items-center justify-center rounded bg-gray-100 text-gray-600 hover:text-gray-900">›</a>
                 @else
                     <span class="w-10 h-10 inline-flex items-center justify-center rounded bg-gray-100 text-gray-300">›</span>
                 @endif
             </div>
+            @endif
 
             <div class="hidden sm:flex items-center rounded overflow-hidden bg-gray-200">
                 <a href="{{ route('contacts.index', array_merge(request()->except('view','page'), ['view' => 'kanban'])) }}"
@@ -161,7 +167,66 @@
         @endif
     </div>
     @else
-    <x-list :paginator="$contacts" :empty-text="__('contacts.no_contacts')">
+    @can('export', \App\Models\Contacts\Contact::class)
+    <x-export
+        :fields="config('exportable')['contacts']['fields'] ?? []"
+        :export-url="route('export')"
+        model-key="contacts"
+    />
+    @endcan
+
+    @if(isset($groups))
+    <x-list :grouped="true" :empty-text="__('contacts.no_contacts')">
+        <x-slot:columns>
+            <x-sortable-th column="name"    :label="__('contacts.name')"    class="px-4 py-2" :default="true" />
+            <x-sortable-th column="email"   :label="__('contacts.email')"   class="px-3 py-2" />
+            <th class="px-3 py-2 text-xs font-semibold text-gray-500 uppercase tracking-wide text-left">{{ __('contacts.phone') }}</th>
+            <x-sortable-th column="city"    :label="__('contacts.city')"    class="px-3 py-2" />
+            <x-sortable-th column="country" :label="__('contacts.country')" class="px-3 py-2" />
+            <x-sortable-th column="company" :label="__('contacts.company')" class="px-3 py-2" />
+        </x-slot:columns>
+
+        @forelse($groups as $group)
+        <tbody x-data="{ open: {{ $loop->first ? 'true' : 'false' }} }" class="divide-y divide-gray-100">
+            <tr class="bg-gray-50 border-y border-gray-200 cursor-pointer select-none" @click="open = !open">
+                <td colspan="99" class="px-4 py-2.5">
+                    <div class="flex items-center gap-2 text-sm font-semibold text-gray-800">
+                        <svg class="w-3.5 h-3.5 transition-transform shrink-0 text-gray-400" :class="open ? 'rotate-90' : ''" fill="currentColor" viewBox="0 0 20 20">
+                            <path fill-rule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clip-rule="evenodd"/>
+                        </svg>
+                        {{ $group['label'] }}
+                        <span class="ms-1 text-xs text-gray-400 font-normal">({{ $group['count'] }})</span>
+                    </div>
+                </td>
+            </tr>
+            @foreach($group['items'] as $contact)
+            <tr x-show="open" class="hover:bg-purple-50/30 cursor-pointer" onclick="window.location='{{ route('contacts.show', $contact) }}'">
+                <td class="px-4 py-2 font-medium text-gray-900">
+                    {{ $contact->name }}
+                    @if(!$contact->active)
+                        <span class="ms-1.5 text-[10px] text-amber-600 font-semibold uppercase">{{ __('contacts.archived') }}</span>
+                    @endif
+                </td>
+                <td class="px-3 py-2 text-gray-600">{{ $contact->email }}</td>
+                <td class="px-3 py-2 text-gray-600">{{ $contact->phones->pluck('phone')->join(', ') }}</td>
+                <td class="px-3 py-2 text-gray-600">{{ $contact->city }}</td>
+                <td class="px-3 py-2 text-gray-600">{{ $contact->country }}</td>
+                <td class="px-3 py-2 text-gray-600">{{ $contact->company?->name ?? $contact->company_name }}</td>
+            </tr>
+            @endforeach
+        </tbody>
+        @empty
+        <tbody>
+            <tr><td colspan="99" class="px-4 py-20 text-center text-sm text-gray-400">{{ __('contacts.no_contacts') }}</td></tr>
+        </tbody>
+        @endforelse
+    </x-list>
+
+    @else
+    <x-list :paginator="$contacts"
+            :empty-text="__('contacts.no_contacts')"
+            :selectable="true"
+            :total-count="$contacts->total()">
         <x-slot:columns>
             <x-sortable-th column="name"    :label="__('contacts.name')"    class="px-4 py-2" :default="true" />
             <x-sortable-th column="email"   :label="__('contacts.email')"   class="px-3 py-2" />
@@ -173,6 +238,12 @@
 
         @foreach($contacts as $contact)
         <tr class="hover:bg-purple-50/30 cursor-pointer" onclick="window.location='{{ route('contacts.show', $contact) }}'">
+            <td class="w-10 px-3 py-2 text-center" @click.stop>
+                <input type="checkbox"
+                       class="list-checkbox rounded border-gray-300 text-purple-600 focus:ring-purple-500 cursor-pointer"
+                       x-model="selected"
+                       value="{{ $contact->id }}">
+            </td>
             <td class="px-4 py-2 font-medium text-gray-900">
                 {{ $contact->name }}
                 @if(!$contact->active)
@@ -187,6 +258,7 @@
         </tr>
         @endforeach
     </x-list>
+    @endif
     @endif
 </div>
 @endsection

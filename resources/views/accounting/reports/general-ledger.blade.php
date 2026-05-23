@@ -15,10 +15,8 @@
             'dateFrom'    => $dateFrom,
             'dateTo'      => $dateTo,
             'showJournal' => true,
-            'journals'    => $journals,
             'journalId'   => $journalId,
             'showAccount' => true,
-            'accounts'    => $accounts,
             'accountId'   => $accountId,
         ])
 

@@ -65,22 +65,11 @@
 
 <div class="bg-white rounded-xl border border-gray-200 p-6">
     <h2 class="text-sm font-semibold text-gray-700 mb-4">{{ __('settings.roles') }}</h2>
-    @php $assignedRoleIds = $user?->roles->pluck('id')->toArray() ?? []; @endphp
-    <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
-        @forelse($roles as $role)
-        <label class="flex items-center gap-3 p-3 border rounded-lg cursor-pointer hover:bg-gray-50 transition-colors">
-            <input type="checkbox" name="roles[]" value="{{ $role->id }}"
-                   {{ in_array($role->id, old('roles', $assignedRoleIds)) ? 'checked' : '' }}
-                   class="w-4 h-4 text-purple-600 border-gray-300 rounded focus:ring-purple-500">
-            <div>
-                <div class="text-sm font-medium text-gray-800">{{ $role->name }}</div>
-                @if($role->description)
-                    <div class="text-xs text-gray-500">{{ $role->description }}</div>
-                @endif
-            </div>
-        </label>
-        @empty
-        <p class="text-sm text-gray-400 col-span-2">{{ __('settings.no_roles_create') }} <a href="{{ route('settings.roles.create') }}" class="text-purple-600 hover:underline">{{ __('common.new') }}</a>.</p>
-        @endforelse
-    </div>
+    <x-relation-dropdown
+        table="roles"
+        field="name"
+        name="roles"
+        relation="many2many"
+        :selected="old('roles', $user?->roles->pluck('id')->toArray() ?? [])"
+    />
 </div>

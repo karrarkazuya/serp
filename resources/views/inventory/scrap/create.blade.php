@@ -28,11 +28,33 @@
                 </div>
                 @endif
 
-                <div class="grid grid-cols-2 gap-x-8">
+                <div class="grid grid-cols-2 gap-x-8" x-data="{
+                    productId: '{{ old('product_id') }}',
+                    uomId: '',
+                    uomName: '',
+                    uomInfoUrl: @js(route('inventory.products.uom-info')),
+                    async onProductSelected(e) {
+                        const pid = e.detail.value;
+                        if (!pid) return;
+                        const res = await fetch(this.uomInfoUrl + '?product_id=' + pid, {
+                            headers: { 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' }
+                        });
+                        const d = await res.json();
+                        this.uomId = d.uom_id;
+                        this.uomName = d.uom_name;
+                    }
+                }" @product-selected.window="onProductSelected($event)">
                     <div>
                         <div class="flex items-center gap-4 py-2 border-b border-gray-100">
                             <label class="w-40 shrink-0 text-sm text-gray-500">Product</label>
-                            <x-relation-dropdown table="inventory_products" field="name" name="product_id" relation="many2one" :selected="old('product_id')" class="flex-1" compact />
+                            <x-relation-dropdown table="inventory_products" field="name" name="product_id" relation="many2one" :selected="old('product_id')" event="product-selected" class="flex-1" compact />
+                        </div>
+                        <div class="flex items-center gap-4 py-2 border-b border-gray-100">
+                            <label class="w-40 shrink-0 text-sm text-gray-500">Unit of Measure</label>
+                            <div class="flex-1">
+                                <input type="hidden" name="uom_id" :value="uomId">
+                                <span x-text="uomName || '-'" class="text-sm text-gray-600"></span>
+                            </div>
                         </div>
                         <div class="flex items-center gap-4 py-2 border-b border-gray-100">
                             <label class="w-40 shrink-0 text-sm text-gray-500">Lot / Serial</label>

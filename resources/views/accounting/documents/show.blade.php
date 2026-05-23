@@ -109,12 +109,13 @@
                 </div>
                 <div>
                     <label class="block text-xs font-semibold text-gray-500 mb-1">Journal</label>
-                    <select name="journal_id"
-                            class="w-full text-sm border border-gray-300 rounded px-3 py-1.5 focus:outline-none focus:ring-1 focus:ring-purple-500 bg-white">
-                        @foreach($paymentJournals as $j)
-                        <option value="{{ $j->id }}">{{ $j->name }}</option>
-                        @endforeach
-                    </select>
+                    <x-relation-dropdown
+                        table="account_journals"
+                        field="name"
+                        name="journal_id"
+                        :compact="true"
+                        :selected="null"
+                    />
                 </div>
                 <div>
                     <label class="block text-xs font-semibold text-gray-500 mb-1">Memo</label>

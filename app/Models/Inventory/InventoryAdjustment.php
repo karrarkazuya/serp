@@ -40,7 +40,7 @@ class InventoryAdjustment extends Model
     ];
 
     protected $fillable = [
-        'uuid', 'company_id', 'name', 'state', 'exhausted', 'date', 'note', 'active', 'created_by', 'updated_by',
+        'company_id', 'name', 'state', 'exhausted', 'date', 'note', 'active',
     ];
 
     protected $casts = [
