@@ -40,6 +40,32 @@ class AuditableObserver
         }
     }
 
+    public function updated(Model $model): void
+    {
+        if (empty($model->chatterTracked) || !method_exists($model, 'logMessage')) {
+            return;
+        }
+
+        $changes = [];
+
+        foreach ($model->chatterTracked as $column => $label) {
+            if (!$model->wasChanged($column)) {
+                continue;
+            }
+            $changes[] = [
+                'label' => $label,
+                'from'  => (string) ($model->getOriginal($column) ?? ''),
+                'to'    => (string) ($model->getAttribute($column) ?? ''),
+            ];
+        }
+
+        if (empty($changes)) {
+            return;
+        }
+
+        $model->logMessage('Record updated.', 'log', ['changes' => $changes]);
+    }
+
     private function hasColumn(Model $model, string $column): bool
     {
         $table = $model->getTable();

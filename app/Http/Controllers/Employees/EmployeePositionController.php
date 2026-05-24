@@ -149,7 +149,7 @@ class EmployeePositionController extends Controller
             'employee_ids.*' => 'exists:hr_employees,id',
         ]);
 
-        $newIds = collect($data['employee_ids'] ?? []);
+        $newIds = collect($data['employee_ids'] ?? [])->map(fn ($id) => (int) $id);
 
         $activeCompanyIds = $this->companyContext->getActiveCompanyIds();
         if (!empty($activeCompanyIds) && $newIds->isNotEmpty()) {

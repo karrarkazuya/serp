@@ -194,7 +194,16 @@
       "Bash(php -l /Users/karrar/Projects/web/serp/app/Models/Employees/Employee.php)",
       "Bash(php -l /Users/karrar/Projects/web/serp/app/Models/Employees/EmployeeDocument.php)",
       "Bash(curl -s -o /dev/null -w \"%{http_code}\" http://127.0.0.1:8000/employees/certificates)",
-      "Bash(php -l /Users/karrar/Projects/web/serp/app/Http/Controllers/Employees/EmployeePositionController.php)"
+      "Bash(php -l /Users/karrar/Projects/web/serp/app/Http/Controllers/Employees/EmployeePositionController.php)",
+      "Bash(php -r \"echo 'opcache enabled: ' . \\(function_exists\\('opcache_get_status'\\) ? \\(opcache_get_status\\(\\) ? 'yes' : 'disabled'\\) : 'not available'\\) . PHP_EOL;\")",
+      "Bash(php -r \"echo php_ini_loaded_file\\(\\) . PHP_EOL;\")",
+      "Bash(php -r \"echo ini_get\\('opcache.enable'\\) . PHP_EOL;\")",
+      "Bash(php -r \"echo 'opcache.enable_cli: ' . ini_get\\('opcache.enable_cli'\\) . PHP_EOL; echo 'opcache.enable: ' . ini_get\\('opcache.enable'\\) . PHP_EOL;\")",
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\" \"http://127.0.0.1:8000/chatter?model_type=App%5CModels%5CEmployees%5CEmployeePosition&model_id=1\" -H \"Accept: application/json\" -H \"X-Requested-With: XMLHttpRequest\")",
+      "Bash(awk '{print $2}')",
+      "Bash(grep -rn 'logMessage\\\\|logSystemMessage\\\\|logComment\\\\|chatterTracked\\\\|$chatterTracked' /Users/karrar/Projects/web/serp/app/)",
+      "Bash(php -l /Users/karrar/Projects/web/serp/app/Observers/AuditableObserver.php)",
+      "Bash(php -l /Users/karrar/Projects/web/serp/app/Http/Controllers/Api/Chatter/ChatterController.php)"
     ],
     "additionalDirectories": [
       "/Users/karrar/Projects/web/serp/storage/app/public/avatars/contacts"

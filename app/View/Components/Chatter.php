@@ -16,9 +16,9 @@ class Chatter extends Component
         public int $modelId,
         public bool $canComment = false,
     ) {
-        $this->apiUrl      = route('api.chatter.index');
-        $this->postUrl     = route('api.chatter.store');
-        $this->fileBaseUrl = url('chatter');
+        $this->apiUrl      = route('api.chatter.index', [], false);
+        $this->postUrl     = route('api.chatter.store', [], false);
+        $this->fileBaseUrl = '/chatter';
     }
 
     public function render(): View

@@ -102,6 +102,7 @@
                     relation="many2many"
                     :selected="$position->employees->pluck('id')->all()"
                     placeholder="{{ __('employees.select_employee') }}"
+                    compact
                 />
             </form>
         </div>
