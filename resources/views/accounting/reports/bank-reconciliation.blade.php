@@ -65,11 +65,11 @@
                                     default       => route('accounting.moves.show', $line->move_id),
                                 };
                             @endphp
-                            <a href="{{ $lineRoute }}" class="text-purple-600 hover:underline">{{ $line->move?->name }}</a>
+                            <a href="{{ $lineRoute }}" class="text-purple-600 hover:underline">{{ $line->move?->display_name }}</a>
                         </td>
                         <td class="px-4 py-2.5 text-gray-700">{{ $line->name ?: '—' }}</td>
-                        <td class="px-4 py-2.5 text-right tabular-nums text-green-700">{{ $line->debit > 0 ? number_format($line->debit, 2) : '' }}</td>
-                        <td class="px-4 py-2.5 text-right tabular-nums text-red-600">{{ $line->credit > 0 ? number_format($line->credit, 2) : '' }}</td>
+                        <td class="px-4 py-2.5 text-right tabular-nums text-green-700"><x-money :amount="(float) $line->debit" :blank="true" /></td>
+                        <td class="px-4 py-2.5 text-right tabular-nums text-red-600"><x-money :amount="(float) $line->credit" :blank="true" /></td>
                     </tr>
                     @empty
                     <tr><td colspan="5" class="px-4 py-8 text-sm text-gray-400 text-center">{{ __('accounting.no_journal_items_filter') }}</td></tr>
@@ -79,8 +79,8 @@
                 <tfoot class="bg-gray-50 border-t-2 border-gray-300">
                     <tr>
                         <td colspan="3" class="px-4 py-3 text-sm font-bold text-gray-800">{{ __('accounting.total') }}</td>
-                        <td class="px-4 py-3 text-right tabular-nums font-bold text-green-700">{{ number_format($lines->sum('debit'), 2) }}</td>
-                        <td class="px-4 py-3 text-right tabular-nums font-bold text-red-600">{{ number_format($lines->sum('credit'), 2) }}</td>
+                        <td class="px-4 py-3 text-right tabular-nums font-bold text-green-700"><x-money :amount="(float) $lines->sum('debit')" /></td>
+                        <td class="px-4 py-3 text-right tabular-nums font-bold text-red-600"><x-money :amount="(float) $lines->sum('credit')" /></td>
                     </tr>
                 </tfoot>
                 @endif

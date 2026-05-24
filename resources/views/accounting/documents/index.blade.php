@@ -55,11 +55,11 @@
             @foreach($group['items'] as $document)
             <tr x-show="open" class="hover:bg-purple-50/30 cursor-pointer" onclick="window.location='{{ route($config['routes']['show'], $document) }}'">
                 <td class="px-4 py-2 text-gray-700 tabular-nums">{{ optional($document->date)->format('Y-m-d') }}</td>
-                <td class="px-3 py-2 font-medium text-gray-900">{{ $document->name ?: '(Draft)' }}</td>
+                <td class="px-3 py-2 font-medium text-gray-900">{{ $document->display_name }}</td>
                 <td class="px-3 py-2 text-gray-600">{{ $document->partner?->name ?: '—' }}</td>
                 <td class="px-3 py-2 tabular-nums {{ $document->invoice_date_due && $document->invoice_date_due->isPast() && !$document->isPaid() ? 'text-red-600 font-medium' : 'text-gray-600' }}">{{ optional($document->invoice_date_due)->format('Y-m-d') ?: '—' }}</td>
                 <td class="px-3 py-2 text-gray-600">{{ $document->ref ?: '—' }}</td>
-                <td class="px-3 py-2 text-right tabular-nums text-gray-800">{{ number_format((float) $document->amount_total, 2) }}</td>
+                <td class="px-3 py-2 text-right tabular-nums text-gray-800"><x-money :amount="(float) $document->amount_total" :currency="$document->currency" /></td>
                 <td class="px-3 py-2">
                     @php
                         $color = match($document->state) {
@@ -75,9 +75,11 @@
                     @if($document->isPosted())
                     @php
                         $payColor = match($document->payment_state ?? 'not_paid') {
-                            'paid'     => 'bg-green-100 text-green-700',
-                            'partial'  => 'bg-blue-100 text-blue-700',
-                            default    => 'bg-orange-100 text-orange-700',
+                            'paid'       => 'bg-green-100 text-green-700',
+                            'in_payment' => 'bg-blue-100 text-blue-700',
+                            'partial'    => 'bg-cyan-100 text-cyan-700',
+                            'reversed'   => 'bg-purple-100 text-purple-700',
+                            default      => 'bg-orange-100 text-orange-700',
                         };
                     @endphp
                     <span class="inline-block px-2 py-0.5 rounded text-[11px] font-medium {{ $payColor }}">{{ $document->payment_state_label }}</span>
@@ -109,11 +111,11 @@
         @foreach($documents as $document)
         <tr class="hover:bg-purple-50/30 cursor-pointer" onclick="window.location='{{ route($config['routes']['show'], $document) }}'">
             <td class="px-4 py-2 text-gray-700 tabular-nums">{{ optional($document->date)->format('Y-m-d') }}</td>
-            <td class="px-3 py-2 font-medium text-gray-900">{{ $document->name ?: '(Draft)' }}</td>
+            <td class="px-3 py-2 font-medium text-gray-900">{{ $document->display_name }}</td>
             <td class="px-3 py-2 text-gray-600">{{ $document->partner?->name ?: '—' }}</td>
             <td class="px-3 py-2 tabular-nums {{ $document->invoice_date_due && $document->invoice_date_due->isPast() && !$document->isPaid() ? 'text-red-600 font-medium' : 'text-gray-600' }}">{{ optional($document->invoice_date_due)->format('Y-m-d') ?: '—' }}</td>
             <td class="px-3 py-2 text-gray-600">{{ $document->ref ?: '—' }}</td>
-            <td class="px-3 py-2 text-right tabular-nums text-gray-800">{{ number_format((float) $document->amount_total, 2) }}</td>
+            <td class="px-3 py-2 text-right tabular-nums text-gray-800"><x-money :amount="(float) $document->amount_total" :currency="$document->currency" /></td>
             <td class="px-3 py-2">
                 @php
                     $color = match($document->state) {
@@ -128,10 +130,14 @@
             <td class="px-3 py-2">
                 @if($document->isPosted())
                 @php
+                    // O6 (Odoo parity): payment_state has five values now —
+                    // not_paid / partial / in_payment / paid / reversed.
                     $payColor = match($document->payment_state ?? 'not_paid') {
-                        'paid'     => 'bg-green-100 text-green-700',
-                        'partial'  => 'bg-blue-100 text-blue-700',
-                        default    => 'bg-orange-100 text-orange-700',
+                        'paid'       => 'bg-green-100 text-green-700',
+                        'in_payment' => 'bg-blue-100 text-blue-700',
+                        'partial'    => 'bg-cyan-100 text-cyan-700',
+                        'reversed'   => 'bg-purple-100 text-purple-700',
+                        default      => 'bg-orange-100 text-orange-700',
                     };
                 @endphp
                 <span class="inline-block px-2 py-0.5 rounded text-[11px] font-medium {{ $payColor }}">{{ $document->payment_state_label }}</span>

@@ -8,6 +8,7 @@ use App\Services\Company\CompanyContextService;
 use App\Support\Chatter\AllowedTypes;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 
 class ChatterController extends Controller
 {
@@ -62,13 +63,13 @@ class ChatterController extends Controller
             $request,
         );
 
-        $message = ChatterMessage::create([
+        $message = DB::transaction(fn () => ChatterMessage::create([
             'model_type'   => $modelType,
             'model_id'     => $request->model_id,
             'user_id'      => auth()->id(),
             'message_type' => $request->input('message_type', 'comment'),
             'body'         => $request->body,
-        ]);
+        ]));
 
         return response()->json(['message' => 'Message added.', 'data' => $message->load('user')], 201);
     }

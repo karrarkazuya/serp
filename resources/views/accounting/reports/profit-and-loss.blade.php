@@ -25,14 +25,14 @@
                         <tr class="hover:bg-gray-50">
                             <td class="px-5 py-2.5 font-mono text-gray-600">{{ $row->account_code }}</td>
                             <td class="px-2 py-2.5 text-gray-700">{{ $row->account_name }}</td>
-                            <td class="px-5 py-2.5 text-right tabular-nums text-gray-800">{{ number_format(abs($row->net), 2) }}</td>
+                            <td class="px-5 py-2.5 text-right tabular-nums text-gray-800"><x-money :amount="(float) abs($row->net)" /></td>
                         </tr>
                         @endforeach
                     </tbody>
                     <tfoot class="bg-green-50 border-t border-green-100">
                         <tr>
                             <td colspan="2" class="px-5 py-2.5 text-sm font-bold text-green-800">{{ __('accounting.total') }} {{ __('accounting.income') }}</td>
-                            <td class="px-5 py-2.5 text-right tabular-nums font-bold text-green-800">{{ number_format($totalIncome, 2) }}</td>
+                            <td class="px-5 py-2.5 text-right tabular-nums font-bold text-green-800"><x-money :amount="(float) $totalIncome" /></td>
                         </tr>
                     </tfoot>
                 </table>
@@ -49,14 +49,14 @@
                         <tr class="hover:bg-gray-50">
                             <td class="px-5 py-2.5 font-mono text-gray-600">{{ $row->account_code }}</td>
                             <td class="px-2 py-2.5 text-gray-700">{{ $row->account_name }}</td>
-                            <td class="px-5 py-2.5 text-right tabular-nums text-gray-800">{{ number_format(abs($row->net), 2) }}</td>
+                            <td class="px-5 py-2.5 text-right tabular-nums text-gray-800"><x-money :amount="(float) abs($row->net)" /></td>
                         </tr>
                         @endforeach
                     </tbody>
                     <tfoot class="bg-red-50 border-t border-red-100">
                         <tr>
                             <td colspan="2" class="px-5 py-2.5 text-sm font-bold text-red-800">{{ __('accounting.total') }} {{ __('accounting.expense') }}</td>
-                            <td class="px-5 py-2.5 text-right tabular-nums font-bold text-red-800">{{ number_format($totalExpense, 2) }}</td>
+                            <td class="px-5 py-2.5 text-right tabular-nums font-bold text-red-800"><x-money :amount="(float) $totalExpense" /></td>
                         </tr>
                     </tfoot>
                 </table>
@@ -69,7 +69,7 @@
                         {{ $netProfit >= 0 ? __('accounting.net_profit') : __('accounting.net_loss') }}
                     </span>
                     <span class="text-xl font-bold tabular-nums {{ $netProfit >= 0 ? 'text-green-700' : 'text-red-700' }}">
-                        {{ number_format(abs($netProfit), 2) }}
+                        <x-money :amount="(float) abs($netProfit)" />
                     </span>
                 </div>
             </div>

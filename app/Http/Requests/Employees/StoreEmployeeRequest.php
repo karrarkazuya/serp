@@ -27,6 +27,15 @@ class StoreEmployeeRequest extends FormRequest
                 ? $q->whereRaw('1 = 0')
                 : $q->whereIn('company_id', $activeCompanyIds);
         });
+        // `hr_employee_categories.company_id` is nullable on purpose — shared
+        // categories ("Permanent", "Trainee") belong to every company. Accept
+        // null or one of the actor's active companies.
+        $categoryRule     = Rule::exists('hr_employee_categories', 'id')->where(function ($q) use ($activeCompanyIds) {
+            $q->whereNull('company_id');
+            if (!empty($activeCompanyIds)) {
+                $q->orWhereIn('company_id', $activeCompanyIds);
+            }
+        });
 
         return [
             'name'              => 'required|string|max:255',
@@ -108,7 +117,7 @@ class StoreEmployeeRequest extends FormRequest
             'emergency_relation' => 'nullable|string|max:100',
 
             'categories'        => 'nullable|array',
-            'categories.*'      => 'exists:hr_employee_categories,id',
+            'categories.*'      => $categoryRule,
         ];
     }
 }

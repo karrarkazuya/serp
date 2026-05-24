@@ -33,10 +33,10 @@
                             <span class="text-gray-400">Unknown</span>
                             @endif
                         </td>
-                        <td class="px-4 py-2.5 text-right tabular-nums text-gray-800">{{ number_format($row->total_debit, 2) }}</td>
-                        <td class="px-4 py-2.5 text-right tabular-nums text-gray-800">{{ number_format($row->total_credit, 2) }}</td>
+                        <td class="px-4 py-2.5 text-right tabular-nums text-gray-800"><x-money :amount="(float) $row->total_debit" /></td>
+                        <td class="px-4 py-2.5 text-right tabular-nums text-gray-800"><x-money :amount="(float) $row->total_credit" /></td>
                         <td class="px-4 py-2.5 text-right tabular-nums font-medium {{ $row->balance >= 0 ? 'text-gray-800' : 'text-red-600' }}">
-                            {{ number_format(abs($row->balance), 2) }} {{ $row->balance < 0 ? __('accounting.cr_suffix') : '' }}
+                            <x-money :amount="(float) abs($row->balance)" /> {{ $row->balance < 0 ? __('accounting.cr_suffix') : '' }}
                         </td>
                     </tr>
                     @empty
@@ -47,9 +47,9 @@
                 <tfoot class="bg-gray-50 border-t-2 border-gray-300">
                     <tr>
                         <td class="px-4 py-3 text-sm font-bold text-gray-800">{{ __('accounting.total') }}</td>
-                        <td class="px-4 py-3 text-right tabular-nums font-bold">{{ number_format($rows->sum('total_debit'), 2) }}</td>
-                        <td class="px-4 py-3 text-right tabular-nums font-bold">{{ number_format($rows->sum('total_credit'), 2) }}</td>
-                        <td class="px-4 py-3 text-right tabular-nums font-bold">{{ number_format($rows->sum('balance'), 2) }}</td>
+                        <td class="px-4 py-3 text-right tabular-nums font-bold"><x-money :amount="(float) $rows->sum('total_debit')" /></td>
+                        <td class="px-4 py-3 text-right tabular-nums font-bold"><x-money :amount="(float) $rows->sum('total_credit')" /></td>
+                        <td class="px-4 py-3 text-right tabular-nums font-bold"><x-money :amount="(float) $rows->sum('balance')" /></td>
                     </tr>
                 </tfoot>
                 @endif

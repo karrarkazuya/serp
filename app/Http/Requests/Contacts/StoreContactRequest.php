@@ -22,6 +22,14 @@ class StoreContactRequest extends FormRequest
                 ? $query->whereRaw('1 = 0')
                 : $query->whereIn('company_id', $activeCompanyIds);
         });
+        // `tags.company_id` is nullable on purpose — shared tags belong to every
+        // company. Accept null or one of the actor's active companies.
+        $tagRule = Rule::exists('tags', 'id')->where(function ($query) use ($activeCompanyIds) {
+            $query->whereNull('company_id');
+            if (!empty($activeCompanyIds)) {
+                $query->orWhereIn('company_id', $activeCompanyIds);
+            }
+        });
 
         return [
             'company_id'   => ['nullable', $companyRule],
@@ -30,7 +38,7 @@ class StoreContactRequest extends FormRequest
             'related_contacts.*' => [$contactRule],
             'avatar'       => 'nullable|file|max:2048|mimetypes:image/jpeg,image/png,image/gif,image/webp|mimes:jpg,jpeg,png,gif,webp',
             'tags'         => 'nullable|array',
-            'tags.*'       => 'exists:tags,id',
+            'tags.*'       => $tagRule,
             'name'         => 'required|string|max:255',
             'company_name' => 'nullable|string|max:255',
             'contact_type' => 'required|in:individual,company',

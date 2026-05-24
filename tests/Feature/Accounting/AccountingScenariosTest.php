@@ -5,6 +5,7 @@ namespace Tests\Feature\Accounting;
 use App\Models\Accounting\Account;
 use App\Models\Accounting\AccountJournal;
 use App\Models\Accounting\AccountMove;
+use App\Models\Contacts\Contact;
 use App\Models\Settings\Company;
 use App\Models\User;
 use App\Services\Accounting\AccountingService;
@@ -47,6 +48,10 @@ class AccountingScenariosTest extends TestCase
     private AccountJournal $salesJournal;
     private AccountJournal $miscJournal;
 
+    // O2 (Odoo parity): AR/AP lines require a partner. Tests that touch the
+    // receivable/payable accounts must attach this contact to those lines.
+    private Contact $partner;
+
     protected function setUp(): void
     {
         parent::setUp();
@@ -88,6 +93,14 @@ class AccountingScenariosTest extends TestCase
         $this->cashJournal  = $this->mkJournal('BANK', 'Bank',          'bank',     'BNK/');
         $this->salesJournal = $this->mkJournal('INV',  'Sales Journal', 'sales',    'INV/');
         $this->miscJournal  = $this->mkJournal('MISC', 'Miscellaneous', 'general',  'MISC/');
+
+        // O2 (Odoo parity): postings to AR/AP accounts must carry a partner.
+        $this->partner = Contact::create([
+            'company_id'   => $this->company->id,
+            'name'         => 'Test Partner',
+            'contact_type' => 'company',
+            'active'       => true,
+        ]);
     }
 
     // ─────────────────────────────────────────────────────────────────────
@@ -148,7 +161,7 @@ class AccountingScenariosTest extends TestCase
             [
                 ['account_id' => $this->inventory->id, 'name' => 'Goods',    'debit' => 100, 'credit' => 0],
                 ['account_id' => $this->tax->id,       'name' => 'Sales tax', 'debit' => 10,  'credit' => 0],
-                ['account_id' => $this->payable->id,   'name' => 'Vendor',    'debit' => 0,   'credit' => 110],
+                ['account_id' => $this->payable->id,   'partner_id' => $this->partner->id, 'name' => 'Vendor', 'debit' => 0, 'credit' => 110],
             ]
         );
 
@@ -397,11 +410,17 @@ class AccountingScenariosTest extends TestCase
         string $label,
         ?Carbon $date = null
     ): AccountMove {
+        // O2 (Odoo parity): AR/AP lines require a partner. Stamp the partner
+        // onto any line whose account is receivable or payable.
+        $partnerFor = fn (Account $a) => in_array($a->internal_type, ['receivable', 'payable'], true)
+            ? $this->partner->id
+            : null;
+
         $move = $this->service->createMove(
             $this->header($journal, $date),
             [
-                ['account_id' => $debitAccount->id,  'name' => $label, 'debit' => $amount, 'credit' => 0],
-                ['account_id' => $creditAccount->id, 'name' => $label, 'debit' => 0,       'credit' => $amount],
+                ['account_id' => $debitAccount->id,  'partner_id' => $partnerFor($debitAccount),  'name' => $label, 'debit' => $amount, 'credit' => 0],
+                ['account_id' => $creditAccount->id, 'partner_id' => $partnerFor($creditAccount), 'name' => $label, 'debit' => 0,       'credit' => $amount],
             ]
         );
         return $this->service->postMove($move);

@@ -434,8 +434,24 @@ class AccountingReportController extends Controller
 
         $asOfDate = now()->parse($asOf);
 
+        // D1 (Odoo parity): assign installment_number (1-based) per move so the
+        // report can show "2/3" next to the invoice number. Sort within each
+        // move by date_maturity ASC then sequence, mirroring the order used in
+        // documentCounterpartLines().
+        $installmentMeta = [];
+        foreach ($lines->groupBy('move_id') as $moveId => $moveLines) {
+            $sorted = $moveLines->sortBy([
+                fn ($a, $b) => ($a->date_maturity?->timestamp ?? 0) <=> ($b->date_maturity?->timestamp ?? 0),
+                fn ($a, $b) => $a->sequence <=> $b->sequence,
+            ])->values();
+            $total = $sorted->count();
+            foreach ($sorted as $idx => $line) {
+                $installmentMeta[$line->id] = ['number' => $idx + 1, 'total' => $total];
+            }
+        }
+
         return $lines
-            ->map(function (AccountMoveLine $line) use ($asOfDate) {
+            ->map(function (AccountMoveLine $line) use ($asOfDate, $installmentMeta) {
                 $matched  = (float) $line->matchedDebits->sum('amount') + (float) $line->matchedCredits->sum('amount');
                 $balance  = (float) $line->debit - (float) $line->credit;
                 $residual = round(abs($balance) - $matched, 2);
@@ -445,16 +461,20 @@ class AccountingReportController extends Controller
                 // for legacy single-counterpart rows.
                 $dueDate = $line->date_maturity ?? $line->date;
 
+                $meta = $installmentMeta[$line->id] ?? ['number' => 1, 'total' => 1];
+
                 return (object) [
-                    'move_id'          => $line->move_id,
-                    'line_id'          => $line->id,
-                    'name'             => $line->move?->name,
-                    'invoice_date'     => $line->move?->date,
-                    'invoice_date_due' => $dueDate,
-                    'partner_id'       => $line->partner_id,
-                    'partner_name'     => $line->partner?->name,
-                    'residual'         => $residual,
-                    'days_overdue'     => max(0, (int) ($asOfDate->diffInDays($dueDate, false) * -1)),
+                    'move_id'            => $line->move_id,
+                    'line_id'            => $line->id,
+                    'name'               => $line->move?->name,
+                    'invoice_date'       => $line->move?->date,
+                    'invoice_date_due'   => $dueDate,
+                    'partner_id'         => $line->partner_id,
+                    'partner_name'       => $line->partner?->name,
+                    'residual'           => $residual,
+                    'days_overdue'       => max(0, (int) ($asOfDate->diffInDays($dueDate, false) * -1)),
+                    'installment_number' => $meta['number'],
+                    'total_installments' => $meta['total'],
                 ];
             })
             // Drop fully-paid installments (residual <= rounding floor).

@@ -26,6 +26,7 @@ class UpdatePickingRequest extends FormRequest
         $productRule  = $this->inventoryProductRule($activeCompanyIds);
         $lotRule      = $this->companyScopedExists('inventory_lots', $activeCompanyIds);
         $partnerRule  = $this->contactInActiveCompaniesRule($activeCompanyIds);
+        $moveRule     = $this->companyScopedExists('inventory_moves', $activeCompanyIds);
 
         return [
             'partner_id'      => ['nullable', $partnerRule],
@@ -35,9 +36,9 @@ class UpdatePickingRequest extends FormRequest
             'origin'          => ['nullable', 'string', 'max:128'],
             'note'            => ['nullable', 'string', 'max:512'],
             'moves'           => ['nullable', 'array'],
-            // moves.*.id is gated at the controller via $move->picking_id === $picking->id,
-            // but we keep the integer+exists check for cheap input sanity.
-            'moves.*.id'          => ['nullable', 'integer', 'exists:inventory_moves,id'],
+            // moves.*.id is also gated at the controller via $move->picking_id === $picking->id,
+            // but the FK rule must still company-scope to block cross-tenant id injection.
+            'moves.*.id'          => ['nullable', 'integer', $moveRule],
             'moves.*.product_id'  => ['required_with:moves', $productRule],
             'moves.*.uom_id'      => ['required_with:moves', 'exists:inventory_uoms,id'],
             'moves.*.product_qty' => ['required_with:moves', 'numeric', 'min:0.0001'],
@@ -46,7 +47,7 @@ class UpdatePickingRequest extends FormRequest
             'moves.*.delete'      => ['nullable', 'boolean'],
             // Move lines (for lot/serial tracked products)
             'move_lines'           => ['nullable', 'array'],
-            'move_lines.*.move_id' => ['required_with:move_lines', 'integer', 'exists:inventory_moves,id'],
+            'move_lines.*.move_id' => ['required_with:move_lines', 'integer', $moveRule],
             'move_lines.*.lot_id'  => ['nullable', $lotRule],
             'move_lines.*.lot_name' => ['nullable', 'string', 'max:128'],
             'move_lines.*.qty_done' => ['required_with:move_lines', 'numeric', 'min:0'],

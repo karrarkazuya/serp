@@ -71,11 +71,11 @@
             @foreach($group['items'] as $move)
             <tr x-show="open" class="hover:bg-purple-50/30 cursor-pointer" onclick="window.location='{{ route('accounting.moves.show', $move) }}'">
                 <td class="px-4 py-2 text-gray-700 tabular-nums">{{ optional($move->date)->format('Y-m-d') }}</td>
-                <td class="px-3 py-2 font-medium text-gray-900">{{ $move->name ?: '('.__('accounting.status_draft').')' }}</td>
+                <td class="px-3 py-2 font-medium text-gray-900">{{ $move->display_name }}</td>
                 <td class="px-3 py-2 text-gray-600">{{ $move->journal?->name ?: '—' }}</td>
                 <td class="px-3 py-2 text-gray-600">{{ $move->partner?->name ?: '—' }}</td>
                 <td class="px-3 py-2 text-gray-600">{{ $move->ref ?: '—' }}</td>
-                <td class="px-3 py-2 text-right tabular-nums text-gray-800">{{ number_format((float) $move->amount_total, 2) }}</td>
+                <td class="px-3 py-2 text-right tabular-nums text-gray-800"><x-money :amount="(float) $move->amount_total" :currency="$move->currency" /></td>
                 <td class="px-3 py-2">
                     <span class="inline-block px-2 py-0.5 rounded text-[11px] font-medium {{ $moveStateColor($move->state) }}">{{ $move->state_label }}</span>
                 </td>
@@ -110,11 +110,11 @@
                        value="{{ $move->id }}">
             </td>
             <td class="px-4 py-2 text-gray-700 tabular-nums">{{ optional($move->date)->format('Y-m-d') }}</td>
-            <td class="px-3 py-2 font-medium text-gray-900">{{ $move->name ?: '('.__('accounting.status_draft').')' }}</td>
+            <td class="px-3 py-2 font-medium text-gray-900">{{ $move->display_name }}</td>
             <td class="px-3 py-2 text-gray-600">{{ $move->journal?->name ?: '—' }}</td>
             <td class="px-3 py-2 text-gray-600">{{ $move->partner?->name ?: '—' }}</td>
             <td class="px-3 py-2 text-gray-600">{{ $move->ref ?: '—' }}</td>
-            <td class="px-3 py-2 text-right tabular-nums text-gray-800">{{ number_format((float) $move->amount_total, 2) }}</td>
+            <td class="px-3 py-2 text-right tabular-nums text-gray-800"><x-money :amount="(float) $move->amount_total" :currency="$move->currency" /></td>
             <td class="px-3 py-2">
                 <span class="inline-block px-2 py-0.5 rounded text-[11px] font-medium {{ $moveStateColor($move->state) }}">{{ $move->state_label }}</span>
             </td>

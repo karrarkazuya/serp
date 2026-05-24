@@ -47,13 +47,13 @@
                                 };
                             @endphp
                             <a href="{{ $moveRoute }}" class="hover:underline">
-                                {{ $line->move?->name ?? $line->move_id }}
+                                {{ $line->move?->display_name ?? $line->move_id }}
                             </a>
                         </td>
                         <td class="px-4 py-2.5 font-mono text-gray-700">{{ $line->account?->code }} {{ $line->account?->name }}</td>
                         <td class="px-4 py-2.5 text-gray-700">{{ $line->name ?: '—' }}</td>
-                        <td class="px-4 py-2.5 text-right tabular-nums text-gray-800">{{ $line->debit > 0 ? number_format($line->debit, 2) : '' }}</td>
-                        <td class="px-4 py-2.5 text-right tabular-nums text-gray-800">{{ $line->credit > 0 ? number_format($line->credit, 2) : '' }}</td>
+                        <td class="px-4 py-2.5 text-right tabular-nums text-gray-800"><x-money :amount="(float) $line->debit" :blank="true" /></td>
+                        <td class="px-4 py-2.5 text-right tabular-nums text-gray-800"><x-money :amount="(float) $line->credit" :blank="true" /></td>
                     </tr>
                     @empty
                     <tr>

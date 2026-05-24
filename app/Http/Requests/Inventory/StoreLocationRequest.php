@@ -2,12 +2,15 @@
 
 namespace App\Http\Requests\Inventory;
 
+use App\Http\Requests\Inventory\Concerns\InventoryFkRules;
 use App\Services\Company\CompanyContextService;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
 class StoreLocationRequest extends FormRequest
 {
+    use InventoryFkRules;
+
     public function authorize(): bool { return $this->user()->hasPermission('inventory.config'); }
 
     public function rules(): array
@@ -15,7 +18,7 @@ class StoreLocationRequest extends FormRequest
         $activeCompanyIds = app(CompanyContextService::class)->getActiveCompanyIds();
         return [
             'company_id'       => ['nullable', Rule::exists('companies', 'id')->whereIn('id', $activeCompanyIds)],
-            'parent_id'        => ['nullable', 'exists:inventory_locations,id'],
+            'parent_id'        => ['nullable', $this->inventoryLocationRule($activeCompanyIds)],
             'name'             => ['required', 'string', 'max:255'],
             'usage'            => ['required', Rule::in(['supplier', 'view', 'internal', 'customer', 'inventory', 'production', 'transit'])],
             'removal_strategy' => ['nullable', Rule::in(['fifo', 'lifo', 'fefo', 'closest_location'])],

@@ -31,10 +31,10 @@
                                 <span class="font-mono text-gray-600">{{ $row->account_code }}</span>
                                 <span class="ms-2 text-gray-700">{{ $row->account_name }}</span>
                             </td>
-                            <td class="px-5 py-2.5 text-right tabular-nums text-green-700">{{ number_format($row->total_debit, 2) }}</td>
-                            <td class="px-5 py-2.5 text-right tabular-nums text-red-600">{{ number_format($row->total_credit, 2) }}</td>
+                            <td class="px-5 py-2.5 text-right tabular-nums text-green-700"><x-money :amount="(float) $row->total_debit" /></td>
+                            <td class="px-5 py-2.5 text-right tabular-nums text-red-600"><x-money :amount="(float) $row->total_credit" /></td>
                             <td class="px-5 py-2.5 text-right tabular-nums font-medium {{ $row->net >= 0 ? 'text-gray-800' : 'text-red-600' }}">
-                                {{ number_format($row->net, 2) }}
+                                <x-money :amount="(float) $row->net" />
                             </td>
                         </tr>
                         @empty
@@ -44,10 +44,10 @@
                     <tfoot class="bg-gray-50 border-t-2 border-gray-300">
                         <tr>
                             <td class="px-5 py-3 text-sm font-bold text-gray-800">{{ __('accounting.net_cash_flow') }}</td>
-                            <td class="px-5 py-3 text-right tabular-nums font-bold text-green-700">{{ number_format($totalInflow, 2) }}</td>
-                            <td class="px-5 py-3 text-right tabular-nums font-bold text-red-600">{{ number_format($totalOutflow, 2) }}</td>
+                            <td class="px-5 py-3 text-right tabular-nums font-bold text-green-700"><x-money :amount="(float) $totalInflow" /></td>
+                            <td class="px-5 py-3 text-right tabular-nums font-bold text-red-600"><x-money :amount="(float) $totalOutflow" /></td>
                             <td class="px-5 py-3 text-right tabular-nums font-bold text-2xl {{ $netCashFlow >= 0 ? 'text-green-700' : 'text-red-600' }}">
-                                {{ number_format($netCashFlow, 2) }}
+                                <x-money :amount="(float) $netCashFlow" />
                             </td>
                         </tr>
                     </tfoot>

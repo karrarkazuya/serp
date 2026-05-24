@@ -38,16 +38,16 @@
     <div class="shrink-0 grid grid-cols-1 sm:grid-cols-3 border-b border-gray-200 bg-gray-50">
         <div class="px-4 py-2">
             <p class="text-[11px] font-semibold uppercase text-gray-500">{{ __('accounting.col_debit') }}</p>
-            <p class="text-sm font-semibold text-gray-900 tabular-nums">{{ number_format($totalDebit, 2) }}</p>
+            <p class="text-sm font-semibold text-gray-900 tabular-nums"><x-money :amount="(float) $totalDebit" /></p>
         </div>
         <div class="px-4 py-2 border-t sm:border-t-0 sm:border-s border-gray-200">
             <p class="text-[11px] font-semibold uppercase text-gray-500">{{ __('accounting.col_credit') }}</p>
-            <p class="text-sm font-semibold text-gray-900 tabular-nums">{{ number_format($totalCredit, 2) }}</p>
+            <p class="text-sm font-semibold text-gray-900 tabular-nums"><x-money :amount="(float) $totalCredit" /></p>
         </div>
         <div class="px-4 py-2 border-t sm:border-t-0 sm:border-s border-gray-200">
             <p class="text-[11px] font-semibold uppercase text-gray-500">{{ __('accounting.col_balance') }}</p>
             <p class="text-sm font-semibold {{ $totalBalance === 0.0 ? 'text-gray-900' : ($totalBalance > 0 ? 'text-green-700' : 'text-red-700') }} tabular-nums">
-                {{ number_format($totalBalance, 2) }}
+                <x-money :amount="(float) $totalBalance" />
             </p>
         </div>
     </div>
@@ -92,7 +92,7 @@
             @endphp
             <tr x-show="open" class="hover:bg-purple-50/30 cursor-pointer" onclick="window.location='{{ $itemMoveUrl }}'">
                 <td class="px-4 py-2 text-gray-700 tabular-nums">{{ optional($item->date)->format('Y-m-d') }}</td>
-                <td class="px-3 py-2 font-medium text-gray-900">{{ $item->move?->name ?: '('.__('accounting.status_draft').')' }}</td>
+                <td class="px-3 py-2 font-medium text-gray-900">{{ $item->move?->display_name ?: '('.__('accounting.status_draft').')' }}</td>
                 <td class="px-3 py-2 text-gray-600">{{ $item->journal?->code ?: '—' }}</td>
                 <td class="px-3 py-2 text-gray-700">
                     @if($item->account)
@@ -104,10 +104,10 @@
                 </td>
                 <td class="px-3 py-2 text-gray-600">{{ $item->partner?->name ?: '—' }}</td>
                 <td class="px-3 py-2 text-gray-600">{{ $item->name }}</td>
-                <td class="px-3 py-2 text-right tabular-nums text-gray-800">{{ number_format((float) $item->debit, 2) }}</td>
-                <td class="px-3 py-2 text-right tabular-nums text-gray-800">{{ number_format((float) $item->credit, 2) }}</td>
+                <td class="px-3 py-2 text-right tabular-nums text-gray-800"><x-money :amount="(float) $item->debit" /></td>
+                <td class="px-3 py-2 text-right tabular-nums text-gray-800"><x-money :amount="(float) $item->credit" /></td>
                 <td class="px-3 py-2 text-right tabular-nums {{ $item->balance < 0 ? 'text-red-700' : 'text-gray-800' }}">
-                    {{ number_format($item->balance, 2) }}
+                    <x-money :amount="(float) $item->balance" />
                 </td>
                 <td class="px-3 py-2">
                     @php
@@ -157,7 +157,7 @@
         @endphp
         <tr class="hover:bg-purple-50/30 cursor-pointer" onclick="window.location='{{ $itemMoveUrl }}'">
             <td class="px-4 py-2 text-gray-700 tabular-nums">{{ optional($item->date)->format('Y-m-d') }}</td>
-            <td class="px-3 py-2 font-medium text-gray-900">{{ $item->move?->name ?: '('.__('accounting.status_draft').')' }}</td>
+            <td class="px-3 py-2 font-medium text-gray-900">{{ $item->move?->display_name ?: '('.__('accounting.status_draft').')' }}</td>
             <td class="px-3 py-2 text-gray-600">{{ $item->journal?->code ?: '—' }}</td>
             <td class="px-3 py-2 text-gray-700">
                 @if($item->account)
@@ -169,10 +169,10 @@
             </td>
             <td class="px-3 py-2 text-gray-600">{{ $item->partner?->name ?: '—' }}</td>
             <td class="px-3 py-2 text-gray-600">{{ $item->name }}</td>
-            <td class="px-3 py-2 text-right tabular-nums text-gray-800">{{ number_format((float) $item->debit, 2) }}</td>
-            <td class="px-3 py-2 text-right tabular-nums text-gray-800">{{ number_format((float) $item->credit, 2) }}</td>
+            <td class="px-3 py-2 text-right tabular-nums text-gray-800"><x-money :amount="(float) $item->debit" /></td>
+            <td class="px-3 py-2 text-right tabular-nums text-gray-800"><x-money :amount="(float) $item->credit" /></td>
             <td class="px-3 py-2 text-right tabular-nums {{ $item->balance < 0 ? 'text-red-700' : 'text-gray-800' }}">
-                {{ number_format($item->balance, 2) }}
+                <x-money :amount="(float) $item->balance" />
             </td>
             <td class="px-3 py-2">
                 @php

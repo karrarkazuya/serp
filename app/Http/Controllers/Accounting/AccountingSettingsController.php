@@ -42,11 +42,19 @@ class AccountingSettingsController extends Controller
 
         $data = $request->validated();
 
-        // Allow clearing a lock date / FK by submitting an empty string
-        $data['accounting_period_lock_date']         = $data['accounting_period_lock_date']         ?: null;
-        $data['accounting_fiscal_year_lock_date']    = $data['accounting_fiscal_year_lock_date']    ?: null;
-        $data['income_currency_exchange_account_id'] = $data['income_currency_exchange_account_id'] ?: null;
-        $data['expense_currency_exchange_account_id']= $data['expense_currency_exchange_account_id']?: null;
+        // Allow clearing a lock date / FK by submitting an empty string. Use ?? so
+        // a missing key (lock-only request without FX accounts, or vice versa)
+        // simply skips the update for that field rather than throwing.
+        foreach ([
+            'accounting_period_lock_date',
+            'accounting_fiscal_year_lock_date',
+            'income_currency_exchange_account_id',
+            'expense_currency_exchange_account_id',
+        ] as $nullableField) {
+            if (array_key_exists($nullableField, $data)) {
+                $data[$nullableField] = $data[$nullableField] ?: null;
+            }
+        }
 
         // Allowed currencies = M2M; pull out before model->update()
         $allowedCurrencyIds = $data['allowed_currency_ids'] ?? null;

@@ -14,11 +14,13 @@ class StoreAccountingSettingsRequest extends FormRequest
 
     public function rules(): array
     {
-        // FX gain/loss accounts must belong to the target company.
+        // FX gain/loss accounts must belong to the target company. When route
+        // binding for {company} is missing (shouldn't happen via the normal
+        // route), deny outright to avoid cross-tenant FK injection.
         $company = $this->route('company');
         $accountInCompany = $company
             ? Rule::exists('accounts', 'id')->where(fn ($q) => $q->where('company_id', $company->id)->where('active', true))
-            : 'exists:accounts,id';
+            : Rule::exists('accounts', 'id')->where(fn ($q) => $q->whereRaw('1 = 0'));
 
         return [
             // Existing lock-date fields (unchanged)

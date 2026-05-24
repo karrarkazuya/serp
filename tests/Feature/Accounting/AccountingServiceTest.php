@@ -221,8 +221,13 @@ class AccountingServiceTest extends TestCase
             ['account_id' => $this->revenue->id, 'name' => 'Revenue', 'debit' => 0,   'credit' => 500],
         ]));
 
+        // O5 (Odoo parity): reverseMove drafts the reversal for review; the
+        // caller is responsible for posting it. Post here so the rest of the
+        // test (immutable-line and balance assertions) sees the final state.
         $reversal = $this->service->reverseMove($posted, Carbon::today()->addDay());
+        $this->assertSame('draft', $reversal->state, 'Reversal must be drafted, not auto-posted');
 
+        $reversal = $this->service->postMove($reversal);
         $this->assertSame('posted', $reversal->state);
         $this->assertSame($posted->id, $reversal->reversed_move_id);
         $this->assertCount(2, $reversal->lines);

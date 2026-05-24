@@ -78,19 +78,19 @@
                 <tr>
                     <td>{{ $line->name }}</td>
                     <td>{{ $line->account?->display_name }}</td>
-                    <td class="num">{{ number_format($lineAmount($line), 2) }} {{ $document->currency }}</td>
+                    <td class="num"><x-money :amount="$lineAmount($line)" :currency="$document->currency" /></td>
                 </tr>
                 @endforeach
             </tbody>
         </table>
 
         <section class="totals">
-            <div class="total-row"><strong>Untaxed Amount:</strong><span>{{ number_format($untaxed, 2) }} {{ $document->currency }}</span></div>
+            <div class="total-row"><strong>Untaxed Amount:</strong><span><x-money :amount="(float) $untaxed" :currency="$document->currency" /></span></div>
             @foreach($taxLines->groupBy('tax_line_id') as $group)
             @php $tl = $group->first(); @endphp
-            <div class="total-row"><span>{{ $tl->name }}:</span><span>{{ number_format($group->sum(fn($l) => $lineAmount($l)), 2) }} {{ $document->currency }}</span></div>
+            <div class="total-row"><span>{{ $tl->name }}:</span><span><x-money :amount="(float) $group->sum(fn($l) => $lineAmount($l))" :currency="$document->currency" /></span></div>
             @endforeach
-            <div class="total-row grand"><span>{{ __('accounting.total') }}:</span><span>{{ number_format((float) $document->amount_total, 2) }} {{ $document->currency }}</span></div>
+            <div class="total-row grand"><span>{{ __('accounting.total') }}:</span><span><x-money :amount="(float) $document->amount_total" :currency="$document->currency" /></span></div>
         </section>
 
         @if($document->narration)

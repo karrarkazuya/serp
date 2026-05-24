@@ -9,6 +9,7 @@ use App\Models\Accounting\AccountMoveLine;
 use App\Models\Accounting\AccountTax;
 use App\Models\Accounting\CurrencyRate;
 use App\Models\Chatter\ChatterMessage;
+use App\Models\Contacts\Contact;
 use App\Models\Inventory\Product;
 use App\Models\Inventory\Uom;
 use App\Models\Settings\Company;
@@ -58,6 +59,10 @@ class AccountingOdooSimulationTest extends TestCase
 
     private Product $product;
     private Uom $uom;
+
+    // O2 (Odoo parity): the AR/AP control line on every posted invoice/bill
+    // requires a partner. Shared partner for the invoice and bill helpers.
+    private Contact $partner;
 
     protected function setUp(): void
     {
@@ -109,6 +114,14 @@ class AccountingOdooSimulationTest extends TestCase
             'product_type' => 'service',
             'tracking'   => 'none',
             'active'     => true,
+        ]);
+
+        // O2 (Odoo parity): AR/AP lines require a partner. Shared contact.
+        $this->partner = Contact::create([
+            'company_id'   => $this->company->id,
+            'name'         => 'Sim Partner',
+            'contact_type' => 'company',
+            'active'       => true,
         ]);
     }
 
@@ -409,10 +422,17 @@ class AccountingOdooSimulationTest extends TestCase
     }
 
     /**
-     * Resetting a move to draft does NOT check lock dates —
-     * draft resets are always allowed so the accounting team can correct mistakes.
+     * Resetting a move to draft DOES respect the period lock — same rule as
+     * posting: an unprivileged user must not be able to silently remove an
+     * entry from financial reports by flipping it to draft (state != posted
+     * excludes it from balances and reports). Users with the
+     * `accounting.lock` permission bypass — same gate postMove uses.
+     *
+     * (Mirrors Odoo: the lock is a frozen-history guarantee. Reset-to-draft
+     * on a locked-period entry is rejected for non-bypass users; the admin
+     * who has lock-bypass can still correct mistakes.)
      */
-    public function test_reset_to_draft_is_not_blocked_by_lock_dates(): void
+    public function test_reset_to_draft_respects_lock_dates_for_unprivileged_users(): void
     {
         Auth::login($this->admin);
         $posted = $this->svc->postMove($this->simpleMove('2026-01-10'));
@@ -420,9 +440,18 @@ class AccountingOdooSimulationTest extends TestCase
         // Now close January
         $this->company->update(['accounting_period_lock_date' => '2026-01-31']);
 
-        // Even the plain user should be able to reset (lock only applies to posting)
+        // Plain user: blocked.
         Auth::login($this->plain);
-        $reset = $this->svc->resetMoveToDraft($posted);
+        try {
+            $this->svc->resetMoveToDraft($posted);
+            $this->fail('Plain user should not be able to reset an entry inside a locked period.');
+        } catch (RuntimeException $e) {
+            $this->assertMatchesRegularExpression('/locked period/i', $e->getMessage());
+        }
+
+        // Admin with accounting.lock: allowed.
+        Auth::login($this->admin);
+        $reset = $this->svc->resetMoveToDraft($posted->fresh());
         $this->assertSame('draft', $reset->state);
     }
 
@@ -436,7 +465,7 @@ class AccountingOdooSimulationTest extends TestCase
      */
     public function test_fx_converts_amount_currency_to_base_when_debit_credit_are_zero(): void
     {
-        $this->company->update(['currency' => 'IQD']);
+        $this->switchToIqd();
         CurrencyRate::create([
             'company_id' => $this->company->id, 'currency' => 'USD',
             'rate' => 1310.0, 'date' => '2026-01-01', 'active' => true,
@@ -523,7 +552,7 @@ class AccountingOdooSimulationTest extends TestCase
      */
     public function test_explicit_debit_credit_are_not_overridden_by_fx_conversion(): void
     {
-        $this->company->update(['currency' => 'IQD']);
+        $this->switchToIqd();
         CurrencyRate::create(['company_id' => $this->company->id, 'currency' => 'USD', 'rate' => 1310.0, 'date' => '2026-01-01', 'active' => true]);
         Auth::login($this->admin);
 
@@ -627,7 +656,7 @@ class AccountingOdooSimulationTest extends TestCase
     public function test_full_month_simulation_trial_balance_is_zero(): void
     {
         Auth::login($this->admin);
-        $this->company->update(['currency' => 'IQD']);
+        $this->switchToIqd();
 
         // Exchange rate: 1 USD = 1,300 IQD (effective 2026-01-01)
         CurrencyRate::create([
@@ -776,6 +805,14 @@ class AccountingOdooSimulationTest extends TestCase
     // Helpers
     // =========================================================================
 
+    /**
+     * Build an account tax. `$inclusive` controls `price_include` (the price
+     * already contains the tax — extract net from gross). It is NOT the same
+     * thing as `include_base_amount` (cascading flag for "add this tax to the
+     * base for the next sequential tax"); historically this helper wrote into
+     * the wrong column, so the inclusive-tax test never actually flagged the
+     * tax as inclusive.
+     */
     private function tax(string $name, string $type, float $amount, string $use, bool $inclusive): AccountTax
     {
         return AccountTax::create([
@@ -785,7 +822,8 @@ class AccountingOdooSimulationTest extends TestCase
             'amount'              => $amount,
             'type_tax_use'        => $use,
             'account_id'          => $this->taxPayable->id,
-            'include_base_amount' => $inclusive,
+            'price_include'       => $inclusive,
+            'include_base_amount' => false,
             'active'              => true,
         ]);
     }
@@ -795,7 +833,9 @@ class AccountingOdooSimulationTest extends TestCase
         return [
             'company_id'         => $this->company->id,
             'journal_id'         => $this->salesJournal->id,
-            'partner_id'         => null,
+            // O2: AR control line needs a partner. Always supply one — tests
+            // that build documents without posting still tolerate this safely.
+            'partner_id'         => $this->partner->id,
             'control_account_id' => $this->receivable->id,
             'date'               => $date,
             'move_type'          => 'out_invoice',
@@ -808,7 +848,7 @@ class AccountingOdooSimulationTest extends TestCase
         return [
             'company_id'         => $this->company->id,
             'journal_id'         => $this->purchaseJournal->id,
-            'partner_id'         => null,
+            'partner_id'         => $this->partner->id,
             'control_account_id' => $this->payable->id,
             'date'               => $date,
             'move_type'          => 'in_invoice',
@@ -851,6 +891,21 @@ class AccountingOdooSimulationTest extends TestCase
         return AccountJournal::where('company_id', $this->company->id)
             ->where('code', $code)
             ->firstOrFail();
+    }
+
+    /**
+     * Switch the company's base currency to IQD for the FX-conversion tests.
+     *
+     * The seeded chart pins every account AND every journal to the company's
+     * original currency (USD). After re-basing the company to IQD, we also
+     * unpin every account and journal so the test can mix IQD-base entries
+     * with USD-foreign entries without tripping the O9 currency-pin guard.
+     */
+    private function switchToIqd(): void
+    {
+        $this->company->update(['currency' => 'IQD']);
+        AccountJournal::where('company_id', $this->company->id)->update(['currency' => null]);
+        Account::where('company_id', $this->company->id)->update(['currency' => null]);
     }
 
     /**

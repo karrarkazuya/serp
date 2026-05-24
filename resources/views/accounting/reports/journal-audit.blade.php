@@ -43,12 +43,12 @@
                                     default       => route('accounting.moves.show', $move),
                                 };
                             @endphp
-                            <a href="{{ $auditRoute }}" class="text-purple-600 hover:underline font-medium">{{ $move->name }}</a>
+                            <a href="{{ $auditRoute }}" class="text-purple-600 hover:underline font-medium">{{ $move->display_name }}</a>
                             @if($move->ref) <span class="text-xs text-gray-400 ms-1">{{ $move->ref }}</span> @endif
                         </td>
                         <td class="px-4 py-2.5 text-gray-600">{{ $move->journal?->code }} – {{ $move->journal?->name }}</td>
                         <td class="px-4 py-2.5 text-gray-600">{{ $move->partner?->name ?? '—' }}</td>
-                        <td class="px-4 py-2.5 text-right tabular-nums text-gray-800">{{ number_format($move->amount_total, 2) }}</td>
+                        <td class="px-4 py-2.5 text-right tabular-nums text-gray-800"><x-money :amount="(float) $move->amount_total" :currency="$move->currency" /></td>
                     </tr>
                     @empty
                     <tr><td colspan="5" class="px-4 py-8 text-sm text-gray-400 text-center">{{ __('accounting.no_journal_items_filter') }}</td></tr>

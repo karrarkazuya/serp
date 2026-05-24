@@ -39,13 +39,23 @@
                     @foreach($grouped[$bucket] as $row)
                     <tr class="hover:bg-gray-50">
                         <td class="px-4 py-2">
-                            <a href="{{ route('accounting.bills.show', $row->id) }}" class="text-purple-600 hover:underline text-sm">{{ $row->name }}</a>
+                            <a href="{{ route('accounting.bills.show', $row->move_id) }}"
+                               class="text-purple-600 hover:underline text-sm">{{ $row->name ?: '(Draft)' }}</a>
+                            @if(($row->total_installments ?? 1) > 1)
+                            <span class="ms-1 inline-block px-1.5 py-0.5 rounded text-[10px] font-medium bg-blue-50 text-blue-700 border border-blue-200" title="Installment {{ $row->installment_number }} of {{ $row->total_installments }}">
+                                {{ $row->installment_number }}/{{ $row->total_installments }}
+                            </span>
+                            @endif
                         </td>
                         <td class="px-4 py-2 text-sm text-gray-700">{{ $row->partner_name }}</td>
-                        <td class="px-4 py-2 text-sm tabular-nums text-gray-600">{{ $row->invoice_date }}</td>
-                        <td class="px-4 py-2 text-sm tabular-nums {{ $row->days_overdue > 0 ? 'text-red-600 font-medium' : 'text-gray-600' }}">{{ $row->invoice_date_due }}</td>
+                        <td class="px-4 py-2 text-sm tabular-nums text-gray-600">
+                            {{ $row->invoice_date instanceof \Carbon\CarbonInterface ? $row->invoice_date->format('Y-m-d') : $row->invoice_date }}
+                        </td>
+                        <td class="px-4 py-2 text-sm tabular-nums {{ $row->days_overdue > 0 ? 'text-red-600 font-medium' : 'text-gray-600' }}">
+                            {{ $row->invoice_date_due instanceof \Carbon\CarbonInterface ? $row->invoice_date_due->format('Y-m-d') : $row->invoice_date_due }}
+                        </td>
                         <td class="px-4 py-2 text-right text-sm tabular-nums {{ $row->days_overdue > 0 ? 'text-red-600' : 'text-gray-600' }}">{{ $row->days_overdue }}</td>
-                        <td class="px-4 py-2 text-right text-sm tabular-nums font-medium text-gray-800">{{ number_format($row->residual, 2) }}</td>
+                        <td class="px-4 py-2 text-right text-sm tabular-nums font-medium text-gray-800"><x-money :amount="(float) $row->residual" /></td>
                     </tr>
                     @endforeach
                 </tbody>
@@ -59,7 +69,7 @@
         @else
         <div class="bg-white rounded-xl border border-gray-200 shadow-sm p-4 flex justify-between items-center">
             <span class="text-sm font-bold text-gray-800">Total Overdue</span>
-            <span class="text-lg font-bold tabular-nums text-red-600">{{ number_format($rows->sum('residual'), 2) }}</span>
+            <span class="text-lg font-bold tabular-nums text-red-600"><x-money :amount="(float) $rows->sum('residual')" /></span>
         </div>
         @endif
     </div>

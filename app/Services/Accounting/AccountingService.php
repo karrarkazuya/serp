@@ -226,10 +226,14 @@ class AccountingService
         $data['move_type']    = $data['move_type'] ?? 'entry';
         $data['currency']     = $data['currency'] ?? $journal->currency;
         $data['amount_total'] = 0;
-        // D9 (Odoo parity): drafts use '/' as the name placeholder. postMove
-        // treats '/' as "no name yet" and reserves a real sequence; reset
-        // moves keep their real name so the sequence isn't wasted.
-        $data['name']         = !empty($data['name']) ? $data['name'] : '/';
+        // D9 (Odoo parity): drafts have no name yet. We store `null`, not the
+        // legacy `'/'` placeholder — the `UNIQUE(company_id, name)` index on
+        // `account_moves` treats nulls as distinct (SQLite/MySQL/PostgreSQL all
+        // agree), so multiple drafts coexist in the same company. Views and
+        // `postMove` still treat both `null` and the legacy `'/'` as "no
+        // sequence assigned yet" via `($move->name && $move->name !== '/')`,
+        // so existing data with `'/'` keeps rendering correctly.
+        $data['name']         = !empty($data['name']) && $data['name'] !== '/' ? $data['name'] : null;
 
         $move = AccountMove::create($data);
         $this->syncLines($move, $lines);
@@ -884,6 +888,36 @@ class AccountingService
                 ->sum(fn (AccountMoveLine $line) => $this->getLineResidual($line)),
             self::SCALE
         );
+    }
+
+    /**
+     * D1 (Odoo parity): per-installment breakdown for the invoice show page.
+     * Returns one row per receivable/payable line with its due date, total,
+     * matched, and residual amounts. Single-shot invoices return one row;
+     * multi-installment invoices return one row per payment-term line.
+     *
+     * @return \Illuminate\Support\Collection<int, array{number:int,line:AccountMoveLine,date_maturity:?\Carbon\Carbon,amount:float,matched:float,residual:float}>
+     */
+    public function documentInstallments(AccountMove $move): \Illuminate\Support\Collection
+    {
+        if (!in_array($move->move_type, ['out_invoice', 'in_invoice', 'out_refund', 'in_refund'], true)) {
+            return collect();
+        }
+
+        return $this->documentCounterpartLines($move)
+            ->values()
+            ->map(function (AccountMoveLine $line, int $idx) {
+                $amount   = round(max((float) $line->debit, (float) $line->credit), self::SCALE);
+                $residual = round($this->getLineResidual($line), self::SCALE);
+                return [
+                    'number'        => $idx + 1,
+                    'line'          => $line,
+                    'date_maturity' => $line->date_maturity,
+                    'amount'        => $amount,
+                    'matched'       => round($amount - $residual, self::SCALE),
+                    'residual'      => $residual,
+                ];
+            });
     }
 
     public function refreshPaymentState(AccountMove $move): AccountMove

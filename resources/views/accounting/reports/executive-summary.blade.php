@@ -45,7 +45,7 @@
             <div class="rounded-xl border {{ $bgColor }} p-5">
                 <p class="text-xs font-medium text-gray-500 mb-1">{{ $card['label'] }}</p>
                 <p class="text-2xl font-bold tabular-nums {{ $textColor }}">
-                    {{ isset($card['is_count']) ? $card['value'] : number_format($card['value'], 2) }}
+                    @if(isset($card['is_count'])){{ $card['value'] }}@else<x-money :amount="(float) $card['value']" />@endif
                 </p>
             </div>
             @endforeach

@@ -51,9 +51,9 @@
                 </td>
                 <td class="px-3 py-2 text-gray-600">{{ $payment->partner?->name ?: '—' }}</td>
                 <td class="px-3 py-2 text-gray-600">{{ $payment->journal?->name ?: '—' }}</td>
-                <td class="px-3 py-2 text-gray-600">{{ $payment->pairedDocument?->name ?: '—' }}</td>
+                <td class="px-3 py-2 text-gray-600">{{ $payment->pairedDocument?->display_name ?: '—' }}</td>
                 <td class="px-3 py-2 text-gray-600">{{ $payment->memo ?: '—' }}</td>
-                <td class="px-3 py-2 text-right tabular-nums font-medium text-gray-900">{{ number_format((float) $payment->amount, 2) }} {{ $payment->currency }}</td>
+                <td class="px-3 py-2 text-right tabular-nums font-medium text-gray-900"><x-money :amount="(float) $payment->amount" :currency="$payment->currency" /></td>
             </tr>
             @endforeach
         </tbody>
@@ -86,9 +86,9 @@
             </td>
             <td class="px-3 py-2 text-gray-600">{{ $payment->partner?->name ?: '—' }}</td>
             <td class="px-3 py-2 text-gray-600">{{ $payment->journal?->name ?: '—' }}</td>
-            <td class="px-3 py-2 text-gray-600">{{ $payment->pairedDocument?->name ?: '—' }}</td>
+            <td class="px-3 py-2 text-gray-600">{{ $payment->pairedDocument?->display_name ?: '—' }}</td>
             <td class="px-3 py-2 text-gray-600">{{ $payment->memo ?: '—' }}</td>
-            <td class="px-3 py-2 text-right tabular-nums font-medium text-gray-900">{{ number_format((float) $payment->amount, 2) }} {{ $payment->currency }}</td>
+            <td class="px-3 py-2 text-right tabular-nums font-medium text-gray-900"><x-money :amount="(float) $payment->amount" :currency="$payment->currency" /></td>
         </tr>
         @endforeach
     </x-list>

@@ -93,7 +93,7 @@
                     <div>
                         <div class="bg-purple-50 border border-purple-200 rounded-lg p-4">
                             <p class="text-xs font-semibold uppercase text-purple-700">{{ __('accounting.posted_balance') }}</p>
-                            <p class="mt-2 text-3xl font-bold text-purple-900 tabular-nums">{{ number_format($balance, 2) }}</p>
+                            <p class="mt-2 text-3xl font-bold text-purple-900 tabular-nums"><x-money :amount="(float) $balance" :currency="$account->currency" /></p>
                             <p class="mt-1 text-xs text-purple-600">{{ __('accounting.debit_minus_credit') }} · {{ $account->currency ?: '—' }}</p>
                         </div>
                     </div>

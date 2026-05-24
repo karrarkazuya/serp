@@ -1,5 +1,5 @@
 @extends('layouts.app')
-@section('title', $move->name ?: __('accounting.move_type_entry'))
+@section('title', ($move->name && $move->name !== '/') ? $move->name : __('accounting.move_type_entry'))
 
 @section('content')
 <div class="flex flex-col h-full bg-gray-50">
@@ -15,7 +15,7 @@
         <x-slot:breadcrumb>
             <a href="{{ route('accounting.dashboard') }}" class="text-xs text-purple-600 hover:text-purple-700">{{ __('accounting.accounting') }}</a>
             <a href="{{ route('accounting.moves.index') }}" class="text-xs text-purple-600 hover:text-purple-700">{{ __('accounting.journal_entries') }}</a>
-            <span class="text-sm font-semibold text-gray-800">{{ $move->name ?: __('accounting.status_draft') }}</span>
+            <span class="text-sm font-semibold text-gray-800">{{ ($move->name && $move->name !== '/') ? $move->name : __('accounting.status_draft') }}</span>
         </x-slot:breadcrumb>
         <x-slot:actions>
             <div class="flex items-center gap-2">
@@ -101,8 +101,8 @@
                 <div class="mb-8 flex items-start justify-between gap-6">
                     <div>
                         <p class="text-lg font-semibold text-gray-800">{{ __('accounting.move_type_entry') }}</p>
-                        <h1 class="mt-2 text-4xl font-bold {{ $move->name ? 'text-gray-900' : 'text-gray-400' }}">
-                            {{ $move->name ?: __('accounting.status_draft') }}
+                        <h1 class="mt-2 text-4xl font-bold {{ ($move->name && $move->name !== '/') ? 'text-gray-900' : 'text-gray-400' }}">
+                            {{ ($move->name && $move->name !== '/') ? $move->name : __('accounting.status_draft') }}
                         </h1>
                     </div>
                     <div class="flex shrink-0 items-center text-sm font-semibold">
@@ -136,14 +136,14 @@
 
                 @if($move->reversedMove)
                 <div class="mb-6 px-3 py-2 bg-purple-50 border border-purple-200 rounded text-sm text-purple-700">
-                    Reverses <a href="{{ route('accounting.moves.show', $move->reversedMove) }}" class="font-semibold underline">{{ $move->reversedMove->name }}</a>
+                    Reverses <a href="{{ route('accounting.moves.show', $move->reversedMove) }}" class="font-semibold underline">{{ $move->reversedMove->display_name }}</a>
                 </div>
                 @endif
                 @if($move->reversal->isNotEmpty())
                 <div class="mb-6 px-3 py-2 bg-amber-50 border border-amber-200 rounded text-sm text-amber-700">
                     Reversed by
                     @foreach($move->reversal as $rev)
-                    <a href="{{ route('accounting.moves.show', $rev) }}" class="font-semibold underline">{{ $rev->name }}</a>{{ !$loop->last ? ', ' : '' }}
+                    <a href="{{ route('accounting.moves.show', $rev) }}" class="font-semibold underline">{{ $rev->display_name }}</a>{{ !$loop->last ? ', ' : '' }}
                     @endforeach
                 </div>
                 @endif
@@ -183,10 +183,10 @@
                                 <td class="px-4 py-2 text-gray-600">{{ $line->partner?->name ?: '—' }}</td>
                                 <td class="px-4 py-2 text-gray-700">{{ $line->name }}</td>
                                 <td class="px-4 py-2 text-right tabular-nums text-gray-800">
-                                    {{ (float) $line->debit ? number_format((float) $line->debit, 2) : '' }}
+                                    <x-money :amount="(float) $line->debit" :currency="$move->currency" :blank="true" />
                                 </td>
                                 <td class="px-4 py-2 text-right tabular-nums text-gray-800">
-                                    {{ (float) $line->credit ? number_format((float) $line->credit, 2) : '' }}
+                                    <x-money :amount="(float) $line->credit" :currency="$move->currency" :blank="true" />
                                 </td>
                             </tr>
                             @endforeach
@@ -194,13 +194,13 @@
                         <tfoot class="border-t border-gray-200">
                             <tr class="bg-gray-100 text-sm font-semibold">
                                 <td colspan="3" class="px-4 py-2.5 text-right text-gray-700">{{ __('accounting.total') }}</td>
-                                <td class="px-4 py-2.5 text-right tabular-nums">{{ number_format($balance['debit'], 2) }}</td>
-                                <td class="px-4 py-2.5 text-right tabular-nums">{{ number_format($balance['credit'], 2) }}</td>
+                                <td class="px-4 py-2.5 text-right tabular-nums"><x-money :amount="(float) $balance['debit']" :currency="$move->currency" /></td>
+                                <td class="px-4 py-2.5 text-right tabular-nums"><x-money :amount="(float) $balance['credit']" :currency="$move->currency" /></td>
                             </tr>
                             @if(abs($balance['difference']) > 0.005)
                             <tr class="bg-amber-50 text-amber-700 text-sm font-medium border-t border-amber-100">
                                 <td colspan="3" class="px-4 py-2 text-right">{{ __('accounting.difference') }}</td>
-                                <td colspan="2" class="px-4 py-2 text-right tabular-nums">{{ number_format($balance['difference'], 2) }}</td>
+                                <td colspan="2" class="px-4 py-2 text-right tabular-nums"><x-money :amount="(float) $balance['difference']" :currency="$move->currency" /></td>
                             </tr>
                             @endif
                         </tfoot>

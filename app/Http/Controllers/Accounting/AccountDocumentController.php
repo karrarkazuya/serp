@@ -385,6 +385,7 @@ class AccountDocumentController extends Controller
         $controlLine = $this->controlLine($document);
         $documentLines = $this->documentLines($document);
         $residual = $this->accounting->documentResidual($document);
+        $installments = $this->accounting->documentInstallments($document);
 
         // Bank and cash journals for the Register Payment form
         $paymentJournals = AccountJournal::where('company_id', $document->company_id)
@@ -393,7 +394,7 @@ class AccountDocumentController extends Controller
             ->orderBy('name')
             ->get(['id', 'name', 'type']);
 
-        return view('accounting.documents.show', compact('document', 'config', 'balance', 'controlLine', 'documentLines', 'residual', 'paymentJournals'));
+        return view('accounting.documents.show', compact('document', 'config', 'balance', 'controlLine', 'documentLines', 'residual', 'installments', 'paymentJournals'));
     }
 
     private function edit(AccountMove $document, string $moveType)

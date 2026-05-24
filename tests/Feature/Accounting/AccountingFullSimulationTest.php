@@ -763,7 +763,13 @@ class AccountingFullSimulationTest extends TestCase
         $invoice->refresh();
         $this->assertSame(50.0, (float) $invoice->amount_total);
 
-        // Pay 200 for a 50 invoice — should mark as paid (Odoo clamps reconcile to residual)
+        // Pay 200 for a 50 invoice — Odoo: invoice flips to `paid`, the
+        // $150 excess sits on the payment line as outstanding receipts /
+        // customer credit. S-ERP records the full $200 on the payment but
+        // only reconciles up to residual; the invoice itself reads `paid`
+        // and its residual is zero, matching what Odoo shows for the
+        // invoice (separate partner-ledger tracking of the excess is not
+        // yet implemented).
         \Illuminate\Support\Facades\Auth::login($this->admin);
         $svc = app(AccountingService::class);
         $svc->registerDocumentPayment($invoice->fresh(), ['amount' => 200]);
@@ -837,12 +843,21 @@ class AccountingFullSimulationTest extends TestCase
                 'reversal_date' => '2026-06-15',
             ]);
 
+        // O5 (Odoo parity): the HTTP reverse drafts the reversal and redirects
+        // to the new draft for the user to review.
         $reversal = AccountMove::where('move_type', 'entry')
-            ->where('state', 'posted')
-            ->where('id', '!=', $move->id)
+            ->where('state', 'draft')
+            ->where('reversed_move_id', $move->id)
             ->firstOrFail();
-
         $response->assertRedirect(route('accounting.moves.show', $reversal));
+
+        // Post it to apply the reversal to the ledger.
+        $this->actingAs($this->admin)
+            ->withSession(['active_company_ids' => [$company->id]])
+            ->patch(route('accounting.moves.post', $reversal))
+            ->assertRedirect();
+        $reversal->refresh();
+        $this->assertSame('posted', $reversal->state);
 
         // Reversal must flip debit/credit
         $reversalDebitLine = $reversal->lines()->where('account_id', $credit->id)->firstOrFail();

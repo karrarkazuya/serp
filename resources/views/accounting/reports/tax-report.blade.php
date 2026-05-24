@@ -28,11 +28,11 @@
                     @forelse($rows as $row)
                     <tr class="hover:bg-gray-50">
                         <td class="px-4 py-2.5 text-gray-700">{{ $row->taxLine?->name ?? '—' }}</td>
-                        <td class="px-4 py-2.5 text-right tabular-nums text-gray-600">{{ number_format($row->total_base, 2) }}</td>
-                        <td class="px-4 py-2.5 text-right tabular-nums text-gray-800">{{ number_format($row->total_debit, 2) }}</td>
-                        <td class="px-4 py-2.5 text-right tabular-nums text-gray-800">{{ number_format($row->total_credit, 2) }}</td>
+                        <td class="px-4 py-2.5 text-right tabular-nums text-gray-600"><x-money :amount="(float) $row->total_base" /></td>
+                        <td class="px-4 py-2.5 text-right tabular-nums text-gray-800"><x-money :amount="(float) $row->total_debit" /></td>
+                        <td class="px-4 py-2.5 text-right tabular-nums text-gray-800"><x-money :amount="(float) $row->total_credit" /></td>
                         <td class="px-4 py-2.5 text-right tabular-nums font-medium {{ $row->net >= 0 ? 'text-gray-800' : 'text-red-600' }}">
-                            {{ number_format($row->net, 2) }}
+                            <x-money :amount="(float) $row->net" />
                         </td>
                     </tr>
                     @empty
@@ -43,10 +43,10 @@
                 <tfoot class="bg-gray-50 border-t-2 border-gray-300">
                     <tr>
                         <td class="px-4 py-3 text-sm font-bold text-gray-800">{{ __('accounting.total') }}</td>
-                        <td class="px-4 py-3 text-right tabular-nums font-bold text-gray-800">{{ number_format($rows->sum('total_base'), 2) }}</td>
-                        <td class="px-4 py-3 text-right tabular-nums font-bold text-gray-800">{{ number_format($rows->sum('total_debit'), 2) }}</td>
-                        <td class="px-4 py-3 text-right tabular-nums font-bold text-gray-800">{{ number_format($rows->sum('total_credit'), 2) }}</td>
-                        <td class="px-4 py-3 text-right tabular-nums font-bold text-gray-800">{{ number_format($rows->sum('net'), 2) }}</td>
+                        <td class="px-4 py-3 text-right tabular-nums font-bold text-gray-800"><x-money :amount="(float) $rows->sum('total_base')" /></td>
+                        <td class="px-4 py-3 text-right tabular-nums font-bold text-gray-800"><x-money :amount="(float) $rows->sum('total_debit')" /></td>
+                        <td class="px-4 py-3 text-right tabular-nums font-bold text-gray-800"><x-money :amount="(float) $rows->sum('total_credit')" /></td>
+                        <td class="px-4 py-3 text-right tabular-nums font-bold text-gray-800"><x-money :amount="(float) $rows->sum('net')" /></td>
                     </tr>
                 </tfoot>
                 @endif

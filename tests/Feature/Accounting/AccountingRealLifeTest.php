@@ -677,13 +677,21 @@ class AccountingRealLifeTest extends TestCase
 
         $invoice->refresh();
 
-        // Create credit note from the posted invoice
+        // Create credit note from the posted invoice — O5 (Odoo parity): drafts
+        // it for review, then we post it explicitly.
         $this->actingAs($this->admin)
             ->withSession(['active_company_ids' => [$company->id]])
             ->post(route('accounting.invoices.credit-note', $invoice));
 
         $creditNote = AccountMove::where('reversed_move_id', $invoice->id)->firstOrFail();
         $this->assertSame('out_refund', $creditNote->move_type);
+        $this->assertSame('draft', $creditNote->state);
+
+        $this->actingAs($this->admin)
+            ->withSession(['active_company_ids' => [$company->id]])
+            ->patch(route('accounting.credit-notes.post', $creditNote))
+            ->assertRedirect();
+        $creditNote->refresh();
         $this->assertSame('posted', $creditNote->state);
 
         // GET show for credit note
@@ -737,13 +745,21 @@ class AccountingRealLifeTest extends TestCase
             ->withSession(['active_company_ids' => [$company->id]])
             ->patch(route('accounting.bills.post', $bill));
 
-        // Create refund (credit note on the bill)
+        // Create refund (credit note on the bill) — O5 (Odoo parity): drafts
+        // for review.
         $this->actingAs($this->admin)
             ->withSession(['active_company_ids' => [$company->id]])
             ->post(route('accounting.bills.credit-note', $bill));
 
         $refund = AccountMove::where('reversed_move_id', $bill->id)->firstOrFail();
         $this->assertSame('in_refund', $refund->move_type);
+        $this->assertSame('draft', $refund->state);
+
+        $this->actingAs($this->admin)
+            ->withSession(['active_company_ids' => [$company->id]])
+            ->patch(route('accounting.refunds.post', $refund))
+            ->assertRedirect();
+        $refund->refresh();
         $this->assertSame('posted', $refund->state);
 
         // GET show
@@ -768,7 +784,7 @@ class AccountingRealLifeTest extends TestCase
         $refund->refresh();
         $this->assertSame('draft', $refund->state);
 
-        // Re-post via PATCH post
+        // Re-post via PATCH post (auto-reconciles with the bill again on post).
         $this->actingAs($this->admin)
             ->withSession(['active_company_ids' => [$company->id]])
             ->patch(route('accounting.refunds.post', $refund))
@@ -776,15 +792,12 @@ class AccountingRealLifeTest extends TestCase
 
         $refund->refresh();
         $this->assertSame('posted', $refund->state);
-
-        // PATCH pay
-        $this->actingAs($this->admin)
-            ->withSession(['active_company_ids' => [$company->id]])
-            ->patch(route('accounting.refunds.pay', $refund))
-            ->assertRedirect(route('accounting.refunds.show', $refund));
-
-        $refund->refresh();
+        // O5 + O6 (Odoo parity): posting the refund auto-reconciles it with
+        // the bill it reverses, so the residual is zero immediately. The
+        // refund itself reads `paid` (nothing points back at it); the
+        // BILL it reverses reads `reversed`. No separate "pay" step needed.
         $this->assertSame('paid', $refund->payment_state);
+        $this->assertEquals(0.00, app(AccountingService::class)->documentResidual($refund));
     }
 
     // =========================================================================
@@ -1179,6 +1192,15 @@ class AccountingRealLifeTest extends TestCase
         $bankJrnl = $this->journal($company, 'BANK');
         $miscJrnl = $this->journal($company, 'MISC');
 
+        // O2 (Odoo parity): AP lines require a partner. Same supplier across
+        // the purchase-on-credit and the payment.
+        $supplier = Contact::create([
+            'company_id'   => $company->id,
+            'name'         => 'Basra Supplier Co',
+            'contact_type' => 'company',
+            'active'       => true,
+        ]);
+
         $mkHeader = fn (AccountJournal $j, string $date) => [
             'company_id' => $company->id,
             'journal_id' => $j->id,
@@ -1201,7 +1223,7 @@ class AccountingRealLifeTest extends TestCase
         ]));
         $purchaseCreditEntry = $svc->postMove($svc->createMove($mkHeader($miscJrnl, '2026-01-03'), [
             ['account_id' => $expense->id, 'name' => 'Inventory - credit', 'debit' => 7_000, 'credit' => 0],
-            ['account_id' => $payable->id, 'name' => 'Basra Supplier',     'debit' => 0,     'credit' => 7_000],
+            ['account_id' => $payable->id, 'partner_id' => $supplier->id, 'name' => 'Basra Supplier', 'debit' => 0, 'credit' => 7_000],
         ]));
         $this->assertSame('posted', $purchaseCashEntry->state);
         $this->assertSame('posted', $purchaseCreditEntry->state);
@@ -1222,8 +1244,8 @@ class AccountingRealLifeTest extends TestCase
 
         // ── Day 15: Pay Basra Supplier $7,000 outstanding ──────────────────
         $paySupplier = $svc->postMove($svc->createMove($mkHeader($bankJrnl, '2026-01-15'), [
-            ['account_id' => $payable->id, 'name' => 'Basra Supplier payment', 'debit' => 7_000, 'credit' => 0],
-            ['account_id' => $cash->id,    'name' => 'Cash out',               'debit' => 0,     'credit' => 7_000],
+            ['account_id' => $payable->id, 'partner_id' => $supplier->id, 'name' => 'Basra Supplier payment', 'debit' => 7_000, 'credit' => 0],
+            ['account_id' => $cash->id,    'name' => 'Cash out',          'debit' => 0,     'credit' => 7_000],
         ]));
         $this->assertSame('posted', $paySupplier->state);
 

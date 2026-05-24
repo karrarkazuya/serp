@@ -47,6 +47,9 @@ class UpdateProductRequest extends FormRequest
             'suppliers.*.min_qty'      => ['nullable', 'numeric', 'min:0'],
             'suppliers.*.price'        => ['nullable', 'numeric', 'min:0'],
             'suppliers.*.delay'        => ['nullable', 'integer', 'min:0'],
+            // Rule 10: never bare 'image' — SVG XSS. Explicit allowlist of
+            // image MIME types/extensions only.
+            'image'               => ['nullable', 'file', 'max:5120', 'mimetypes:image/jpeg,image/png,image/gif,image/webp', 'mimes:jpg,jpeg,png,gif,webp'],
         ];
     }
 }

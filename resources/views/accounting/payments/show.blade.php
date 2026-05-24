@@ -64,13 +64,13 @@
                         <span class="inline-block px-2 py-0.5 rounded text-[11px] font-medium bg-gray-200 text-gray-600">{{ __('accounting.status_cancelled') }}</span>
                     @endif
                 </div>
-                <h1 class="mt-2 text-4xl font-bold text-gray-900">{{ number_format((float) $payment->amount, 2) }} {{ $payment->currency }}</h1>
+                <h1 class="mt-2 text-4xl font-bold text-gray-900"><x-money :amount="(float) $payment->amount" :currency="$payment->currency" /></h1>
 
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-x-12 mt-6">
                     <div>
                         @foreach([
                             [__('accounting.field_partner'), $payment->partner?->name],
-                            [__('accounting.field_document'), $payment->pairedDocument?->name],
+                            [__('accounting.field_document'), $payment->pairedDocument?->display_name],
                             [__('accounting.field_memo'), $payment->memo],
                         ] as [$label, $value])
                         <div class="flex items-center gap-4 py-2 border-b border-gray-100">
@@ -108,8 +108,8 @@
                             <tr>
                                 <td class="px-3 py-1.5 text-gray-800">{{ $line->account?->display_name }}</td>
                                 <td class="px-3 py-1.5 text-gray-700">{{ $line->name }}</td>
-                                <td class="px-3 py-1.5 text-right tabular-nums">{{ (float) $line->debit ? number_format((float) $line->debit, 2) : '' }}</td>
-                                <td class="px-3 py-1.5 text-right tabular-nums">{{ (float) $line->credit ? number_format((float) $line->credit, 2) : '' }}</td>
+                                <td class="px-3 py-1.5 text-right tabular-nums"><x-money :amount="(float) $line->debit" :currency="$payment->currency" :blank="true" /></td>
+                                <td class="px-3 py-1.5 text-right tabular-nums"><x-money :amount="(float) $line->credit" :currency="$payment->currency" :blank="true" /></td>
                             </tr>
                             @endforeach
                         </tbody>

@@ -1,5 +1,5 @@
 @extends('layouts.app')
-@section('title', $document->name ?: $config['singular'])
+@section('title', ($document->name && $document->name !== '/') ? $document->name : $config['singular'])
 
 @php
     $stateColor = match($document->state) {
@@ -22,7 +22,7 @@
         <x-slot:breadcrumb>
             <a href="{{ route('accounting.dashboard') }}" class="text-xs text-purple-600 hover:text-purple-700">{{ __('accounting.accounting') }}</a>
             <a href="{{ route($config['routes']['index']) }}" class="text-xs text-purple-600 hover:text-purple-700">{{ $config['title'] }}</a>
-            <span class="text-sm font-semibold text-gray-800">{{ $document->name ?: __('accounting.status_draft') }}</span>
+            <span class="text-sm font-semibold text-gray-800">{{ ($document->name && $document->name !== '/') ? $document->name : __('accounting.status_draft') }}</span>
         </x-slot:breadcrumb>
         <x-slot:actions>
             <div class="flex items-center gap-2">
@@ -98,8 +98,13 @@
             <div class="grid grid-cols-2 md:grid-cols-4 gap-4 items-end">
                 <div>
                     <label class="block text-xs font-semibold text-gray-500 mb-1">{{ __('accounting.field_amount') }}</label>
-                    <input type="number" name="amount" step="0.01" min="0.01"
-                           value="{{ old('amount', number_format($residual ?? 0, 2, '.', '')) }}"
+                    @php
+                        $payCurrency = \App\Models\Accounting\Currency::byCode($document->currency);
+                        $payDecimals = $payCurrency?->decimal_places ?? 2;
+                        $payStep     = $payDecimals === 0 ? '1' : ('0.' . str_repeat('0', $payDecimals - 1) . '1');
+                    @endphp
+                    <input type="number" name="amount" step="{{ $payStep }}" min="{{ $payStep }}"
+                           value="{{ old('amount', number_format($residual ?? 0, $payDecimals, '.', '')) }}"
                            class="w-full text-sm border border-gray-300 rounded px-3 py-1.5 focus:outline-none focus:ring-1 focus:ring-purple-500">
                 </div>
                 <div>
@@ -142,6 +147,61 @@
         <div class="mx-4 mt-4 px-3 py-2 bg-red-50 border border-red-200 text-sm text-red-700 rounded">{{ session('error') }}</div>
         @endif
 
+        {{-- D1 (Odoo parity): Installment schedule — only when the payment term split
+             the invoice across 2+ due dates. Shows due date, amount, paid, residual
+             per installment, with paid/partial/open status chips. --}}
+        @if($document->isPosted() && $installments->count() > 1)
+        <div class="mx-4 mt-4 rounded-xl border border-gray-200 bg-white shadow-sm overflow-hidden">
+            <div class="px-5 py-2.5 border-b border-gray-100 flex items-center justify-between bg-gray-50">
+                <p class="text-xs font-semibold text-gray-600 uppercase">Installment Schedule</p>
+                <span class="text-xs text-gray-500">{{ $installments->count() }} installments · {{ $document->paymentTerm?->name }}</span>
+            </div>
+            <table class="w-full text-sm">
+                <thead class="bg-gray-50 border-b border-gray-100">
+                    <tr class="text-[11px] font-semibold text-gray-500 uppercase">
+                        <th class="px-5 py-2 text-left w-12">#</th>
+                        <th class="px-3 py-2 text-left">{{ __('accounting.col_due_date') }}</th>
+                        <th class="px-3 py-2 text-right">{{ __('accounting.field_amount') }}</th>
+                        <th class="px-3 py-2 text-right">Paid</th>
+                        <th class="px-3 py-2 text-right">Residual</th>
+                        <th class="px-3 py-2 text-left w-28">{{ __('accounting.col_state') }}</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-gray-100">
+                    @foreach($installments as $inst)
+                    @php
+                        if ($inst['residual'] < 0.005) {
+                            $instColor = 'bg-green-100 text-green-700';
+                            $instLabel = 'Paid';
+                        } elseif ($inst['matched'] > 0.005) {
+                            $instColor = 'bg-blue-100 text-blue-700';
+                            $instLabel = 'Partial';
+                        } elseif ($inst['date_maturity'] && $inst['date_maturity']->isPast()) {
+                            $instColor = 'bg-red-100 text-red-700';
+                            $instLabel = 'Overdue';
+                        } else {
+                            $instColor = 'bg-orange-100 text-orange-700';
+                            $instLabel = 'Open';
+                        }
+                    @endphp
+                    <tr>
+                        <td class="px-5 py-2 text-gray-500 tabular-nums">{{ $inst['number'] }}</td>
+                        <td class="px-3 py-2 tabular-nums {{ $inst['date_maturity'] && $inst['date_maturity']->isPast() && $inst['residual'] > 0.005 ? 'text-red-600 font-medium' : 'text-gray-700' }}">
+                            {{ optional($inst['date_maturity'])->format('Y-m-d') ?: '—' }}
+                        </td>
+                        <td class="px-3 py-2 text-right tabular-nums text-gray-800"><x-money :amount="$inst['amount']" :currency="$document->currency" /></td>
+                        <td class="px-3 py-2 text-right tabular-nums text-gray-600"><x-money :amount="$inst['matched']" :currency="$document->currency" :blank="true" /></td>
+                        <td class="px-3 py-2 text-right tabular-nums font-medium text-gray-900"><x-money :amount="$inst['residual']" :currency="$document->currency" /></td>
+                        <td class="px-3 py-2">
+                            <span class="inline-block px-2 py-0.5 rounded text-[11px] font-medium {{ $instColor }}">{{ $instLabel }}</span>
+                        </td>
+                    </tr>
+                    @endforeach
+                </tbody>
+            </table>
+        </div>
+        @endif
+
         {{-- Payments widget --}}
         @if($document->isPosted() && $document->payments->isNotEmpty())
         <div class="mx-4 mt-4 rounded-xl border border-green-200 bg-green-50 px-5 py-3 shadow-sm">
@@ -153,7 +213,7 @@
                 @endphp
                 <span class="inline-flex items-center gap-2 px-3 py-1 rounded-full border text-sm font-medium {{ $pmtColor }}">
                     <svg class="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M4 4a2 2 0 00-2 2v4a2 2 0 002 2V6h10a2 2 0 00-2-2H4zm2 6a2 2 0 012-2h8a2 2 0 012 2v4a2 2 0 01-2 2H8a2 2 0 01-2-2v-4zm6 4a2 2 0 100-4 2 2 0 000 4z" clip-rule="evenodd"/></svg>
-                    {{ number_format((float) $pmt->amount, 2) }} {{ $pmt->currency ?: $document->currency }}
+                    <x-money :amount="(float) $pmt->amount" :currency="$pmt->currency ?: $document->currency" />
                     <span class="text-xs opacity-70">{{ $pmt->journal?->name }} · {{ optional($pmt->date)->format('Y-m-d') }}</span>
                 </span>
                 @endforeach
@@ -169,7 +229,7 @@
                 <div class="flex items-start justify-between gap-6 mb-1">
                     <div class="flex-1 min-w-0">
                         <p class="text-sm text-gray-500">{{ match($config['move_type']) { 'out_invoice' => 'Customer Invoice', 'in_invoice' => 'Vendor Bill', 'out_refund' => 'Customer Credit Note', 'in_refund' => 'Vendor Refund', default => $config['singular'] } }}</p>
-                        <h1 class="mt-2 text-4xl font-bold {{ $document->name ? 'text-gray-900' : 'text-gray-400' }}">{{ $document->name ?: __('accounting.status_draft') }}</h1>
+                        <h1 class="mt-2 text-4xl font-bold {{ ($document->name && $document->name !== '/') ? 'text-gray-900' : 'text-gray-400' }}">{{ ($document->name && $document->name !== '/') ? $document->name : __('accounting.status_draft') }}</h1>
                     </div>
                     @php
                         $statuses = [
@@ -200,13 +260,16 @@
                             [__('accounting.col_reference'), $document->ref],
                             ['Source Document', $document->invoice_origin],
                             ['Payment Status', $document->payment_state_label],
-                            ['Amount Due', number_format($residual ?? 0, 2) . ' ' . $document->currency],
                         ] as [$label, $value])
                         <div class="flex items-center gap-4 py-2 border-b border-gray-100">
                             <span class="w-40 shrink-0 text-sm text-gray-500">{{ $label }}</span>
                             <span class="flex-1 text-sm text-gray-800">{{ $value ?: '—' }}</span>
                         </div>
                         @endforeach
+                        <div class="flex items-center gap-4 py-2 border-b border-gray-100">
+                            <span class="w-40 shrink-0 text-sm text-gray-500">Amount Due</span>
+                            <span class="flex-1 text-sm text-gray-800"><x-money :amount="(float) ($residual ?? 0)" :currency="$document->currency" /></span>
+                        </div>
                         @if($document->reversedMove)
                         @php
                             $origRoute = match($document->reversedMove->move_type) {
@@ -219,7 +282,7 @@
                         @endphp
                         <div class="flex items-center gap-4 py-2 border-b border-gray-100">
                             <span class="w-40 shrink-0 text-sm text-gray-500">Reversed From</span>
-                            <a href="{{ route($origRoute, $document->reversedMove) }}" class="flex-1 text-sm text-purple-600 hover:underline">{{ $document->reversedMove->name ?: '(Draft)' }}</a>
+                            <a href="{{ route($origRoute, $document->reversedMove) }}" class="flex-1 text-sm text-purple-600 hover:underline">{{ $document->reversedMove->display_name }}</a>
                         </div>
                         @endif
                         @if($document->reversal->isNotEmpty())
@@ -235,7 +298,7 @@
                         @endphp
                         <div class="flex items-center gap-4 py-2 border-b border-gray-100">
                             <span class="w-40 shrink-0 text-sm text-gray-500">{{ $loop->first ? 'Reversal(s)' : '' }}</span>
-                            <a href="{{ route($revRoute, $rev) }}" class="flex-1 text-sm text-amber-600 hover:underline">{{ $rev->name ?: '(Draft)' }}</a>
+                            <a href="{{ route($revRoute, $rev) }}" class="flex-1 text-sm text-amber-600 hover:underline">{{ $rev->display_name }}</a>
                         </div>
                         @endforeach
                         @endif
@@ -299,7 +362,7 @@
                                     <span class="inline-block px-1.5 py-0.5 rounded text-[10px] font-medium bg-blue-50 text-blue-700 border border-blue-200 me-1">{{ $tax->display_name }}</span>
                                     @endforeach
                                 </td>
-                                <td class="px-6 py-2 text-right tabular-nums font-semibold">{{ number_format($lineAmount($line), 2) }} {{ $document->currency }}</td>
+                                <td class="px-6 py-2 text-right tabular-nums font-semibold"><x-money :amount="$lineAmount($line)" :currency="$document->currency" /></td>
                             </tr>
                             @empty
                             <tr><td colspan="4" class="px-3 py-12 text-center text-sm text-gray-400">{{ __('accounting.no_lines') }}</td></tr>
@@ -308,18 +371,18 @@
                         <tfoot class="bg-gray-100 font-semibold">
                             <tr>
                                 <td colspan="3" class="px-6 py-2 text-right text-gray-700">Untaxed Amount:</td>
-                                <td class="px-6 py-2 text-right tabular-nums text-gray-900">{{ number_format($untaxed, 2) }} {{ $document->currency }}</td>
+                                <td class="px-6 py-2 text-right tabular-nums text-gray-900"><x-money :amount="$untaxed" :currency="$document->currency" /></td>
                             </tr>
                             @foreach($taxLines->groupBy('tax_line_id') as $taxId => $group)
                             @php $taxLine = $group->first(); @endphp
                             <tr class="text-sm font-normal">
                                 <td colspan="3" class="px-6 py-1 text-right text-gray-600">{{ $taxLine->name }}:</td>
-                                <td class="px-6 py-1 text-right tabular-nums text-gray-700">{{ number_format($group->sum(fn($l) => $lineAmount($l)), 2) }} {{ $document->currency }}</td>
+                                <td class="px-6 py-1 text-right tabular-nums text-gray-700"><x-money :amount="(float) $group->sum(fn($l) => $lineAmount($l))" :currency="$document->currency" /></td>
                             </tr>
                             @endforeach
                             <tr class="text-xl border-t border-gray-300">
                                 <td colspan="3" class="px-6 py-2 text-right text-gray-700">{{ __('accounting.total') }}:</td>
-                                <td class="px-6 py-2 text-right tabular-nums text-gray-900">{{ number_format((float) $document->amount_total, 2) }} {{ $document->currency }}</td>
+                                <td class="px-6 py-2 text-right tabular-nums text-gray-900"><x-money :amount="(float) $document->amount_total" :currency="$document->currency" /></td>
                             </tr>
                         </tfoot>
                     </table>
@@ -340,16 +403,16 @@
                             <tr>
                                 <td class="px-3 py-1.5 text-gray-800">{{ $line->account?->display_name }}</td>
                                 <td class="px-3 py-1.5 text-gray-700">{{ $line->name }}</td>
-                                <td class="px-3 py-1.5 text-right tabular-nums">{{ (float) $line->debit ? number_format((float) $line->debit, 2) : '' }}</td>
-                                <td class="px-3 py-1.5 text-right tabular-nums">{{ (float) $line->credit ? number_format((float) $line->credit, 2) : '' }}</td>
+                                <td class="px-3 py-1.5 text-right tabular-nums"><x-money :amount="(float) $line->debit" :currency="$document->currency" :blank="true" /></td>
+                                <td class="px-3 py-1.5 text-right tabular-nums"><x-money :amount="(float) $line->credit" :currency="$document->currency" :blank="true" /></td>
                             </tr>
                             @endforeach
                         </tbody>
                         <tfoot class="bg-gray-50 font-semibold text-sm">
                             <tr>
                                 <td colspan="2" class="px-3 py-2 text-right text-gray-700">Journal Totals</td>
-                                <td class="px-3 py-2 text-right tabular-nums">{{ number_format($balance['debit'], 2) }}</td>
-                                <td class="px-3 py-2 text-right tabular-nums">{{ number_format($balance['credit'], 2) }}</td>
+                                <td class="px-3 py-2 text-right tabular-nums"><x-money :amount="(float) $balance['debit']" :currency="$document->currency" /></td>
+                                <td class="px-3 py-2 text-right tabular-nums"><x-money :amount="(float) $balance['credit']" :currency="$document->currency" /></td>
                             </tr>
                         </tfoot>
                     </table>

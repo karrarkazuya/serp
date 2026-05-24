@@ -237,7 +237,24 @@
       "Bash(php -l app/Services/Accounting/AccountingService.php app/Http/Controllers/Accounting/AccountDocumentController.php app/Http/Controllers/Accounting/AccountMoveController.php app/Http/Controllers/Accounting/AccountingPaymentTermController.php app/Policies/Accounting/AccountMovePolicy.php app/Observers/Accounting/AccountMoveLineObserver.php app/Providers/AppServiceProvider.php app/Models/Accounting/AccountMoveLine.php app/Models/Accounting/AccountMove.php database/migrations/2026_05_25_000020_add_date_maturity_to_account_move_lines.php)",
       "Bash(php -l app/Http/Controllers/Accounting/AccountingReportController.php)",
       "Bash(php -l app/Services/Accounting/AccountingService.php app/Models/Accounting/Currency.php app/Models/Settings/Company.php app/Http/Controllers/Accounting/AccountingSettingsController.php app/Http/Requests/Accounting/StoreAccountingSettingsRequest.php database/migrations/2026_05_25_000030_add_multi_currency.php database/seeders/CoreSeeder.php)",
-      "Bash(php -l app/Services/Accounting/AccountingService.php app/Models/Accounting/AccountPartialReconcile.php database/migrations/2026_05_25_000040_partial_reconcile_foreign_amounts.php)"
+      "Bash(php -l app/Services/Accounting/AccountingService.php app/Models/Accounting/AccountPartialReconcile.php database/migrations/2026_05_25_000040_partial_reconcile_foreign_amounts.php)",
+      "Bash(php -l app/View/Components/Money.php)",
+      "Bash(php -l app/Services/Accounting/AccountingService.php)",
+      "Bash(php -l app/Http/Controllers/Accounting/AccountDocumentController.php)",
+      "Bash(grep -vE '/\\\\*|//|alpine|$alert')",
+      "Bash(awk '/foreach.*models|\\\\$models\\\\s*=/,/AuditableObserver/' /Users/karrar/Projects/web/serp/app/Providers/AppServiceProvider.php)",
+      "Bash(git mv *)",
+      "Bash(python3 -c \"import sys, json; data = json.load\\(sys.stdin\\); print\\(f\\\\\"tests={data.get\\('tests'\\)} passed={data.get\\('passed'\\)} failed={data.get\\('failed'\\)} errors={data.get\\('errors'\\)}\\\\\"\\); print\\('first failures/errors:'\\); [print\\('  ', x.get\\('message',''\\)[:120]\\) for x in \\(data.get\\('failures',[]\\) + data.get\\('error_details',[]\\)\\)[:5]]\")",
+      "Bash(php -l tests/Feature/Accounting/AccountingOdooParitySimulationTest.php)",
+      "Bash(grep -nA 30 \"public function createCreditNote\" /Users/karrar/Projects/web/serp/app/Services/Accounting/AccountingService.php)",
+      "Bash(grep -n \"^use\\\\|protected \\\\$\\\\|private \\\\$\" /Users/karrar/Projects/web/serp/tests/Feature/Accounting/AccountingScenariosTest.php)",
+      "Bash(grep -n \"private.*Uom\\\\|private.*Product\\\\|private.*Account\\\\|private.*Company\\\\|private.*User\\\\|private.*\\\\\\\\\\\\$\" /Users/karrar/Projects/web/serp/tests/Feature/Accounting/AccountingOdooSimulationTest.php)",
+      "Bash(grep -nA 15 \"public function resetRefund\\\\|private function reset\\\\b\" /Users/karrar/Projects/web/serp/app/Http/Controllers/Accounting/AccountDocumentController.php)",
+      "Bash(grep -nA 25 \"private function resetToDraft\\\\b\" /Users/karrar/Projects/web/serp/app/Http/Controllers/Accounting/AccountDocumentController.php)",
+      "Bash(grep -nA 25 \"private function print\\\\b\\\\|public function printRefund\" /Users/karrar/Projects/web/serp/app/Http/Controllers/Accounting/AccountDocumentController.php)",
+      "Bash(grep -nA 25 \"private function createBill\\\\b\" /Users/karrar/Projects/web/serp/tests/Feature/Accounting/AccountingRealLifeTest.php)",
+      "Bash(vendor/bin/phpunit --filter \"test_refund_post_pay_print_cancel$\")",
+      "Bash(grep -nA 30 \"private function markPaid\\\\b\" /Users/karrar/Projects/web/serp/app/Http/Controllers/Accounting/AccountDocumentController.php)"
     ],
     "additionalDirectories": [
       "/Users/karrar/Projects/web/serp/storage/app/public/avatars/contacts"

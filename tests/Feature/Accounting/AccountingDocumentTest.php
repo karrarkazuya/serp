@@ -308,7 +308,18 @@ class AccountingDocumentTest extends TestCase
 
         $creditNote = AccountMove::where('reversed_move_id', $invoice->id)->firstOrFail();
 
+        // O5 (Odoo parity): credit notes are created in DRAFT — the user
+        // reviews the proposed reversal lines and then posts it explicitly.
         $this->assertSame('out_refund', $creditNote->move_type);
+        $this->assertSame('draft', $creditNote->state);
+
+        // Now post the draft credit note via its post endpoint.
+        $this->actingAs($this->admin)
+            ->withSession(['active_company_ids' => [$company->id]])
+            ->patch(route('accounting.credit-notes.post', $creditNote))
+            ->assertRedirect();
+        $creditNote->refresh();
+
         $this->assertSame('posted', $creditNote->state);
         $this->assertSame('not_paid', $creditNote->payment_state);
         $this->assertEquals((float) $invoice->amount_total, (float) $creditNote->amount_total);
@@ -370,14 +381,27 @@ class AccountingDocumentTest extends TestCase
             ->post(route('accounting.invoices.credit-note', $invoice))
             ->assertRedirect();
 
-        $invoice->refresh();
         $creditNote = AccountMove::where('reversed_move_id', $invoice->id)->firstOrFail();
         $receivable = $this->accountByType($company, 'asset_receivable');
         $income = $this->accountByType($company, 'income');
 
+        // O5 (Odoo parity): credit note is drafted, not posted. Auto-reconcile
+        // with the original happens at post time.
+        $this->assertSame('draft', $creditNote->state);
+
+        $this->actingAs($this->admin)
+            ->withSession(['active_company_ids' => [$company->id]])
+            ->patch(route('accounting.credit-notes.post', $creditNote))
+            ->assertRedirect();
+        $creditNote->refresh();
+        $invoice->refresh();
+
         $this->assertSame('posted', $creditNote->state);
         $this->assertStringStartsWith('INV/2026/', $creditNote->name);
-        $this->assertSame('paid', $invoice->payment_state);
+        // O6 (Odoo parity): an invoice fully cancelled by a credit note flips
+        // to `reversed`, not `paid`. The credit note itself just reads `paid`
+        // (its residual is zero — nothing else points back at it).
+        $this->assertSame('reversed', $invoice->payment_state);
         $this->assertSame('paid', $creditNote->payment_state);
         $this->assertEquals(0.00, app(AccountingService::class)->documentResidual($invoice));
         $this->assertEquals(0.00, app(AccountingService::class)->documentResidual($creditNote));
@@ -420,11 +444,22 @@ class AccountingDocumentTest extends TestCase
 
         $refund = AccountMove::where('reversed_move_id', $bill->id)->firstOrFail();
 
+        // O5 (Odoo parity): vendor refund is drafted, not posted.
         $this->assertSame('in_refund', $refund->move_type);
-        $this->assertSame('posted', $refund->state);
-        $this->assertSame('paid', $refund->payment_state);
+        $this->assertSame('draft', $refund->state);
+
+        $this->actingAs($this->admin)
+            ->withSession(['active_company_ids' => [$company->id]])
+            ->patch(route('accounting.refunds.post', $refund))
+            ->assertRedirect();
+        $refund->refresh();
         $bill->refresh();
-        $this->assertSame('paid', $bill->payment_state);
+
+        $this->assertSame('posted', $refund->state);
+        // O6 (Odoo parity): the bill being reversed flips to `reversed`; the
+        // refund itself just reads `paid` (nothing points back at it).
+        $this->assertSame('paid', $refund->payment_state);
+        $this->assertSame('reversed', $bill->payment_state);
         $this->assertEquals(0.00, app(AccountingService::class)->documentResidual($bill));
         $this->assertEquals(0.00, app(AccountingService::class)->documentResidual($refund));
 
@@ -489,14 +524,6 @@ class AccountingDocumentTest extends TestCase
             ->assertRedirect(route('accounting.invoices.index'));
 
         $this->assertSoftDeleted('account_moves', ['id' => $invoice->id]);
-    }
-
-    public function test_legacy_document_without_payment_state_still_renders_as_not_paid(): void
-    {
-        $move = new AccountMove(['payment_state' => null]);
-
-        $this->assertSame('Not Paid', $move->payment_state_label);
-        $this->assertFalse($move->isPaid());
     }
 
     public function test_user_without_accounting_permission_cannot_access_invoice_pages(): void

@@ -32,10 +32,10 @@
                             </a>
                             <span class="ms-2 text-gray-700">{{ $row->account?->name }}</span>
                         </td>
-                        <td class="px-4 py-2.5 text-right tabular-nums text-gray-800">{{ number_format($row->total_debit, 2) }}</td>
-                        <td class="px-4 py-2.5 text-right tabular-nums text-gray-800">{{ number_format($row->total_credit, 2) }}</td>
+                        <td class="px-4 py-2.5 text-right tabular-nums text-gray-800"><x-money :amount="(float) $row->total_debit" /></td>
+                        <td class="px-4 py-2.5 text-right tabular-nums text-gray-800"><x-money :amount="(float) $row->total_credit" /></td>
                         <td class="px-4 py-2.5 text-right tabular-nums font-medium {{ $row->balance >= 0 ? 'text-gray-800' : 'text-red-600' }}">
-                            {{ number_format(abs($row->balance), 2) }} {{ $row->balance < 0 ? __('accounting.cr_suffix') : '' }}
+                            <x-money :amount="(float) abs($row->balance)" /> {{ $row->balance < 0 ? __('accounting.cr_suffix') : '' }}
                         </td>
                     </tr>
                     @empty
@@ -45,10 +45,10 @@
                 <tfoot class="bg-gray-50 border-t-2 border-gray-300">
                     <tr>
                         <td class="px-4 py-3 text-sm font-bold text-gray-800">{{ __('accounting.total') }}</td>
-                        <td class="px-4 py-3 text-right tabular-nums font-bold text-gray-800">{{ number_format($totalDebit, 2) }}</td>
-                        <td class="px-4 py-3 text-right tabular-nums font-bold text-gray-800">{{ number_format($totalCredit, 2) }}</td>
+                        <td class="px-4 py-3 text-right tabular-nums font-bold text-gray-800"><x-money :amount="(float) $totalDebit" /></td>
+                        <td class="px-4 py-3 text-right tabular-nums font-bold text-gray-800"><x-money :amount="(float) $totalCredit" /></td>
                         <td class="px-4 py-3 text-right tabular-nums font-bold {{ abs($totalDebit - $totalCredit) < 0.01 ? 'text-green-600' : 'text-red-600' }}">
-                            {{ number_format(abs($totalDebit - $totalCredit), 2) }}
+                            <x-money :amount="(float) abs($totalDebit - $totalCredit)" />
                             @if(abs($totalDebit - $totalCredit) < 0.01) ✓ @endif
                         </td>
                     </tr>
