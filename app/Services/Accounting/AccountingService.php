@@ -12,6 +12,7 @@ use App\Models\Accounting\AccountTax;
 use App\Models\Accounting\CurrencyRate;
 use App\Models\Settings\Company;
 use App\Services\Chatter\ChatterService;
+use Illuminate\Support\Facades\DB;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Auth;
 use RuntimeException;
@@ -170,11 +171,12 @@ class AccountingService
         }
 
         // Odoo format: `{prefix}/{year}/{padded}` (the slash between prefix and
-        // year was missing — the previous output looked like INV2025/00001
-        // instead of INV/2025/00001). When the prefix is empty, omit the
-        // leading separator gracefully.
+        // year was missing before — output was `INV2025/00001` instead of
+        // `INV/2025/00001`). Trim trailing slashes from the stored prefix so
+        // legacy "INV/" values don't produce `INV//2026/...`; empty prefix
+        // drops the leading separator entirely.
         $padded = str_pad((string) $next, $padding, '0', STR_PAD_LEFT);
-        $prefix = trim((string) $locked->sequence_prefix);
+        $prefix = rtrim(trim((string) $locked->sequence_prefix), '/');
         $name   = $prefix === ''
             ? "{$year}/{$padded}"
             : "{$prefix}/{$year}/{$padded}";
@@ -224,7 +226,10 @@ class AccountingService
         $data['move_type']    = $data['move_type'] ?? 'entry';
         $data['currency']     = $data['currency'] ?? $journal->currency;
         $data['amount_total'] = 0;
-        $data['name']         = !empty($data['name']) ? $data['name'] : null;
+        // D9 (Odoo parity): drafts use '/' as the name placeholder. postMove
+        // treats '/' as "no name yet" and reserves a real sequence; reset
+        // moves keep their real name so the sequence isn't wasted.
+        $data['name']         = !empty($data['name']) ? $data['name'] : '/';
 
         $move = AccountMove::create($data);
         $this->syncLines($move, $lines);
@@ -293,6 +298,13 @@ class AccountingService
      */
     public function postMove(AccountMove $move): AccountMove
     {
+        // D11 (Odoo parity): row-level lock prevents two concurrent posts of
+        // the same draft both passing the isDraft() check, both reserving
+        // sequence numbers, and both stamping the move 'posted' (with one
+        // sequence number wasted on a now-overwritten state). Re-read the
+        // row inside the lock so we see the freshest version.
+        $move = AccountMove::whereKey($move->id)->lockForUpdate()->first() ?? $move;
+
         if ($move->isPosted()) {
             return $move;
         }
@@ -310,7 +322,28 @@ class AccountingService
         $this->assertLinesValid($move);
         $this->assertDateNotLocked($move);
 
-        $name = $move->name ?: $this->reserveSequenceForJournal($move->journal, Carbon::parse($move->date));
+        // R4.11 (Odoo parity): an invoice/bill/credit-note/refund without ANY
+        // receivable/payable line is malformed — payment_state would forever
+        // read 'paid' because documentResidual sums an empty set. Guard at
+        // post time so a manual JE classified as a document type can't slip
+        // through. Pure journal entries (`move_type=entry`) are allowed to
+        // have no AR/AP lines (and frequently don't).
+        if (in_array($move->move_type, ['out_invoice', 'in_invoice', 'out_refund', 'in_refund'], true)
+            && $this->documentCounterpartLines($move)->isEmpty()
+        ) {
+            $expectedType = in_array($move->move_type, ['out_invoice', 'out_refund'], true) ? 'receivable' : 'payable';
+            throw new RuntimeException(sprintf(
+                'A %s must include at least one %s line. None found.',
+                AccountMove::MOVE_TYPES[$move->move_type] ?? $move->move_type,
+                $expectedType
+            ));
+        }
+
+        // D9 (Odoo parity): drafts use name='/' as a placeholder; treat that
+        // as "no name yet" so the sequence reservation still fires. A posted
+        // move that was reset to draft (and kept its real name) reuses it.
+        $existingName = $move->name && $move->name !== '/' ? $move->name : null;
+        $name         = $existingName ?: $this->reserveSequenceForJournal($move->journal, Carbon::parse($move->date));
 
         $move->update([
             'name'         => $name,
@@ -355,7 +388,7 @@ class AccountingService
             return;
         }
 
-        // Only invoice-class documents have a single counterpart to match against.
+        // Only invoice-class documents have receivable/payable counterpart lines.
         // Pure journal entries (move_type=entry) can have arbitrary structures;
         // skip auto-reconcile — the user can match manually if needed.
         $documentTypes = ['out_invoice', 'in_invoice', 'out_refund', 'in_refund'];
@@ -363,18 +396,45 @@ class AccountingService
             return;
         }
 
-        try {
-            $originalCounterpart = $this->documentCounterpartLine($original);
-            $newCounterpart      = $this->documentCounterpartLine($move);
-        } catch (\RuntimeException $e) {
-            // Either side missing a receivable/payable line — silent no-op,
-            // user can reconcile by hand.
+        // D1: original may have multiple installment lines (multi-installment
+        // invoice); the credit note typically has one counterpart line (it
+        // doesn't inherit the original's payment term). Walk the original's
+        // installments oldest-first and consume the credit note's residual
+        // against each.
+        $originalLines       = $this->documentCounterpartLines($original);
+        $newCounterpartLines = $this->documentCounterpartLines($move);
+        if ($originalLines->isEmpty() || $newCounterpartLines->isEmpty()) {
             return;
         }
 
-        $amount = min($this->getLineResidual($originalCounterpart), $this->getLineResidual($newCounterpart));
-        if ($amount > 0.005) {
-            $this->reconcileLines($originalCounterpart, $newCounterpart, $amount, Carbon::parse($move->date));
+        $creditResidual = round($newCounterpartLines->sum(fn (AccountMoveLine $l) => $this->getLineResidual($l)), self::SCALE);
+        if ($creditResidual <= 0.005) {
+            return;
+        }
+
+        $reconciled = false;
+        foreach ($originalLines as $origLine) {
+            if ($creditResidual <= 0.005) break;
+            $origResidual = $this->getLineResidual($origLine);
+            if ($origResidual <= 0.005) continue;
+
+            // Pull from the credit note's installments in order too, so a CN
+            // with its own multi-installment term (unusual but possible)
+            // still reconciles cleanly.
+            foreach ($newCounterpartLines as $newLine) {
+                if ($creditResidual <= 0.005 || $origResidual <= 0.005) break;
+                $newRes = $this->getLineResidual($newLine);
+                if ($newRes <= 0.005) continue;
+
+                $matchAmount = min($origResidual, $newRes);
+                $this->reconcileLines($origLine, $newLine, $matchAmount, Carbon::parse($move->date));
+                $origResidual   = round($origResidual - $matchAmount, self::SCALE);
+                $creditResidual = round($creditResidual - $matchAmount, self::SCALE);
+                $reconciled = true;
+            }
+        }
+
+        if ($reconciled) {
             $this->refreshPaymentState($original);
             $this->refreshPaymentState($move);
         }
@@ -463,8 +523,14 @@ class AccountingService
         }
 
         $move->loadMissing(['lines.account', 'journal']);
-        $counterpartLine = $this->documentCounterpartLine($move);
-        $residual = $this->getLineResidual($counterpartLine);
+
+        // D1 (Odoo parity): multi-installment invoices have N receivable
+        // lines, one per payment-term schedule line. Payments consume them
+        // oldest-first (by date_maturity) — matching Odoo's default
+        // reconciliation policy. We sum residuals across all installments to
+        // decide if the doc is fully paid.
+        $counterpartLines = $this->documentCounterpartLines($move);
+        $residual         = round($counterpartLines->sum(fn (AccountMoveLine $l) => $this->getLineResidual($l)), self::SCALE);
 
         if ($residual <= 0) {
             throw new RuntimeException('This document is already fully paid.');
@@ -498,14 +564,20 @@ class AccountingService
         // back to the journal's default_account_id (legacy "direct" behaviour).
         $liquidityAccountId = $this->resolvePaymentLiquidityAccount($journal, $paymentType);
 
+        // The payment's counterpart line uses the SAME account as the invoice's
+        // receivable/payable lines (every installment shares the control account
+        // — only date_maturity differs). Picking the first counterpart line is
+        // safe because all installments live on the same account.
+        $counterpartAccountId = $counterpartLines->first()->account_id;
+
         $lines = $paymentType === 'inbound'
             ? [
-                ['account_id' => $liquidityAccountId,           'partner_id' => $move->partner_id, 'name' => $memo, 'debit' => $amount, 'credit' => 0, 'sequence' => 10],
-                ['account_id' => $counterpartLine->account_id,  'partner_id' => $move->partner_id, 'name' => $memo, 'debit' => 0, 'credit' => $amount, 'sequence' => 20],
+                ['account_id' => $liquidityAccountId,    'partner_id' => $move->partner_id, 'name' => $memo, 'debit' => $amount, 'credit' => 0, 'sequence' => 10],
+                ['account_id' => $counterpartAccountId,  'partner_id' => $move->partner_id, 'name' => $memo, 'debit' => 0, 'credit' => $amount, 'sequence' => 20],
             ]
             : [
-                ['account_id' => $counterpartLine->account_id,  'partner_id' => $move->partner_id, 'name' => $memo, 'debit' => $amount, 'credit' => 0, 'sequence' => 10],
-                ['account_id' => $liquidityAccountId,           'partner_id' => $move->partner_id, 'name' => $memo, 'debit' => 0, 'credit' => $amount, 'sequence' => 20],
+                ['account_id' => $counterpartAccountId,  'partner_id' => $move->partner_id, 'name' => $memo, 'debit' => $amount, 'credit' => 0, 'sequence' => 10],
+                ['account_id' => $liquidityAccountId,    'partner_id' => $move->partner_id, 'name' => $memo, 'debit' => 0, 'credit' => $amount, 'sequence' => 20],
             ];
 
         $paymentMove = $this->createMove([
@@ -520,11 +592,27 @@ class AccountingService
 
         $paymentMove = $this->postMove($paymentMove);
         $paymentLine = $paymentMove->lines()
-            ->where('account_id', $counterpartLine->account_id)
+            ->where('account_id', $counterpartAccountId)
             ->where('partner_id', $move->partner_id)
             ->firstOrFail();
 
-        $this->reconcileLines($counterpartLine, $paymentLine, $reconcileAmount, $date);
+        // D1: distribute the payment across installments oldest-first.
+        // Each partial-reconcile entry pairs ONE invoice installment line
+        // against the payment's counterpart line, until $reconcileAmount is
+        // fully consumed. Excess landing on the last installment is fine —
+        // overpayments leave residual on the payment side.
+        $remaining = $reconcileAmount;
+        foreach ($counterpartLines as $invLine) {
+            if ($remaining <= 0.005) break;
+
+            $lineResidual = $this->getLineResidual($invLine);
+            if ($lineResidual <= 0.005) continue;
+
+            $matchAmount = min($remaining, $lineResidual);
+            $this->reconcileLines($invLine, $paymentLine, $matchAmount, $date);
+            $remaining = round($remaining - $matchAmount, self::SCALE);
+        }
+
         $this->refreshPaymentState($move);
 
         $payment = AccountPayment::create([
@@ -788,7 +876,14 @@ class AccountingService
             return 0.0;
         }
 
-        return $this->getLineResidual($this->documentCounterpartLine($move));
+        // D1: sum residuals across every installment line. Single-shot invoices
+        // collapse to one line, multi-installment invoices contribute one per
+        // payment-term line.
+        return round(
+            $this->documentCounterpartLines($move)
+                ->sum(fn (AccountMoveLine $line) => $this->getLineResidual($line)),
+            self::SCALE
+        );
     }
 
     public function refreshPaymentState(AccountMove $move): AccountMove
@@ -960,6 +1055,51 @@ class AccountingService
                 $totalDebit - $totalCredit
             ));
         }
+
+        // MC5 (Odoo parity): also enforce per-currency balance on
+        // `amount_currency`. A multi-currency move that balances in base via
+        // FX conversion can still be imbalanced in its foreign currency
+        // (e.g. EUR 100 debit + USD 110 credit, both converting to 110 base
+        // — base balances but per-currency does not). Odoo rejects this.
+        $move->loadMissing('lines');
+        $byCurrency = $move->lines
+            ->filter(fn ($l) => $l->currency && abs((float) $l->amount_currency) > 0.005)
+            ->groupBy('currency');
+
+        $baseCurrency = Company::find($move->company_id)?->currency ?: 'IQD';
+
+        foreach ($byCurrency as $currencyCode => $currencyLines) {
+            if ($currencyCode === $baseCurrency) continue;
+            $signedSum = $currencyLines->sum(function ($line) {
+                // amount_currency is stored unsigned; recover the sign from
+                // debit/credit direction (debit-side positive, credit-side negative).
+                return (float) $line->debit > 0
+                    ? +abs((float) $line->amount_currency)
+                    : -abs((float) $line->amount_currency);
+            });
+
+            $rounding = $this->currencyRounding($currencyCode);
+            if (abs(round($signedSum, max(2, $rounding))) > 0.005) {
+                throw new RuntimeException(sprintf(
+                    'Journal entry is not balanced in %s. Net %s amount_currency = %.4f (must be 0). ' .
+                    'Either the FX rate is wrong for one of the %s lines or the foreign-currency amount needs adjustment.',
+                    $currencyCode,
+                    $currencyCode,
+                    $signedSum,
+                    $currencyCode
+                ));
+            }
+        }
+    }
+
+    /**
+     * MC5 helper: look up the per-currency decimal precision from the Currency
+     * lookup so per-currency rounding tolerates the right number of decimals.
+     * Falls back to 2 when the code isn't seeded.
+     */
+    private function currencyRounding(string $code): int
+    {
+        return \App\Models\Accounting\Currency::byCode($code)?->decimal_places ?? 2;
     }
 
     /**
@@ -1033,7 +1173,34 @@ class AccountingService
         return $journal;
     }
 
+    /**
+     * D1: returns the "primary" counterpart line — the highest-balance
+     * receivable/payable line. For multi-installment invoices this is the
+     * largest installment. Callers that need ALL installments (payment
+     * matching, residual sums) should use documentCounterpartLines() instead.
+     *
+     * Kept for back-compat with single-line flows (credit-note auto-reconcile
+     * picks ONE line to match).
+     */
     private function documentCounterpartLine(AccountMove $move): AccountMoveLine
+    {
+        $lines = $this->documentCounterpartLines($move);
+        if ($lines->isEmpty()) {
+            throw new RuntimeException('The document has no receivable or payable line to reconcile.');
+        }
+        return $lines->sortByDesc(fn (AccountMoveLine $line) => abs($line->balance))->first();
+    }
+
+    /**
+     * D1 (Odoo parity): returns ALL receivable/payable lines on a document,
+     * ordered by `date_maturity` ASC (oldest installment first). Multi-
+     * installment invoices have one such line per payment-term line; single-
+     * shot invoices have exactly one. Order matters for "oldest first"
+     * payment matching, which is Odoo's default reconciliation policy.
+     *
+     * @return \Illuminate\Support\Collection<int, AccountMoveLine>
+     */
+    private function documentCounterpartLines(AccountMove $move): \Illuminate\Support\Collection
     {
         $move->loadMissing('lines.account');
 
@@ -1041,16 +1208,13 @@ class AccountingService
             ? 'receivable'
             : 'payable';
 
-        $line = $move->lines
+        return $move->lines
             ->filter(fn (AccountMoveLine $line) => $line->account?->internal_type === $expectedInternalType)
-            ->sortByDesc(fn (AccountMoveLine $line) => abs($line->balance))
-            ->first();
-
-        if (!$line) {
-            throw new RuntimeException('The document has no receivable or payable line to reconcile.');
-        }
-
-        return $line;
+            ->sortBy([
+                fn (AccountMoveLine $a, AccountMoveLine $b) => ($a->date_maturity?->timestamp ?? 0) <=> ($b->date_maturity?->timestamp ?? 0),
+                fn (AccountMoveLine $a, AccountMoveLine $b) => $a->sequence <=> $b->sequence,
+            ])
+            ->values();
     }
 
     private function getLineResidual(AccountMoveLine $line): float
@@ -1091,13 +1255,241 @@ class AccountingService
         $debitLine = $lineA->balance > 0 ? $lineA : $lineB;
         $creditLine = $lineA->balance < 0 ? $lineA : $lineB;
 
-        return AccountPartialReconcile::create([
-            'company_id' => $lineA->company_id,
-            'debit_move_line_id' => $debitLine->id,
-            'credit_move_line_id' => $creditLine->id,
-            'amount' => round($amount, self::SCALE),
-            'date' => $date->toDateString(),
+        // MC4 (Odoo parity): record the per-side foreign-currency amount
+        // consumed by THIS partial reconcile, independent of `amount` (base).
+        // Computed proportionally from each line's `amount_currency` vs its
+        // base balance — so a 105-base reconcile against a 110-base / 100-EUR
+        // AR line consumes (105/110)*100 = 95.4545 EUR of the foreign side.
+        // The remaining 4.5455 EUR foreign residual is what drives FX-drift
+        // detection when the OTHER side's foreign happens to close exactly.
+        $debitForeign  = $this->computeForeignPortion($debitLine, $amount);
+        $creditForeign = $this->computeForeignPortion($creditLine, $amount);
+
+        $reconcile = AccountPartialReconcile::create([
+            'company_id'             => $lineA->company_id,
+            'debit_move_line_id'     => $debitLine->id,
+            'credit_move_line_id'    => $creditLine->id,
+            'amount'                 => round($amount, self::SCALE),
+            'debit_amount_currency'  => $debitForeign,
+            'credit_amount_currency' => $creditForeign,
+            'date'                   => $date->toDateString(),
         ]);
+
+        // MC4 (Odoo parity): cross-currency reconcile may close the
+        // foreign-currency residual on both sides while leaving a small
+        // base-currency residual (FX rate moved between invoice and payment).
+        // Post a small adjustment move to the company's FX gain/loss accounts
+        // so the AR/AP closes cleanly in base too.
+        $this->maybePostFxAdjustment($debitLine, $creditLine, $date);
+
+        return $reconcile;
+    }
+
+    /**
+     * MC4 (Odoo parity): detect cross-currency reconciliation that left a
+     * base-currency drift and post an adjustment to the company's FX gain or
+     * loss account.
+     *
+     * Triggers when:
+     *   - both lines have a non-base `currency` set (or differ from each
+     *     other), AND
+     *   - one line's `amount_currency` residual is now fully consumed
+     *     (foreign side closed), AND
+     *   - the OTHER line still has a base-currency residual remaining
+     *
+     * The adjustment is a one-line debit + one-line credit move:
+     *   - residual side line on the AR/AP account (closes the residual)
+     *   - offsetting line on income_currency_exchange_account_id (gain) or
+     *     expense_currency_exchange_account_id (loss)
+     *
+     * Skips silently when both lines share the same currency (classical
+     * same-currency reconcile produces no FX drift). Throws if cross-currency
+     * but the company hasn't configured FX accounts.
+     */
+    private function maybePostFxAdjustment(AccountMoveLine $debitLine, AccountMoveLine $creditLine, Carbon $date): void
+    {
+        $debitLine->loadMissing(['account', 'move']);
+        $creditLine->loadMissing(['account', 'move']);
+
+        $company = Company::find($debitLine->company_id);
+        if (!$company) return;
+        $baseCurrency = $company->currency ?: 'IQD';
+
+        $debitCurrency  = $debitLine->currency  ?: $baseCurrency;
+        $creditCurrency = $creditLine->currency ?: $baseCurrency;
+
+        // Same-currency reconcile → nothing to do.
+        if ($debitCurrency === $creditCurrency && $debitCurrency === $baseCurrency) {
+            return;
+        }
+
+        $debitResidualBase  = $this->getLineResidual($debitLine);
+        $creditResidualBase = $this->getLineResidual($creditLine);
+
+        // If either side still has base residual, there's no drift to write
+        // off yet — more reconciliation activity will keep matching against
+        // these lines. We only post adjustment when one side has closed
+        // completely on its native currency but a small base gap remains.
+        $debitForeignResidual  = $this->getLineForeignResidual($debitLine);
+        $creditForeignResidual = $this->getLineForeignResidual($creditLine);
+
+        // Pick the side that still has base drift (the "open" side). The
+        // adjustment will close ITS residual. Three trigger cases:
+        //   1. Debit foreign closed, debit base still open → drift on debit
+        //   2. Credit foreign closed, credit base still open → drift on credit
+        //   3. One side fully closed in BOTH currencies AND the other still
+        //      has both — the other's leftover is proportional FX drift
+        //      (typical scenario: invoice EUR 100 @ 1.10 = 110 base, payment
+        //      EUR 100 @ 1.05 = 105 base. After matching 105 base, payment
+        //      closes fully in both; AR has 4.55 EUR / 5 base residual — all FX.)
+        $openSide = null;
+        if ($debitForeignResidual <= 0.005 && $debitResidualBase > 0.005) {
+            $openSide = $debitLine;
+        } elseif ($creditForeignResidual <= 0.005 && $creditResidualBase > 0.005) {
+            $openSide = $creditLine;
+        } elseif ($debitResidualBase <= 0.005 && $debitForeignResidual <= 0.005
+            && $creditResidualBase > 0.005 && $creditForeignResidual > 0.005
+        ) {
+            // Debit closed in both; credit's leftover is FX drift only.
+            $openSide = $creditLine;
+        } elseif ($creditResidualBase <= 0.005 && $creditForeignResidual <= 0.005
+            && $debitResidualBase > 0.005 && $debitForeignResidual > 0.005
+        ) {
+            // Credit closed in both; debit's leftover is FX drift only.
+            $openSide = $debitLine;
+        }
+
+        if (!$openSide) {
+            return;
+        }
+
+        $drift = round($this->getLineResidual($openSide), self::SCALE);
+        if ($drift <= 0.005) return;
+
+        // openSide is the AR/AP line whose base residual remains. We post a
+        // tiny adjustment move on the SAME control account to close it, with
+        // the offsetting line on the company's FX gain or loss account.
+        //
+        // Gain vs loss heuristic:
+        //   - AR (out_invoice) with debit-side residual = we recorded MORE
+        //     base than we collected → LOSS (FX rate dropped between
+        //     invoice and payment).
+        //   - AR with credit-side residual = we collected MORE than recorded
+        //     → GAIN (FX rate rose).
+        //   - AP (in_invoice) flips the direction.
+        $openIsDebit  = (float) $openSide->balance > 0;
+        $isReceivable = in_array($openSide->move?->move_type, ['out_invoice', 'out_refund'], true);
+
+        // Open-debit + AR  → loss  (sales rate dropped → AR worth less base)
+        // Open-credit + AR → gain  (sales rate rose → collected more base than booked)
+        // Open-debit + AP  → gain  (purchases rate dropped → owe less base than booked)
+        // Open-credit + AP → loss  (purchases rate rose → paid more base than booked)
+        $isGain = $isReceivable ? !$openIsDebit : $openIsDebit;
+
+        $fxAccountId = $isGain
+            ? $company->income_currency_exchange_account_id
+            : $company->expense_currency_exchange_account_id;
+
+        if (!$fxAccountId) {
+            throw new RuntimeException(sprintf(
+                "Cross-currency reconciliation left a %.2f %s residual but company '%s' has no %s account configured. " .
+                "Set the FX gain/loss accounts under Accounting > Settings.",
+                $drift,
+                $baseCurrency,
+                $company->name,
+                $isGain ? 'income (gain)' : 'expense (loss)'
+            ));
+        }
+
+        // The openSide has leftover base residual. If it's on the debit side,
+        // we credit the same account to close it (and debit FX loss/gain). If
+        // on the credit side, mirror it.
+        $adjustmentLines = $openIsDebit
+            ? [
+                ['account_id' => $fxAccountId,          'partner_id' => $openSide->partner_id, 'name' => 'FX adjustment', 'debit' => $drift, 'credit' => 0, 'sequence' => 10],
+                ['account_id' => $openSide->account_id, 'partner_id' => $openSide->partner_id, 'name' => 'FX adjustment', 'debit' => 0, 'credit' => $drift, 'sequence' => 20],
+            ]
+            : [
+                ['account_id' => $openSide->account_id, 'partner_id' => $openSide->partner_id, 'name' => 'FX adjustment', 'debit' => $drift, 'credit' => 0, 'sequence' => 10],
+                ['account_id' => $fxAccountId,          'partner_id' => $openSide->partner_id, 'name' => 'FX adjustment', 'debit' => 0, 'credit' => $drift, 'sequence' => 20],
+            ];
+
+        $adjustmentMove = $this->createMove([
+            'company_id' => $openSide->company_id,
+            'journal_id' => $openSide->journal_id,
+            'partner_id' => $openSide->partner_id,
+            'date'       => $date->toDateString(),
+            'move_type'  => 'entry',
+            'ref'        => 'FX adjustment on ' . ($openSide->move?->name ?: "#{$openSide->move_id}"),
+        ], $adjustmentLines);
+
+        $adjustmentMove = $this->postMove($adjustmentMove);
+
+        // Reconcile the adjustment's AR/AP line against the openSide's
+        // residual so it reaches zero in base.
+        $adjustmentControlLine = $adjustmentMove->lines()
+            ->where('account_id', $openSide->account_id)
+            ->first();
+
+        if ($adjustmentControlLine) {
+            AccountPartialReconcile::create([
+                'company_id' => $openSide->company_id,
+                'debit_move_line_id'  => $openIsDebit ? $openSide->id : $adjustmentControlLine->id,
+                'credit_move_line_id' => $openIsDebit ? $adjustmentControlLine->id : $openSide->id,
+                'amount' => $drift,
+                'date'   => $date->toDateString(),
+            ]);
+        }
+    }
+
+    /**
+     * MC4 helper: how much of this line's foreign-currency `amount_currency`
+     * is still unmatched, computed from the partial_reconcile rows' per-side
+     * foreign columns (debit_amount_currency / credit_amount_currency).
+     *
+     * For each reconcile this line is the debit side of, subtract
+     * debit_amount_currency; for credit-side reconciles, subtract
+     * credit_amount_currency. Legacy rows where the foreign columns are NULL
+     * fall back to the base `amount` (correct for same-currency reconciles
+     * where foreign equals base anyway).
+     */
+    private function getLineForeignResidual(AccountMoveLine $line): float
+    {
+        $amountCurrency = abs((float) $line->amount_currency);
+        if ($amountCurrency <= 0.005) {
+            return 0.0;
+        }
+
+        $debitMatched  = (float) AccountPartialReconcile::where('debit_move_line_id', $line->id)
+            ->sum(DB::raw('COALESCE(debit_amount_currency, amount)'));
+        $creditMatched = (float) AccountPartialReconcile::where('credit_move_line_id', $line->id)
+            ->sum(DB::raw('COALESCE(credit_amount_currency, amount)'));
+
+        $foreignMatched = $debitMatched + $creditMatched;
+
+        return round(max(0, $amountCurrency - $foreignMatched), self::SCALE);
+    }
+
+    /**
+     * MC4 helper: for a partial reconcile of $baseAmount against $line, how
+     * much of the line's foreign currency is consumed. We use the per-line
+     * proportion `amount_currency / abs(balance)` so the foreign math scales
+     * with the base math at the LINE's recorded rate, not at the reconcile
+     * date. (Odoo does the same — the foreign-currency portion attributed to
+     * a reconcile entry reflects the source line's booked FX rate.)
+     */
+    private function computeForeignPortion(AccountMoveLine $line, float $baseAmount): ?float
+    {
+        $amountCurrency = abs((float) $line->amount_currency);
+        $baseTotal      = abs((float) $line->balance);
+
+        if ($amountCurrency <= 0.005 || $baseTotal <= 0.005) {
+            // Line has no foreign-currency tracking — store NULL so legacy
+            // queries treating it as "same-as-base" still work.
+            return null;
+        }
+
+        return round($baseAmount * ($amountCurrency / $baseTotal), 4);
     }
 
     private function assertLinesValid(AccountMove $move): void
@@ -1131,6 +1523,23 @@ class AccountingService
                     $line->name,
                     $line->account->internal_type,
                     $line->account->display_name ?? $line->account->code
+                ));
+            }
+
+            // MC6 (Odoo parity): if the account is pinned to a single currency
+            // (e.g. a USD-only bank GL), every line on it must use that
+            // currency. Posting a EUR line to a USD-pinned account would
+            // silently mix bases inside the same account.
+            if ($line->account?->currency
+                && $line->currency
+                && $line->account->currency !== $line->currency
+            ) {
+                throw new RuntimeException(sprintf(
+                    "Line '%s' uses %s but its account (%s) is pinned to %s.",
+                    $line->name,
+                    $line->currency,
+                    $line->account->display_name ?? $line->account->code,
+                    $line->account->currency
                 ));
             }
         }
@@ -1339,18 +1748,120 @@ class AccountingService
             'in_refund'   => 'Vendor refund',
         ];
 
-        $lines[] = [
-            'account_id'      => $controlAccountId,
-            'partner_id'      => $partnerId,
-            'name'            => $controlLabels[$moveType],
-            'debit'           => $controlOnDebit ? $grandTotal : 0,
-            'credit'          => $controlOnDebit ? 0 : $grandTotal,
-            'currency'        => $currency,
-            'amount_currency' => $grandTotal,
-            'sequence'        => 9999,
-        ];
+        // D1 (Odoo parity): when a payment term has multiple installment lines
+        // (e.g. "30% in 0 days, balance in 30 days"), split the AR/AP control
+        // into ONE LINE PER INSTALLMENT, each with its own `date_maturity`.
+        // AR aging then buckets per installment; reconciliation can match
+        // payments against specific installments oldest-first.
+        //
+        // Falls back to a single control line when no term is set (single-shot
+        // invoice) or when the term has no schedule (immediate-payment term).
+        $installments = $this->splitGrandTotalAcrossPaymentTerm(
+            $grandTotal,
+            $data['payment_term_id'] ?? null,
+            $data['invoice_date'] ?? $data['date'] ?? null,
+            $data['invoice_date_due'] ?? null
+        );
+
+        foreach ($installments as $i => $installment) {
+            $label = count($installments) > 1
+                ? sprintf('%s (%d/%d)', $controlLabels[$moveType], $i + 1, count($installments))
+                : $controlLabels[$moveType];
+
+            $lines[] = [
+                'account_id'      => $controlAccountId,
+                'partner_id'      => $partnerId,
+                'name'            => $label,
+                'debit'           => $controlOnDebit ? $installment['amount'] : 0,
+                'credit'          => $controlOnDebit ? 0 : $installment['amount'],
+                'currency'        => $currency,
+                'amount_currency' => $installment['amount'],
+                'sequence'        => 9000 + $i,
+                'date_maturity'   => $installment['date_maturity'],
+            ];
+        }
 
         return $lines;
+    }
+
+    /**
+     * D1 (Odoo parity): turn a grand total + payment term into a list of
+     * installment amounts and due dates. Mirrors Odoo's
+     * `account.payment.term._compute_terms()` output. Each installment becomes
+     * its own AR/AP control line on the invoice/bill.
+     *
+     * When no payment term is set, returns a single installment for the full
+     * total with `date_maturity` = $explicitDueDate (legacy single-shot flow).
+     *
+     * @return array<int, array{amount: float, date_maturity: ?string}>
+     */
+    private function splitGrandTotalAcrossPaymentTerm(
+        float $grandTotal,
+        ?int $paymentTermId,
+        ?string $anchorDate,
+        ?string $explicitDueDate
+    ): array {
+        if (!$paymentTermId) {
+            return [['amount' => round($grandTotal, self::SCALE), 'date_maturity' => $explicitDueDate ?: $anchorDate]];
+        }
+
+        $term = \App\Models\Accounting\AccountingPaymentTerm::with('lines')->find($paymentTermId);
+        $termLines = $term?->lines ?? collect();
+        if ($termLines->isEmpty()) {
+            return [['amount' => round($grandTotal, self::SCALE), 'date_maturity' => $explicitDueDate ?: $anchorDate]];
+        }
+
+        $anchor = $anchorDate ? Carbon::parse($anchorDate) : Carbon::today();
+
+        // Walk non-balance lines first to compute their amounts, leave the
+        // residual for the single balance line. Order matters for stable
+        // rounding distribution.
+        $installments = [];
+        $allocated    = 0.0;
+        $balanceLine  = $termLines->firstWhere('value_type', 'balance');
+
+        foreach ($termLines as $tl) {
+            if ($tl->value_type === 'balance') {
+                continue; // handled at the end
+            }
+            $amount = $tl->value_type === 'percent'
+                ? round($grandTotal * ((float) $tl->value) / 100, self::SCALE)
+                : round((float) $tl->value, self::SCALE);
+
+            // Cap so cumulative non-balance allocation never exceeds the total
+            // (defensive — payment-term validation already enforces sum<=100%).
+            if ($allocated + $amount > $grandTotal) {
+                $amount = round($grandTotal - $allocated, self::SCALE);
+            }
+            if ($amount <= 0) continue;
+
+            $installments[] = [
+                'amount'        => $amount,
+                'date_maturity' => $anchor->copy()->addDays((int) $tl->days)->toDateString(),
+                'sequence'      => (int) $tl->sequence,
+            ];
+            $allocated = round($allocated + $amount, self::SCALE);
+        }
+
+        // The balance line absorbs whatever's left after rounding so the sum
+        // of installments matches the grand total exactly. If no balance line
+        // exists (term is malformed but slipped past validation), append a
+        // synthetic balance with date_maturity = explicit due date.
+        $residual = round($grandTotal - $allocated, self::SCALE);
+        if ($residual > 0.005) {
+            $days = $balanceLine ? (int) $balanceLine->days : 0;
+            $installments[] = [
+                'amount'        => $residual,
+                'date_maturity' => $anchor->copy()->addDays($days)->toDateString(),
+                'sequence'      => $balanceLine ? (int) $balanceLine->sequence : 9999,
+            ];
+        }
+
+        // Sort installments by their term-line sequence so the AR appears in
+        // the order the user defined the schedule.
+        usort($installments, fn ($a, $b) => $a['sequence'] <=> $b['sequence']);
+
+        return array_map(fn ($i) => ['amount' => $i['amount'], 'date_maturity' => $i['date_maturity']], $installments);
     }
 
     /**
@@ -1409,6 +1920,9 @@ class AccountingService
                 'tax_base_amount' => $taxBaseAmount,
                 'name'            => $line['name'] ?? '',
                 'date'            => $move->date,
+                // D1: per-installment due date for AR/AP control lines. null
+                // for non-installment lines (income, expense, tax).
+                'date_maturity'   => $line['date_maturity'] ?? null,
                 'state'           => $move->state,
                 'debit'           => $debit,
                 'credit'          => $credit,

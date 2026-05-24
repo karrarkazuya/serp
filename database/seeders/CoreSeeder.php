@@ -56,7 +56,41 @@ class CoreSeeder extends Seeder
         $this->seedUsers();
         $this->seedSettings();
         $this->seedInventory();
+        $this->seedCurrencies();
         $this->seedAccounting();
+    }
+
+    /**
+     * MC1 (Odoo parity): seed common ISO 4217 currencies. Idempotent —
+     * updateOrCreate keyed on `code`. Decimal_places follow ISO 4217 (JPY=0,
+     * BHD=3, most=2); IQD per Iraqi practice uses 0 decimals (the smallest
+     * common-circulation note is 250 IQD).
+     */
+    private function seedCurrencies(): void
+    {
+        $currencies = [
+            ['code' => 'IQD', 'name' => 'Iraqi Dinar',       'symbol' => 'د.ع', 'position' => 'after',  'decimal_places' => 0, 'rounding' => 1.0],
+            ['code' => 'USD', 'name' => 'US Dollar',         'symbol' => '$',    'position' => 'before', 'decimal_places' => 2, 'rounding' => 0.01],
+            ['code' => 'EUR', 'name' => 'Euro',              'symbol' => '€',    'position' => 'after',  'decimal_places' => 2, 'rounding' => 0.01],
+            ['code' => 'GBP', 'name' => 'Pound Sterling',    'symbol' => '£',    'position' => 'before', 'decimal_places' => 2, 'rounding' => 0.01],
+            ['code' => 'JPY', 'name' => 'Japanese Yen',      'symbol' => '¥',    'position' => 'before', 'decimal_places' => 0, 'rounding' => 1.0],
+            ['code' => 'SAR', 'name' => 'Saudi Riyal',       'symbol' => 'ر.س', 'position' => 'after',  'decimal_places' => 2, 'rounding' => 0.01],
+            ['code' => 'AED', 'name' => 'UAE Dirham',        'symbol' => 'د.إ', 'position' => 'after',  'decimal_places' => 2, 'rounding' => 0.01],
+            ['code' => 'KWD', 'name' => 'Kuwaiti Dinar',     'symbol' => 'د.ك', 'position' => 'after',  'decimal_places' => 3, 'rounding' => 0.001],
+            ['code' => 'BHD', 'name' => 'Bahraini Dinar',    'symbol' => '.د.ب','position' => 'after',  'decimal_places' => 3, 'rounding' => 0.001],
+            ['code' => 'TRY', 'name' => 'Turkish Lira',      'symbol' => '₺',    'position' => 'before', 'decimal_places' => 2, 'rounding' => 0.01],
+            ['code' => 'CHF', 'name' => 'Swiss Franc',       'symbol' => 'CHF',  'position' => 'before', 'decimal_places' => 2, 'rounding' => 0.01],
+            ['code' => 'CAD', 'name' => 'Canadian Dollar',   'symbol' => 'C$',   'position' => 'before', 'decimal_places' => 2, 'rounding' => 0.01],
+            ['code' => 'CNY', 'name' => 'Chinese Yuan',      'symbol' => '¥',    'position' => 'before', 'decimal_places' => 2, 'rounding' => 0.01],
+            ['code' => 'INR', 'name' => 'Indian Rupee',      'symbol' => '₹',    'position' => 'before', 'decimal_places' => 2, 'rounding' => 0.01],
+        ];
+
+        foreach ($currencies as $row) {
+            \App\Models\Accounting\Currency::updateOrCreate(
+                ['code' => $row['code']],
+                $row + ['active' => true],
+            );
+        }
     }
 
     // ── Inventory ─────────────────────────────────────────────────────────────

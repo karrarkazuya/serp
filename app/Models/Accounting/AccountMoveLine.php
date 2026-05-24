@@ -66,6 +66,7 @@ class AccountMoveLine extends Model
         'tax_base_amount',
         'name',
         'date',
+        'date_maturity',
         'state',
         'debit',
         'credit',
@@ -77,6 +78,7 @@ class AccountMoveLine extends Model
 
     protected $casts = [
         'date'            => 'date',
+        'date_maturity'   => 'date',
         'debit'           => 'decimal:4',
         'credit'          => 'decimal:4',
         'amount_currency' => 'decimal:4',

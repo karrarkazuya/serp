@@ -18,12 +18,20 @@ class AccountPartialReconcile extends Model
         'debit_move_line_id',
         'credit_move_line_id',
         'amount',
+        // MC4 (Odoo parity): per-side foreign-currency reconciled amount,
+        // tracked separately from `amount` (base) so cross-currency reconciles
+        // can detect when one side fully closes in its own currency while a
+        // base-currency drift remains. See AccountingService::maybePostFxAdjustment.
+        'debit_amount_currency',
+        'credit_amount_currency',
         'date',
     ];
 
     protected $casts = [
-        'amount' => 'decimal:4',
-        'date' => 'date',
+        'amount'                 => 'decimal:4',
+        'debit_amount_currency'  => 'decimal:4',
+        'credit_amount_currency' => 'decimal:4',
+        'date'                   => 'date',
     ];
 
     public function company(): BelongsTo

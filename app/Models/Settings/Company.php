@@ -83,6 +83,8 @@ class Company extends Model
         'active',
         'accounting_period_lock_date',
         'accounting_fiscal_year_lock_date',
+        'income_currency_exchange_account_id',
+        'expense_currency_exchange_account_id',
         'created_by',
         'updated_by',
     ];
@@ -96,6 +98,33 @@ class Company extends Model
     public function users(): BelongsToMany
     {
         return $this->belongsToMany(User::class, 'user_company');
+    }
+
+    /**
+     * MC2 (Odoo parity): currencies this company is allowed to invoice/bill/pay
+     * in. Empty pivot = "all active currencies" (so existing single-currency
+     * companies keep working without setup). The company's base `currency` is
+     * always permitted.
+     */
+    public function allowedCurrencies(): BelongsToMany
+    {
+        return $this->belongsToMany(\App\Models\Accounting\Currency::class, 'company_currencies');
+    }
+
+    /**
+     * MC2: target accounts when cross-currency reconciliation leaves a base
+     * residual after foreign residuals close. Both must be configured before
+     * reconcileLines will post adjustments — otherwise the reconcile errors
+     * with a clear setup message.
+     */
+    public function incomeCurrencyExchangeAccount(): BelongsTo
+    {
+        return $this->belongsTo(\App\Models\Accounting\Account::class, 'income_currency_exchange_account_id');
+    }
+
+    public function expenseCurrencyExchangeAccount(): BelongsTo
+    {
+        return $this->belongsTo(\App\Models\Accounting\Account::class, 'expense_currency_exchange_account_id');
     }
 
     public function creator(): BelongsTo

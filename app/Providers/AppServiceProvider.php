@@ -327,6 +327,10 @@ class AppServiceProvider extends ServiceProvider
         // Auto-install the Iraqi UAS chart of accounts + journals on every new company.
         Company::observe(CompanyAccountingObserver::class);
 
+        // D8 (Odoo parity): block direct mutation/deletion of posted move lines.
+        // Reset-to-draft is the supported path for editing posted entries.
+        \App\Models\Accounting\AccountMoveLine::observe(\App\Observers\Accounting\AccountMoveLineObserver::class);
+
         // Share company context with all views for the navbar switcher
         View::composer('components.navbar', function ($view) {
             if (auth()->check()) {

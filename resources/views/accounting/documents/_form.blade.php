@@ -4,15 +4,21 @@
 
     $existingItems = old('items');
     if (!$existingItems && $document) {
-        $isInvoice = $config['move_type'] === 'out_invoice';
-        $controlLine = $document->lines
-            ->filter(fn($line) => $isInvoice ? (float) $line->debit > 0 : (float) $line->credit > 0)
-            ->sortByDesc(fn($line) => max((float) $line->debit, (float) $line->credit))
-            ->first();
+        // D1 (Odoo parity): multi-installment invoices have N receivable/payable
+        // lines (one per payment-term schedule). Rejecting only the "largest
+        // debit/credit" leaves smaller installments rendering as if they were
+        // product items. Filter by account internal_type to drop EVERY
+        // installment control line, matching the controller's documentLines().
+        $isInvoice           = in_array($config['move_type'], ['out_invoice', 'in_refund'], true);
+        $controlInternalType = in_array($config['move_type'], ['out_invoice', 'out_refund'], true)
+            ? 'receivable' : 'payable';
+        $controlLineIds = $document->lines
+            ->filter(fn($line) => $line->account?->internal_type === $controlInternalType)
+            ->pluck('id')->all();
 
         $existingItems = $document->lines
-            // Reject the control line and auto-generated tax lines
-            ->reject(fn($line) => ($controlLine && $line->id === $controlLine->id) || $line->tax_line_id)
+            // Reject every receivable/payable installment line and every auto-generated tax line.
+            ->reject(fn($line) => in_array($line->id, $controlLineIds, true) || $line->tax_line_id)
             ->map(function ($line) use ($isInvoice) {
                 $amount = $isInvoice ? (float) $line->credit : (float) $line->debit;
                 $line->loadMissing('taxes');

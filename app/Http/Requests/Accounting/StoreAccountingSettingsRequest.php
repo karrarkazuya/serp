@@ -3,6 +3,7 @@
 namespace App\Http\Requests\Accounting;
 
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rule;
 
 class StoreAccountingSettingsRequest extends FormRequest
 {
@@ -13,9 +14,30 @@ class StoreAccountingSettingsRequest extends FormRequest
 
     public function rules(): array
     {
+        // FX gain/loss accounts must belong to the target company.
+        $company = $this->route('company');
+        $accountInCompany = $company
+            ? Rule::exists('accounts', 'id')->where(fn ($q) => $q->where('company_id', $company->id)->where('active', true))
+            : 'exists:accounts,id';
+
         return [
+            // Existing lock-date fields (unchanged)
             'accounting_period_lock_date'      => ['nullable', 'date'],
             'accounting_fiscal_year_lock_date' => ['nullable', 'date'],
+
+            // MC2 (Odoo parity): per-company FX gain/loss accounts. Required
+            // only when cross-currency reconciliation actually fires; unset
+            // means "no automatic FX adjustment is posted" — the reconcile
+            // will error with a clear setup message. Both must live in the
+            // same company so the adjustment move stays self-contained.
+            'income_currency_exchange_account_id'  => ['nullable', $accountInCompany],
+            'expense_currency_exchange_account_id' => ['nullable', $accountInCompany],
+
+            // MC3: allowed currencies for invoices/bills/payments under this
+            // company. Null = unchanged; empty array = "any active currency"
+            // (M2M is treated as a positive-list only when non-empty).
+            'allowed_currency_ids'   => ['nullable', 'array'],
+            'allowed_currency_ids.*' => ['integer', 'exists:currencies,id'],
         ];
     }
 }

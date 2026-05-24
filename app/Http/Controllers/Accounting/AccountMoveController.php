@@ -223,7 +223,10 @@ class AccountMoveController extends Controller
 
     public function cancel(Request $_request, AccountMove $move)
     {
-        $this->authorize('post', $move);
+        // D3 (Odoo parity): the dedicated `cancel` policy ability gates
+        // posted-invoice cancellation to accounting managers; pure journal
+        // entries (move_type=entry) fall through to the post-permission check.
+        $this->authorize('cancel', $move);
         $activeCompanyIds = $this->companyContext->getActiveCompanyIds();
         abort_unless(in_array($move->company_id, $activeCompanyIds), 403);
 
@@ -246,9 +249,11 @@ class AccountMoveController extends Controller
             return back()->with('error', $e->getMessage());
         }
 
+        // Odoo parity (O5): the reversal lands in draft. Auto-reconcile with
+        // the original move fires when the user posts it.
         return redirect()
             ->route('accounting.moves.show', $reversal)
-            ->with('success', 'Reversal entry created.');
+            ->with('success', 'Reversal entry drafted. Review the lines and post to apply.');
     }
 
     public function unlink(Request $_request, AccountMove $move)

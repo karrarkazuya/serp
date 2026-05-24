@@ -112,6 +112,8 @@ class AccountingPaymentTermController extends Controller
         $lines = $data['lines'] ?? [];
         unset($data['lines']);
 
+        $this->assertPaymentTermLinesValid($lines);
+
         $term = DB::transaction(function () use ($data, $lines) {
             $term = AccountingPaymentTerm::create($data);
             foreach ($lines as $seq => $line) {
@@ -158,6 +160,8 @@ class AccountingPaymentTermController extends Controller
         $data['active'] = array_key_exists('active', $data) ? (bool) $data['active'] : $paymentTerm->active;
         $lines = $data['lines'] ?? [];
         unset($data['lines']);
+
+        $this->assertPaymentTermLinesValid($lines);
 
         DB::transaction(function () use ($paymentTerm, $data, $lines) {
             $paymentTerm->update($data);
@@ -218,5 +222,61 @@ class AccountingPaymentTermController extends Controller
         DB::transaction(fn () => $paymentTerm->logComment($request->body));
 
         return back()->with('success', 'Comment added.');
+    }
+
+    /**
+     * D2 (Odoo parity): a payment term must have exactly one `balance` line
+     * and its `percent` lines must sum to <= 100. Without these checks the
+     * term silently produces invoices whose AR is under- or over-allocated:
+     *   - "30% in 0 days" with no balance line → invoice's receivable only
+     *     accounts for 30% of the total
+     *   - "60% + 50% + balance" → over-allocates to 110%+balance
+     *   - Two `balance` lines → ambiguous, Odoo rejects
+     * Empty $lines (no schedule) is valid — interpreted as full balance at
+     * invoice date, matching Odoo's "Immediate Payment" term.
+     */
+    private function assertPaymentTermLinesValid(array $lines): void
+    {
+        if (empty($lines)) {
+            return;
+        }
+
+        $balanceCount = 0;
+        $percentSum   = 0.0;
+
+        foreach ($lines as $i => $line) {
+            $type  = $line['value_type'] ?? null;
+            $value = (float) ($line['value'] ?? 0);
+            if ($type === 'balance') {
+                $balanceCount++;
+            } elseif ($type === 'percent') {
+                if ($value <= 0 || $value > 100) {
+                    throw \Illuminate\Validation\ValidationException::withMessages([
+                        "lines.{$i}.value" => 'Percent value must be between 0 and 100.',
+                    ]);
+                }
+                $percentSum += $value;
+            } elseif ($type === 'fixed' && $value <= 0) {
+                throw \Illuminate\Validation\ValidationException::withMessages([
+                    "lines.{$i}.value" => 'Fixed value must be greater than 0.',
+                ]);
+            }
+        }
+
+        if ($balanceCount === 0) {
+            throw \Illuminate\Validation\ValidationException::withMessages([
+                'lines' => 'A payment term must include exactly one "balance" line so the residual is always covered.',
+            ]);
+        }
+        if ($balanceCount > 1) {
+            throw \Illuminate\Validation\ValidationException::withMessages([
+                'lines' => 'Only one "balance" line is allowed per payment term.',
+            ]);
+        }
+        if (round($percentSum, 4) > 100.0) {
+            throw \Illuminate\Validation\ValidationException::withMessages([
+                'lines' => sprintf('Percent lines total %.2f%%; they must not exceed 100%%.', $percentSum),
+            ]);
+        }
     }
 }

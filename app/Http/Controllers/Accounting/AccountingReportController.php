@@ -405,32 +405,63 @@ class AccountingReportController extends Controller
             ->get();
     }
 
+    /**
+     * D1 / Odoo parity: bucket by per-line `date_maturity` and compute the
+     * actual outstanding residual (line.balance - matched_amount), not the
+     * move header's gross `amount_total`. Multi-installment invoices have N
+     * receivable/payable lines, each with its own due date — the aged report
+     * MUST bucket each installment separately. Without this, a "30% now,
+     * 70% in 60 days" invoice reports the full 100% in the 60-day bucket
+     * even after the 30% leg has been paid.
+     *
+     * Lines with no `date_maturity` (legacy single-counterpart invoices, or
+     * direct journal entries that happened to use a receivable/payable
+     * account) fall back to their own `date` for bucketing.
+     */
     private function agedReport(array $companyIds, string $asOf, string $moveType): \Illuminate\Support\Collection
     {
-        $accountType = $moveType === 'out_invoice' ? 'asset_receivable' : 'liability_payable';
+        $internalType = $moveType === 'out_invoice' ? 'receivable' : 'payable';
 
-        return AccountMove::query()
-            ->select(
-                'account_moves.id',
-                'account_moves.name',
-                'account_moves.date as invoice_date',
-                'account_moves.invoice_date_due',
-                'account_moves.partner_id',
-                'contacts.name as partner_name',
-                'account_moves.amount_total as residual'
-            )
-            ->join('contacts', 'contacts.id', '=', 'account_moves.partner_id')
+        $lines = AccountMoveLine::query()
+            ->with(['move', 'account', 'partner', 'matchedDebits', 'matchedCredits'])
+            ->whereHas('account', fn ($q) => $q->where('internal_type', $internalType))
+            ->whereHas('move', fn ($q) => $q->where('move_type', $moveType)->where('state', '!=', 'cancelled'))
             ->when(empty($companyIds), fn ($q) => $q->whereRaw('1 = 0'))
-            ->when(!empty($companyIds), fn ($q) => $q->whereIn('account_moves.company_id', $companyIds))
-            ->where('account_moves.move_type', $moveType)
-            ->where('account_moves.state', 'posted')
-            ->whereIn('account_moves.payment_state', ['not_paid', 'partial'])
-            ->where('account_moves.invoice_date_due', '<=', $asOf)
-            ->orderBy('account_moves.invoice_date_due')
-            ->get()
-            ->map(function ($row) use ($asOf) {
-                $daysOverdue = now()->parse($asOf)->diffInDays($row->invoice_date_due, false) * -1;
-                $row->days_overdue = max(0, (int) $daysOverdue);
+            ->when(!empty($companyIds), fn ($q) => $q->whereIn('company_id', $companyIds))
+            ->where('state', 'posted')
+            ->whereNotNull('partner_id')
+            ->get();
+
+        $asOfDate = now()->parse($asOf);
+
+        return $lines
+            ->map(function (AccountMoveLine $line) use ($asOfDate) {
+                $matched  = (float) $line->matchedDebits->sum('amount') + (float) $line->matchedCredits->sum('amount');
+                $balance  = (float) $line->debit - (float) $line->credit;
+                $residual = round(abs($balance) - $matched, 2);
+
+                // Use date_maturity when set (multi-installment invoices via
+                // splitGrandTotalAcrossPaymentTerm); fall back to line.date
+                // for legacy single-counterpart rows.
+                $dueDate = $line->date_maturity ?? $line->date;
+
+                return (object) [
+                    'move_id'          => $line->move_id,
+                    'line_id'          => $line->id,
+                    'name'             => $line->move?->name,
+                    'invoice_date'     => $line->move?->date,
+                    'invoice_date_due' => $dueDate,
+                    'partner_id'       => $line->partner_id,
+                    'partner_name'     => $line->partner?->name,
+                    'residual'         => $residual,
+                    'days_overdue'     => max(0, (int) ($asOfDate->diffInDays($dueDate, false) * -1)),
+                ];
+            })
+            // Drop fully-paid installments (residual <= rounding floor).
+            ->filter(fn ($row) => $row->residual > 0.005)
+            // Aged report shows only items due on or before $asOf.
+            ->filter(fn ($row) => $row->invoice_date_due && $row->invoice_date_due <= $asOfDate)
+            ->map(function ($row) {
                 $row->bucket = match (true) {
                     $row->days_overdue <= 0  => 'Current',
                     $row->days_overdue <= 30 => '1–30',
@@ -439,6 +470,8 @@ class AccountingReportController extends Controller
                     default                  => '90+',
                 };
                 return $row;
-            });
+            })
+            ->sortBy('invoice_date_due')
+            ->values();
     }
 }

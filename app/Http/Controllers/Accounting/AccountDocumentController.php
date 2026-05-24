@@ -474,7 +474,12 @@ class AccountDocumentController extends Controller
 
     private function cancel(AccountMove $document, string $moveType)
     {
-        $this->authorize('post', $document);
+        // D3 (Odoo parity): cancelling a posted invoice/bill/credit-note/refund
+        // removes it from financial reports — restricted to users with
+        // `accounting.lock` (closest equivalent of Odoo's "accounting manager"
+        // group). Drafts fall through to the post-permission check. See
+        // AccountMovePolicy::cancel() for the full decision matrix.
+        $this->authorize('cancel', $document);
         $this->assertDocumentAccess($document, $moveType);
 
         DB::transaction(fn () => $this->accounting->cancelMove($document));
@@ -521,7 +526,11 @@ class AccountDocumentController extends Controller
             ? 'accounting.credit-notes.show'
             : 'accounting.refunds.show';
 
-        return redirect()->route($route, $creditNote)->with('success', 'Credit note created.');
+        // Odoo parity (O5): the credit note lands in draft. Land the user on
+        // the new document with a prompt to review-then-post — auto-reconcile
+        // with the original fires when they post it.
+        return redirect()->route($route, $creditNote)
+            ->with('success', 'Credit note drafted. Review the lines and post to apply.');
     }
 
     private function print(AccountMove $document, string $moveType)
@@ -583,22 +592,48 @@ class AccountDocumentController extends Controller
         ];
     }
 
-    private function controlLine(AccountMove $document)
+    /**
+     * D1: return ALL receivable/payable control lines on the document. For
+     * multi-installment invoices this is one line per payment-term schedule
+     * line; single-shot invoices return a one-item collection.
+     */
+    private function controlLines(AccountMove $document): \Illuminate\Support\Collection
     {
-        $debitControlTypes = ['out_invoice', 'in_refund'];
+        $document->loadMissing('lines.account');
+        $expectedInternalType = in_array($document->move_type, ['out_invoice', 'out_refund'], true)
+            ? 'receivable'
+            : 'payable';
 
         return $document->lines
-            ->filter(fn ($line) => in_array($document->move_type, $debitControlTypes, true) ? (float) $line->debit > 0 : (float) $line->credit > 0)
+            ->filter(fn ($line) => $line->account?->internal_type === $expectedInternalType)
+            ->sortBy([
+                fn ($a, $b) => ($a->date_maturity?->timestamp ?? 0) <=> ($b->date_maturity?->timestamp ?? 0),
+                fn ($a, $b) => $a->sequence <=> $b->sequence,
+            ])
+            ->values();
+    }
+
+    /**
+     * Back-compat: the "primary" control line is the largest installment.
+     * Used by show.blade.php widgets that display a single AR/AP summary
+     * (per-installment breakdown is shown separately).
+     */
+    private function controlLine(AccountMove $document)
+    {
+        return $this->controlLines($document)
             ->sortByDesc(fn ($line) => max((float) $line->debit, (float) $line->credit))
             ->first();
     }
 
     private function documentLines(AccountMove $document)
     {
-        $controlLine = $this->controlLine($document);
+        // D1: filter out EVERY installment control line, not just the largest.
+        // Otherwise smaller installments would render as if they were product
+        // lines on the invoice page.
+        $controlLineIds = $this->controlLines($document)->pluck('id')->all();
 
         return $document->lines
-            ->reject(fn ($line) => ($controlLine && $line->id === $controlLine->id) || $line->tax_line_id)
+            ->reject(fn ($line) => in_array($line->id, $controlLineIds, true) || $line->tax_line_id)
             ->values();
     }
 

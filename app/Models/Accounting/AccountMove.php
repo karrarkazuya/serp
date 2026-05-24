@@ -244,6 +244,8 @@ class AccountMove extends Model
 
     public function getDisplayNameAttribute(): string
     {
-        return $this->name ?: '(Draft)';
+        // D9 (Odoo parity): drafts use '/' as a placeholder until they're
+        // posted and reserve a real sequence number.
+        return ($this->name && $this->name !== '/') ? $this->name : '(Draft)';
     }
 }
