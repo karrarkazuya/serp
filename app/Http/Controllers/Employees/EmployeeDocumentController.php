@@ -87,8 +87,18 @@ class EmployeeDocumentController extends Controller
 
         $activeCompanyIds = $this->companyContext->getActiveCompanyIds();
 
+        // Scope employee_id at the validation layer (not after findOrFail) so the
+        // company gate doesn't disappear if the post-find check is ever refactored
+        // away. An empty activeCompanyIds array means "no allowed companies", which
+        // we translate to "deny all employee_id values" — matching how list pages
+        // hide everything in the same state.
+        $employeeRule = \Illuminate\Validation\Rule::exists('hr_employees', 'id')
+            ->where(fn ($q) => empty($activeCompanyIds)
+                ? $q->whereRaw('1 = 0')
+                : $q->whereIn('company_id', $activeCompanyIds));
+
         $data = $request->validate([
-            'employee_id'             => 'required|exists:hr_employees,id',
+            'employee_id'             => ['required', $employeeRule],
             'name'                    => 'required|string|max:255',
             'document_type'           => 'nullable|in:contract,id_card,passport,certificate,resume,medical,other',
             'issued_by'               => 'nullable|string|max:255',
@@ -102,7 +112,6 @@ class EmployeeDocumentController extends Controller
         ]);
 
         $employee = Employee::findOrFail($data['employee_id']);
-        abort_unless(empty($activeCompanyIds) || in_array($employee->company_id, $activeCompanyIds), 403);
 
         $fileRecord = null;
         if ($request->hasFile('file')) {
@@ -283,7 +292,7 @@ class EmployeeDocumentController extends Controller
 
     public function download(Request $_request, Employee $employee, EmployeeDocument $document)
     {
-        abort_unless($document->employee_id === $employee->id, 403);
+        $this->assertCanReachEmployeeDocument($employee, $document);
         abort_unless($document->file_path, 404);
 
         return redirect()->route('files.serve', $document->file_path);
@@ -291,9 +300,24 @@ class EmployeeDocumentController extends Controller
 
     public function preview(Request $_request, Employee $employee, EmployeeDocument $document)
     {
-        abort_unless($document->employee_id === $employee->id, 403);
+        $this->assertCanReachEmployeeDocument($employee, $document);
         abort_unless($document->file_path, 404);
 
         return redirect()->route('files.serve', $document->file_path);
+    }
+
+    /**
+     * Gate both the parent-child relation AND the actor's company access. Without
+     * the second check, any holder of `employees.read` could iterate URL pairs
+     * `/employees/{id}/documents/{doc}/download` and pull HR documents (contracts,
+     * IDs, passports, medical files) for employees in companies they have no
+     * legitimate access to.
+     */
+    private function assertCanReachEmployeeDocument(Employee $employee, EmployeeDocument $document): void
+    {
+        abort_unless($document->employee_id === $employee->id, 403);
+
+        $activeCompanyIds = $this->companyContext->getActiveCompanyIds();
+        abort_unless(empty($activeCompanyIds) || in_array($employee->company_id, $activeCompanyIds), 403);
     }
 }

@@ -94,9 +94,20 @@
                     <p class="text-sm text-gray-900 mt-0.5">{{ $certificate->affective_date?->format('d M Y') ?? '—' }}</p>
                 </div>
                 <div>
+                    <p class="text-xs font-semibold text-gray-400 uppercase tracking-wide">{{ __('employees.specialization_type') }}</p>
+                    <p class="text-sm text-gray-900 mt-0.5">
+                        @if($certificate->specialization_type === 'percentage') {{ __('employees.specialization_type_percentage') }}
+                        @else {{ __('employees.specialization_type_amount') }}
+                        @endif
+                    </p>
+                </div>
+                <div>
                     <p class="text-xs font-semibold text-gray-400 uppercase tracking-wide">{{ __('employees.financial_specialization') }}</p>
                     <p class="text-sm text-gray-900 mt-0.5">
-                        {{ $certificate->financial_specialization ? number_format($certificate->financial_specialization, 2) : '—' }}
+                        @if($certificate->financial_specialization)
+                            {{ number_format($certificate->financial_specialization, 2) }}{{ $certificate->specialization_type === 'percentage' ? '%' : '' }}
+                        @else —
+                        @endif
                     </p>
                 </div>
             </div>

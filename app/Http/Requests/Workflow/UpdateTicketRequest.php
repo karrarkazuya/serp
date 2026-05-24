@@ -20,7 +20,7 @@ class UpdateTicketRequest extends FormRequest
             'assigned_to_department_id'  => 'nullable|exists:hr_departments,id',
             'assigned_to_user_id'        => 'nullable|exists:workflow_users,user_id',
             'inputs'                     => 'nullable|array',
-            'inputs.*.template_input_id' => 'required|exists:workflow_template_inputs,id',
+            'inputs.*.template_input_id' => 'required|exists:workflow_template_inputs,id,deleted_at,NULL',
             'inputs.*.value'             => 'nullable|max:5000',
         ];
     }

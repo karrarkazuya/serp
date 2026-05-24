@@ -47,6 +47,11 @@ use App\Models\Employees\EmployeeDependent;
 use App\Models\Employees\EmployeeCertificate;
 use App\Models\Employees\EmployeeDocument;
 use App\Models\Employees\EmployeePosition;
+use App\Models\Employees\EmployeeBonus;
+use App\Models\Employees\EmployeeAppreciation;
+use App\Models\Employees\EmployeeSanction;
+use App\Models\Employees\EmployeeReward;
+use App\Models\Employees\EmployeeJobGrade;
 use App\Models\Employees\EmployeeEmergencyContact;
 use App\Models\Employees\EmployeeSkill;
 use App\Models\Employees\Job;
@@ -265,6 +270,11 @@ class AppServiceProvider extends ServiceProvider
             EmployeeDocument::class,
             EmployeeCertificate::class,
             EmployeePosition::class,
+            EmployeeBonus::class,
+            EmployeeAppreciation::class,
+            EmployeeSanction::class,
+            EmployeeReward::class,
+            EmployeeJobGrade::class,
             EmployeeBankAccount::class,
             EmployeeEmergencyContact::class,
             EmployeeDependent::class,

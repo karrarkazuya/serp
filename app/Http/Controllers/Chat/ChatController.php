@@ -66,24 +66,26 @@ class ChatController extends Controller
 
         $request->validate([
             'body'    => 'nullable|string|max:5000',
-            'files.*' => ['nullable', 'file', 'max:10240'],
+            'files'   => 'nullable|array|max:10',
+            'files.*' => ['nullable', 'file', 'max:10240', 'mimetypes:' . implode(',', self::ALLOWED_MIMES)],
         ]);
 
         $body  = trim($request->input('body', ''));
-        $files = $request->file('files', []);
+        $files = array_values(array_filter($request->file('files', []) ?: []));
 
-        abort_if(empty($body) && empty(array_filter($files)), 422);
+        abort_if($body === '' && empty($files), 422);
 
         DB::transaction(function () use ($room, $auth, $body, $files) {
             $message = ChatMessage::create([
                 'room_id' => $room->id,
                 'user_id' => $auth->id,
-                'body'    => $body ?: null,
+                'body'    => $body !== '' ? $body : null,
             ]);
 
             foreach ($files as $file) {
-                if (!$file || !in_array($file->getMimeType(), self::ALLOWED_MIMES)) {
-                    continue;
+                // Belt-and-braces: validation already enforces the MIME allowlist.
+                if (!in_array($file->getMimeType(), self::ALLOWED_MIMES, true)) {
+                    abort(422, 'File type not allowed.');
                 }
                 $fileRecord = $this->fileService->store($file, "chat/{$room->id}", null, $room, $message);
                 ChatMessageFile::create([
@@ -97,7 +99,7 @@ class ChatController extends Controller
             }
 
             // Notify all other members
-            $preview = Str::limit($body ?: '📎 Sent a file', 80);
+            $preview = Str::limit($body !== '' ? $body : '📎 Sent a file', 80);
             $url     = route('chat.show', $room);
             foreach ($room->members()->where('user_id', '!=', $auth->id)->get() as $member) {
                 $member->notify($auth->name, $preview, $url);
@@ -112,17 +114,24 @@ class ChatController extends Controller
         $request->validate([
             'name'         => 'required|string|max:100',
             'description'  => 'nullable|string|max:255',
-            'member_ids'   => 'nullable|array',
-            'member_ids.*' => 'exists:users,id',
+            'member_ids'   => 'nullable|array|max:200',
+            'member_ids.*' => 'integer|exists:users,id',
         ]);
 
-        $memberIds = collect($request->input('member_ids', []))
+        $requestedIds = collect($request->input('member_ids', []))
             ->filter()
             ->map(fn ($id) => (int) $id)
-            ->push(Auth::id())
             ->unique()
-            ->values()
+            ->values();
+
+        // Reject inactive users — off-boarded accounts must not be re-attached to new rooms.
+        $activeIds = User::whereIn('id', $requestedIds)
+            ->where('active', true)
+            ->whereKeyNot(0)
+            ->pluck('id')
             ->all();
+
+        $memberIds = collect($activeIds)->push(Auth::id())->unique()->values()->all();
 
         $room = DB::transaction(function () use ($request, $memberIds) {
             $room = ChatRoom::create([
@@ -140,7 +149,7 @@ class ChatController extends Controller
 
     public function openDirect(User $user)
     {
-        abort_unless($user->active, 404);
+        abort_unless($user->active && $user->id !== 0, 404);
         $auth = Auth::user();
 
         // Find existing 1-on-1 DM between exactly these two users
@@ -169,9 +178,9 @@ class ChatController extends Controller
         abort_unless($room->isChannel(), 403);
         $this->authorize('view', $room);
 
-        $request->validate(['user_id' => 'required|exists:users,id']);
+        $request->validate(['user_id' => 'required|integer|exists:users,id']);
         $user = User::findOrFail($request->user_id);
-        abort_unless($user->active, 422, 'User is not active.');
+        abort_unless($user->active && $user->id !== 0, 422, 'User is not active.');
 
         if (!$room->members()->where('user_id', $user->id)->exists()) {
             DB::transaction(fn () => $room->members()->attach($user->id));
@@ -183,13 +192,10 @@ class ChatController extends Controller
     public function removeMember(ChatRoom $room, User $user)
     {
         abort_unless($room->isChannel(), 403);
+        $this->authorize('view', $room);  // any current member can manage the roster (symmetric with addMember)
 
-        $auth      = Auth::user();
-        $isSelf    = $auth->id === $user->id;
-        $isCreator = $auth->id === $room->created_by_user_id;
-
-        abort_unless($isSelf || $isCreator, 403);
-        abort_unless($room->members()->where('user_id', $auth->id)->exists(), 403);
+        $auth   = Auth::user();
+        $isSelf = $auth->id === $user->id;
 
         DB::transaction(fn () => $room->members()->detach($user->id));
 
@@ -230,7 +236,7 @@ class ChatController extends Controller
             ->mapWithKeys(fn ($r) => [$r->id => $r->unreadCountFor($auth)])
             ->toArray();
 
-        $users = User::where('active', true)->orderBy('name')->get();
+        $users = User::where('active', true)->whereKeyNot(0)->orderBy('name')->get();
 
         return [$channels, $dms, $unreadCounts, $users];
     }

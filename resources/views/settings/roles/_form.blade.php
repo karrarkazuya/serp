@@ -4,7 +4,14 @@
         return ['id' => $p->id, 'name' => $p->name, 'key' => $p->key, 'module' => $p->module];
     })->values()->all();
     $initialIds = array_values(array_map('intval', old('permissions', $assignedIds ?? [])));
+    $isSystem   = $role && $role->isSystem();
 @endphp
+
+@if($isSystem)
+<div class="shrink-0 mx-5 mt-4 bg-amber-50 border border-amber-200 rounded-lg px-4 py-3 text-sm text-amber-700">
+    {{ __('settings.system_role_locked') ?? 'This is a system role. Its key, active state, and permission set are managed by the seeder and cannot be changed here.' }}
+</div>
+@endif
 
 {{-- Data injected into window before Alpine boots --}}
 <script>
@@ -77,7 +84,7 @@ window.rolePicker = function () {
             <label class="block text-[11px] font-semibold text-gray-400 uppercase tracking-wider mb-1">{{ __('settings.role_key') }} <span class="text-red-400">*</span></label>
             <input type="text" name="key" value="{{ $fv('key') }}" required placeholder="sales_manager"
                    class="w-40 px-3 py-1.5 text-sm font-mono border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#714B67]/25 focus:border-[#714B67] transition-colors {{ $errors->has('key') ? 'border-red-400' : '' }}"
-                   {{ $role && $role->key === 'admin' ? 'readonly' : '' }}>
+                   {{ $isSystem ? 'readonly' : '' }}>
         </div>
         <div class="flex-1 min-w-52">
             <label class="block text-[11px] font-semibold text-gray-400 uppercase tracking-wider mb-1">{{ __('common.description') }}</label>
@@ -89,6 +96,7 @@ window.rolePicker = function () {
             <label class="relative inline-flex items-center cursor-pointer">
                 <input type="checkbox" id="active" name="active" value="1"
                        {{ $fv('active', $role?->active ? '1' : '0') == '1' ? 'checked' : '' }}
+                       {{ $isSystem ? 'disabled' : '' }}
                        class="sr-only peer">
                 <div class="w-9 h-5 bg-gray-200 rounded-full peer peer-checked:bg-[#714B67] transition-colors
                             after:content-[''] after:absolute after:top-0.5 after:inset-s-0.5 after:bg-white

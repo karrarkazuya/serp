@@ -21,7 +21,7 @@
     <div class="flex-1 overflow-y-auto p-6">
         <form id="user-form" method="POST" action="{{ route('settings.users.update', $user) }}" class="space-y-6">
             @csrf @method('PUT')
-            @include('settings.users._form', ['user' => $user, 'roles' => $roles])
+            @include('settings.users._form', ['user' => $user])
         </form>
     </div>
 </div>

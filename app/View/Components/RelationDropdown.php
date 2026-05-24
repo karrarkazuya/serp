@@ -108,9 +108,12 @@ class RelationDropdown extends Component
             return;
         }
 
-        $this->selectedOptions = empty($this->selectedValues)
-            ? []
-            : $this->selectedQuery($config)
+        if (empty($this->selectedValues)) {
+            $this->selectedOptions = [];
+            return;
+        }
+
+        $rows = $this->selectedQuery($config)
             ->whereIn($this->qualifiedValueColumn($config), $this->selectedValues)
             ->when(Schema::hasColumn($this->table, 'company_id'), function ($query) {
                 $activeCompanyIds = app(CompanyContextService::class)->getActiveCompanyIds();
@@ -122,12 +125,34 @@ class RelationDropdown extends Component
             ->orderBy('label')
             ->get()
             ->map(fn ($row) => [
-                'id' => $row->id,
-                'label' => (string) $row->label,
-                'color' => $this->colorField ? ($row->{$this->colorField} ?? null) : null,
+                'id'     => $row->id,
+                'label'  => (string) $row->label,
+                'color'  => $this->colorField ? ($row->{$this->colorField} ?? null) : null,
+                'stale'  => false,
             ])
             ->values()
             ->all();
+
+        // Any stored ID that no longer matches the lookup's filters (where/active_only/
+        // company scope) is rendered as a "stale" chip with a warning, instead of
+        // disappearing silently. The hidden input keeps the original value so the user
+        // can decide whether to remove it or fix the underlying record.
+        $foundIds  = array_map(fn ($r) => (string) $r['id'], $rows);
+        $staleIds  = array_values(array_filter(
+            $this->selectedValues,
+            fn ($id) => !in_array((string) $id, $foundIds, true),
+        ));
+
+        foreach ($staleIds as $id) {
+            $rows[] = [
+                'id'    => $id,
+                'label' => "Unavailable (id: {$id})",
+                'color' => null,
+                'stale' => true,
+            ];
+        }
+
+        $this->selectedOptions = $rows;
     }
 
     private function qualifiedValueColumn(array $config): string
@@ -157,6 +182,21 @@ class RelationDropdown extends Component
 
         if ($colorColumn) {
             $query->addSelect($colorColumn);
+        }
+
+        // Apply the same `where` and `active_only` filters the lookup endpoint applies, so
+        // a stale or out-of-scope selected_id (e.g. a customer id pointing at a vendor row,
+        // or an archived row) does not silently render in the dropdown. The lookup API is
+        // authoritative; this keeps the displayed selection consistent with what the user
+        // could actually pick.
+        if (!empty($config['active_only']) && Schema::hasColumn($this->actualTable, 'active')) {
+            $query->where("{$this->actualTable}.active", true);
+        }
+
+        if (!empty($config['where'])) {
+            foreach ($config['where'] as [$column, $operator, $value]) {
+                $query->where("{$this->actualTable}.{$column}", $operator, $value);
+            }
         }
 
         return $query;

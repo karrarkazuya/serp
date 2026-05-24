@@ -92,7 +92,8 @@
         </template>
 
         <div class="ms-auto flex items-center gap-2">
-            {{-- Actions dropdown --}}
+            @if($canExport)
+            {{-- Actions dropdown — only rendered when caller confirms export permission --}}
             <div class="relative">
                 <button type="button"
                         @click="actionsOpen = !actionsOpen"
@@ -128,6 +129,7 @@
                     </button>
                 </div>
             </div>
+            @endif
 
             {{-- Clear selection --}}
             <button type="button"

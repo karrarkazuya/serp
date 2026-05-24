@@ -108,12 +108,20 @@ class ReorderRuleController extends Controller
         $activeCompanyIds = $this->companyContext->getActiveCompanyIds();
         abort_unless(in_array($reorderRule->company_id, $activeCompanyIds), 403);
 
+        // Scope route_id to the actor's active companies — without this, an editor
+        // could repoint a Company A reorder rule at a Company B route, sending
+        // future replenishment pickings across tenant boundaries.
+        $routeRule = \Illuminate\Validation\Rule::exists('inventory_routes', 'id')->where(function ($q) use ($activeCompanyIds) {
+            if (empty($activeCompanyIds)) { $q->whereRaw('1 = 0'); return; }
+            $q->whereIn('company_id', $activeCompanyIds)->orWhereNull('company_id');
+        });
+
         $data = $request->validate([
             'qty_min'      => ['required', 'numeric', 'min:0'],
             'qty_max'      => ['required', 'numeric', 'gte:qty_min'],
             'qty_multiple' => ['nullable', 'numeric', 'min:1'],
             'lead_days'    => ['nullable', 'integer', 'min:0'],
-            'route_id'     => ['nullable', 'exists:inventory_routes,id'],
+            'route_id'     => ['nullable', $routeRule],
         ]);
 
         DB::transaction(fn () => $reorderRule->update(array_merge($data, ['updated_by' => auth()->id()])));

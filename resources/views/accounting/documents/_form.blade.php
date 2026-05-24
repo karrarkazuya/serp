@@ -177,17 +177,23 @@ window._docFormData = {
      }">
     <div class="mb-8 flex items-start justify-between gap-6">
         <input type="hidden" name="move_type" value="{{ $config['move_type'] }}">
-        <div>
-            <p class="text-lg font-semibold text-gray-800">{{ match($config['move_type']) { 'out_invoice' => 'Customer Invoice', 'in_invoice' => 'Vendor Bill', 'out_refund' => 'Customer Credit Note', 'in_refund' => 'Vendor Refund', default => $config['singular'] } }}</p>
-            @if($document?->name)
-                <h1 class="mt-2 text-4xl font-bold text-gray-900">{{ $document->name }}</h1>
-            @else
-                <h1 class="mt-2 text-4xl font-bold text-gray-900">{{ __('accounting.status_draft') }}</h1>
-            @endif
+        <div class="flex-1 min-w-0">
+            <p class="text-sm text-gray-500">{{ match($config['move_type']) { 'out_invoice' => 'Customer Invoice', 'in_invoice' => 'Vendor Bill', 'out_refund' => 'Customer Credit Note', 'in_refund' => 'Vendor Refund', default => $config['singular'] } }}</p>
+            <input type="text" name="name"
+                   value="{{ old('name', $document?->name ?? '') }}"
+                   placeholder="{{ match($config['move_type']) { 'out_invoice' => 'INV/2026/00001', 'in_invoice' => 'BILL/2026/00001', 'out_refund' => 'RINV/2026/00001', 'in_refund' => 'RSUPP/2026/00001', default => 'REF/2026/00001' } }}"
+                   class="mt-2 w-full text-3xl font-bold text-gray-800 bg-transparent border-0 border-b-2 border-blue-300 focus:border-blue-500 focus:outline-none focus:ring-0 px-0 py-1 placeholder-gray-300">
         </div>
-        <div class="flex shrink-0 items-center text-sm font-semibold">
-            <span class="relative px-8 py-2 border border-[#71639e] bg-purple-50 text-gray-900">{{ __('accounting.status_draft') }}</span>
-            <span class="px-8 py-2 border border-gray-200 bg-gray-200 text-gray-500">{{ __('accounting.status_posted') }}</span>
+        <div class="flex shrink-0 items-center text-sm font-semibold mt-3">
+            {{-- Odoo-style chevron status bar --}}
+            <span class="relative ps-5 pe-8 py-2 border border-[#71639e] bg-purple-50 text-gray-900 z-10">
+                {{ __('accounting.status_draft') }}
+                <span class="absolute" style="right:-9px;top:50%;transform:translateY(-50%);width:0;height:0;border-top:17px solid transparent;border-bottom:17px solid transparent;border-left:9px solid #71639e;z-index:10;display:block"></span>
+                <span class="absolute" style="right:-8px;top:50%;transform:translateY(-50%);width:0;height:0;border-top:16px solid transparent;border-bottom:16px solid transparent;border-left:8px solid #faf5ff;z-index:11;display:block"></span>
+            </span>
+            <span class="ps-8 pe-5 py-2 border-y border-e border-gray-200 bg-gray-100 text-gray-400">
+                {{ __('accounting.status_posted') }}
+            </span>
         </div>
     </div>
 

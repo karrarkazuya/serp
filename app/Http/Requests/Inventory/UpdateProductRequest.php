@@ -2,12 +2,15 @@
 
 namespace App\Http\Requests\Inventory;
 
+use App\Http\Requests\Inventory\Concerns\InventoryFkRules;
 use App\Services\Company\CompanyContextService;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
 class UpdateProductRequest extends FormRequest
 {
+    use InventoryFkRules;
+
     public function authorize(): bool
     {
         return $this->user()->hasPermission('inventory.write');
@@ -16,6 +19,9 @@ class UpdateProductRequest extends FormRequest
     public function rules(): array
     {
         $activeCompanyIds = app(CompanyContextService::class)->getActiveCompanyIds();
+
+        $routeRule   = $this->companyScopedExists('inventory_routes', $activeCompanyIds, allowNull: true);
+        $partnerRule = $this->contactInActiveCompaniesRule($activeCompanyIds);
 
         return [
             'company_id'          => ['nullable', Rule::exists('companies', 'id')->whereIn('id', $activeCompanyIds)],
@@ -34,9 +40,9 @@ class UpdateProductRequest extends FormRequest
             'weight'              => ['nullable', 'numeric', 'min:0'],
             'volume'              => ['nullable', 'numeric', 'min:0'],
             'routes'              => ['nullable', 'array'],
-            'routes.*'            => ['exists:inventory_routes,id'],
+            'routes.*'            => [$routeRule],
             'suppliers'           => ['nullable', 'array'],
-            'suppliers.*.partner_id'   => ['nullable', 'exists:contacts,id'],
+            'suppliers.*.partner_id'   => ['nullable', $partnerRule],
             'suppliers.*.partner_name' => ['nullable', 'string', 'max:255'],
             'suppliers.*.min_qty'      => ['nullable', 'numeric', 'min:0'],
             'suppliers.*.price'        => ['nullable', 'numeric', 'min:0'],

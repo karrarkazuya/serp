@@ -154,15 +154,35 @@ class AccountingService
             throw new RuntimeException('Journal not found while reserving sequence.');
         }
 
-        $next    = (int) $locked->sequence_next_number;
+        $year    = (int) $date->format('Y');
         $padding = max(1, (int) $locked->sequence_padding);
-        $year    = $date->format('Y');
-        $prefix  = (string) $locked->sequence_prefix;
 
+        // Odoo parity (O4): reset the sequence counter when the move date
+        // enters a new year. Existing per-year scope is the standard ir.sequence
+        // behaviour for accounting journals. Without the reset, INV/2025/00150
+        // is followed by INV/2026/00151 (continues across the year boundary);
+        // with the reset, the 2026 series starts cleanly at INV/2026/00001.
+        $lastYear = (int) ($locked->sequence_last_year ?? 0);
+        if ($lastYear !== 0 && $year !== $lastYear) {
+            $next = 1;
+        } else {
+            $next = (int) $locked->sequence_next_number;
+        }
+
+        // Odoo format: `{prefix}/{year}/{padded}` (the slash between prefix and
+        // year was missing — the previous output looked like INV2025/00001
+        // instead of INV/2025/00001). When the prefix is empty, omit the
+        // leading separator gracefully.
         $padded = str_pad((string) $next, $padding, '0', STR_PAD_LEFT);
-        $name   = "{$prefix}{$year}/{$padded}";
+        $prefix = trim((string) $locked->sequence_prefix);
+        $name   = $prefix === ''
+            ? "{$year}/{$padded}"
+            : "{$prefix}/{$year}/{$padded}";
 
-        $locked->update(['sequence_next_number' => $next + 1]);
+        $locked->update([
+            'sequence_next_number' => $next + 1,
+            'sequence_last_year'   => $year,
+        ]);
 
         return $name;
     }
@@ -182,12 +202,29 @@ class AccountingService
         $journal = AccountJournal::findOrFail($data['journal_id']);
         $this->assertSameCompany($journal->company_id, (int) $data['company_id'], 'journal');
 
+        // O9 (Odoo parity): when a journal pins a currency (e.g. a USD-only
+        // bank journal), every move in it must use that currency. Falling
+        // through to "default it from the journal" silently fixes the
+        // mismatch instead of surfacing a user error.
+        if (!empty($journal->currency)) {
+            $requested = $data['currency'] ?? null;
+            if ($requested !== null && $requested !== '' && $requested !== $journal->currency) {
+                throw new RuntimeException(sprintf(
+                    "Journal '%s' is pinned to currency %s; this entry cannot use %s.",
+                    $journal->name,
+                    $journal->currency,
+                    $requested
+                ));
+            }
+            $data['currency'] = $journal->currency;
+        }
+
         $data['state']        = 'draft';
         $data['payment_state'] = 'not_paid';
         $data['move_type']    = $data['move_type'] ?? 'entry';
         $data['currency']     = $data['currency'] ?? $journal->currency;
         $data['amount_total'] = 0;
-        $data['name']         = null;
+        $data['name']         = !empty($data['name']) ? $data['name'] : null;
 
         $move = AccountMove::create($data);
         $this->syncLines($move, $lines);
@@ -286,7 +323,61 @@ class AccountingService
         $move->lines()->update(['state' => 'posted']);
 
         $this->chatterService->log($move, "Entry posted as {$name}.", 'system');
+
+        // O5 (Odoo parity): when posting a credit note / reversal that points
+        // back at an original move via `reversed_move_id`, auto-reconcile their
+        // counterpart lines. Previously this happened inside createCreditNote
+        // (auto-post), but with the draft-first flow the matching has to fire
+        // at post time so manual edits to the draft still propagate to the
+        // residual update.
+        $this->autoReconcileWithReversedMove($move);
+
         return $move->fresh();
+    }
+
+    /**
+     * If this move reverses another (set via `reversed_move_id` on the credit
+     * note / reversal draft), match their receivable/payable counterpart lines
+     * up to the smaller of the two residuals and refresh the payment state on
+     * both. Only fires when:
+     *   - Both moves are posted
+     *   - Both have a single counterpart line on the same reconcilable account
+     *   - The two residuals overlap (>= 0.005 in base currency)
+     */
+    private function autoReconcileWithReversedMove(AccountMove $move): void
+    {
+        if (!$move->reversed_move_id) {
+            return;
+        }
+
+        $original = AccountMove::find($move->reversed_move_id);
+        if (!$original || !$original->isPosted()) {
+            return;
+        }
+
+        // Only invoice-class documents have a single counterpart to match against.
+        // Pure journal entries (move_type=entry) can have arbitrary structures;
+        // skip auto-reconcile — the user can match manually if needed.
+        $documentTypes = ['out_invoice', 'in_invoice', 'out_refund', 'in_refund'];
+        if (!in_array($move->move_type, $documentTypes, true) || !in_array($original->move_type, $documentTypes, true)) {
+            return;
+        }
+
+        try {
+            $originalCounterpart = $this->documentCounterpartLine($original);
+            $newCounterpart      = $this->documentCounterpartLine($move);
+        } catch (\RuntimeException $e) {
+            // Either side missing a receivable/payable line — silent no-op,
+            // user can reconcile by hand.
+            return;
+        }
+
+        $amount = min($this->getLineResidual($originalCounterpart), $this->getLineResidual($newCounterpart));
+        if ($amount > 0.005) {
+            $this->reconcileLines($originalCounterpart, $newCounterpart, $amount, Carbon::parse($move->date));
+            $this->refreshPaymentState($original);
+            $this->refreshPaymentState($move);
+        }
     }
 
     /**
@@ -299,6 +390,13 @@ class AccountingService
         if ($move->isDraft()) {
             return $move;
         }
+
+        // Reset → edit → re-post is otherwise a fully-supported flow, but if
+        // the entry's date sits inside a locked period, reset alone removes it
+        // from financial reports (state != 'posted'). The period lock is meant
+        // to freeze the historical ledger in place; enforce it here too, with
+        // the same bypass rule postMove uses (accounting.lock permission).
+        $this->assertDateNotLocked($move);
 
         $lineIds = $move->lines()->pluck('id');
         AccountPartialReconcile::where(function ($q) use ($lineIds) {
@@ -324,13 +422,31 @@ class AccountingService
             return $move;
         }
 
+        // Cancelling a posted entry that sits inside a locked period would
+        // remove it from financial reports — same period-lock bypass concern
+        // as resetMoveToDraft. Skip the check for drafts (nothing posted to
+        // protect from disappearing).
+        $wasPosted = $move->isPosted();
+        if ($wasPosted) {
+            $this->assertDateNotLocked($move);
+        }
+
         $lineIds = $move->lines()->pluck('id');
         AccountPartialReconcile::where(function ($q) use ($lineIds) {
             $q->whereIn('debit_move_line_id', $lineIds)
               ->orWhereIn('credit_move_line_id', $lineIds);
         })->delete();
 
-        $move->update(['state' => 'cancelled', 'payment_state' => 'not_paid']);
+        // O8 (Odoo parity): mark a cancelled posted move's name with a
+        // [CANCELLED] prefix so the sequence stays visible in journal listings
+        // (and no future move can reuse the same number cosmetically). Draft
+        // cancels have no name yet, so nothing to mark.
+        $updates = ['state' => 'cancelled', 'payment_state' => 'not_paid'];
+        if ($wasPosted && $move->name && !str_starts_with($move->name, '[CANCELLED]')) {
+            $updates['name'] = '[CANCELLED] ' . $move->name;
+        }
+
+        $move->update($updates);
         $move->lines()->update(['state' => 'cancelled']);
         $this->chatterService->log($move, 'Entry cancelled.', 'system');
         return $move->fresh();
@@ -374,14 +490,22 @@ class AccountingService
         $paymentType = in_array($move->move_type, ['out_invoice', 'in_refund'], true) ? 'inbound' : 'outbound';
         $memo = $data['memo'] ?? 'Payment for ' . ($move->name ?: "#{$move->id}");
 
+        // O11 (Odoo parity): if the journal has an outstanding receipts/payments
+        // account configured, route the liquidity leg through it. The payment
+        // sits in the outstanding account until bank reconciliation moves it
+        // to the actual bank GL — meanwhile the invoice flips to `in_payment`
+        // (see refreshPaymentState). When no outstanding account is set, fall
+        // back to the journal's default_account_id (legacy "direct" behaviour).
+        $liquidityAccountId = $this->resolvePaymentLiquidityAccount($journal, $paymentType);
+
         $lines = $paymentType === 'inbound'
             ? [
-                ['account_id' => $journal->default_account_id, 'partner_id' => $move->partner_id, 'name' => $memo, 'debit' => $amount, 'credit' => 0, 'sequence' => 10],
-                ['account_id' => $counterpartLine->account_id, 'partner_id' => $move->partner_id, 'name' => $memo, 'debit' => 0, 'credit' => $amount, 'sequence' => 20],
+                ['account_id' => $liquidityAccountId,           'partner_id' => $move->partner_id, 'name' => $memo, 'debit' => $amount, 'credit' => 0, 'sequence' => 10],
+                ['account_id' => $counterpartLine->account_id,  'partner_id' => $move->partner_id, 'name' => $memo, 'debit' => 0, 'credit' => $amount, 'sequence' => 20],
             ]
             : [
-                ['account_id' => $counterpartLine->account_id, 'partner_id' => $move->partner_id, 'name' => $memo, 'debit' => $amount, 'credit' => 0, 'sequence' => 10],
-                ['account_id' => $journal->default_account_id, 'partner_id' => $move->partner_id, 'name' => $memo, 'debit' => 0, 'credit' => $amount, 'sequence' => 20],
+                ['account_id' => $counterpartLine->account_id,  'partner_id' => $move->partner_id, 'name' => $memo, 'debit' => $amount, 'credit' => 0, 'sequence' => 10],
+                ['account_id' => $liquidityAccountId,           'partner_id' => $move->partner_id, 'name' => $memo, 'debit' => 0, 'credit' => $amount, 'sequence' => 20],
             ];
 
         $paymentMove = $this->createMove([
@@ -414,6 +538,12 @@ class AccountingService
             'amount' => $amount,
             'currency' => $move->currency,
             'memo' => $memo,
+            // O7 (Odoo parity): the underlying account_move is already posted
+            // + reconciled before we get here, so the AccountPayment itself
+            // must be 'posted'. Falling through to the DB default ('draft')
+            // would leave the payment looking unconfirmed even though the
+            // ledger is already moved.
+            'state' => 'posted',
         ]);
 
         $this->chatterService->log($move, sprintf('Payment registered: %.2f %s.', $amount, $move->currency ?: ''), 'system');
@@ -434,24 +564,32 @@ class AccountingService
             throw new RuntimeException('Payment amount must be greater than zero.');
         }
 
-        $counterpartAccountId = $data['destination_account_id']
-            ?? $journal->suspense_account_id
-            ?? $journal->default_account_id;
-
         $paymentType = $data['payment_type'];
         $date        = $data['date'] ?? now()->toDateString();
         $memo        = $data['memo'] ?? '';
         $partnerId   = $data['partner_id'] ?? null;
         $currency    = $data['currency'] ?? null;
 
+        // O11 (Odoo parity): the liquidity leg goes through the journal's
+        // outstanding receipts/payments account when configured, fallback to
+        // default_account_id (legacy direct posting). The OTHER leg (the
+        // counterpart that records who the payment is to/from) defaults to
+        // the journal's suspense account unless the user picks something
+        // explicit via destination_account_id.
+        $liquidityAccountId = $this->resolvePaymentLiquidityAccount($journal, $paymentType);
+
+        $counterpartAccountId = $data['destination_account_id']
+            ?? $journal->suspense_account_id
+            ?? $journal->default_account_id;
+
         $lines = $paymentType === 'inbound'
             ? [
-                ['account_id' => $journal->default_account_id, 'partner_id' => $partnerId, 'name' => $memo ?: 'Payment', 'debit' => $amount, 'credit' => 0, 'sequence' => 10],
-                ['account_id' => $counterpartAccountId,        'partner_id' => $partnerId, 'name' => $memo ?: 'Payment', 'debit' => 0, 'credit' => $amount, 'sequence' => 20],
+                ['account_id' => $liquidityAccountId,    'partner_id' => $partnerId, 'name' => $memo ?: 'Payment', 'debit' => $amount, 'credit' => 0, 'sequence' => 10],
+                ['account_id' => $counterpartAccountId,  'partner_id' => $partnerId, 'name' => $memo ?: 'Payment', 'debit' => 0, 'credit' => $amount, 'sequence' => 20],
             ]
             : [
-                ['account_id' => $counterpartAccountId,        'partner_id' => $partnerId, 'name' => $memo ?: 'Payment', 'debit' => $amount, 'credit' => 0, 'sequence' => 10],
-                ['account_id' => $journal->default_account_id, 'partner_id' => $partnerId, 'name' => $memo ?: 'Payment', 'debit' => 0, 'credit' => $amount, 'sequence' => 20],
+                ['account_id' => $counterpartAccountId,  'partner_id' => $partnerId, 'name' => $memo ?: 'Payment', 'debit' => $amount, 'credit' => 0, 'sequence' => 10],
+                ['account_id' => $liquidityAccountId,    'partner_id' => $partnerId, 'name' => $memo ?: 'Payment', 'debit' => 0, 'credit' => $amount, 'sequence' => 20],
             ];
 
         $paymentMove = $this->createMove([
@@ -546,15 +684,16 @@ class AccountingService
         $refundType = $move->move_type === 'out_invoice' ? 'out_refund' : 'in_refund';
 
         $header = [
-            'company_id' => $move->company_id,
-            'journal_id' => $move->journal_id,
-            'partner_id' => $move->partner_id,
+            'company_id'       => $move->company_id,
+            'journal_id'       => $move->journal_id,
+            'partner_id'       => $move->partner_id,
             'reversed_move_id' => $move->id,
-            'ref' => 'Credit note for ' . ($move->name ?: "#{$move->id}"),
-            'date' => now()->toDateString(),
-            'move_type' => $refundType,
-            'currency' => $move->currency,
-            'narration' => $move->narration,
+            'ref'              => 'Credit note for ' . ($move->name ?: "#{$move->id}"),
+            'date'             => now()->toDateString(),
+            'invoice_date'     => now()->toDateString(),
+            'move_type'        => $refundType,
+            'currency'         => $move->currency,
+            'narration'        => $move->narration,
         ];
 
         $lines = $move->lines->map(fn (AccountMoveLine $line) => [
@@ -571,27 +710,24 @@ class AccountingService
             'tax_ids'         => $line->taxes->pluck('id')->all(),
         ])->all();
 
+        // O5 (Odoo parity): the credit note is created in DRAFT, NOT posted and
+        // NOT auto-reconciled. Odoo's "Reverse"/"Add Credit Note" button leaves
+        // the new document open so the user can amend lines (partial refund,
+        // change line text) before posting. Reconciliation with the original
+        // happens automatically the moment the user posts it — see `postMove`'s
+        // post-commit hook (`reconcileWithReversed`).
         $creditNote = $this->createMove($header, $lines);
-        $creditNote = $this->postMove($creditNote);
 
-        $originalCounterpart = $this->documentCounterpartLine($move);
-        $creditCounterpart = $this->documentCounterpartLine($creditNote);
-        $amountToReconcile = min($this->getLineResidual($originalCounterpart), $this->getLineResidual($creditCounterpart));
-
-        if ($amountToReconcile > 0.005) {
-            $this->reconcileLines($originalCounterpart, $creditCounterpart, $amountToReconcile, Carbon::parse($creditNote->date));
-            $this->refreshPaymentState($move);
-            $creditNote = $this->refreshPaymentState($creditNote);
-        }
-
-        $this->chatterService->log($move, "Credit note created (#{$creditNote->id}).", 'system');
+        $this->chatterService->log($move, "Credit note drafted (#{$creditNote->id}). Review and post to apply.", 'system');
 
         return $creditNote;
     }
 
     /**
      * Create a reversal entry: same accounts, flipped debit/credit, optional new date.
-     * The original move must be posted. The reversal is automatically posted (Odoo behaviour).
+     * The original move must be posted. Odoo parity (O5): the reversal is
+     * created in DRAFT for the user to review and post; previously it was
+     * auto-posted, which removed the chance for a partial reversal.
      */
     public function reverseMove(AccountMove $move, ?Carbon $reversalDate = null): AccountMove
     {
@@ -625,8 +761,11 @@ class AccountingService
             'sequence'        => $line->sequence,
         ])->all();
 
-        $reversal = $this->postMove($this->createMove($reverseHeader, $reverseLines));
-        $this->chatterService->log($move, "Reversal entry created (#{$reversal->id}).", 'system');
+        // O5 (Odoo parity): stays in DRAFT for review. Reconciliation with the
+        // original move's counterpart happens at post time via the post-commit
+        // hook in postMove().
+        $reversal = $this->createMove($reverseHeader, $reverseLines);
+        $this->chatterService->log($move, "Reversal entry drafted (#{$reversal->id}). Review and post to apply.", 'system');
         return $reversal;
     }
 
@@ -658,18 +797,120 @@ class AccountingService
             return $move;
         }
 
-        $total = round((float) $move->amount_total, self::SCALE);
+        $total    = round((float) $move->amount_total, self::SCALE);
         $residual = $this->documentResidual($move);
 
+        // O6 (Odoo parity): when an invoice is fully matched by a credit note
+        // (a posted move that points back at it via `reversed_move_id`),
+        // payment_state goes to `reversed`, not `paid`. The user-visible
+        // distinction matters: a `paid` invoice means the customer actually
+        // paid us; `reversed` means we cancelled the receivable with a credit.
+        $fullyMatchedByReversal = $residual <= 0.005 && $this->isFullyMatchedByReversal($move);
+
+        // `in_payment` (Odoo): an outstanding payment has been posted but the
+        // bank statement hasn't reconciled it yet. We can only detect this when
+        // outstanding accounts are configured on the payment journal — the
+        // counterpart line would sit on `outstanding_receipts_account_id` /
+        // `outstanding_payments_account_id` rather than the bank GL itself.
+        $inPayment = $residual <= 0.005 && !$fullyMatchedByReversal && $this->isWaitingOnBankClearance($move);
+
         $state = match (true) {
-            $residual <= 0.005 => 'paid',
-            $residual < $total => 'partial',
-            default => 'not_paid',
+            $fullyMatchedByReversal => 'reversed',
+            $inPayment              => 'in_payment',
+            $residual <= 0.005      => 'paid',
+            $residual < $total      => 'partial',
+            default                 => 'not_paid',
         };
 
         $move->update(['payment_state' => $state]);
 
         return $move->fresh();
+    }
+
+    /**
+     * True if the entire residual was wiped by reconciliation with one or more
+     * posted moves that name this document as their `reversed_move_id`. Used
+     * to surface payment_state = 'reversed' (vs 'paid' from an actual payment).
+     */
+    private function isFullyMatchedByReversal(AccountMove $move): bool
+    {
+        if (!in_array($move->move_type, ['out_invoice', 'in_invoice', 'out_refund', 'in_refund'], true)) {
+            return false;
+        }
+
+        try {
+            $counterpart = $this->documentCounterpartLine($move);
+        } catch (\RuntimeException $e) {
+            return false;
+        }
+
+        $matchedLineIds = AccountPartialReconcile::where('debit_move_line_id', $counterpart->id)
+            ->orWhere('credit_move_line_id', $counterpart->id)
+            ->get()
+            ->flatMap(fn ($r) => [$r->debit_move_line_id, $r->credit_move_line_id])
+            ->unique()
+            ->filter(fn ($id) => (int) $id !== (int) $counterpart->id)
+            ->values();
+
+        if ($matchedLineIds->isEmpty()) {
+            return false;
+        }
+
+        // Any matching move whose `reversed_move_id` is this document → reversal match.
+        return AccountMoveLine::query()
+            ->whereIn('id', $matchedLineIds)
+            ->whereHas('move', fn ($q) => $q->where('reversed_move_id', $move->id))
+            ->exists();
+    }
+
+    /**
+     * O11/O6: true if the counterpart was reconciled against a payment that
+     * landed on an outstanding receipts/payments account (i.e. payment is
+     * recorded in the books but bank statement hasn't cleared it yet).
+     */
+    private function isWaitingOnBankClearance(AccountMove $move): bool
+    {
+        try {
+            $counterpart = $this->documentCounterpartLine($move);
+        } catch (\RuntimeException $e) {
+            return false;
+        }
+
+        $matchedLineIds = AccountPartialReconcile::where('debit_move_line_id', $counterpart->id)
+            ->orWhere('credit_move_line_id', $counterpart->id)
+            ->get()
+            ->flatMap(fn ($r) => [$r->debit_move_line_id, $r->credit_move_line_id])
+            ->unique()
+            ->filter(fn ($id) => (int) $id !== (int) $counterpart->id)
+            ->values();
+
+        if ($matchedLineIds->isEmpty()) {
+            return false;
+        }
+
+        // The opposite-side line on each matching payment move lives on the
+        // payment journal's outstanding account. If any matched line's
+        // sibling sits on outstanding_receipts/payments_account, we're
+        // in_payment until bank-rec clears it.
+        $matchedMoves = AccountMoveLine::whereIn('id', $matchedLineIds)->pluck('move_id')->unique();
+        foreach ($matchedMoves as $moveId) {
+            $paymentMove = AccountMove::with(['journal', 'lines.account'])->find($moveId);
+            if (!$paymentMove?->journal) continue;
+
+            $outstandingIds = array_filter([
+                $paymentMove->journal->outstanding_receipts_account_id,
+                $paymentMove->journal->outstanding_payments_account_id,
+            ]);
+            if (empty($outstandingIds)) continue;
+
+            $usesOutstanding = $paymentMove->lines
+                ->contains(fn ($l) => in_array((int) $l->account_id, array_map('intval', $outstandingIds), true));
+            if ($usesOutstanding) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     // ─────────────────────────────────────────────────────────────────────────
@@ -740,6 +981,41 @@ class AccountingService
         return round((float) $move->lines()->sum('debit'), self::SCALE);
     }
 
+    /**
+     * O11 (Odoo parity): pick the liquidity account for a payment leg.
+     *
+     * Odoo's payment flow uses TWO accounts per journal:
+     *   - `outstanding_receipts_account_id` / `outstanding_payments_account_id`
+     *     — temporary holding while the payment is recorded but the bank
+     *     statement hasn't cleared it (invoice payment_state = `in_payment`)
+     *   - `default_account_id` — the actual bank/cash GL account; the bank
+     *     reconciliation flow moves outstanding → default
+     *
+     * When outstanding accounts aren't configured (common in single-bank
+     * setups, or before any bank reconciliation infrastructure is built),
+     * fall back to default_account_id so payments still post — invoices will
+     * just skip the `in_payment` intermediate state and go straight to `paid`.
+     */
+    private function resolvePaymentLiquidityAccount(AccountJournal $journal, string $paymentType): int
+    {
+        $outstandingId = $paymentType === 'inbound'
+            ? $journal->outstanding_receipts_account_id
+            : $journal->outstanding_payments_account_id;
+
+        if ($outstandingId) {
+            return (int) $outstandingId;
+        }
+
+        if (!$journal->default_account_id) {
+            throw new RuntimeException(sprintf(
+                "Journal '%s' has no default liquidity account configured.",
+                $journal->name
+            ));
+        }
+
+        return (int) $journal->default_account_id;
+    }
+
     private function defaultPaymentJournal(AccountMove $move): AccountJournal
     {
         $journal = AccountJournal::where('company_id', $move->company_id)
@@ -796,6 +1072,18 @@ class AccountingService
             throw new RuntimeException('Cannot reconcile lines from different accounts.');
         }
 
+        // O3 (Odoo parity): the account itself must be flagged as reconcilable.
+        // Odoo blocks reconciliation on non-`reconcile` accounts because the
+        // residual on e.g. an income account is not a true outstanding balance
+        // — matching two unrelated entries there silently corrupts P&L drilldowns.
+        $lineA->loadMissing('account');
+        if (!$lineA->account?->reconcile) {
+            throw new RuntimeException(sprintf(
+                'Account %s is not flagged as reconcilable. Only receivable, payable, and liquidity accounts can be reconciled.',
+                $lineA->account?->display_name ?? "#{$lineA->account_id}"
+            ));
+        }
+
         if (abs($lineA->balance) < 0.005 || abs($lineB->balance) < 0.005 || ($lineA->balance > 0) === ($lineB->balance > 0)) {
             throw new RuntimeException('Reconciliation requires one debit line and one credit line.');
         }
@@ -829,6 +1117,22 @@ class AccountingService
             if ($line->account && (int) $line->account->company_id !== (int) $move->company_id) {
                 throw new RuntimeException("Line '{$line->name}' uses an account from a different company than the entry.");
             }
+
+            // O2 (Odoo parity): receivable / payable lines REQUIRE a partner_id.
+            // Without it, AR/AP aging reports cannot bucket the balance by partner
+            // and the residual stays orphaned in the chart of accounts. Odoo
+            // enforces this at the model layer (`_check_partner_id_required`).
+            if ($line->account
+                && in_array($line->account->internal_type, ['receivable', 'payable'], true)
+                && !$line->partner_id
+            ) {
+                throw new RuntimeException(sprintf(
+                    "Line '%s' posts to a %s account (%s) and requires a partner.",
+                    $line->name,
+                    $line->account->internal_type,
+                    $line->account->display_name ?? $line->account->code
+                ));
+            }
         }
     }
 
@@ -840,22 +1144,32 @@ class AccountingService
     }
 
     /**
-     * If a payment_term_id is provided, compute invoice_date_due from the term's
-     * balance line (the line with value_type = 'balance', taking its `days` offset).
-     * A manually entered invoice_date_due takes precedence over the computed value.
+     * Odoo parity (O1): documents have two dates — `invoice_date` (commercial,
+     * shown on the customer PDF) and `date` (accounting/posting). Default
+     * `invoice_date := date` when the user didn't supply one, then anchor
+     * payment-term due-date math on `invoice_date` (matching Odoo: the
+     * customer sees their statement counted from the invoice date, not the
+     * accounting period close).
      */
     private function resolveInvoiceDueDate(array $data): array
     {
+        // Default invoice_date := date when the form didn't carry one (back-compat
+        // for the legacy single-date flow).
+        if (empty($data['invoice_date'])) {
+            $data['invoice_date'] = $data['date'] ?? null;
+        }
+
+        $anchorDate = $data['invoice_date'] ?? $data['date'] ?? null;
+
         if (!empty($data['payment_term_id'])) {
             $term = \App\Models\Accounting\AccountingPaymentTerm::with('lines')->find($data['payment_term_id']);
-            if ($term) {
+            if ($term && $anchorDate) {
                 $balanceLine = $term->lines->firstWhere('value_type', 'balance') ?? $term->lines->sortByDesc('days')->first();
                 $days = $balanceLine ? (int) $balanceLine->days : 0;
-                $invoiceDate = Carbon::parse($data['date'] ?? now());
-                $data['invoice_date_due'] = $invoiceDate->copy()->addDays($days)->toDateString();
+                $data['invoice_date_due'] = Carbon::parse($anchorDate)->copy()->addDays($days)->toDateString();
             }
         } elseif (empty($data['invoice_date_due'])) {
-            $data['invoice_date_due'] = $data['date'] ?? null;
+            $data['invoice_date_due'] = $anchorDate;
         }
 
         return $data;
@@ -915,10 +1229,13 @@ class AccountingService
                 continue;
             }
 
-            // Net base (after extracting inclusive taxes)
+            // O10 (Odoo parity): the unwrap from "gross price → net base" is
+            // driven by `price_include`, not `include_base_amount`. The latter
+            // is the cascading flag used further down when computing each tax's
+            // base.
             $netAmount = $grossAmount;
             foreach ($taxes as $tax) {
-                if ($tax->include_base_amount) {
+                if ($tax->price_include) {
                     $netAmount = $tax->extractBase($netAmount);
                 }
             }
@@ -949,9 +1266,23 @@ class AccountingService
             ];
             $sequence += 10;
 
+            // O10 (Odoo parity): compute each tax against a running base.
+            //   - price-inclusive taxes use the gross to extract the embedded tax
+            //   - other taxes use the cumulative base; if a previous tax had
+            //     `include_base_amount = true`, its computed amount is added to
+            //     the base before the next tax is computed (cascading: VAT on
+            //     top of an environmental fee, QST on top of GST, etc.)
+            // `tax_base_amount` recorded on each tax line is the actual base
+            // that tax used, not the line's net — matters for tax reports.
+            $cumulativeBase = $netAmount;
             foreach ($taxes as $tax) {
-                $baseForCompute = $tax->include_base_amount ? $grossAmount : $netAmount;
+                $baseForCompute = $tax->price_include ? $grossAmount : $cumulativeBase;
                 $taxAmount = $tax->computeAmount($baseForCompute);
+
+                if ($tax->include_base_amount && !$tax->price_include) {
+                    $cumulativeBase = round($cumulativeBase + $taxAmount, self::SCALE);
+                }
+
                 if ($taxAmount <= 0) {
                     continue;
                 }
@@ -971,8 +1302,8 @@ class AccountingService
                         'currency'        => $currency,
                     ];
                 }
-                $taxTotals[$key]['amount']         = round($taxTotals[$key]['amount']         + $taxAmount, self::SCALE);
-                $taxTotals[$key]['tax_base_amount'] = round($taxTotals[$key]['tax_base_amount'] + $netAmount, self::SCALE);
+                $taxTotals[$key]['amount']          = round($taxTotals[$key]['amount']          + $taxAmount, self::SCALE);
+                $taxTotals[$key]['tax_base_amount'] = round($taxTotals[$key]['tax_base_amount'] + $baseForCompute, self::SCALE);
             }
         }
 

@@ -17,6 +17,23 @@ class RelationLookupController extends Controller
         $config = config("relation_dropdowns.{$table}");
         abort_unless($config, 404);
 
+        // Cap caller-controlled inputs early — these flow into LIKE patterns, paginators,
+        // and whereIn() lists. Without a cap a single request can pin DB CPU on big tables.
+        // Custom messages so the dropdown UI can surface a human explanation instead of
+        // a generic "Lookup failed" — see the JSON 422 handler in relation-dropdown.blade.php.
+        $request->validate([
+            'search'    => 'sometimes|string|max:100',
+            'page'      => 'sometimes|integer|min:1|max:10000',
+            'per_page'  => 'sometimes|integer|min:1|max:50',
+            'exclude'   => 'sometimes|array|max:500',
+            'exclude.*' => 'sometimes|nullable',
+        ], [
+            'search.max'   => 'Search term is too long (max 100 characters). Shorten it and try again.',
+            'exclude.max'  => 'Too many items already selected to filter (max 500). Save the form before adding more.',
+            'per_page.max' => 'Page size too large (max 50).',
+            'page.max'     => 'Page number too high.',
+        ]);
+
         $field = $request->query('field', 'name');
         abort_unless(in_array($field, $config['fields'] ?? [], true), 404);
 

@@ -16,11 +16,18 @@ class UpdateMoveRequest extends FormRequest
 
     public function rules(): array
     {
+        // company_id is IMMUTABLE on update — pinned to the existing move's
+        // company_id via `Rule::in([$move->company_id])`. The controller also
+        // unsets `company_id` from $data as defense in depth. Without these,
+        // a user editing draft Move M (originally in Company A) could submit
+        // company_id = B and have all FK validation re-target B-scoped
+        // accounts/journals/partners; the service would then update the move
+        // with company_id = B, breaking audit-trail integrity ("this entry
+        // was always in B").
         $activeCompanyIds = app(CompanyContextService::class)->getActiveCompanyIds();
-        $companyRule = Rule::exists('companies', 'id')->whereIn('id', $activeCompanyIds);
-
-        $move      = $this->route('move');
-        $companyId = $this->input('company_id', $move?->company_id);
+        $move        = $this->route('move');
+        $companyId   = $move?->company_id;
+        $companyRule = Rule::in([$companyId]);
 
         $journalRule = Rule::exists('account_journals', 'id')->where(function ($q) use ($companyId) {
             empty($companyId) ? $q->whereRaw('1 = 0') : $q->where('company_id', $companyId)->where('active', true);

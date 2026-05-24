@@ -23,7 +23,11 @@ class UserPolicy
 
     public function update(User $user, User $model): bool
     {
-        return $user->hasPermission('users.write') || $user->id === $model->id;
+        // Self-edit via the Settings/Users CRUD requires users.write — the controller
+        // routes are gated by `permission:users.write` middleware, so there is no
+        // "always allow self" branch here. If a profile-self-edit endpoint is
+        // added later, wire it through a dedicated policy ability.
+        return $user->hasPermission('users.write');
     }
 
     public function delete(User $user, User $model): bool

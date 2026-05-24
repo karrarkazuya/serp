@@ -70,12 +70,14 @@ class AccountTax extends Model
         'type_tax_use',
         'account_id',
         'description',
+        'price_include',
         'include_base_amount',
         'active',
     ];
 
     protected $casts = [
         'amount'              => 'decimal:4',
+        'price_include'       => 'boolean',
         'include_base_amount' => 'boolean',
         'active'              => 'boolean',
     ];
@@ -131,15 +133,31 @@ class AccountTax extends Model
     }
 
     /**
-     * Compute the tax amount for a given base amount.
-     * If include_base_amount = true the base is a gross amount and we extract tax from it.
+     * Compute the tax amount for a given base.
+     *
+     * Odoo parity (O10) — `price_include` and `include_base_amount` are TWO
+     * different flags:
+     *   - price_include = true        → the price already contains this tax;
+     *                                   extract the embedded amount from the
+     *                                   gross. The caller is expected to use
+     *                                   extractBase() to also unwrap the net.
+     *   - include_base_amount = true  → after this tax is computed, ADD it to
+     *                                   the base for the next sequential tax
+     *                                   (cascading taxes — e.g. Quebec QST on
+     *                                   top of GST + base).
+     *
+     * Both flags can be set independently. computeAmount() only handles the
+     * per-tax math; AccountingService::buildDocumentLines() owns the cascading
+     * order and the price-include unwrap.
      */
     public function computeAmount(float $base): float
     {
         $rate = (float) $this->amount;
 
-        if ($this->include_base_amount) {
-            // price-inclusive: extract embedded tax from the gross amount
+        if ($this->price_include) {
+            // The `base` here is a GROSS amount (the listed line price). Extract
+            // just the embedded tax portion. Net base is unwrapped separately
+            // by extractBase().
             return match ($this->amount_type) {
                 'percent'  => round($base - $base / (1 + $rate / 100), 4),
                 'division' => round($base * $rate / 100, 4),
@@ -157,11 +175,13 @@ class AccountTax extends Model
     }
 
     /**
-     * Net base for a price-inclusive gross amount.
+     * Net base for a price-inclusive gross amount. Used when the line price
+     * is gross (price_include = true) and we need the net to record on the
+     * income/expense line.
      */
     public function extractBase(float $gross): float
     {
-        if (!$this->include_base_amount) {
+        if (!$this->price_include) {
             return $gross;
         }
 

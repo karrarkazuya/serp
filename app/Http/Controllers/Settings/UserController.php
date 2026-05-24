@@ -57,10 +57,11 @@ class UserController extends Controller
 
     public function store(StoreUserRequest $request)
     {
-        DB::transaction(fn () => $this->userService->create(
-            $request->validated(),
-            $request->input('roles', [])
-        ));
+        $roleIds = $request->user()->hasPermission('users.assign_roles')
+            ? $request->input('roles', [])
+            : [];
+
+        DB::transaction(fn () => $this->userService->create($request->validated(), $roleIds));
 
         return redirect()
             ->route('settings.users.index')
@@ -76,11 +77,20 @@ class UserController extends Controller
 
     public function write(UpdateUserRequest $request, User $user)
     {
-        DB::transaction(fn () => $this->userService->update(
-            $user,
-            $request->validated(),
-            $request->has('roles') ? $request->input('roles', []) : null
-        ));
+        $data = $request->validated();
+
+        // Guard: users cannot disable themselves and lock themselves out
+        if ($user->is($request->user()) && array_key_exists('active', $data) && !$data['active']) {
+            return back()->with('error', 'You cannot disable your own account.');
+        }
+
+        // Role assignment is a separate, more dangerous permission than users.write
+        $roleIds = null;
+        if ($request->has('roles') && $request->user()->hasPermission('users.assign_roles')) {
+            $roleIds = $request->input('roles', []);
+        }
+
+        DB::transaction(fn () => $this->userService->update($user, $data, $roleIds));
 
         return redirect()
             ->route('settings.users.show', $user)

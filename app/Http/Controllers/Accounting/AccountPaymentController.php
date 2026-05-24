@@ -22,7 +22,7 @@ class AccountPaymentController extends Controller
 
     public function read(Request $request)
     {
-        abort_unless(auth()->user()->hasPermission('accounting.read'), 403);
+        $this->authorize('viewAny', AccountPayment::class);
 
         $activeCompanyIds = $this->companyContext->getActiveCompanyIds();
         $query = AccountPayment::query()->with(['journal', 'partner', 'pairedDocument']);
@@ -53,7 +53,7 @@ class AccountPaymentController extends Controller
 
     public function show(AccountPayment $payment)
     {
-        abort_unless(auth()->user()->hasPermission('accounting.read'), 403);
+        $this->authorize('view', $payment);
         abort_unless(in_array($payment->company_id, $this->companyContext->getActiveCompanyIds()), 403);
 
         $payment->load(['company', 'journal', 'partner', 'pairedDocument', 'move.lines.account', 'destinationAccount']);
@@ -63,7 +63,7 @@ class AccountPaymentController extends Controller
 
     public function create(Request $request)
     {
-        abort_unless(auth()->user()->hasPermission('accounting.create'), 403);
+        $this->authorize('create', AccountPayment::class);
 
         $activeCompanyIds = $this->companyContext->getActiveCompanyIds();
         $defaultCompanyId = count($activeCompanyIds) === 1 ? $activeCompanyIds[0] : null;
@@ -75,31 +75,47 @@ class AccountPaymentController extends Controller
 
     public function store(Request $request)
     {
-        abort_unless(auth()->user()->hasPermission('accounting.create'), 403);
+        $this->authorize('create', AccountPayment::class);
+
+        $activeCompanyIds = $this->companyContext->getActiveCompanyIds();
+
+        // Step 1: bind the journal first so every other FK can be scoped to its
+        // company_id at the validation layer (instead of a post-validate
+        // findOrFail + abort_unless that's fragile under refactor).
+        $journalId = (int) $request->input('journal_id');
+        $journal   = AccountJournal::find($journalId);
+        abort_unless($journal && in_array($journal->company_id, $activeCompanyIds, true), 403);
+        abort_unless(in_array($journal->type, ['bank', 'cash'], true), 422, 'Payment journal must be of type bank or cash.');
+
+        // Step 2: scope every downstream FK to the journal's company. Without
+        // these, a user with two active companies (A+B) could pick `journal_id`
+        // = A's bank journal and `destination_account_id` = B's receivable
+        // account — the standalone-payment service would then write an
+        // account_move stamped `company_id = A` whose lines touch a Company-B
+        // account. Cross-tenant ledger pollution.
+        $journalCompanyId   = (int) $journal->company_id;
+        $accountInJournalCo = \Illuminate\Validation\Rule::exists('accounts', 'id')
+            ->where(fn ($q) => $q->where('company_id', $journalCompanyId)->where('active', true));
+        $partnerInActiveCo  = \Illuminate\Validation\Rule::exists('contacts', 'id')
+            ->where(function ($q) use ($activeCompanyIds) {
+                empty($activeCompanyIds)
+                    ? $q->whereRaw('1 = 0')
+                    : $q->whereIn('company_id', $activeCompanyIds);
+            });
 
         $data = $request->validate([
-            'journal_id'             => ['required', 'integer', 'exists:account_journals,id'],
+            'journal_id'             => ['required', 'integer', \Illuminate\Validation\Rule::in([$journalId])],
             'payment_type'           => ['required', 'in:inbound,outbound'],
-            'partner_id'             => ['nullable', 'integer', 'exists:contacts,id'],
+            'partner_id'             => ['nullable', 'integer', $partnerInActiveCo],
             'date'                   => ['required', 'date'],
             'amount'                 => ['required', 'numeric', 'gt:0'],
             'currency'               => ['nullable', 'string', 'max:10'],
             'memo'                   => ['nullable', 'string', 'max:255'],
-            'payment_method'         => ['nullable', 'string', 'max:64'],
+            'payment_method'         => ['nullable', 'string', 'max:64', \Illuminate\Validation\Rule::in(array_keys(AccountPayment::PAYMENT_METHODS))],
             'bank_reference'         => ['nullable', 'string', 'max:255'],
             'cheque_number'          => ['nullable', 'string', 'max:255'],
-            'destination_account_id' => ['nullable', 'integer', 'exists:accounts,id'],
+            'destination_account_id' => ['nullable', 'integer', $accountInJournalCo],
         ]);
-
-        $activeCompanyIds = $this->companyContext->getActiveCompanyIds();
-        $journal = AccountJournal::findOrFail($data['journal_id']);
-        abort_unless(in_array($journal->company_id, $activeCompanyIds), 403);
-        abort_unless(in_array($journal->type, ['bank', 'cash']), 422);
-
-        if (!empty($data['destination_account_id'])) {
-            $destAccount = \App\Models\Accounting\Account::findOrFail($data['destination_account_id']);
-            abort_unless(in_array($destAccount->company_id, $activeCompanyIds), 403);
-        }
 
         try {
             $payment = DB::transaction(fn () => $this->accounting->createStandalonePayment($data));
@@ -112,7 +128,13 @@ class AccountPaymentController extends Controller
 
     public function confirm(Request $request, AccountPayment $payment)
     {
-        abort_unless(auth()->user()->hasPermission('accounting.write'), 403);
+        // 'post' policy is now gated on accounting.post — confirming a payment
+        // calls AccountingService::confirmPayment() which posts the underlying
+        // account_move. Without this tightening, any accounting.write holder
+        // could effectively post journal entries by funnelling them through
+        // the payment confirm flow, bypassing the accounting.post permission
+        // separation that gates direct AccountMove posting.
+        $this->authorize('post', $payment);
         abort_unless(in_array($payment->company_id, $this->companyContext->getActiveCompanyIds()), 403);
 
         try {
@@ -126,7 +148,9 @@ class AccountPaymentController extends Controller
 
     public function resetDraft(Request $request, AccountPayment $payment)
     {
-        abort_unless(auth()->user()->hasPermission('accounting.write'), 403);
+        // Resetting cancels the underlying posted move, so this is also a
+        // posting-class operation — gate on accounting.post via the policy.
+        $this->authorize('post', $payment);
         abort_unless(in_array($payment->company_id, $this->companyContext->getActiveCompanyIds()), 403);
 
         try {
@@ -140,7 +164,8 @@ class AccountPaymentController extends Controller
 
     public function cancel(Request $request, AccountPayment $payment)
     {
-        abort_unless(auth()->user()->hasPermission('accounting.write'), 403);
+        // Cancelling cancels the underlying posted move — posting-class operation.
+        $this->authorize('post', $payment);
         abort_unless(in_array($payment->company_id, $this->companyContext->getActiveCompanyIds()), 403);
 
         try {
@@ -154,7 +179,7 @@ class AccountPaymentController extends Controller
 
     public function unlink(Request $_request, AccountPayment $payment)
     {
-        abort_unless(auth()->user()->hasPermission('accounting.unlink'), 403);
+        $this->authorize('delete', $payment);
         abort_unless(in_array($payment->company_id, $this->companyContext->getActiveCompanyIds()), 403);
         abort_unless($payment->isDraft(), 403);
 

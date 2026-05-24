@@ -79,7 +79,15 @@ class CompanyController extends Controller
             $data['logo'] = $fileRecord->uuid;
         }
 
-        $company = DB::transaction(fn () => $this->companyService->create($data));
+        try {
+            $company = DB::transaction(fn () => $this->companyService->create($data));
+        } catch (\Throwable $e) {
+            // Don't leave an orphaned File row + disk file behind if the company create fails.
+            if ($fileRecord) {
+                $this->fileService->forceDelete($fileRecord);
+            }
+            throw $e;
+        }
 
         $fileRecord?->update(['source_type' => $company->getTable(), 'source_id' => $company->id]);
 

@@ -63,6 +63,7 @@
     </div>
 </div>
 
+@if(auth()->user()->hasPermission('users.assign_roles'))
 <div class="bg-white rounded-xl border border-gray-200 p-6">
     <h2 class="text-sm font-semibold text-gray-700 mb-4">{{ __('settings.roles') }}</h2>
     <x-relation-dropdown
@@ -73,3 +74,4 @@
         :selected="old('roles', $user?->roles->pluck('id')->toArray() ?? [])"
     />
 </div>
+@endif

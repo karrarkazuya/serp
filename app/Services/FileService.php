@@ -58,6 +58,23 @@ class FileService
         $filename  = $uuid . ($extension ? '.' . $extension : '');
         $mime      = $file->getMimeType() ?? 'application/octet-stream';
 
+        // Defense-in-depth: even if a caller's form-request validation is too loose
+        // (or absent), no file outside the ALLOWED_MIMES + ALLOWED_EXTENSIONS lists
+        // ever lands on disk. The most important class blocked here is image/svg+xml,
+        // which can carry <script>/<foreignObject> XSS and renders inline in the
+        // browser when FileController serves it.
+        if (!in_array($mime, self::ALLOWED_MIMES, true) || ($extension !== '' && !in_array($extension, self::ALLOWED_EXTENSIONS, true))) {
+            throw new \Symfony\Component\HttpKernel\Exception\UnprocessableEntityHttpException(
+                "File type not allowed: {$mime}" . ($extension ? " (.{$extension})" : '')
+            );
+        }
+
+        if ($file->getSize() > self::MAX_SIZE) {
+            throw new \Symfony\Component\HttpKernel\Exception\UnprocessableEntityHttpException(
+                'File exceeds maximum size of ' . (self::MAX_SIZE / 1024 / 1024) . ' MB.'
+            );
+        }
+
         $path = $file->storeAs($directory, $filename, $disk);
 
         $thumbnailPath = $this->makeThumbnail($path, $disk, $mime);

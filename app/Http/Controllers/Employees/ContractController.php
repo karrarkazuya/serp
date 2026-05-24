@@ -55,14 +55,25 @@ class ContractController extends Controller
         $activeCompanyIds = $this->companyContext->getActiveCompanyIds();
         abort_unless(empty($activeCompanyIds) || in_array($employee->company_id, $activeCompanyIds), 403);
 
+        // Scope every FK rule to the actor's active companies — without this, a user
+        // editing a contract for an employee in company A could set department_id /
+        // job_id / resource_calendar_id to records belonging to company B (mismatched
+        // data, cross-tenant link).
         $companyRule = Rule::exists('companies', 'id')->whereIn('id', $activeCompanyIds);
+        $deptRule    = Rule::exists('hr_departments', 'id')->whereIn('company_id', $activeCompanyIds);
+        $jobRule     = Rule::exists('hr_jobs', 'id')->whereIn('company_id', $activeCompanyIds);
+        // hr_resource_calendars: company_id is nullable (calendars can be shared), so
+        // we accept rows that are either in scope OR explicitly cross-company (null).
+        $calendarRule = Rule::exists('hr_resource_calendars', 'id')->where(function ($q) use ($activeCompanyIds) {
+            $q->whereNull('company_id')->orWhereIn('company_id', $activeCompanyIds);
+        });
 
         $data = $request->validate([
             'name'                 => 'required|string|max:255',
-            'department_id'        => 'nullable|exists:hr_departments,id',
-            'job_id'               => 'nullable|exists:hr_jobs,id',
+            'department_id'        => ['nullable', $deptRule],
+            'job_id'               => ['nullable', $jobRule],
             'company_id'           => ['nullable', $companyRule],
-            'resource_calendar_id' => 'nullable|exists:hr_resource_calendars,id',
+            'resource_calendar_id' => ['nullable', $calendarRule],
             'date_start'           => 'nullable|date',
             'date_end'             => 'nullable|date|after_or_equal:date_start',
             'trial_date_start'     => 'nullable|date',
@@ -157,6 +168,12 @@ class ContractController extends Controller
     {
         abort_unless($contract->employee_id === $employee->id, 404);
         abort_unless($contract->image, 404);
+
+        // Without the company gate, any `employees.read` holder could iterate URL
+        // pairs (/employees/{id}/contracts/{contract}/image) and pull contract
+        // images for employees in companies they have no legitimate access to.
+        $activeCompanyIds = $this->companyContext->getActiveCompanyIds();
+        abort_unless(empty($activeCompanyIds) || in_array($employee->company_id, $activeCompanyIds), 403);
 
         return redirect()->route('files.serve', $contract->image);
     }

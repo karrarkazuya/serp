@@ -18,7 +18,7 @@ class EmployeeCertificate extends Model
     protected $fillable = [
         'uuid', 'employee_id', 'certificate_type', 'study_type',
         'issuing_institution', 'country', 'data_status', 'graduate_date',
-        'affective_date', 'financial_specialization', 'active', 'created_by', 'updated_by',
+        'affective_date', 'financial_specialization', 'specialization_type', 'active', 'created_by', 'updated_by',
     ];
 
     protected $casts = [
@@ -36,6 +36,7 @@ class EmployeeCertificate extends Model
         'data_status'              => 'Data Status',
         'graduate_date'            => 'Graduate Date',
         'affective_date'           => 'Affective Date',
+        'specialization_type'      => 'Specialization Type',
         'financial_specialization' => 'Financial Specialization',
         'active'                   => 'Active',
     ];
@@ -45,7 +46,8 @@ class EmployeeCertificate extends Model
         'study_type'          => ['label' => 'Study Type',          'column' => 'study_type',          'type' => 'string'],
         'issuing_institution' => ['label' => 'Issuing Institution', 'column' => 'issuing_institution', 'type' => 'string'],
         'country'             => ['label' => 'Country',             'column' => 'country',             'type' => 'string'],
-        'data_status'         => ['label' => 'Data Status',         'column' => 'data_status',         'type' => 'string'],
+        'data_status'         => ['label' => 'Data Status',         'column' => 'data_status',         'type' => 'string', 'options' => [['value' => 'current', 'label' => 'Current'], ['value' => 'previous', 'label' => 'Previous']]],
+        'specialization_type' => ['label' => 'Specialization Type', 'column' => 'specialization_type', 'type' => 'string', 'options' => [['value' => 'amount', 'label' => 'Amount'], ['value' => 'percentage', 'label' => 'Percentage']]],
         'graduate_date'       => ['label' => 'Graduate Date',       'column' => 'graduate_date',       'type' => 'date'],
         'affective_date'      => ['label' => 'Affective Date',      'column' => 'affective_date',      'type' => 'date'],
     ];

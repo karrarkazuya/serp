@@ -118,12 +118,14 @@ class TicketController extends Controller
         abort_unless(is_null($ticket->company_id) || in_array($ticket->company_id, $activeCompanyIds), 403);
 
         $ticket->load([
-            'template.inputs.options',
-            'procedureStep.inputs.options',
             'procedure',
             'procedureLines.procedure',
-            'inputs.templateInput',
+            'inputs.templateInput.options',
             'inputs.selectedOptions',
+            'crossRefInputs.templateInput.options',
+            'crossRefInputs.selectedOptions',
+            'crossRefInputs.selectedOption',
+            'crossRefInputs.ownerTicket',
             'assignedDepartment',
             'assignedUser',
             'sharedLink',
@@ -220,7 +222,7 @@ class TicketController extends Controller
         $activeCompanyIds = $this->companyContext->getActiveCompanyIds();
         abort_unless(is_null($ticket->company_id) || in_array($ticket->company_id, $activeCompanyIds), 403);
 
-        $ticket->load(['template.inputs.options', 'inputs.selectedOptions', 'viewers']);
+        $ticket->load(['inputs.templateInput.options', 'inputs.selectedOptions', 'viewers']);
         $departments = Department::where('active', true)->orderBy('name')->get();
 
         return view('workflow.tickets.edit', compact('ticket', 'departments'));
@@ -285,13 +287,14 @@ class TicketController extends Controller
         $activeCompanyIds = $this->companyContext->getActiveCompanyIds();
         abort_unless(is_null($ticket->company_id) || in_array($ticket->company_id, $activeCompanyIds), 403);
 
-        $ownerId   = $ticket->procedure_step_id ?? $ticket->template_id;
-        $ownerType = $ticket->procedure_step_id ? 'procedure_step' : 'ticket_template';
+        $ownerId = $ticket->procedure_step_id ?? $ticket->template_id;
         abort_unless($ownerId, 422);
 
-        // Load all template inputs for this ticket's current step/template
-        $templateInputs = WorkflowTemplateInput::where('owner_type', $ownerType)
-            ->where('owner_id', $ownerId)
+        // Only process inputs that were frozen on this ticket at creation time.
+        // This ensures that template changes (add/remove fields) do not affect running tickets.
+        $frozenInputIds = $ticket->inputs()->pluck('template_input_id')->toArray();
+
+        $templateInputs = WorkflowTemplateInput::whereIn('id', $frozenInputIds)
             ->with('options')
             ->get()
             ->keyBy('id');

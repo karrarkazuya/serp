@@ -9,6 +9,7 @@ use App\Models\Workflow\Ticket;
 use App\Models\Workflow\TicketPath;
 use App\Models\Workflow\WorkflowUser;
 use App\Services\Chatter\ChatterService;
+use Illuminate\Support\Facades\DB;
 
 class ProcedureService
 {
@@ -166,10 +167,12 @@ class ProcedureService
 
     private function instantiateTickets(Procedure $procedure, ProcedureTemplate $template): void
     {
-        $steps = $template->steps()->with(['inputs.options', 'nextSteps', 'pathChoices', 'subProcedures'])->get();
+        $steps = $template->steps()->with(['inputs.options', 'inputs.guestSteps', 'nextSteps', 'pathChoices', 'subProcedures'])->get();
 
-        // Map step_id → Ticket
-        $ticketMap = [];
+        // Map step_id → Ticket; step_id → [template_input_id → frozen_record_input_id]
+        $ticketMap      = [];
+        $frozenInputMap = [];
+
         foreach ($steps as $step) {
             $ticket = Ticket::create([
                 'procedure_id'              => $procedure->id,
@@ -196,13 +199,14 @@ class ProcedureService
             }
 
             foreach ($step->inputs as $input) {
-                $ticket->inputs()->create([
+                $frozen = $ticket->inputs()->create([
                     'record_type'       => 'ticket',
                     'template_input_id' => $input->id,
                     'name'              => $input->name,
                     'type'              => $input->type,
                     'is_required'       => $input->is_required,
                 ]);
+                $frozenInputMap[$step->id][$input->id] = $frozen->id;
             }
 
             $ticketMap[$step->id] = $ticket;
@@ -224,6 +228,27 @@ class ProcedureService
                     ]);
                 }
             }
+        }
+
+        // Freeze cross-ref visibility: inputs from step A that should show read-only in step B's ticket
+        $crossRefs = [];
+        foreach ($steps as $step) {
+            foreach ($step->inputs as $input) {
+                if ($input->guestSteps->isEmpty()) continue;
+                $sourceId = $frozenInputMap[$step->id][$input->id] ?? null;
+                if (!$sourceId) continue;
+                foreach ($input->guestSteps as $guestStep) {
+                    $viewingTicket = $ticketMap[$guestStep->id] ?? null;
+                    if (!$viewingTicket) continue;
+                    $crossRefs[] = [
+                        'viewing_ticket_id'      => $viewingTicket->id,
+                        'source_record_input_id' => $sourceId,
+                    ];
+                }
+            }
+        }
+        if (!empty($crossRefs)) {
+            DB::table('workflow_ticket_input_refs')->insertOrIgnore($crossRefs);
         }
 
         // Activate start tickets (no previous ticket)

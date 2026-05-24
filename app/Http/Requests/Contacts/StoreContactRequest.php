@@ -28,7 +28,7 @@ class StoreContactRequest extends FormRequest
             'parent_id'    => ['nullable', $contactRule],
             'related_contacts' => 'nullable|array',
             'related_contacts.*' => [$contactRule],
-            'avatar'       => 'nullable|image|max:2048',
+            'avatar'       => 'nullable|file|max:2048|mimetypes:image/jpeg,image/png,image/gif,image/webp|mimes:jpg,jpeg,png,gif,webp',
             'tags'         => 'nullable|array',
             'tags.*'       => 'exists:tags,id',
             'name'         => 'required|string|max:255',
@@ -36,7 +36,10 @@ class StoreContactRequest extends FormRequest
             'contact_type' => 'required|in:individual,company',
             'email'        => 'nullable|email|max:255',
             'phones'       => 'nullable|array',
-            'phones.*'     => ['nullable', 'string', 'max:50', 'distinct', Rule::unique('contact_phones', 'phone')],
+            // Within-request uniqueness only — cross-contact uniqueness within the
+            // active companies is enforced in ContactController::assertPhonesUnique
+            // (skips soft-deleted rows and the contact's own existing phones).
+            'phones.*'     => ['nullable', 'string', 'max:50', 'distinct'],
             'website'      => 'nullable|url|max:255',
             'street'       => 'nullable|string|max:255',
             'city'         => 'nullable|string|max:100',

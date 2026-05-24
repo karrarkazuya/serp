@@ -33,7 +33,7 @@ class StoreContractRequest extends FormRequest
             'wage'                => 'nullable|numeric|min:0',
             'currency'            => 'nullable|string|max:10',
             'notes'               => 'nullable|string',
-            'image'               => 'nullable|image|max:5120',
+            'image'               => 'nullable|file|max:5120|mimetypes:image/jpeg,image/png,image/gif,image/webp|mimes:jpg,jpeg,png,gif,webp',
         ];
     }
 }

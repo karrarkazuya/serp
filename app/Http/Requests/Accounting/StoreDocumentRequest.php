@@ -41,7 +41,13 @@ class StoreDocumentRequest extends FormRequest
             'journal_id' => ['required', $journalRule],
             'partner_id' => ['required', $partnerRule],
             'control_account_id' => ['required', $accountRule],
-            'date' => ['required', 'date'],
+            // Odoo parity (O1): `date` is the accounting / posting date used by
+            // period locks, tax periods, and ledger reports. `invoice_date` is
+            // the commercial date that appears on the customer-facing PDF and
+            // anchors the payment-term due-date computation. They commonly
+            // differ (e.g. invoice dated Jan 15, posted Feb 1 in Jan's close).
+            'date'             => ['required', 'date'],
+            'invoice_date'     => ['nullable', 'date'],
             'invoice_date_due' => ['nullable', 'date'],
             'payment_term_id' => ['nullable', Rule::exists('accounting_payment_terms', 'id')->where('company_id', $companyId)->where('active', true)],
             'incoterm_id' => ['nullable', Rule::exists('accounting_incoterms', 'id')],
@@ -50,6 +56,7 @@ class StoreDocumentRequest extends FormRequest
             'move_type' => ['required', Rule::in(['out_invoice', 'in_invoice', 'out_refund', 'in_refund'])],
             'currency' => ['nullable', 'string', 'max:10'],
             'narration' => ['nullable', 'string', 'max:10000'],
+            'name'   => ['nullable', 'string', 'max:191'],
             'action' => ['nullable', 'string', Rule::in(['save', 'post'])],
 
             'items' => ['required', 'array', 'min:1'],

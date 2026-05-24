@@ -79,10 +79,28 @@
                class="flex-1 text-sm text-gray-800 bg-transparent border-0 focus:outline-none px-0 py-0">
     </div>
 
-    {{-- Financial Specialization --}}
-    <div class="flex items-center gap-4 py-1.5 border-b border-gray-100">
-        <label class="w-48 shrink-0 text-sm text-gray-500">{{ __('employees.financial_specialization') }}</label>
-        <input type="number" name="financial_specialization" value="{{ $val('financial_specialization') }}" min="0" step="0.01"
-               class="flex-1 text-sm text-gray-800 bg-transparent border-0 focus:outline-none px-0 py-0" placeholder="0.00">
+    {{-- Specialization Type + conditional value --}}
+    <div x-data="{ specType: '{{ old('specialization_type', $certificate->specialization_type ?? 'amount') }}' }">
+        <div class="flex items-center gap-4 py-1.5 border-b border-gray-100">
+            <label class="w-48 shrink-0 text-sm text-gray-500">{{ __('employees.specialization_type') }}</label>
+            <div class="flex items-center gap-5">
+                <label class="flex items-center gap-2 text-sm text-gray-700 cursor-pointer">
+                    <input type="radio" name="specialization_type" value="amount" x-model="specType" class="text-purple-600">
+                    {{ __('employees.specialization_type_amount') }}
+                </label>
+                <label class="flex items-center gap-2 text-sm text-gray-700 cursor-pointer">
+                    <input type="radio" name="specialization_type" value="percentage" x-model="specType" class="text-purple-600">
+                    {{ __('employees.specialization_type_percentage') }}
+                </label>
+            </div>
+        </div>
+        <div class="flex items-center gap-4 py-1.5 border-b border-gray-100">
+            <label class="w-48 shrink-0 text-sm text-gray-500">{{ __('employees.financial_specialization') }}</label>
+            <div class="flex items-center gap-2 flex-1">
+                <input type="number" name="financial_specialization" value="{{ $val('financial_specialization') }}" min="0" step="0.01"
+                       class="w-32 text-sm text-gray-800 bg-transparent border-0 focus:outline-none px-0 py-0" placeholder="0.00">
+                <span x-show="specType === 'percentage'" class="text-sm text-gray-400">%</span>
+            </div>
+        </div>
     </div>
 </div>

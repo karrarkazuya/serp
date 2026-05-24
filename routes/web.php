@@ -26,6 +26,11 @@ use App\Http\Controllers\Employees\GoalController;
 use App\Http\Controllers\Employees\EmployeeDocumentController;
 use App\Http\Controllers\Employees\EmployeeCertificateController;
 use App\Http\Controllers\Employees\EmployeePositionController;
+use App\Http\Controllers\Employees\EmployeeBonusController;
+use App\Http\Controllers\Employees\EmployeeAppreciationController;
+use App\Http\Controllers\Employees\EmployeeSanctionController;
+use App\Http\Controllers\Employees\EmployeeRewardController;
+use App\Http\Controllers\Employees\EmployeeJobGradeController;
 use App\Http\Controllers\Components\RelationLookupController;
 use App\Http\Controllers\Settings\CompanyController;
 use App\Http\Controllers\Settings\PermissionController;
@@ -56,9 +61,6 @@ use Illuminate\Support\Facades\Route;
 */
 // Public shared-link route — no authentication required
 Route::get('/share/{token}', [SharedLinkController::class, 'show'])->name('share.show');
-
-// Contact avatar — kept for backward compat; redirects to unified file route
-Route::get('/contacts/avatar/{uuid}', [ContactController::class, 'avatar'])->name('contacts.avatar');
 
 Route::middleware('guest')->group(function () {
     Route::get('/login', [LoginController::class, 'showLoginForm'])->name('login');
@@ -374,6 +376,89 @@ Route::middleware('auth')->group(function () {
             Route::post('/{certificate}/comment',  [EmployeeCertificateController::class, 'addComment'])->middleware('permission:employees.write')->name('comment');
         });
 
+        // Bonuses
+        Route::prefix('bonuses')->name('bonuses.')->group(function () {
+            Route::get('/',                    [EmployeeBonusController::class, 'read'])->middleware('permission:employees.read')->name('index');
+            Route::get('/create',              [EmployeeBonusController::class, 'create'])->middleware('permission:employees.write')->name('create');
+            Route::post('/',                   [EmployeeBonusController::class, 'store'])->middleware('permission:employees.write')->name('store');
+            Route::get('/{bonus}',             [EmployeeBonusController::class, 'show'])->middleware('permission:employees.read')->name('show');
+            Route::get('/{bonus}/edit',        [EmployeeBonusController::class, 'edit'])->middleware('permission:employees.write')->name('edit');
+            Route::put('/{bonus}/employees',    [EmployeeBonusController::class, 'syncEmployees'])->middleware('permission:employees.write')->name('employees.sync');
+            Route::put('/{bonus}',             [EmployeeBonusController::class, 'write'])->middleware('permission:employees.write')->name('update');
+            Route::patch('/{bonus}/archive',   [EmployeeBonusController::class, 'archive'])->middleware('permission:employees.write')->name('archive');
+            Route::patch('/{bonus}/unarchive', [EmployeeBonusController::class, 'unarchive'])->middleware('permission:employees.write')->name('unarchive');
+            Route::delete('/{bonus}',          [EmployeeBonusController::class, 'unlink'])->middleware('permission:employees.unlink')->name('delete');
+            Route::post('/{bonus}/comment',    [EmployeeBonusController::class, 'addComment'])->middleware('permission:employees.write')->name('comment');
+            Route::post('/{bonus}/document',   [EmployeeBonusController::class, 'replaceDocument'])->middleware('permission:employees.write')->name('document.replace');
+            Route::delete('/{bonus}/document', [EmployeeBonusController::class, 'deleteDocument'])->middleware('permission:employees.write')->name('document.delete');
+        });
+
+        // Appreciations
+        Route::prefix('appreciations')->name('appreciations.')->group(function () {
+            Route::get('/',                           [EmployeeAppreciationController::class, 'read'])->middleware('permission:employees.read')->name('index');
+            Route::get('/create',                     [EmployeeAppreciationController::class, 'create'])->middleware('permission:employees.write')->name('create');
+            Route::post('/',                          [EmployeeAppreciationController::class, 'store'])->middleware('permission:employees.write')->name('store');
+            Route::get('/{appreciation}',             [EmployeeAppreciationController::class, 'show'])->middleware('permission:employees.read')->name('show');
+            Route::get('/{appreciation}/edit',        [EmployeeAppreciationController::class, 'edit'])->middleware('permission:employees.write')->name('edit');
+            Route::put('/{appreciation}/employees',   [EmployeeAppreciationController::class, 'syncEmployees'])->middleware('permission:employees.write')->name('employees.sync');
+            Route::put('/{appreciation}',             [EmployeeAppreciationController::class, 'write'])->middleware('permission:employees.write')->name('update');
+            Route::patch('/{appreciation}/archive',   [EmployeeAppreciationController::class, 'archive'])->middleware('permission:employees.write')->name('archive');
+            Route::patch('/{appreciation}/unarchive', [EmployeeAppreciationController::class, 'unarchive'])->middleware('permission:employees.write')->name('unarchive');
+            Route::delete('/{appreciation}',          [EmployeeAppreciationController::class, 'unlink'])->middleware('permission:employees.unlink')->name('delete');
+            Route::post('/{appreciation}/comment',    [EmployeeAppreciationController::class, 'addComment'])->middleware('permission:employees.write')->name('comment');
+            Route::post('/{appreciation}/document',   [EmployeeAppreciationController::class, 'replaceDocument'])->middleware('permission:employees.write')->name('document.replace');
+            Route::delete('/{appreciation}/document', [EmployeeAppreciationController::class, 'deleteDocument'])->middleware('permission:employees.write')->name('document.delete');
+        });
+
+        // Sanctions
+        Route::prefix('sanctions')->name('sanctions.')->group(function () {
+            Route::get('/',                      [EmployeeSanctionController::class, 'read'])->middleware('permission:employees.read')->name('index');
+            Route::get('/create',                [EmployeeSanctionController::class, 'create'])->middleware('permission:employees.write')->name('create');
+            Route::post('/',                     [EmployeeSanctionController::class, 'store'])->middleware('permission:employees.write')->name('store');
+            Route::get('/{sanction}',            [EmployeeSanctionController::class, 'show'])->middleware('permission:employees.read')->name('show');
+            Route::get('/{sanction}/edit',       [EmployeeSanctionController::class, 'edit'])->middleware('permission:employees.write')->name('edit');
+            Route::put('/{sanction}/employees',  [EmployeeSanctionController::class, 'syncEmployees'])->middleware('permission:employees.write')->name('employees.sync');
+            Route::put('/{sanction}',            [EmployeeSanctionController::class, 'write'])->middleware('permission:employees.write')->name('update');
+            Route::patch('/{sanction}/archive',  [EmployeeSanctionController::class, 'archive'])->middleware('permission:employees.write')->name('archive');
+            Route::patch('/{sanction}/unarchive',[EmployeeSanctionController::class, 'unarchive'])->middleware('permission:employees.write')->name('unarchive');
+            Route::delete('/{sanction}',         [EmployeeSanctionController::class, 'unlink'])->middleware('permission:employees.unlink')->name('delete');
+            Route::post('/{sanction}/comment',   [EmployeeSanctionController::class, 'addComment'])->middleware('permission:employees.write')->name('comment');
+            Route::post('/{sanction}/document',  [EmployeeSanctionController::class, 'replaceDocument'])->middleware('permission:employees.write')->name('document.replace');
+            Route::delete('/{sanction}/document',[EmployeeSanctionController::class, 'deleteDocument'])->middleware('permission:employees.write')->name('document.delete');
+        });
+
+        // Rewards
+        Route::prefix('rewards')->name('rewards.')->group(function () {
+            Route::get('/',                     [EmployeeRewardController::class, 'read'])->middleware('permission:employees.read')->name('index');
+            Route::get('/create',               [EmployeeRewardController::class, 'create'])->middleware('permission:employees.write')->name('create');
+            Route::post('/',                    [EmployeeRewardController::class, 'store'])->middleware('permission:employees.write')->name('store');
+            Route::get('/{reward}',             [EmployeeRewardController::class, 'show'])->middleware('permission:employees.read')->name('show');
+            Route::get('/{reward}/edit',        [EmployeeRewardController::class, 'edit'])->middleware('permission:employees.write')->name('edit');
+            Route::put('/{reward}/employees',   [EmployeeRewardController::class, 'syncEmployees'])->middleware('permission:employees.write')->name('employees.sync');
+            Route::put('/{reward}',             [EmployeeRewardController::class, 'write'])->middleware('permission:employees.write')->name('update');
+            Route::patch('/{reward}/archive',   [EmployeeRewardController::class, 'archive'])->middleware('permission:employees.write')->name('archive');
+            Route::patch('/{reward}/unarchive', [EmployeeRewardController::class, 'unarchive'])->middleware('permission:employees.write')->name('unarchive');
+            Route::delete('/{reward}',          [EmployeeRewardController::class, 'unlink'])->middleware('permission:employees.unlink')->name('delete');
+            Route::post('/{reward}/comment',    [EmployeeRewardController::class, 'addComment'])->middleware('permission:employees.write')->name('comment');
+            Route::post('/{reward}/document',   [EmployeeRewardController::class, 'replaceDocument'])->middleware('permission:employees.write')->name('document.replace');
+            Route::delete('/{reward}/document', [EmployeeRewardController::class, 'deleteDocument'])->middleware('permission:employees.write')->name('document.delete');
+        });
+
+        // Job Grades
+        Route::prefix('job-grades')->name('job-grades.')->group(function () {
+            Route::get('/',                       [EmployeeJobGradeController::class, 'read'])->middleware('permission:employees.read')->name('index');
+            Route::get('/create',                 [EmployeeJobGradeController::class, 'create'])->middleware('permission:employees.write')->name('create');
+            Route::post('/',                      [EmployeeJobGradeController::class, 'store'])->middleware('permission:employees.write')->name('store');
+            Route::get('/{jobGrade}',             [EmployeeJobGradeController::class, 'show'])->middleware('permission:employees.read')->name('show');
+            Route::get('/{jobGrade}/edit',        [EmployeeJobGradeController::class, 'edit'])->middleware('permission:employees.write')->name('edit');
+            Route::put('/{jobGrade}/employees',   [EmployeeJobGradeController::class, 'syncEmployees'])->middleware('permission:employees.write')->name('employees.sync');
+            Route::put('/{jobGrade}',             [EmployeeJobGradeController::class, 'write'])->middleware('permission:employees.write')->name('update');
+            Route::patch('/{jobGrade}/archive',   [EmployeeJobGradeController::class, 'archive'])->middleware('permission:employees.write')->name('archive');
+            Route::patch('/{jobGrade}/unarchive', [EmployeeJobGradeController::class, 'unarchive'])->middleware('permission:employees.write')->name('unarchive');
+            Route::delete('/{jobGrade}',          [EmployeeJobGradeController::class, 'unlink'])->middleware('permission:employees.unlink')->name('delete');
+            Route::post('/{jobGrade}/comment',    [EmployeeJobGradeController::class, 'addComment'])->middleware('permission:employees.write')->name('comment');
+        });
+
         // Employee CRUD (after all fixed sub-routes)
         Route::get('/avatar/{uuid}', [EmployeeController::class, 'serveAvatar'])->middleware('permission:employees.read')->name('avatar');
         Route::get('/{employee}', [EmployeeController::class, 'show'])->middleware('permission:employees.read')->name('show');
@@ -593,15 +678,19 @@ Route::middleware('auth')->group(function () {
 
         // Customer Credit Notes
         Route::prefix('credit-notes')->name('credit-notes.')->group(function () {
-            Route::get('/', [\App\Http\Controllers\Accounting\AccountDocumentController::class, 'creditNotes'])->middleware('permission:accounting.read')->name('index');
-            Route::get('/{creditNote}', [\App\Http\Controllers\Accounting\AccountDocumentController::class, 'showCreditNote'])->middleware('permission:accounting.read')->name('show');
-            Route::patch('/{creditNote}/post', [\App\Http\Controllers\Accounting\AccountDocumentController::class, 'postCreditNote'])->middleware('permission:accounting.post')->name('post');
-            Route::patch('/{creditNote}/pay', [\App\Http\Controllers\Accounting\AccountDocumentController::class, 'payCreditNote'])->middleware('permission:accounting.post')->name('pay');
-            Route::get('/{creditNote}/print', [\App\Http\Controllers\Accounting\AccountDocumentController::class, 'printCreditNote'])->middleware('permission:accounting.read')->name('print');
-            Route::patch('/{creditNote}/draft', [\App\Http\Controllers\Accounting\AccountDocumentController::class, 'resetCreditNote'])->middleware('permission:accounting.post')->name('reset-draft');
-            Route::patch('/{creditNote}/cancel', [\App\Http\Controllers\Accounting\AccountDocumentController::class, 'cancelCreditNote'])->middleware('permission:accounting.post')->name('cancel');
-            Route::delete('/{creditNote}', [\App\Http\Controllers\Accounting\AccountDocumentController::class, 'deleteCreditNote'])->middleware('permission:accounting.unlink')->name('delete');
-            Route::post('/{creditNote}/comment', [\App\Http\Controllers\Accounting\AccountDocumentController::class, 'commentCreditNote'])->middleware('permission:accounting.write')->name('comment');
+            Route::get('/',               [\App\Http\Controllers\Accounting\AccountDocumentController::class, 'creditNotes'])      ->middleware('permission:accounting.read')   ->name('index');
+            Route::get('/create',         [\App\Http\Controllers\Accounting\AccountDocumentController::class, 'createCreditNote']) ->middleware('permission:accounting.create') ->name('create');
+            Route::post('/',              [\App\Http\Controllers\Accounting\AccountDocumentController::class, 'storeCreditNote'])  ->middleware('permission:accounting.create') ->name('store');
+            Route::get('/{creditNote}',           [\App\Http\Controllers\Accounting\AccountDocumentController::class, 'showCreditNote'])   ->middleware('permission:accounting.read')   ->name('show');
+            Route::get('/{creditNote}/edit',      [\App\Http\Controllers\Accounting\AccountDocumentController::class, 'editCreditNote'])   ->middleware('permission:accounting.write')  ->name('edit');
+            Route::put('/{creditNote}',           [\App\Http\Controllers\Accounting\AccountDocumentController::class, 'updateCreditNote']) ->middleware('permission:accounting.write')  ->name('update');
+            Route::patch('/{creditNote}/post',    [\App\Http\Controllers\Accounting\AccountDocumentController::class, 'postCreditNote'])   ->middleware('permission:accounting.post')   ->name('post');
+            Route::patch('/{creditNote}/pay',     [\App\Http\Controllers\Accounting\AccountDocumentController::class, 'payCreditNote'])    ->middleware('permission:accounting.post')   ->name('pay');
+            Route::get('/{creditNote}/print',     [\App\Http\Controllers\Accounting\AccountDocumentController::class, 'printCreditNote'])  ->middleware('permission:accounting.read')   ->name('print');
+            Route::patch('/{creditNote}/draft',   [\App\Http\Controllers\Accounting\AccountDocumentController::class, 'resetCreditNote'])  ->middleware('permission:accounting.post')   ->name('reset-draft');
+            Route::patch('/{creditNote}/cancel',  [\App\Http\Controllers\Accounting\AccountDocumentController::class, 'cancelCreditNote']) ->middleware('permission:accounting.post')   ->name('cancel');
+            Route::delete('/{creditNote}',        [\App\Http\Controllers\Accounting\AccountDocumentController::class, 'deleteCreditNote']) ->middleware('permission:accounting.unlink') ->name('delete');
+            Route::post('/{creditNote}/comment',  [\App\Http\Controllers\Accounting\AccountDocumentController::class, 'commentCreditNote'])->middleware('permission:accounting.write')  ->name('comment');
         });
 
         // Vendor Bills
@@ -624,15 +713,19 @@ Route::middleware('auth')->group(function () {
 
         // Vendor Refunds
         Route::prefix('refunds')->name('refunds.')->group(function () {
-            Route::get('/', [\App\Http\Controllers\Accounting\AccountDocumentController::class, 'refunds'])->middleware('permission:accounting.read')->name('index');
-            Route::get('/{refund}', [\App\Http\Controllers\Accounting\AccountDocumentController::class, 'showRefund'])->middleware('permission:accounting.read')->name('show');
-            Route::patch('/{refund}/post', [\App\Http\Controllers\Accounting\AccountDocumentController::class, 'postRefund'])->middleware('permission:accounting.post')->name('post');
-            Route::patch('/{refund}/pay', [\App\Http\Controllers\Accounting\AccountDocumentController::class, 'payRefund'])->middleware('permission:accounting.post')->name('pay');
-            Route::get('/{refund}/print', [\App\Http\Controllers\Accounting\AccountDocumentController::class, 'printRefund'])->middleware('permission:accounting.read')->name('print');
-            Route::patch('/{refund}/draft', [\App\Http\Controllers\Accounting\AccountDocumentController::class, 'resetRefund'])->middleware('permission:accounting.post')->name('reset-draft');
-            Route::patch('/{refund}/cancel', [\App\Http\Controllers\Accounting\AccountDocumentController::class, 'cancelRefund'])->middleware('permission:accounting.post')->name('cancel');
-            Route::delete('/{refund}', [\App\Http\Controllers\Accounting\AccountDocumentController::class, 'deleteRefund'])->middleware('permission:accounting.unlink')->name('delete');
-            Route::post('/{refund}/comment', [\App\Http\Controllers\Accounting\AccountDocumentController::class, 'commentRefund'])->middleware('permission:accounting.write')->name('comment');
+            Route::get('/',             [\App\Http\Controllers\Accounting\AccountDocumentController::class, 'refunds'])       ->middleware('permission:accounting.read')   ->name('index');
+            Route::get('/create',       [\App\Http\Controllers\Accounting\AccountDocumentController::class, 'createRefund'])  ->middleware('permission:accounting.create') ->name('create');
+            Route::post('/',            [\App\Http\Controllers\Accounting\AccountDocumentController::class, 'storeRefund'])   ->middleware('permission:accounting.create') ->name('store');
+            Route::get('/{refund}',          [\App\Http\Controllers\Accounting\AccountDocumentController::class, 'showRefund'])   ->middleware('permission:accounting.read')   ->name('show');
+            Route::get('/{refund}/edit',     [\App\Http\Controllers\Accounting\AccountDocumentController::class, 'editRefund'])   ->middleware('permission:accounting.write')  ->name('edit');
+            Route::put('/{refund}',          [\App\Http\Controllers\Accounting\AccountDocumentController::class, 'updateRefund']) ->middleware('permission:accounting.write')  ->name('update');
+            Route::patch('/{refund}/post',   [\App\Http\Controllers\Accounting\AccountDocumentController::class, 'postRefund'])   ->middleware('permission:accounting.post')   ->name('post');
+            Route::patch('/{refund}/pay',    [\App\Http\Controllers\Accounting\AccountDocumentController::class, 'payRefund'])    ->middleware('permission:accounting.post')   ->name('pay');
+            Route::get('/{refund}/print',    [\App\Http\Controllers\Accounting\AccountDocumentController::class, 'printRefund'])  ->middleware('permission:accounting.read')   ->name('print');
+            Route::patch('/{refund}/draft',  [\App\Http\Controllers\Accounting\AccountDocumentController::class, 'resetRefund'])  ->middleware('permission:accounting.post')   ->name('reset-draft');
+            Route::patch('/{refund}/cancel', [\App\Http\Controllers\Accounting\AccountDocumentController::class, 'cancelRefund']) ->middleware('permission:accounting.post')   ->name('cancel');
+            Route::delete('/{refund}',       [\App\Http\Controllers\Accounting\AccountDocumentController::class, 'deleteRefund']) ->middleware('permission:accounting.unlink') ->name('delete');
+            Route::post('/{refund}/comment', [\App\Http\Controllers\Accounting\AccountDocumentController::class, 'commentRefund'])->middleware('permission:accounting.write')  ->name('comment');
         });
 
         // Payments
@@ -641,9 +734,14 @@ Route::middleware('auth')->group(function () {
             Route::get('/create',  [\App\Http\Controllers\Accounting\AccountPaymentController::class, 'create'])     ->middleware('permission:accounting.create') ->name('create');
             Route::post('/',       [\App\Http\Controllers\Accounting\AccountPaymentController::class, 'store'])      ->middleware('permission:accounting.create') ->name('store');
             Route::get('/{payment}',               [\App\Http\Controllers\Accounting\AccountPaymentController::class, 'show'])       ->middleware('permission:accounting.read')   ->name('show');
-            Route::patch('/{payment}/confirm',     [\App\Http\Controllers\Accounting\AccountPaymentController::class, 'confirm'])    ->middleware('permission:accounting.write')  ->name('confirm');
-            Route::patch('/{payment}/reset-draft', [\App\Http\Controllers\Accounting\AccountPaymentController::class, 'resetDraft']) ->middleware('permission:accounting.write')  ->name('reset-draft');
-            Route::patch('/{payment}/cancel',      [\App\Http\Controllers\Accounting\AccountPaymentController::class, 'cancel'])     ->middleware('permission:accounting.write')  ->name('cancel');
+            // Posting-class actions: confirm posts the underlying account_move,
+            // cancel/reset tear it down. All three require accounting.post — not
+            // accounting.write — to keep parity with direct AccountMove posting
+            // (otherwise accounting.write becomes "post journal entries via the
+            // payment funnel", bypassing the accounting.post permission separation).
+            Route::patch('/{payment}/confirm',     [\App\Http\Controllers\Accounting\AccountPaymentController::class, 'confirm'])    ->middleware('permission:accounting.post')   ->name('confirm');
+            Route::patch('/{payment}/reset-draft', [\App\Http\Controllers\Accounting\AccountPaymentController::class, 'resetDraft']) ->middleware('permission:accounting.post')   ->name('reset-draft');
+            Route::patch('/{payment}/cancel',      [\App\Http\Controllers\Accounting\AccountPaymentController::class, 'cancel'])     ->middleware('permission:accounting.post')   ->name('cancel');
             Route::delete('/{payment}',            [\App\Http\Controllers\Accounting\AccountPaymentController::class, 'unlink'])     ->middleware('permission:accounting.unlink') ->name('delete');
             Route::post('/{payment}/comment',      [\App\Http\Controllers\Accounting\AccountPaymentController::class, 'addComment']) ->middleware('permission:accounting.write')  ->name('comment');
         });

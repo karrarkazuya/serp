@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Employees\Employee;
 use App\Models\Employees\EmployeeCertificate;
 use App\Services\Company\CompanyContextService;
+use App\Helpers\GroupsQuery;
 use App\Helpers\SearchFilters;
 use App\Helpers\SortsTable;
 use Illuminate\Http\Request;
@@ -39,11 +40,21 @@ class EmployeeCertificateController extends Controller
             $query->active();
         }
 
+        $groupBy = $request->query('group_by');
+        if ($groupBy) {
+            $fields = SearchFilters::fieldsFor(EmployeeCertificate::class);
+            if (isset($fields[$groupBy])) {
+                $records = (clone $query)->with('employee')->orderBy('certificate_type')->get();
+                $groups  = GroupsQuery::apply($records, $fields[$groupBy]);
+                return view('employees.certificates.index', compact('groups'));
+            }
+        }
+
         SortsTable::apply($query, $request);
 
-        $certificates = $query->paginate(50)->withQueryString();
+        $records = $query->paginate(50)->withQueryString();
 
-        return view('employees.certificates.index', compact('certificates'));
+        return view('employees.certificates.index', compact('records'));
     }
 
     public function show(EmployeeCertificate $certificate)
@@ -92,6 +103,7 @@ class EmployeeCertificateController extends Controller
             'data_status'              => 'nullable|in:current,previous',
             'graduate_date'            => 'nullable|date',
             'affective_date'           => 'nullable|date',
+            'specialization_type'      => 'nullable|in:amount,percentage',
             'financial_specialization' => 'nullable|numeric|min:0',
         ]);
 
@@ -140,6 +152,7 @@ class EmployeeCertificateController extends Controller
             'data_status'              => 'nullable|in:current,previous',
             'graduate_date'            => 'nullable|date',
             'affective_date'           => 'nullable|date',
+            'specialization_type'      => 'nullable|in:amount,percentage',
             'financial_specialization' => 'nullable|numeric|min:0',
         ]);
 

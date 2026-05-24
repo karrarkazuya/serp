@@ -87,14 +87,16 @@ class InventoryAdjustmentController extends Controller
         $this->authorize('create', InventoryAdjustment::class);
         $activeCompanyIds = $this->companyContext->getActiveCompanyIds();
 
+        // Scope `company_id` at the validation layer (not after the fact) so the
+        // gate can't disappear under refactor. Matches how every other Inventory
+        // request validates company_id.
         $data = $request->validate([
-            'company_id' => ['required', 'exists:companies,id'],
+            'company_id' => ['required', \Illuminate\Validation\Rule::exists('companies', 'id')->whereIn('id', $activeCompanyIds)],
             'date'       => ['nullable', 'date'],
             'note'       => ['nullable', 'string'],
             'exhausted'  => ['boolean'],
         ]);
 
-        abort_unless(in_array($data['company_id'], $activeCompanyIds), 403);
         $data['created_by'] = auth()->id();
         $data['updated_by'] = auth()->id();
 

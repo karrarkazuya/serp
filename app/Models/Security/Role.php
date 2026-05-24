@@ -48,6 +48,14 @@ class Role extends Model
         'active' => 'boolean',
     ];
 
+    /** Role keys that the seeder owns; mutation of key/permissions/active is blocked at the controller layer. */
+    public const SYSTEM_KEYS = ['admin'];
+
+    public function isSystem(): bool
+    {
+        return in_array($this->key, self::SYSTEM_KEYS, true);
+    }
+
     public function permissions(): BelongsToMany
     {
         return $this->belongsToMany(Permission::class, 'role_permission');

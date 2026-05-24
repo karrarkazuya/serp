@@ -170,7 +170,11 @@ class AccountMoveController extends Controller
         $data  = $request->validated();
         $lines = $data['lines'];
         $action = $data['action'] ?? 'save';
-        unset($data['lines'], $data['action']);
+        // Belt-and-braces: company_id is already pinned at the form layer
+        // (UpdateMoveRequest::rules uses Rule::in([$move->company_id])), but
+        // strip it from $data here too so the service cannot mutate the move's
+        // company_id even if a future refactor loosens the form rule.
+        unset($data['lines'], $data['action'], $data['company_id']);
 
         try {
             $move = DB::transaction(function () use ($move, $data, $lines, $action) {

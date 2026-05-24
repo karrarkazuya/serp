@@ -141,6 +141,9 @@ class WorkflowConfigService
                     foreach ($options as $opt) {
                         $input->options()->create(['name' => $opt]);
                     }
+                    if ($ownerType === 'procedure_step') {
+                        $input->guestSteps()->sync($this->parseGuestStepIds($row));
+                    }
                     $submittedIds[] = $input->id;
                     continue;
                 }
@@ -150,10 +153,18 @@ class WorkflowConfigService
             foreach ($options as $opt) {
                 $input->options()->create(['name' => $opt]);
             }
+            if ($ownerType === 'procedure_step') {
+                $input->guestSteps()->sync($this->parseGuestStepIds($row));
+            }
             $submittedIds[] = $input->id;
         }
 
         $query->whereNotIn('id', $submittedIds ?: [0])->delete();
+    }
+
+    private function parseGuestStepIds(array $row): array
+    {
+        return array_values(array_filter(array_map('intval', $row['guest_step_ids'] ?? [])));
     }
 
     public function deleteTicketTemplate(TicketTemplate $tpl): void

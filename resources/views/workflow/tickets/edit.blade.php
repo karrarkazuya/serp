@@ -70,56 +70,56 @@
                                   class="flex-1 text-sm text-gray-800 placeholder-gray-400 border border-gray-200 rounded px-3 py-2 focus:outline-none focus:ring-1 focus:ring-purple-400 resize-y">{{ old('description', $ticket->description) }}</textarea>
                     </div>
 
-                    @if($ticket->template && $ticket->template->inputs->isNotEmpty())
+                    @if($ticket->inputs->isNotEmpty())
                     <div class="mt-6 border-t border-gray-200 pt-4">
                         <h3 class="text-sm font-semibold text-gray-700 mb-3">{{ __('workflow.form_fields_label') }}</h3>
-                        @foreach($ticket->template->inputs->sortBy('sort_order') as $i => $input)
-                        @php $existing = $ticket->inputs->firstWhere('template_input_id', $input->id); @endphp
+                        @foreach($ticket->inputs->filter(fn($i) => $i->template_input_id !== null)->sortBy(fn($i) => $i->templateInput?->sort_order ?? 0) as $idx => $inp)
+                        @php $tplInput = $inp->templateInput; @endphp
                         <div class="flex items-center gap-4 py-2 border-b border-gray-100">
                             <label class="w-36 shrink-0 text-sm text-gray-500">
-                                {{ $input->name }}@if($input->is_required)<span class="text-red-400 ml-0.5">*</span>@endif
+                                {{ $inp->name }}@if($inp->is_required)<span class="text-red-400 ml-0.5">*</span>@endif
                             </label>
-                            <input type="hidden" name="inputs[{{ $i }}][template_input_id]" value="{{ $input->id }}">
-                            @if($input->type === 'select')
-                            <select name="inputs[{{ $i }}][value]" class="flex-1 text-sm text-gray-800 border border-gray-200 rounded px-2 py-1 focus:outline-none focus:ring-1 focus:ring-purple-400">
+                            <input type="hidden" name="inputs[{{ $idx }}][template_input_id]" value="{{ $inp->template_input_id }}">
+                            @if($inp->type === 'select')
+                            <select name="inputs[{{ $idx }}][value]" class="flex-1 text-sm text-gray-800 border border-gray-200 rounded px-2 py-1 focus:outline-none focus:ring-1 focus:ring-purple-400">
                                 <option value="">{{ __('workflow.select_option') }}</option>
-                                @foreach($input->options as $opt)
-                                <option value="{{ $opt->id }}" {{ $existing?->value_select_id == $opt->id ? 'selected' : '' }}>{{ $opt->name }}</option>
+                                @foreach(($tplInput?->options ?? collect()) as $opt)
+                                <option value="{{ $opt->id }}" {{ $inp->value_select_id == $opt->id ? 'selected' : '' }}>{{ $opt->name }}</option>
                                 @endforeach
                             </select>
-                            @elseif($input->type === 'boolean')
-                            <select name="inputs[{{ $i }}][value]" class="flex-1 text-sm text-gray-800 border border-gray-200 rounded px-2 py-1 focus:outline-none focus:ring-1 focus:ring-purple-400">
-                                <option value="0" {{ !$existing?->value_boolean ? 'selected' : '' }}>{{ __('common.no') }}</option>
-                                <option value="1" {{ $existing?->value_boolean ? 'selected' : '' }}>{{ __('common.yes') }}</option>
+                            @elseif($inp->type === 'boolean')
+                            <select name="inputs[{{ $idx }}][value]" class="flex-1 text-sm text-gray-800 border border-gray-200 rounded px-2 py-1 focus:outline-none focus:ring-1 focus:ring-purple-400">
+                                <option value="0" {{ !$inp->value_boolean ? 'selected' : '' }}>{{ __('common.no') }}</option>
+                                <option value="1" {{ $inp->value_boolean ? 'selected' : '' }}>{{ __('common.yes') }}</option>
                             </select>
-                            @elseif($input->type === 'date')
-                            <input type="date" name="inputs[{{ $i }}][value]" value="{{ $existing?->value_date?->format('Y-m-d') }}"
+                            @elseif($inp->type === 'date')
+                            <input type="date" name="inputs[{{ $idx }}][value]" value="{{ $inp->value_date?->format('Y-m-d') }}"
                                    class="flex-1 text-sm text-gray-800 border border-gray-200 rounded px-2 py-1 focus:outline-none focus:ring-1 focus:ring-purple-400">
-                            @elseif($input->type === 'datetime')
-                            <input type="datetime-local" name="inputs[{{ $i }}][value]" value="{{ $existing?->value_datetime?->format('Y-m-d\TH:i') }}"
+                            @elseif($inp->type === 'datetime')
+                            <input type="datetime-local" name="inputs[{{ $idx }}][value]" value="{{ $inp->value_datetime?->format('Y-m-d\TH:i') }}"
                                    class="flex-1 text-sm text-gray-800 border border-gray-200 rounded px-2 py-1 focus:outline-none focus:ring-1 focus:ring-purple-400">
-                            @elseif($input->type === 'int')
-                            <input type="number" name="inputs[{{ $i }}][value]" value="{{ $existing?->value_int }}"
+                            @elseif($inp->type === 'int')
+                            <input type="number" name="inputs[{{ $idx }}][value]" value="{{ $inp->value_int }}"
                                    class="flex-1 text-sm text-gray-800 border border-gray-200 rounded px-2 py-1 focus:outline-none focus:ring-1 focus:ring-purple-400" placeholder="—">
-                            @elseif($input->type === 'float')
-                            <input type="number" step="any" name="inputs[{{ $i }}][value]" value="{{ $existing?->value_float }}"
+                            @elseif($inp->type === 'float')
+                            <input type="number" step="any" name="inputs[{{ $idx }}][value]" value="{{ $inp->value_float }}"
                                    class="flex-1 text-sm text-gray-800 border border-gray-200 rounded px-2 py-1 focus:outline-none focus:ring-1 focus:ring-purple-400" placeholder="—">
-                            @elseif($input->type === 'textarea')
-                            <textarea name="inputs[{{ $i }}][value]" rows="3"
+                            @elseif($inp->type === 'textarea')
+                            <textarea name="inputs[{{ $idx }}][value]" rows="3"
                                       class="flex-1 text-sm text-gray-800 border border-gray-200 rounded px-2 py-1 focus:outline-none focus:ring-1 focus:ring-purple-400 resize-y"
-                                      placeholder="—">{{ $existing?->value_text }}</textarea>
-                            @elseif($input->type === 'multiselect')
+                                      placeholder="—">{{ $inp->value_text }}</textarea>
+                            @elseif($inp->type === 'multiselect')
                             <span class="flex-1 text-sm text-gray-400 italic">
-                                {{ $existing?->getResultValue() ?: '—' }} <span class="text-xs">{{ __('workflow.multiselect_edit_on_ticket') }}</span>
+                                {{ $inp->getResultValue() ?: '—' }} <span class="text-xs">{{ __('workflow.multiselect_edit_on_ticket') }}</span>
                             </span>
-                            @elseif($input->type === 'file')
+                            @elseif($inp->type === 'file')
                             <span class="flex-1 text-sm text-gray-400 italic">
-                                {{ $existing?->value_file_name ?: '—' }} <span class="text-xs">{{ __('workflow.upload_on_ticket') }}</span>
+                                {{ $inp->value_file_name ?: '—' }} <span class="text-xs">{{ __('workflow.upload_on_ticket') }}</span>
                             </span>
-                            @elseif($input->type === 'label')
+                            @elseif($inp->type === 'label')
                             <span class="flex-1 text-sm text-gray-400 italic">{{ __('workflow.label_only_no_value') }}</span>
                             @else
-                            <input type="text" name="inputs[{{ $i }}][value]" value="{{ $existing?->value_char }}"
+                            <input type="text" name="inputs[{{ $idx }}][value]" value="{{ $inp->value_char }}"
                                    class="flex-1 text-sm text-gray-800 border border-gray-200 rounded px-2 py-1 focus:outline-none focus:ring-1 focus:ring-purple-400" placeholder="—">
                             @endif
                         </div>

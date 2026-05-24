@@ -371,8 +371,9 @@ class CoreSeeder extends Seeder
             // Users
             ['name' => 'Read Users',      'key' => 'users.read',      'module' => 'users',     'description' => 'View user list and profiles.'],
             ['name' => 'Create Users',    'key' => 'users.create',    'module' => 'users',     'description' => 'Create new user accounts.'],
-            ['name' => 'Edit Users',      'key' => 'users.write',     'module' => 'users',     'description' => 'Edit user accounts and assign roles.'],
-            ['name' => 'Delete Users',    'key' => 'users.unlink',    'module' => 'users',     'description' => 'Delete user accounts.'],
+            ['name' => 'Edit Users',         'key' => 'users.write',         'module' => 'users',     'description' => 'Edit user accounts (name, email, password, contact details, active state).'],
+            ['name' => 'Delete Users',       'key' => 'users.unlink',        'module' => 'users',     'description' => 'Delete user accounts.'],
+            ['name' => 'Assign User Roles',  'key' => 'users.assign_roles',  'module' => 'users',     'description' => 'Attach or detach roles on user accounts. Grants effective privilege escalation; assign with care.'],
 
             // Roles
             ['name' => 'Read Roles',      'key' => 'roles.read',      'module' => 'roles',     'description' => 'View roles and their permissions.'],

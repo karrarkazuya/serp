@@ -5,6 +5,7 @@ namespace App\Models\Workflow;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
 use Illuminate\Database\Eloquent\SoftDeletes;
@@ -27,6 +28,11 @@ class WorkflowTemplateInput extends Model
     public function options(): HasMany
     {
         return $this->hasMany(WorkflowTemplateInputOption::class, 'template_input_id');
+    }
+
+    public function guestSteps(): BelongsToMany
+    {
+        return $this->belongsToMany(ProcedureStep::class, 'workflow_template_input_guest_steps', 'template_input_id', 'guest_step_id');
     }
 
     public function creator(): BelongsTo

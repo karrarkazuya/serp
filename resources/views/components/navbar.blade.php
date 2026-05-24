@@ -159,7 +159,7 @@
             <button type="button"
                     @click="open = !open"
                     class="hidden sm:flex items-center h-full px-4 text-white/85 hover:text-white hover:bg-[#5c3d55] transition-colors text-sm font-semibold
-                           {{ request()->routeIs('employees.positions.*', 'employees.certificates.*') ? 'bg-[#5c3d55]' : '' }}">
+                           {{ request()->routeIs('employees.positions.*', 'employees.certificates.*', 'employees.bonuses.*', 'employees.appreciations.*', 'employees.sanctions.*', 'employees.rewards.*', 'employees.job-grades.*') ? 'bg-[#5c3d55]' : '' }}">
                 Allocations
                 <svg class="ms-1 w-3.5 h-3.5 transition-transform" :class="open ? 'rotate-180' : ''" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
@@ -182,6 +182,26 @@
                 <a href="{{ route('employees.certificates.index') }}"
                    class="block px-4 py-2.5 text-sm text-gray-800 hover:bg-gray-100 {{ request()->routeIs('employees.certificates.*') ? 'bg-gray-100 font-semibold' : '' }}">
                     Certificates
+                </a>
+                <a href="{{ route('employees.bonuses.index') }}"
+                   class="block px-4 py-2.5 text-sm text-gray-800 hover:bg-gray-100 {{ request()->routeIs('employees.bonuses.*') ? 'bg-gray-100 font-semibold' : '' }}">
+                    {{ __('employees.bonuses_title') }}
+                </a>
+                <a href="{{ route('employees.appreciations.index') }}"
+                   class="block px-4 py-2.5 text-sm text-gray-800 hover:bg-gray-100 {{ request()->routeIs('employees.appreciations.*') ? 'bg-gray-100 font-semibold' : '' }}">
+                    {{ __('employees.appreciations_title') }}
+                </a>
+                <a href="{{ route('employees.sanctions.index') }}"
+                   class="block px-4 py-2.5 text-sm text-gray-800 hover:bg-gray-100 {{ request()->routeIs('employees.sanctions.*') ? 'bg-gray-100 font-semibold' : '' }}">
+                    {{ __('employees.sanctions_title') }}
+                </a>
+                <a href="{{ route('employees.rewards.index') }}"
+                   class="block px-4 py-2.5 text-sm text-gray-800 hover:bg-gray-100 {{ request()->routeIs('employees.rewards.*') ? 'bg-gray-100 font-semibold' : '' }}">
+                    {{ __('employees.rewards_title') }}
+                </a>
+                <a href="{{ route('employees.job-grades.index') }}"
+                   class="block px-4 py-2.5 text-sm text-gray-800 hover:bg-gray-100 {{ request()->routeIs('employees.job-grades.*') ? 'bg-gray-100 font-semibold' : '' }}">
+                    {{ __('employees.job_grades_title') }}
                 </a>
             </div>
         </div>

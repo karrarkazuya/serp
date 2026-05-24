@@ -8,7 +8,6 @@ use App\Models\Settings\Company;
 use App\Models\User;
 use App\Models\Chat\ChatRoom;
 use App\Traits\HasChatter;
-use App\Models\Workflow\WorkflowTemplateInput;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -75,7 +74,6 @@ class Ticket extends Model
         'path_choice_required'   => 'boolean',
         'has_procedures'         => 'boolean',
         'procedures_required'    => 'boolean',
-        'has_procedures'    => 'boolean',
         'ignore_state'      => 'boolean',
         'finished_creation' => 'boolean',
         'share_enabled'     => 'boolean',
@@ -177,6 +175,16 @@ class Ticket extends Model
             ->where('record_type', 'ticket');
     }
 
+    public function crossRefInputs(): BelongsToMany
+    {
+        return $this->belongsToMany(
+            WorkflowRecordInput::class,
+            'workflow_ticket_input_refs',
+            'viewing_ticket_id',
+            'source_record_input_id'
+        );
+    }
+
     public function durations(): HasMany
     {
         return $this->hasMany(TicketDuration::class, 'ticket_id');
@@ -264,30 +272,16 @@ class Ticket extends Model
 
     public function hasRequiredInputsFilled(): bool
     {
-        $ownerId   = $this->procedure_step_id ?? $this->template_id;
-        $ownerType = $this->procedure_step_id ? 'procedure_step' : 'ticket_template';
-
-        if (!$ownerId) return true;
-
-        $requiredIds = WorkflowTemplateInput::where('owner_type', $ownerType)
-            ->where('owner_id', $ownerId)
+        $required = $this->inputs()
             ->where('is_required', true)
             ->where('type', '!=', 'label')
-            ->pluck('id');
-
-        if ($requiredIds->isEmpty()) return true;
-
-        $filled = $this->inputs()
-            ->whereIn('template_input_id', $requiredIds)
             ->with('selectedOptions')
-            ->get()
-            ->keyBy('template_input_id');
+            ->get();
 
-        foreach ($requiredIds as $tid) {
-            $record = $filled->get($tid);
-            if (!$record || !$record->isFilled()) {
-                return false;
-            }
+        if ($required->isEmpty()) return true;
+
+        foreach ($required as $record) {
+            if (!$record->isFilled()) return false;
         }
 
         return true;

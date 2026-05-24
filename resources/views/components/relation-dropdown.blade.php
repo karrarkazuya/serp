@@ -17,6 +17,8 @@
         modalOptions: [],
         loading: false,
         modalLoading: false,
+        error: '',
+        modalError: '',
         pageSize: @js($limit),
         modalPageSize: @js($limit),
         meta: { from: 0, to: 0, total: 0, current_page: 1, last_page: 1 },
@@ -61,20 +63,40 @@
                 last_page: payload.last_page || 1,
             };
         },
+        async extractErrorMessage(response) {
+            // Surface backend validation messages (e.g. exclude > 500, search > 100 chars)
+            // instead of swallowing them behind a generic "Lookup failed".
+            try {
+                const payload = await response.json();
+                if (payload?.errors && typeof payload.errors === 'object') {
+                    return Object.values(payload.errors).flat().join(' ');
+                }
+                if (payload?.message) return payload.message;
+            } catch (_) { /* not JSON */ }
+            return `Lookup failed (HTTP ${response.status}).`;
+        },
         async fetchOptions(page = 1) {
             if (!this.lookupUrl) return;
 
             this.loading = true;
+            this.error = '';
             try {
                 const response = await fetch(`${this.lookupUrl}?${this.params(this.search, page, this.pageSize)}`, {
                     headers: { 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' },
                 });
 
-                if (!response.ok) throw new Error('Lookup failed');
+                if (!response.ok) {
+                    this.error = await this.extractErrorMessage(response);
+                    this.options = [];
+                    return;
+                }
 
                 const payload = await response.json();
                 this.options = payload.data || [];
                 this.applyMeta('meta', payload);
+            } catch (e) {
+                this.error = 'Network error while loading options.';
+                this.options = [];
             } finally {
                 this.loading = false;
             }
@@ -83,16 +105,24 @@
             if (!this.lookupUrl) return;
 
             this.modalLoading = true;
+            this.modalError = '';
             try {
                 const response = await fetch(`${this.lookupUrl}?${this.params(this.modalSearch, page, this.modalPageSize)}`, {
                     headers: { 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' },
                 });
 
-                if (!response.ok) throw new Error('Lookup failed');
+                if (!response.ok) {
+                    this.modalError = await this.extractErrorMessage(response);
+                    this.modalOptions = [];
+                    return;
+                }
 
                 const payload = await response.json();
                 this.modalOptions = payload.data || [];
                 this.applyMeta('modalMeta', payload);
+            } catch (e) {
+                this.modalError = 'Network error while loading options.';
+                this.modalOptions = [];
             } finally {
                 this.modalLoading = false;
             }
@@ -231,7 +261,16 @@
                         <template x-for="option in selectedOptions()" :key="option.id">
                             @if($list)
                             <div class="flex items-center justify-between gap-2 py-1 border-b border-gray-50 last:border-0">
-                                <span class="text-sm text-gray-700" x-text="option.label"></span>
+                                <span class="text-sm flex items-center gap-1"
+                                      :class="option.stale ? 'text-amber-700' : 'text-gray-700'">
+                                    <template x-if="option.stale">
+                                        <svg class="w-3.5 h-3.5 shrink-0" fill="currentColor" viewBox="0 0 20 20"
+                                             title="Stored value no longer matches the picker filter (archived or out-of-scope).">
+                                            <path fill-rule="evenodd" d="M8.485 2.495c.673-1.167 2.357-1.167 3.03 0l6.28 10.875c.673 1.167-.17 2.625-1.516 2.625H3.72c-1.347 0-2.189-1.458-1.515-2.625L8.485 2.495zM10 6a.75.75 0 01.75.75v3.5a.75.75 0 01-1.5 0v-3.5A.75.75 0 0110 6zm0 9a1 1 0 100-2 1 1 0 000 2z" clip-rule="evenodd"/>
+                                        </svg>
+                                    </template>
+                                    <span x-text="option.label"></span>
+                                </span>
                                 <button type="button" @click.stop="remove(option.id)"
                                         class="shrink-0 text-gray-300 hover:text-red-400 transition-colors">
                                     <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
@@ -239,11 +278,20 @@
                             </div>
                             @else
                             <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium"
-                                  :class="option.color ? 'text-white' : 'bg-gray-100 text-gray-700 border border-gray-200'"
-                                  :style="option.color ? `background-color: ${option.color}` : ''">
+                                  :class="option.stale
+                                      ? 'bg-amber-50 text-amber-800 border border-amber-300'
+                                      : (option.color ? 'text-white' : 'bg-gray-100 text-gray-700 border border-gray-200')"
+                                  :style="!option.stale && option.color ? `background-color: ${option.color}` : ''"
+                                  :title="option.stale ? 'Stored value no longer matches the picker filter (archived or out-of-scope).' : ''">
+                                <template x-if="option.stale">
+                                    <svg class="w-3 h-3 shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                                        <path fill-rule="evenodd" d="M8.485 2.495c.673-1.167 2.357-1.167 3.03 0l6.28 10.875c.673 1.167-.17 2.625-1.516 2.625H3.72c-1.347 0-2.189-1.458-1.515-2.625L8.485 2.495zM10 6a.75.75 0 01.75.75v3.5a.75.75 0 01-1.5 0v-3.5A.75.75 0 0110 6zm0 9a1 1 0 100-2 1 1 0 000 2z" clip-rule="evenodd"/>
+                                    </svg>
+                                </template>
                                 <span x-text="option.label"></span>
                                 <button type="button" @click.stop="remove(option.id)"
-                                        class="w-3.5 h-3.5 rounded-full bg-white/30 hover:bg-white/50 flex items-center justify-center text-[10px] leading-none">
+                                        :class="option.stale ? 'hover:bg-amber-100' : 'bg-white/30 hover:bg-white/50'"
+                                        class="w-3.5 h-3.5 rounded-full flex items-center justify-center text-[10px] leading-none">
                                     &times;
                                 </button>
                             </span>
@@ -269,6 +317,10 @@
                         <div x-show="loading" class="px-4 py-2 text-sm text-gray-400">
                             Loading...
                         </div>
+
+                        <div x-show="!loading && error"
+                             class="mx-2 my-1 px-3 py-2 text-xs text-amber-800 bg-amber-50 border border-amber-200 rounded"
+                             x-text="error"></div>
 
                         <template x-for="option in options" :key="option.id">
                             <button type="button"
@@ -375,6 +427,12 @@
                             <tbody>
                                 <tr x-show="modalLoading">
                                     <td colspan="{{ $colorField ? 3 : 2 }}" class="px-6 py-10 text-center text-sm text-gray-400">Loading...</td>
+                                </tr>
+                                <tr x-show="!modalLoading && modalError">
+                                    <td colspan="{{ $colorField ? 3 : 2 }}" class="px-6 py-6 text-center">
+                                        <div class="inline-block px-4 py-2 text-sm text-amber-800 bg-amber-50 border border-amber-200 rounded"
+                                             x-text="modalError"></div>
+                                    </td>
                                 </tr>
 
                                 <template x-for="option in modalOptions" :key="option.id">

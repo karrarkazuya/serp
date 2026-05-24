@@ -73,7 +73,7 @@ class WorkflowUserController extends Controller
         $data = $request->validate([
             'default_department_id' => 'required|exists:hr_departments,id',
             'groups'                => 'nullable|array',
-            'groups.*'              => 'exists:workflow_groups,id',
+            'groups.*'              => 'exists:workflow_groups,id,deleted_at,NULL',
             'departments'           => 'nullable|array',
             'departments.*'         => 'exists:hr_departments,id',
         ]);

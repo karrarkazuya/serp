@@ -27,7 +27,7 @@ Register every new model with `AuditableObserver` in `AppServiceProvider`.
 
 ---
 
-## The 10 Non-Negotiable Rules
+## The 12 Non-Negotiable Rules
 
 Violating any of these is a bug, not a style issue.
 
@@ -112,6 +112,10 @@ Route::post('/{foo}/comment', [FooController::class, 'addComment']) ->middleware
 
 Permission key format: `module.read`, `module.create`, `module.write`, `module.unlink`.
 For nested sub-modules: `workflow.tickets.read`, `workflow.tickets.write`, etc.
+
+**Role assignment is gated by its own permission, not by `users.write`.** Only `users.assign_roles` may attach or detach roles on a user account; `users.write` covers everyday profile edits (name, email, password, active state). Anyone holding `users.assign_roles` can effectively grant admin, so treat it as a super-power. The role picker in [resources/views/settings/users/_form.blade.php](resources/views/settings/users/_form.blade.php) is hidden unless the actor has it; the controller drops `roles[]` from the payload otherwise. Do not collapse the two permissions.
+
+**System roles are immutable at runtime.** `Role::SYSTEM_KEYS` (currently `['admin']`) marks seeder-owned roles. `Role::isSystem()` is the check. `RoleController::write()` strips `key` / `active` / `permissions` from the payload for system roles; `unlink()` rejects deletion outright. Do not add a code path that mutates them — `User::isAdmin()` matches by `key`, so renaming the key would demote every admin instantly and deactivating it would lock everyone out.
 
 ### 7. Every DB create or edit — `DB::transaction` in the controller
 
@@ -244,6 +248,8 @@ Key rules:
 - Never expose unlisted columns: the ExportController validates every field key against `config/exportable.php`.
 - `company_scoped: true` means the controller applies `whereIn('company_id', $activeCompanyIds)` automatically.
 
+**Never bypass `ExportService::safeValue()` / `setValueExplicit(..., TYPE_STRING)`.** Every cell goes through `safeValue()` which prefixes leading `=`/`+`/`-`/`@`/`\t`/`\r` with a single quote, and XLSX cells use `setValueExplicit` so PhpSpreadsheet's default value binder doesn't re-parse `=...` as a formula (CWE-1236, formula injection). Direct `setValue()` or raw `fputcsv` arrays let any user-controllable exported field (contact name, employee name, ticket description, account label) execute as a formula in Excel / LibreOffice / Google Sheets when a manager opens the file. If a future column genuinely needs to render a formula, build it server-side via a dedicated path — never from user input.
+
 See `docs/components/export.md` for the full component reference.
 
 ### 10. All file uploads — `FileService` only. All file serving — `/files/{uuid}` only.
@@ -261,6 +267,20 @@ $fileRecord = $this->fileService->store(
     // context: $model,   ← only when ticket/chat-room ownership check is needed
 );
 $data['avatar'] = $fileRecord->uuid; // store UUID in the model column
+```
+
+#### Image uploads — never use bare `'image'` validation
+
+Laravel's `'image'` rule allows `image/svg+xml`. SVG can carry `<script>`/`<foreignObject>`/`on*` handlers, and any browser that renders the file inline will execute them in the app origin → stored XSS. The `FileService::store()` boundary rejects SVG too (defense-in-depth), and `FileController::serve()` forces `Content-Disposition: attachment` + `Content-Security-Policy: sandbox` for any legacy SVG. But **request-layer validation must surface clear user-facing errors**.
+
+Use this exact pattern for any image field:
+
+```php
+// ✅ Correct
+'avatar' => 'nullable|file|max:2048|mimetypes:image/jpeg,image/png,image/gif,image/webp|mimes:jpg,jpeg,png,gif,webp',
+
+// ❌ Wrong — silently accepts SVG (Laravel's `image` rule includes it)
+'avatar' => 'nullable|image|max:2048',
 ```
 
 `FileService::store()` signature:
@@ -318,6 +338,73 @@ if ($model->avatar) {
     $this->fileService->deleteByUuid($model->avatar);
 }
 ```
+
+### 11. Cross-company FK rules — every form-request relation must be company-scoped
+
+Rule 5 scopes **reads** by `company_id`. Rule 11 scopes **writes**: every form request that validates a foreign-key value into a company-scoped table must reject IDs outside the actor's active companies. Bare `'exists:table,id'` on a company-scoped table is a cross-tenant FK injection bug — it lets a user in Company A wire an A-owned record (Contract, Picking, Employee, Lot, etc.) to a B-owned record (department, location, product, supplier contact, manager). The parent row carries `company_id = A` (gated) but the FK link crosses tenants and downstream flows (replenishment, payroll, audit trails) silently pick it up.
+
+```php
+// ❌ Wrong — accepts a contact / location / product from any company
+'partner_id'      => ['nullable', 'exists:contacts,id'],
+'location_src_id' => ['required', 'exists:inventory_locations,id'],
+
+// ✅ Correct — scoped to active companies
+$activeCompanyIds = app(CompanyContextService::class)->getActiveCompanyIds();
+$contactRule = Rule::exists('contacts', 'id')->where(function ($q) use ($activeCompanyIds) {
+    empty($activeCompanyIds)
+        ? $q->whereRaw('1 = 0')
+        : $q->whereIn('company_id', $activeCompanyIds);
+});
+'partner_id' => ['nullable', $contactRule],
+```
+
+**Empty `$activeCompanyIds` must deny all** — matches how list pages render nothing when the user has no allowed companies. The `whereRaw('1 = 0')` branch is mechanical, don't omit it.
+
+**Shared records** — some tables intentionally hold rows with `company_id = null` (supplier/customer/transit locations, shared service products, shared routes). For those, the rule must also accept null:
+```php
+$locationRule = Rule::exists('inventory_locations', 'id')->where(function ($q) use ($activeCompanyIds) {
+    $q->whereNull('company_id');
+    if (!empty($activeCompanyIds)) $q->orWhereIn('company_id', $activeCompanyIds);
+});
+```
+
+**Inventory module** uses a shared trait so we don't paste this everywhere: `App\Http\Requests\Inventory\Concerns\InventoryFkRules`. New Inventory requests must `use InventoryFkRules;` and call `inventoryLocationRule()` / `inventoryProductRule()` / `companyScopedExists()` / `contactInActiveCompaniesRule()`. Don't paste raw `Rule::exists(...)` for inventory tables.
+
+**Hierarchy FKs need a cycle guard.** Form validation only checks that the target exists — it doesn't catch `A→B→A` loops. For any hierarchy field (`parent_id`, `manager_id`, `coach_id`, `expense_manager_id`, `attendance_manager_id`, `related_contacts`), add a bounded-walk check at the controller before the transaction:
+
+```php
+if (array_key_exists('parent_id', $data) && $data['parent_id']) {
+    $parentId = (int) $data['parent_id'];
+    if ($parentId === $contact->id || $this->isDescendantOf($parentId, $contact->id)) {
+        return back()->withInput()->with('error', 'Selected parent would create a circular hierarchy.');
+    }
+}
+```
+
+Reference implementations: `ContactController::isDescendantOf`, `EmployeeController::isEmployeeDescendantOf` (64-step bounded walk so already-corrupted data can't hang the request).
+
+### 12. Never expose raw column names as user-facing text in views
+
+Form field labels, search filter labels, table column headers, group-by labels, error messages, and every other piece of human-readable text rendered in Blade must use a written-out label — `First Name`, `Created on`, `Company` — not the raw column identifier (`first_name`, `created_at`, `company_id`). The `name=`/`id=`/`value=` attributes on inputs are free to mirror the column (Eloquent's mass-assignment depends on it); the **visible** text the user reads must not.
+
+```blade
+{{-- ❌ Wrong — raw column rendered as the label --}}
+<label for="first_name">first_name</label>
+<input type="text" name="first_name" id="first_name">
+
+{{-- ✅ Correct — human label, column name lives only in the form attribute --}}
+<label for="first_name">{{ __('employees.first_name') }}</label>
+<input type="text" name="first_name" id="first_name">
+```
+
+Where the labels live:
+- **Form fields**: hard-coded English string OR a `__('module.key')` translation. Never `{{ $field }}` where `$field` is a column.
+- **List / search / group-by**: the model's `$searchable` / `$sortable` arrays must always include a `'label' => 'Human Label'` key — the component reads `label`, not the array key. A new searchable entry without a `label` is a Rule 12 violation.
+- **Table headers**: use the same label source as search (`$fields[$col]['label']`) or a hard-coded human string.
+- **Chatter change logs**: `$chatterTracked` maps `column => 'Human Label'`. The label is what shows in the audit feed — `name` is fine, `internal_reference` should be `'Internal Reference'`, not `'internal_reference'`.
+- **Validation messages**: when overriding `messages()` on a FormRequest, address the field by its human label too, not the column.
+
+Why: the visible UI must read as the business domain, not the schema. Renaming a column (or supporting a second language) must not require Blade rewrites; an attacker reading view source must not learn the column layout for free.
 
 ---
 
@@ -433,7 +520,7 @@ When building a new module, follow `docs/implement_new_module.md` using Contacts
 - [ ] Register model with `AuditableObserver` in `AppServiceProvider`
 - [ ] Permissions seeded in `PermissionSeeder` and assigned in `RoleSeeder`
 - [ ] Policy: `viewAny`, `view`, `create`, `update`, `delete`, `comment`, **`export`**
-- [ ] Form requests: authorize + validate; validate company-scoped IDs against `getActiveCompanyIds()`
+- [ ] Form requests: authorize + validate. **Every FK to a company-scoped table** uses `Rule::exists(...)->whereIn('company_id', $activeCompanyIds)` (Rule 11), not bare `'exists:table,id'`. Image fields use explicit `mimetypes:image/jpeg,image/png,image/gif,image/webp|mimes:jpg,jpeg,png,gif,webp` — never bare `'image'` (Rule 10).
 - [ ] Service: create, update, archive, unarchive — business logic + chatter, no transactions
 - [ ] Controller: follows naming above, wraps in `DB::transaction`, applies company gate
 - [ ] Routes: permission middleware on every route, fixed sub-routes before `/{model}` to avoid binding conflicts
@@ -601,3 +688,10 @@ Never use `confirm()`, `alert()`, or `prompt()`. These block the thread, cannot 
 - Do not store files directly with `Storage::put()` or `$file->store()` in controllers — always use `FileService::store()`
 - Do not create module-specific file-serving routes (like `contacts.avatar`) — use `route('files.serve', $uuid)`
 - Do not call `Storage::delete()` directly to remove user-uploaded files — use `FileService::delete()` or `FileService::deleteByUuid()`
+- Do not validate image uploads with bare `'image'` — it includes `image/svg+xml` (stored XSS). Use `mimetypes:image/jpeg,image/png,image/gif,image/webp|mimes:jpg,jpeg,png,gif,webp` instead
+- Do not use bare `'exists:table,id'` for any FK into a company-scoped table — see Rule 11. Form validation must reject cross-company values, not just the controller
+- Do not allow role assignment under the `users.write` permission — it's `users.assign_roles` only (Rule 6)
+- Do not mutate `key` / `active` / `permissions` of a system role at runtime (`Role::SYSTEM_KEYS`) — those fields belong to the seeder
+- Do not bypass `ExportService::safeValue()` / `setValueExplicit(..., TYPE_STRING)` — raw `setValue` or `fputcsv` re-opens CSV/XLSX formula injection
+- Do not add a new file-serve helper that only checks the parent-child relation (`$doc->employee_id === $employee->id`) without also gating by the actor's active companies — that's the EmployeeDocument IDOR pattern
+- Do not render column identifiers as user-facing labels (`first_name`, `created_at`, `company_id`) — always use a written-out human label or `__('...')` translation (Rule 12)

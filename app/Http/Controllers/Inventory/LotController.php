@@ -85,9 +85,18 @@ class LotController extends Controller
         $this->authorize('create', Lot::class);
         $activeCompanyIds = $this->companyContext->getActiveCompanyIds();
 
+        // Scope FKs at the validation layer (not after the fact) — a Lot stamped
+        // company_id=A but pointing at a company-B product would surface in any
+        // "lots of product X" dropdown and contaminate downstream picking flows.
+        $companyRule = \Illuminate\Validation\Rule::exists('companies', 'id')->whereIn('id', $activeCompanyIds);
+        $productRule = \Illuminate\Validation\Rule::exists('inventory_products', 'id')->where(function ($q) use ($activeCompanyIds) {
+            if (empty($activeCompanyIds)) { $q->whereRaw('1 = 0'); return; }
+            $q->whereIn('company_id', $activeCompanyIds)->orWhereNull('company_id');
+        });
+
         $data = $request->validate([
-            'company_id'      => ['required', 'exists:companies,id'],
-            'product_id'      => ['required', 'exists:inventory_products,id'],
+            'company_id'      => ['required', $companyRule],
+            'product_id'      => ['required', $productRule],
             'name'            => ['required', 'string', 'max:128'],
             'ref'             => ['nullable', 'string', 'max:128'],
             'expiration_date' => ['nullable', 'date'],
@@ -96,7 +105,6 @@ class LotController extends Controller
             'note'            => ['nullable', 'string'],
         ]);
 
-        abort_unless(in_array($data['company_id'], $activeCompanyIds), 403);
         $data['active']      = true;
         $data['created_by']  = auth()->id();
         $data['updated_by']  = auth()->id();

@@ -24,9 +24,11 @@ class AccountMove extends Model
     ];
 
     public const PAYMENT_STATES = [
-        'not_paid' => 'Not Paid',
-        'partial'  => 'Partially Paid',
-        'paid'     => 'Paid',
+        'not_paid'   => 'Not Paid',
+        'partial'    => 'Partially Paid',
+        'in_payment' => 'In Payment',
+        'paid'       => 'Paid',
+        'reversed'   => 'Reversed',
     ];
 
     public const MOVE_TYPES = [
@@ -95,6 +97,7 @@ class AccountMove extends Model
         'name',
         'ref',
         'date',
+        'invoice_date',
         'invoice_date_due',
         'invoice_origin',
         'state',
@@ -109,6 +112,7 @@ class AccountMove extends Model
 
     protected $casts = [
         'date'             => 'date',
+        'invoice_date'     => 'date',
         'invoice_date_due' => 'date',
         'posted_at'        => 'datetime',
         'amount_total'     => 'decimal:4',

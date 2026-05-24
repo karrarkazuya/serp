@@ -19,7 +19,14 @@ class StoreEmployeeRequest extends FormRequest
         $companyRule      = Rule::exists('companies', 'id')->whereIn('id', $activeCompanyIds);
         $deptRule         = Rule::exists('hr_departments', 'id')->whereIn('company_id', $activeCompanyIds);
         $jobRule          = Rule::exists('hr_jobs', 'id')->whereIn('company_id', $activeCompanyIds);
-        $empRule          = Rule::exists('hr_employees', 'id');
+        // Manager / coach / approver chains must stay inside the actor's active
+        // companies, otherwise employees can be wired into cross-tenant hierarchies.
+        $empRule          = Rule::exists('hr_employees', 'id')->whereIn('company_id', $activeCompanyIds);
+        $contactRule      = Rule::exists('contacts', 'id')->where(function ($q) use ($activeCompanyIds) {
+            empty($activeCompanyIds)
+                ? $q->whereRaw('1 = 0')
+                : $q->whereIn('company_id', $activeCompanyIds);
+        });
 
         return [
             'name'              => 'required|string|max:255',
@@ -30,7 +37,7 @@ class StoreEmployeeRequest extends FormRequest
             'employee_code'     => 'nullable|string|max:50|unique:hr_employees,employee_code',
             'first_name'        => 'nullable|string|max:100',
             'last_name'         => 'nullable|string|max:100',
-            'avatar'            => 'nullable|image|max:2048',
+            'avatar'            => 'nullable|file|max:2048|mimetypes:image/jpeg,image/png,image/gif,image/webp|mimes:jpg,jpeg,png,gif,webp',
             'barcode'           => 'nullable|string|max:100|unique:hr_employees,barcode',
             'pin_code'          => 'nullable|string|max:20',
             'notes'             => 'nullable|string',
@@ -51,7 +58,7 @@ class StoreEmployeeRequest extends FormRequest
             'expense_manager_id'    => ['nullable', $empRule],
             'attendance_manager_id' => ['nullable', $empRule],
             'user_id'           => 'nullable|exists:users,id',
-            'contact_id'        => 'nullable|exists:contacts,id',
+            'contact_id'        => ['nullable', $contactRule],
 
             'private_email'     => 'nullable|email|max:255',
             'private_phone'     => 'nullable|string|max:50',

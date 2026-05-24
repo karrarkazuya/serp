@@ -85,11 +85,19 @@ class RoleController extends Controller
 
     public function write(UpdateRoleRequest $request, Role $role)
     {
-        DB::transaction(fn () => $this->roleService->update(
-            $role,
-            $request->validated(),
-            $request->has('permissions') ? $request->input('permissions', []) : null
-        ));
+        $data = $request->validated();
+
+        // System roles (e.g. 'admin') are seeded and must not be mutated at runtime:
+        // changing the key breaks User::isAdmin(), deactivating it locks out every admin,
+        // and editing its permissions would let a role-manager strip admin privileges.
+        if ($role->isSystem()) {
+            unset($data['key'], $data['active']);
+            $permissionIds = null;
+        } else {
+            $permissionIds = $request->has('permissions') ? $request->input('permissions', []) : null;
+        }
+
+        DB::transaction(fn () => $this->roleService->update($role, $data, $permissionIds));
 
         return redirect()
             ->route('settings.roles.show', $role)
@@ -100,7 +108,7 @@ class RoleController extends Controller
     {
         $this->authorize('delete', $role);
 
-        if ($role->key === 'admin') {
+        if ($role->isSystem()) {
             return back()->with('error', 'System roles cannot be deleted.');
         }
 

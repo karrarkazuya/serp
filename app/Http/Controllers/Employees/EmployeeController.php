@@ -221,6 +221,18 @@ class EmployeeController extends Controller
         unset($data['categories']);
         unset($data['avatar']);
 
+        // Cycle guard on hierarchy FKs — the form request only validates that the
+        // target exists and is in an active company, not that pointing at it would
+        // form a loop with $employee's own subtree. Without this, A→B→A bricks the
+        // tree view (buildEmployeeTree recurses unbounded).
+        foreach (['parent_id', 'coach_id', 'expense_manager_id', 'attendance_manager_id'] as $fk) {
+            if (!array_key_exists($fk, $data) || !$data[$fk]) continue;
+            $targetId = (int) $data[$fk];
+            if ($targetId === $employee->id || $this->isEmployeeDescendantOf($targetId, $employee->id)) {
+                return back()->withInput()->with('error', "Selected {$fk} would create a circular reporting line.");
+            }
+        }
+
         if ($request->hasFile('avatar')) {
             if ($employee->avatar) {
                 $this->fileService->deleteByUuid($employee->avatar);
@@ -262,14 +274,26 @@ class EmployeeController extends Controller
             }
 
             if (!empty($newDoc['name'])) {
+                // Validate the inline doc payload the same way EmployeeDocumentController
+                // does — without this, this path accepted any document_type string and
+                // any notify_before_days value.
+                $newDocValidated = validator($newDoc, [
+                    'name'               => 'required|string|max:255',
+                    'document_type'      => 'nullable|in:contract,id_card,passport,certificate,resume,medical,other',
+                    'issue_date'         => 'nullable|date',
+                    'expiry_date'        => 'nullable|date',
+                    'notify_before_days' => 'nullable|integer|min:0|max:365',
+                    'notes'              => 'nullable|string',
+                ])->validate();
+
                 $docData = [
                     'employee_id'        => $employee->id,
-                    'name'               => $newDoc['name'],
-                    'document_type'      => $newDoc['document_type'] ?? 'other',
-                    'issue_date'         => $newDoc['issue_date'] ?: null,
-                    'expiry_date'        => $newDoc['expiry_date'] ?: null,
-                    'notify_before_days' => $newDoc['notify_before_days'] ?? 30,
-                    'notes'              => $newDoc['notes'] ?? null,
+                    'name'               => $newDocValidated['name'],
+                    'document_type'      => $newDocValidated['document_type'] ?? 'other',
+                    'issue_date'         => $newDocValidated['issue_date'] ?? null,
+                    'expiry_date'        => $newDocValidated['expiry_date'] ?? null,
+                    'notify_before_days' => $newDocValidated['notify_before_days'] ?? 30,
+                    'notes'              => $newDocValidated['notes'] ?? null,
                 ];
                 $docFileRecord = null;
                 if ($request->hasFile('new_document.file')) {
@@ -399,14 +423,48 @@ class EmployeeController extends Controller
             }
         }
 
-        $buildNode = function (int $id) use (&$buildNode, &$map, $childrenOf): array {
+        // Bounded recursion + visited-set so an already-corrupted parent_id cycle
+        // in the data can't produce infinite recursion or duplicate subtrees.
+        $buildNode = function (int $id, array $visited = []) use (&$buildNode, &$map, $childrenOf): array {
             $node = $map[$id];
+            $visited[$id] = true;
             foreach ($childrenOf[$id] ?? [] as $childId) {
-                $node['children'][] = $buildNode($childId);
+                if (isset($visited[$childId])) continue;
+                $node['children'][] = $buildNode($childId, $visited);
             }
             return $node;
         };
 
-        return array_map($buildNode, $roots);
+        return array_map(fn ($id) => $buildNode($id), $roots);
+    }
+
+    /**
+     * Is $candidateId in $rootId's subtree (i.e. would pointing at it create a
+     * cycle if assigned as $rootId's parent/coach/manager)? Walks parent_id
+     * upward from $candidateId; if we hit $rootId, candidate is a descendant.
+     * Bounded so corrupted data can't hang the request.
+     */
+    private function isEmployeeDescendantOf(int $candidateId, int $rootId): bool
+    {
+        $seen = [];
+        $currentId = $candidateId;
+
+        for ($i = 0; $i < 64; $i++) {
+            if (in_array($currentId, $seen, true)) {
+                return false;
+            }
+            $seen[] = $currentId;
+
+            $parentId = Employee::where('id', $currentId)->value('parent_id');
+            if (!$parentId) {
+                return false;
+            }
+            if ((int) $parentId === $rootId) {
+                return true;
+            }
+            $currentId = (int) $parentId;
+        }
+
+        return false;
     }
 }

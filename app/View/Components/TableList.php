@@ -20,6 +20,7 @@ class TableList extends Component
         public bool $selectable = false,
         public int $totalCount = 0,
         public bool $grouped = false,
+        public bool $canExport = false,
     ) {
         if ($this->grouped) {
             $this->isEmpty      = false;

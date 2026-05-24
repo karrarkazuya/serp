@@ -13,7 +13,6 @@ use App\Helpers\GroupsQuery;
 use App\Helpers\SearchFilters;
 use App\Helpers\SortsTable;
 use Illuminate\Http\Request;
-use Illuminate\Http\Response;
 use Illuminate\Support\Facades\DB;
 
 class ContactController extends Controller
@@ -113,6 +112,10 @@ class ContactController extends Controller
         $phones = $this->cleanPhones($data['phones'] ?? []);
         unset($data['tags'], $data['related_contacts'], $data['phones']);
 
+        if ($conflict = $this->phoneInUse($phones, ignoreContactId: null)) {
+            return back()->withInput()->with('error', "Phone number {$conflict} is already in use by another contact in this company.");
+        }
+
         $fileRecord = null;
         if ($request->hasFile('avatar')) {
             $fileRecord      = $this->fileService->store($request->file('avatar'), 'avatars/contacts', 'contacts.read');
@@ -164,6 +167,20 @@ class ContactController extends Controller
         $relatedContactIds = $data['related_contacts'] ?? [];
         $phones = $this->cleanPhones($data['phones'] ?? []);
         unset($data['tags'], $data['related_contacts'], $data['phones']);
+
+        // Cycle guard on the parent_id field — the form request only validates that
+        // the parent exists and is in an active company, not that pointing at it
+        // would form a loop with this contact's own descendants.
+        if (array_key_exists('parent_id', $data) && $data['parent_id']) {
+            $parentId = (int) $data['parent_id'];
+            if ($parentId === $contact->id || $this->isDescendantOf($parentId, $contact->id)) {
+                return back()->withInput()->with('error', 'Selected parent would create a circular contact hierarchy.');
+            }
+        }
+
+        if ($conflict = $this->phoneInUse($phones, ignoreContactId: $contact->id)) {
+            return back()->withInput()->with('error', "Phone number {$conflict} is already in use by another contact in this company.");
+        }
 
         $oldAvatarUuid = $contact->avatar;
 
@@ -244,35 +261,6 @@ class ContactController extends Controller
         return back()->with('success', 'Comment added.');
     }
 
-    /**
-     * Redirect to the unified file route. Kept for backward compat with existing Blade views.
-     * Falls back to an inline SVG placeholder when the contact has no avatar.
-     */
-    public function avatar(string $uuid): Response|\Illuminate\Http\RedirectResponse
-    {
-        $contact = Contact::where('uuid', $uuid)->first();
-
-        if (!$contact || !$contact->avatar) {
-            return $this->defaultAvatarResponse();
-        }
-
-        return redirect()->route('files.serve', $contact->avatar);
-    }
-
-    private function defaultAvatarResponse(): Response
-    {
-        $svg = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">'
-             . '<rect width="100" height="100" fill="#e5e7eb"/>'
-             . '<circle cx="50" cy="37" r="19" fill="#9ca3af"/>'
-             . '<ellipse cx="50" cy="82" rx="30" ry="22" fill="#9ca3af"/>'
-             . '</svg>';
-
-        return response($svg, 200, [
-            'Content-Type'  => 'image/svg+xml',
-            'Cache-Control' => 'private, max-age=60',
-        ]);
-    }
-
     private function cleanPhones(array $raw): array
     {
         return collect($raw)
@@ -285,10 +273,42 @@ class ContactController extends Controller
 
     private function syncPhones(Contact $contact, array $phones): void
     {
-        $contact->phones()->delete();
+        // Hard delete: phones are value-data attached to a contact, not auditable
+        // records on their own. Soft-deleting them used to accumulate orphan rows
+        // that then collided with phone re-use checks at the app layer.
+        $contact->phones()->forceDelete();
         foreach ($phones as $phone) {
             $contact->phones()->create(['phone' => $phone]);
         }
+    }
+
+    /**
+     * Returns the first phone that is already used by another contact within the
+     * actor's active companies, or null if all phones are available. Only counts
+     * live (non-soft-deleted) phones attached to live contacts.
+     */
+    private function phoneInUse(array $phones, ?int $ignoreContactId): ?string
+    {
+        if (empty($phones)) {
+            return null;
+        }
+
+        $activeCompanyIds = $this->companyContext->getActiveCompanyIds();
+        if (empty($activeCompanyIds)) {
+            return null;
+        }
+
+        $query = \App\Models\Contacts\ContactPhone::query()
+            ->whereIn('phone', $phones)
+            ->whereHas('contact', function ($q) use ($activeCompanyIds) {
+                $q->whereIn('company_id', $activeCompanyIds);
+            });
+
+        if ($ignoreContactId !== null) {
+            $query->where('contact_id', '!=', $ignoreContactId);
+        }
+
+        return $query->value('phone');
     }
 
     private function syncRelatedContacts(Contact $contact, array $relatedContactIds): void
@@ -300,6 +320,13 @@ class ContactController extends Controller
             ->values()
             ->all();
 
+        // Cycle guard: any candidate that is already an ancestor of $contact would
+        // form a loop (A→B→A) once we set its parent_id to $contact->id. Walking the
+        // parent chain upward from $contact captures every ancestor we must exclude.
+        $ancestorIds = $this->ancestorIds($contact);
+
+        $relatedContactIds = array_values(array_diff($relatedContactIds, $ancestorIds));
+
         Contact::where('parent_id', $contact->id)
             ->whereNotIn('id', $relatedContactIds)
             ->get()
@@ -310,5 +337,60 @@ class ContactController extends Controller
                 ->get()
                 ->each(fn (Contact $child) => $child->update(['parent_id' => $contact->id]));
         }
+    }
+
+    /**
+     * Walk the parent_id chain upward and return every ancestor's id. Bounded loop
+     * so an already-corrupted cycle in the data can't hang the request.
+     *
+     * @return array<int, int>
+     */
+    private function ancestorIds(Contact $contact): array
+    {
+        $ids = [$contact->id];
+        $current = $contact;
+
+        for ($i = 0; $i < 64; $i++) {
+            $parentId = $current->parent_id;
+            if (!$parentId || in_array($parentId, $ids, true)) {
+                break;
+            }
+            $ids[] = $parentId;
+            $current = Contact::find($parentId);
+            if (!$current) {
+                break;
+            }
+        }
+
+        return $ids;
+    }
+
+    /**
+     * Is $candidateId a descendant of $rootId? Walks parent_id upward from
+     * $candidateId; if we hit $rootId, candidate is in $rootId's subtree.
+     * Bounded so a corrupted cycle in the data can't hang the check.
+     */
+    private function isDescendantOf(int $candidateId, int $rootId): bool
+    {
+        $seen = [];
+        $currentId = $candidateId;
+
+        for ($i = 0; $i < 64; $i++) {
+            if (in_array($currentId, $seen, true)) {
+                return false;
+            }
+            $seen[] = $currentId;
+
+            $parentId = Contact::where('id', $currentId)->value('parent_id');
+            if (!$parentId) {
+                return false;
+            }
+            if ((int) $parentId === $rootId) {
+                return true;
+            }
+            $currentId = (int) $parentId;
+        }
+
+        return false;
     }
 }

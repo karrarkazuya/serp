@@ -166,12 +166,6 @@
                                     <p class="text-xs text-gray-400 mb-0.5">{{ __('workflow.last_updated_label') }}</p>
                                     <p class="text-sm font-medium text-gray-800">{{ $procedure->updated_at->diffForHumans() }}</p>
                                 </div>
-                                @if($procedure->resolve_duration)
-                                <div>
-                                    <p class="text-xs text-gray-400 mb-0.5">{{ __('workflow.duration_h_label') }}</p>
-                                    <p class="text-sm font-medium text-gray-800">{{ $procedure->resolve_duration }}h</p>
-                                </div>
-                                @endif
                                 @if($procedure->procedureTemplate)
                                 <div>
                                     <p class="text-xs text-gray-400 mb-0.5">{{ __('workflow.template_meta_label') }}</p>

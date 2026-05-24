@@ -410,4 +410,70 @@ return [
     'resume_line_type_updated'   => 'تم تحديث نوع السطر.',
     'resume_line_type_archived'  => 'تم أرشفة نوع السطر.',
     'resume_line_type_deleted'   => 'تم حذف نوع السطر.',
+
+    // Bonuses sub-module
+    'bonuses_title'       => 'العلاوات والترفيعات',
+    'new_bonus'           => 'علاوة جديدة',
+    'no_bonuses'          => 'لا توجد علاوات.',
+    'bonus_created'       => 'تم إنشاء العلاوة.',
+    'bonus_updated'       => 'تم تحديث العلاوة.',
+    'bonus_archived'      => 'تم أرشفة العلاوة.',
+    'bonus_unarchived'    => 'تمت استعادة العلاوة.',
+    'bonus_deleted'       => 'تم حذف العلاوة.',
+
+    // Appreciations sub-module
+    'appreciations_title'     => 'الشكر والتقدير',
+    'new_appreciation'        => 'شكر وتقدير جديد',
+    'no_appreciations'        => 'لا توجد سجلات شكر وتقدير.',
+    'appreciation_created'    => 'تم إنشاء سجل التقدير.',
+    'appreciation_updated'    => 'تم تحديث سجل التقدير.',
+    'appreciation_archived'   => 'تم أرشفة سجل التقدير.',
+    'appreciation_unarchived' => 'تمت استعادة سجل التقدير.',
+    'appreciation_deleted'    => 'تم حذف سجل التقدير.',
+
+    // Sanctions sub-module
+    'sanctions_title'     => 'العقوبات الانضباطية',
+    'new_sanction'        => 'عقوبة جديدة',
+    'no_sanctions'        => 'لا توجد عقوبات.',
+    'sanction_created'    => 'تم إنشاء العقوبة.',
+    'sanction_updated'    => 'تم تحديث العقوبة.',
+    'sanction_archived'   => 'تم أرشفة العقوبة.',
+    'sanction_unarchived' => 'تمت استعادة العقوبة.',
+    'sanction_deleted'    => 'تم حذف العقوبة.',
+
+    // Rewards sub-module
+    'rewards_title'     => 'المكافآت والغرامات',
+    'new_reward'        => 'مكافأة جديدة',
+    'no_rewards'        => 'لا توجد مكافآت.',
+    'reward_created'    => 'تم إنشاء المكافأة.',
+    'reward_updated'    => 'تم تحديث المكافأة.',
+    'reward_archived'   => 'تم أرشفة المكافأة.',
+    'reward_unarchived' => 'تمت استعادة المكافأة.',
+    'reward_deleted'    => 'تم حذف المكافأة.',
+
+    // Job Grades sub-module
+    'job_grades_title'     => 'الدرجات الوظيفية',
+    'new_job_grade'        => 'درجة وظيفية جديدة',
+    'no_job_grades'        => 'لا توجد درجات وظيفية.',
+    'job_grade_created'    => 'تم إنشاء الدرجة الوظيفية.',
+    'job_grade_updated'    => 'تم تحديث الدرجة الوظيفية.',
+    'job_grade_archived'   => 'تم أرشفة الدرجة الوظيفية.',
+    'job_grade_unarchived' => 'تمت استعادة الدرجة الوظيفية.',
+    'job_grade_deleted'    => 'تم حذف الدرجة الوظيفية.',
+
+    // Shared document file keys
+    'document_replaced'    => 'تم استبدال المستند.',
+    'document_deleted'     => 'تم حذف المستند.',
+    'doc_replace_hint'     => 'ارفع ملفاً جديداً للاستبدال',
+    'doc_file'             => 'الملف المرفق',
+    'notes'                => 'ملاحظات',
+    'notify_before_days'   => 'إشعار قبل (أيام)',
+
+    // Specialization type
+    'specialization_type'             => 'نوع التخصيص',
+    'specialization_type_amount'      => 'تخصص مالي (مبلغ)',
+    'specialization_type_percentage'  => 'تخصص مالي (نسبة مئوية)',
+    'specialization_type_seniority'   => 'قدم موظف (بالأشهر)',
+    'employee_seniority'              => 'قدم الموظف',
+    'employee_seniority_months'       => 'شهر',
 ];

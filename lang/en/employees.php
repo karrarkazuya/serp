@@ -410,4 +410,70 @@ return [
     'resume_line_type_updated'   => 'Resume line type updated.',
     'resume_line_type_archived'  => 'Resume line type archived.',
     'resume_line_type_deleted'   => 'Resume line type deleted.',
+
+    // Bonuses sub-module
+    'bonuses_title'       => 'Bonuses & Promotions',
+    'new_bonus'           => 'New Bonus',
+    'no_bonuses'          => 'No bonuses found.',
+    'bonus_created'       => 'Bonus created.',
+    'bonus_updated'       => 'Bonus updated.',
+    'bonus_archived'      => 'Bonus archived.',
+    'bonus_unarchived'    => 'Bonus restored.',
+    'bonus_deleted'       => 'Bonus deleted.',
+
+    // Appreciations sub-module
+    'appreciations_title'     => 'Thanks & Appreciation',
+    'new_appreciation'        => 'New Appreciation',
+    'no_appreciations'        => 'No appreciation records found.',
+    'appreciation_created'    => 'Appreciation created.',
+    'appreciation_updated'    => 'Appreciation updated.',
+    'appreciation_archived'   => 'Appreciation archived.',
+    'appreciation_unarchived' => 'Appreciation restored.',
+    'appreciation_deleted'    => 'Appreciation deleted.',
+
+    // Sanctions sub-module
+    'sanctions_title'     => 'Disciplinary Sanctions',
+    'new_sanction'        => 'New Sanction',
+    'no_sanctions'        => 'No sanctions found.',
+    'sanction_created'    => 'Sanction created.',
+    'sanction_updated'    => 'Sanction updated.',
+    'sanction_archived'   => 'Sanction archived.',
+    'sanction_unarchived' => 'Sanction restored.',
+    'sanction_deleted'    => 'Sanction deleted.',
+
+    // Rewards sub-module
+    'rewards_title'     => 'Rewards & Penalties',
+    'new_reward'        => 'New Reward',
+    'no_rewards'        => 'No rewards found.',
+    'reward_created'    => 'Reward created.',
+    'reward_updated'    => 'Reward updated.',
+    'reward_archived'   => 'Reward archived.',
+    'reward_unarchived' => 'Reward restored.',
+    'reward_deleted'    => 'Reward deleted.',
+
+    // Job Grades sub-module
+    'job_grades_title'     => 'Job Grades',
+    'new_job_grade'        => 'New Job Grade',
+    'no_job_grades'        => 'No job grades found.',
+    'job_grade_created'    => 'Job grade created.',
+    'job_grade_updated'    => 'Job grade updated.',
+    'job_grade_archived'   => 'Job grade archived.',
+    'job_grade_unarchived' => 'Job grade restored.',
+    'job_grade_deleted'    => 'Job grade deleted.',
+
+    // Shared document file keys
+    'document_replaced'    => 'Document replaced.',
+    'document_deleted'     => 'Document removed.',
+    'doc_replace_hint'     => 'Upload a new file to replace',
+    'doc_file'             => 'Attached File',
+    'notes'                => 'Notes',
+    'notify_before_days'   => 'Notify Before (days)',
+
+    // Specialization type
+    'specialization_type'             => 'Specialization Type',
+    'specialization_type_amount'      => 'Financial Specialization (Amount)',
+    'specialization_type_percentage'  => 'Financial Specialization (Percentage)',
+    'specialization_type_seniority'   => 'Employee Seniority (Months)',
+    'employee_seniority'              => 'Employee Seniority',
+    'employee_seniority_months'       => 'months',
 ];

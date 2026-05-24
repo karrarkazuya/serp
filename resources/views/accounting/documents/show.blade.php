@@ -167,14 +167,29 @@
             @endif
             <div class="p-6">
                 <div class="flex items-start justify-between gap-6 mb-1">
-                    <div>
-                        <span class="text-lg font-semibold text-gray-800">{{ match($config['move_type']) { 'out_invoice' => 'Customer Invoice', 'in_invoice' => 'Vendor Bill', 'out_refund' => 'Customer Credit Note', 'in_refund' => 'Vendor Refund', default => $config['singular'] } }}</span>
+                    <div class="flex-1 min-w-0">
+                        <p class="text-sm text-gray-500">{{ match($config['move_type']) { 'out_invoice' => 'Customer Invoice', 'in_invoice' => 'Vendor Bill', 'out_refund' => 'Customer Credit Note', 'in_refund' => 'Vendor Refund', default => $config['singular'] } }}</p>
                         <h1 class="mt-2 text-4xl font-bold {{ $document->name ? 'text-gray-900' : 'text-gray-400' }}">{{ $document->name ?: __('accounting.status_draft') }}</h1>
                     </div>
+                    @php
+                        $statuses = [
+                            ['active' => $document->isDraft(),     'label' => __('accounting.status_draft'),     'border' => '#71639e', 'bg' => 'bg-purple-50', 'text' => 'text-gray-900',   'fill' => '#faf5ff'],
+                            ['active' => $document->isPosted(),    'label' => __('accounting.status_posted'),    'border' => '#16a34a', 'bg' => 'bg-green-50',  'text' => 'text-green-800', 'fill' => '#f0fdf4'],
+                            ['active' => $document->isCancelled(), 'label' => __('accounting.status_cancelled'), 'border' => '#ef4444', 'bg' => 'bg-red-50',    'text' => 'text-red-700',   'fill' => '#fef2f2'],
+                        ];
+                    @endphp
                     <div class="flex shrink-0 items-center text-sm font-semibold">
-                        <span class="px-6 py-2 border {{ $document->isDraft() ? 'border-[#71639e] bg-purple-50 text-gray-900' : 'border-gray-200 bg-gray-200 text-gray-400' }}">{{ __('accounting.status_draft') }}</span>
-                        <span class="px-6 py-2 border {{ $document->isPosted() ? 'border-green-600 bg-green-50 text-green-800' : 'border-gray-200 bg-gray-200 text-gray-400' }}">{{ __('accounting.status_posted') }}</span>
-                        <span class="px-6 py-2 border {{ $document->isCancelled() ? 'border-red-400 bg-red-50 text-red-700' : 'border-gray-200 bg-gray-200 text-gray-400' }}">{{ __('accounting.status_cancelled') }}</span>
+                        @foreach($statuses as $si => $st)
+                        @php $isLast = $si === count($statuses) - 1; $bc = $st['active'] ? $st['border'] : '#e5e7eb'; $fc = $st['active'] ? $st['fill'] : '#f3f4f6'; @endphp
+                        <span class="relative py-2 {{ $si === 0 ? 'ps-5 pe-8' : ($isLast ? 'ps-8 pe-5' : 'ps-8 pe-8') }} {{ $st['active'] ? $st['bg'].' '.$st['text'] : 'bg-gray-100 text-gray-400' }} border border-gray-200"
+                              @if($st['active']) style="border-color:{{ $st['border'] }}" @endif>
+                            {{ $st['label'] }}
+                            @if(!$isLast)
+                            <span class="absolute" style="right:-9px;top:50%;transform:translateY(-50%);width:0;height:0;border-top:17px solid transparent;border-bottom:17px solid transparent;border-left:9px solid {{ $bc }};z-index:10;display:block"></span>
+                            <span class="absolute" style="right:-8px;top:50%;transform:translateY(-50%);width:0;height:0;border-top:16px solid transparent;border-bottom:16px solid transparent;border-left:8px solid {{ $fc }};z-index:11;display:block"></span>
+                            @endif
+                        </span>
+                        @endforeach
                     </div>
                 </div>
 

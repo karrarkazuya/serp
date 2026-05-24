@@ -4,6 +4,7 @@ namespace App\Services;
 
 use Illuminate\Support\Collection;
 use PhpOffice\PhpSpreadsheet\Cell\Coordinate;
+use PhpOffice\PhpSpreadsheet\Cell\DataType;
 use PhpOffice\PhpSpreadsheet\Spreadsheet;
 use PhpOffice\PhpSpreadsheet\Style\Fill;
 use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
@@ -11,6 +12,15 @@ use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class ExportService
 {
+    /**
+     * Characters that, when leading a cell value, are interpreted as formulas
+     * by Excel, LibreOffice Calc, Numbers, and Google Sheets. Leaving them
+     * unescaped lets any user who can write an exported field plant a payload
+     * like `=HYPERLINK(...)` or `+cmd|...` that runs in the viewer's spreadsheet.
+     * See CWE-1236 (Improper Neutralization of Formula Elements in a CSV File).
+     */
+    private const FORMULA_TRIGGERS = ['=', '+', '-', '@', "\t", "\r"];
+
     public function download(
         Collection $records,
         array $columns,
@@ -52,7 +62,12 @@ class ExportService
         foreach ($records as $record) {
             $colIdx = 1;
             foreach ($columns as $col) {
-                $sheet->getCellByColumnAndRow($colIdx, $rowIdx)->setValue($this->value($record, $col));
+                // Use setValueExplicit + TYPE_STRING so PhpSpreadsheet never parses
+                // a leading "=" as a formula. We also prefix formula triggers with
+                // a single quote so the cell renders identically when opened in
+                // Excel or pasted out as text.
+                $sheet->getCellByColumnAndRow($colIdx, $rowIdx)
+                    ->setValueExplicit($this->safeValue($record, $col), DataType::TYPE_STRING);
                 $colIdx++;
             }
             $rowIdx++;
@@ -80,7 +95,7 @@ class ExportService
             ));
 
             foreach ($records as $record) {
-                fputcsv($handle, array_map(fn ($col) => $this->value($record, $col), $columns));
+                fputcsv($handle, array_map(fn ($col) => $this->safeValue($record, $col), $columns));
             }
 
             fclose($handle);
@@ -101,5 +116,16 @@ class ExportService
         if (is_bool($val)) return $val ? 'Yes' : 'No';
 
         return (string) $val;
+    }
+
+    private function safeValue(mixed $record, array $col): string
+    {
+        $val = (string) $this->value($record, $col);
+
+        if ($val !== '' && in_array($val[0], self::FORMULA_TRIGGERS, true)) {
+            return "'" . $val;
+        }
+
+        return $val;
     }
 }

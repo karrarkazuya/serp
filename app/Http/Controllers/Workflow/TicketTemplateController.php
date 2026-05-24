@@ -90,7 +90,7 @@ class TicketTemplateController extends Controller
         $data = $request->validate([
             'name'                  => 'required|string|max:255',
             'description'           => 'nullable|string|max:5000',
-            'default_group_id'      => 'nullable|exists:workflow_groups,id',
+            'default_group_id'      => 'nullable|exists:workflow_groups,id,deleted_at,NULL',
             'default_department_id' => 'nullable|exists:hr_departments,id',
             'resolve_max_duration'  => 'nullable|integer|min:1',
             'enabled'               => 'boolean',

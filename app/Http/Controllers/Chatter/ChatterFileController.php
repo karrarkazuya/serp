@@ -4,46 +4,33 @@ namespace App\Http\Controllers\Chatter;
 
 use App\Http\Controllers\Controller;
 use App\Models\Chatter\ChatterMessage;
-use App\Models\Workflow\Procedure;
-use App\Models\Workflow\Ticket;
+use App\Services\Company\CompanyContextService;
+use App\Support\Chatter\AllowedTypes;
+use Illuminate\Http\Request;
 
 class ChatterFileController extends Controller
 {
-    private const ALLOWED_TYPES = [
-        'App\Models\Contacts\Contact'              => 'contacts.read',
-        'App\Models\Settings\Company'              => 'companies.read',
-        'App\Models\User'                          => 'users.read',
-        'App\Models\Workflow\Ticket'               => 'workflow.tickets.read',
-        'App\Models\Workflow\Procedure'            => 'workflow.procedures.read',
-        'App\Models\Workflow\TicketTemplate'       => 'workflow.config.read',
-        'App\Models\Workflow\ProcedureTemplate'    => 'workflow.config.read',
-        'App\Models\Workflow\Group'                => 'workflow.config.read',
-        'App\Models\Employees\Department'           => 'employees.read',
-        'App\Models\Workflow\Manager'              => 'workflow.config.read',
-        'App\Models\Workflow\WorkflowUser'         => 'workflow.config.read',
-    ];
+    public function __construct(private readonly CompanyContextService $companyContext) {}
 
     /**
      * Resolve the File UUID from chatter metadata and redirect to the unified file route.
      * Metadata uses from_file_uuid / to_file_uuid keys (written by TicketController::saveInputs).
      */
-    public function serve(ChatterMessage $chatterMessage, int $index, string $side)
+    public function serve(Request $request, ChatterMessage $chatterMessage, int $index, string $side)
     {
-        abort_unless(in_array($side, ['from', 'to']), 404);
+        abort_unless(in_array($side, ['from', 'to'], true), 404);
 
         $modelType = $chatterMessage->model_type;
-        abort_unless(array_key_exists($modelType, self::ALLOWED_TYPES), 403);
-        abort_unless(auth()->user()->hasPermission(self::ALLOWED_TYPES[$modelType]), 403);
+        abort_unless(array_key_exists($modelType, AllowedTypes::READ_PERMISSIONS), 403);
+        abort_unless($request->user()->hasPermission(AllowedTypes::READ_PERMISSIONS[$modelType]), 403);
 
-        // For ticket/procedure, enforce viewer-level access on the specific record
-        $record = match ($modelType) {
-            'App\Models\Workflow\Ticket'    => Ticket::findOrFail($chatterMessage->model_id),
-            'App\Models\Workflow\Procedure' => Procedure::findOrFail($chatterMessage->model_id),
-            default                         => null,
-        };
-        if ($record !== null) {
-            $this->authorize('view', $record);
-        }
+        AllowedTypes::authorizeRecordAccess(
+            $modelType,
+            (int) $chatterMessage->model_id,
+            'view',
+            $this->companyContext,
+            $request,
+        );
 
         $changes = $chatterMessage->metadata['changes'] ?? [];
         abort_unless(isset($changes[$index]), 404);
@@ -54,7 +41,7 @@ class ChatterFileController extends Controller
 
         abort_unless($uuid, 404);
 
-        // Access control (permission + context ownership) is enforced by FileController
+        // Final access control (permission + context ownership) is enforced by FileController
         return redirect()->route('files.serve', $uuid);
     }
 }

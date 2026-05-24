@@ -11,7 +11,12 @@ use App\Models\Employees\Contract;
 use App\Models\Employees\Department;
 use App\Models\Employees\DepartureReason;
 use App\Models\Employees\Employee;
+use App\Models\Employees\EmployeeAppreciation;
+use App\Models\Employees\EmployeeBonus;
 use App\Models\Employees\EmployeeCategory;
+use App\Models\Employees\EmployeeJobGrade;
+use App\Models\Employees\EmployeeReward;
+use App\Models\Employees\EmployeeSanction;
 use App\Models\Employees\EmployeeSkill;
 use App\Models\Employees\Job;
 use App\Models\Employees\ResourceCalendar;
@@ -572,7 +577,353 @@ class DemoSeeder extends Seeder
             $emp->update(['contract_id' => $contract->id, 'wage' => $contract->wage]);
         }
 
+        $this->seedAllocations($allEmployees);
+
         $this->command->info('Employees seeded — ' . $allEmployees->count() . ' records created.');
+    }
+
+    // ── Allocations (Salary Components) ──────────────────────────────────────
+
+    private function seedAllocations(\Illuminate\Support\Collection $employees): void
+    {
+        // Index employees by job title for easy lookup
+        $byJob = $employees->keyBy(fn ($e) => $e->job?->name ?? '');
+
+        $ceo        = $byJob['CEO'] ?? null;
+        $cto        = $byJob['Head of Software Solutions'] ?? null;
+        $hrManager  = $byJob['HR Manager'] ?? null;
+        $finManager = $byJob['Finance Manager'] ?? null;
+        $opsManager = $byJob['Operations Manager'] ?? null;
+        $dev1       = $employees->firstWhere('work_email', 'hayder.ali@company.iq');
+        $dev2       = $employees->firstWhere('work_email', 'zainab.khalid@company.iq');
+        $dev3       = $employees->firstWhere('work_email', 'mohammed.jassim@company.iq');
+        $dba        = $byJob['Database Administrator'] ?? null;
+        $designer   = $byJob['UI/UX Designer'] ?? null;
+        $hr1        = $employees->firstWhere('work_email', 'fatima.rahim@company.iq');
+        $fin1       = $byJob['Financial Analyst'] ?? null;
+        $supp1      = $employees->firstWhere('work_email', 'basim.tariq@company.iq');
+        $supp2      = $employees->firstWhere('work_email', 'rana.razzaq@company.iq');
+
+        // ── Job Grades ────────────────────────────────────────────────────────
+        // Define pay-scale grades; financial_specialization = grade supplement (IQD equivalent)
+
+        $gradeExec = EmployeeJobGrade::firstOrCreate(
+            ['organizational_structure' => 'المستوى التنفيذي'],
+            ['assignment_type' => 'دائمي', 'data_status' => 'current', 'financial_specialization' => 1500.00, 'affective_date' => '2024-01-01', 'active' => true]
+        );
+        $gradeExec->employees()->syncWithoutDetaching(collect([$ceo])->filter()->pluck('id'));
+
+        $gradeSrMgr = EmployeeJobGrade::firstOrCreate(
+            ['organizational_structure' => 'مستوى الإدارة العليا'],
+            ['assignment_type' => 'دائمي', 'data_status' => 'current', 'financial_specialization' => 1000.00, 'affective_date' => '2024-01-01', 'active' => true]
+        );
+        $gradeSrMgr->employees()->syncWithoutDetaching(collect([$cto, $hrManager, $finManager, $opsManager])->filter()->pluck('id'));
+
+        $gradeSrTech = EmployeeJobGrade::firstOrCreate(
+            ['organizational_structure' => 'المستوى التقني المتقدم'],
+            ['assignment_type' => 'دائمي', 'data_status' => 'current', 'financial_specialization' => 600.00, 'affective_date' => '2024-01-01', 'active' => true]
+        );
+        $gradeSrTech->employees()->syncWithoutDetaching(collect([$dev3, $dba])->filter()->pluck('id'));
+
+        $gradeTech = EmployeeJobGrade::firstOrCreate(
+            ['organizational_structure' => 'المستوى التقني'],
+            ['assignment_type' => 'دائمي', 'data_status' => 'current', 'financial_specialization' => 400.00, 'affective_date' => '2024-01-01', 'active' => true]
+        );
+        $gradeTech->employees()->syncWithoutDetaching(collect([$dev1, $dev2, $designer, $fin1])->filter()->pluck('id'));
+
+        $gradeAdmin = EmployeeJobGrade::firstOrCreate(
+            ['organizational_structure' => 'المستوى الإداري'],
+            ['assignment_type' => 'دائمي', 'data_status' => 'current', 'financial_specialization' => 300.00, 'affective_date' => '2024-01-01', 'active' => true]
+        );
+        $gradeAdmin->employees()->syncWithoutDetaching(collect([$hr1])->filter()->pluck('id'));
+
+        $gradeEntry = EmployeeJobGrade::firstOrCreate(
+            ['organizational_structure' => 'مستوى الدعم الفني'],
+            ['assignment_type' => 'عقدي', 'data_status' => 'current', 'financial_specialization' => 200.00, 'affective_date' => '2024-01-01', 'active' => true]
+        );
+        $gradeEntry->employees()->syncWithoutDetaching(collect([$supp1, $supp2])->filter()->pluck('id'));
+
+        // ── Bonuses & Promotions (علاوات وترفيعات) ────────────────────────────
+
+        $bonusHousing = EmployeeBonus::firstOrCreate(
+            ['name' => 'علاوة الإسكان'],
+            [
+                'organizational_structure' => 'جميع الأقسام',
+                'assignment_type'          => 'دائمي',
+                'data_status'              => 'current',
+                'financial_specialization' => 400.00,
+                'affective_date'           => '2024-01-01',
+                'issued_by'                => 'إدارة الموارد البشرية',
+                'notes'                    => 'علاوة إسكان شهرية ثابتة لجميع الموظفين الدائميين.',
+                'active'                   => true,
+            ]
+        );
+        $bonusHousing->employees()->syncWithoutDetaching($employees->pluck('id'));
+
+        $bonusTransport = EmployeeBonus::firstOrCreate(
+            ['name' => 'علاوة النقل'],
+            [
+                'organizational_structure' => 'جميع الأقسام',
+                'assignment_type'          => 'دائمي',
+                'data_status'              => 'current',
+                'financial_specialization' => 150.00,
+                'affective_date'           => '2024-01-01',
+                'issued_by'                => 'إدارة الموارد البشرية',
+                'notes'                    => 'علاوة نقل شهرية لتغطية تكاليف التنقل.',
+                'active'                   => true,
+            ]
+        );
+        $bonusTransport->employees()->syncWithoutDetaching($employees->pluck('id'));
+
+        $bonusTechSpec = EmployeeBonus::firstOrCreate(
+            ['name' => 'علاوة التخصص التقني'],
+            [
+                'organizational_structure' => 'قسم تطوير البرمجيات',
+                'assignment_type'          => 'دائمي',
+                'data_status'              => 'current',
+                'financial_specialization' => 350.00,
+                'affective_date'           => '2023-07-01',
+                'issued_by'                => 'إدارة الموارد البشرية',
+                'notes'                    => 'علاوة خاصة بالكوادر التقنية في قسم البرمجيات.',
+                'active'                   => true,
+            ]
+        );
+        $bonusTechSpec->employees()->syncWithoutDetaching(
+            collect([$cto, $dev1, $dev2, $dev3, $dba, $designer])->filter()->pluck('id')
+        );
+
+        $bonusPromotion = EmployeeBonus::firstOrCreate(
+            ['name' => 'ترفيع 2024 - زيادة علاوة الأقدمية'],
+            [
+                'organizational_structure' => 'الإدارة العليا والتقنيون',
+                'assignment_type'          => 'دائمي',
+                'data_status'              => 'current',
+                'financial_specialization' => 250.00,
+                'affective_date'           => '2024-07-01',
+                'issued_by'                => 'مجلس الإدارة',
+                'notes'                    => 'علاوة أقدمية سنوية بمناسبة إتمام 5 سنوات خدمة أو أكثر.',
+                'active'                   => true,
+            ]
+        );
+        $bonusPromotion->employees()->syncWithoutDetaching(
+            collect([$ceo, $cto, $hrManager, $finManager, $opsManager, $dev3, $dba])->filter()->pluck('id')
+        );
+
+        $bonusRisk = EmployeeBonus::firstOrCreate(
+            ['name' => 'علاوة الخطورة والمسؤولية'],
+            [
+                'organizational_structure' => 'الإدارة التنفيذية',
+                'assignment_type'          => 'دائمي',
+                'data_status'              => 'current',
+                'financial_specialization' => 300.00,
+                'affective_date'           => '2024-01-01',
+                'issued_by'                => 'مجلس الإدارة',
+                'notes'                    => 'علاوة خطورة ومسؤولية لشاغلي المناصب الإدارية.',
+                'active'                   => true,
+            ]
+        );
+        $bonusRisk->employees()->syncWithoutDetaching(
+            collect([$ceo, $cto, $hrManager, $finManager, $opsManager])->filter()->pluck('id')
+        );
+
+        // ── Thanks & Appreciation (شكر وتقدير) ────────────────────────────────
+
+        $appExcellence = EmployeeAppreciation::firstOrCreate(
+            ['name' => 'شهادة شكر - الأداء المتميز 2025'],
+            [
+                'document_type'            => 'certificate',
+                'organizational_structure' => 'قسم تطوير البرمجيات',
+                'assignment_type'          => 'سنوي',
+                'data_status'              => 'current',
+                'financial_specialization' => 0.00,
+                'issue_date'               => '2025-12-31',
+                'issued_by'                => 'المدير التنفيذي',
+                'document_number'          => 'APP-2025-001',
+                'notes'                    => 'تقديراً للجهود المبذولة والأداء المتميز خلال عام 2025.',
+                'active'                   => true,
+            ]
+        );
+        $appExcellence->employees()->syncWithoutDetaching(
+            collect([$cto, $dev3, $dba])->filter()->pluck('id')
+        );
+
+        $appProject = EmployeeAppreciation::firstOrCreate(
+            ['name' => 'شكر جزيل - إنجاز مشروع التحول الرقمي'],
+            [
+                'document_type'            => 'certificate',
+                'organizational_structure' => 'فريق التحول الرقمي',
+                'assignment_type'          => 'مرحلي',
+                'data_status'              => 'current',
+                'financial_specialization' => 0.00,
+                'issue_date'               => '2025-06-15',
+                'issued_by'                => 'رئيس مجلس الإدارة',
+                'document_number'          => 'APP-2025-002',
+                'notes'                    => 'شكر وتقدير لفريق العمل على إتمام مشروع التحول الرقمي في الموعد المحدد.',
+                'active'                   => true,
+            ]
+        );
+        $appProject->employees()->syncWithoutDetaching(
+            collect([$cto, $dev1, $dev2, $dev3, $designer])->filter()->pluck('id')
+        );
+
+        $appHR = EmployeeAppreciation::firstOrCreate(
+            ['name' => 'تكريم - موظف الربع الأول 2026'],
+            [
+                'organizational_structure' => 'الموارد البشرية',
+                'assignment_type'          => 'ربع سنوي',
+                'data_status'              => 'current',
+                'financial_specialization' => 0.00,
+                'issue_date'               => '2026-04-01',
+                'issued_by'                => 'إدارة الموارد البشرية',
+                'document_number'          => 'APP-2026-001',
+                'notes'                    => 'جائزة موظف الربع - التزام ومبادرة استثنائية.',
+                'active'                   => true,
+            ]
+        );
+        $appHR->employees()->syncWithoutDetaching(
+            collect([$hr1])->filter()->pluck('id')
+        );
+
+        // ── Disciplinary Sanctions (عقوبات انضباطية) ─────────────────────────
+        // financial_specialization = deduction amount
+
+        $sanctionWarning = EmployeeSanction::firstOrCreate(
+            ['name' => 'إنذار خطي - تأخر متكرر'],
+            [
+                'document_type'            => 'other',
+                'organizational_structure' => 'قسم الدعم الفني',
+                'assignment_type'          => 'انضباطي',
+                'data_status'              => 'previous',
+                'financial_specialization' => 50.00,
+                'issue_date'               => '2025-03-10',
+                'affective_date'           => '2025-03-10',
+                'issued_by'                => 'مدير العمليات',
+                'document_number'          => 'SANC-2025-001',
+                'notes'                    => 'إنذار خطي بسبب التأخر المتكرر في الحضور. الخصم 50 دولار من راتب شهر آذار.',
+                'active'                   => true,
+            ]
+        );
+        $sanctionWarning->employees()->syncWithoutDetaching(
+            collect([$supp1])->filter()->pluck('id')
+        );
+
+        $sanctionAbsence = EmployeeSanction::firstOrCreate(
+            ['name' => 'خصم راتب - غياب بدون إذن'],
+            [
+                'document_type'            => 'other',
+                'organizational_structure' => 'قسم الدعم الفني',
+                'assignment_type'          => 'انضباطي',
+                'data_status'              => 'current',
+                'financial_specialization' => 100.00,
+                'issue_date'               => '2026-02-05',
+                'affective_date'           => '2026-02-01',
+                'issued_by'                => 'إدارة الموارد البشرية',
+                'document_number'          => 'SANC-2026-001',
+                'notes'                    => 'خصم يومين راتب بسبب الغياب بدون إذن مسبق.',
+                'active'                   => true,
+            ]
+        );
+        $sanctionAbsence->employees()->syncWithoutDetaching(
+            collect([$supp2])->filter()->pluck('id')
+        );
+
+        $sanctionDeduction = EmployeeSanction::firstOrCreate(
+            ['name' => 'خصم مالي - إهمال في العمل'],
+            [
+                'document_type'            => 'other',
+                'organizational_structure' => 'قسم الموارد البشرية',
+                'assignment_type'          => 'انضباطي',
+                'data_status'              => 'previous',
+                'financial_specialization' => 200.00,
+                'issue_date'               => '2024-11-01',
+                'affective_date'           => '2024-11-01',
+                'issued_by'                => 'مجلس التأديب',
+                'document_number'          => 'SANC-2024-001',
+                'notes'                    => 'خصم مالي بسبب إهمال واضح أثر على مستوى الخدمة.',
+                'active'                   => true,
+            ]
+        );
+        $sanctionDeduction->employees()->syncWithoutDetaching(
+            collect([$hr1])->filter()->pluck('id')
+        );
+
+        // ── Rewards & Penalties (مكافآت وغرامات) ─────────────────────────────
+
+        $rewardExcellence = EmployeeReward::firstOrCreate(
+            ['name' => 'مكافأة التميز - الربع الأول 2026'],
+            [
+                'organizational_structure' => 'قسم تطوير البرمجيات',
+                'assignment_type'          => 'ربع سنوي',
+                'data_status'              => 'current',
+                'financial_specialization' => 500.00,
+                'issue_date'               => '2026-04-01',
+                'affective_date'           => '2026-04-01',
+                'issued_by'                => 'المدير التنفيذي',
+                'document_number'          => 'RWD-2026-001',
+                'notes'                    => 'مكافأة مالية لأعلى أداء في الربع الأول من 2026.',
+                'active'                   => true,
+            ]
+        );
+        $rewardExcellence->employees()->syncWithoutDetaching(
+            collect([$dev3, $cto])->filter()->pluck('id')
+        );
+
+        $rewardLongService = EmployeeReward::firstOrCreate(
+            ['name' => 'مكافأة الخدمة الطويلة - 10 سنوات'],
+            [
+                'organizational_structure' => 'الإدارة التنفيذية',
+                'assignment_type'          => 'استثنائي',
+                'data_status'              => 'current',
+                'financial_specialization' => 750.00,
+                'issue_date'               => '2025-01-01',
+                'affective_date'           => '2025-01-01',
+                'issued_by'                => 'مجلس الإدارة',
+                'document_number'          => 'RWD-2025-001',
+                'notes'                    => 'مكافأة خاصة لإتمام 10 سنوات خدمة متواصلة.',
+                'active'                   => true,
+            ]
+        );
+        $rewardLongService->employees()->syncWithoutDetaching(
+            collect([$ceo, $finManager, $opsManager])->filter()->pluck('id')
+        );
+
+        $rewardProject = EmployeeReward::firstOrCreate(
+            ['name' => 'مكافأة إتمام مشروع ERP'],
+            [
+                'organizational_structure' => 'فريق مشروع ERP',
+                'assignment_type'          => 'مرحلي',
+                'data_status'              => 'current',
+                'financial_specialization' => 400.00,
+                'issue_date'               => '2025-09-30',
+                'affective_date'           => '2025-09-30',
+                'issued_by'                => 'المدير التنفيذي',
+                'document_number'          => 'RWD-2025-002',
+                'notes'                    => 'مكافأة مالية لأعضاء الفريق على إنجاز منظومة ERP في الموعد المحدد.',
+                'active'                   => true,
+            ]
+        );
+        $rewardProject->employees()->syncWithoutDetaching(
+            collect([$cto, $dev1, $dev2, $dev3, $dba, $designer])->filter()->pluck('id')
+        );
+
+        $rewardAnnual = EmployeeReward::firstOrCreate(
+            ['name' => 'المكافأة السنوية 2025'],
+            [
+                'organizational_structure' => 'جميع الأقسام',
+                'assignment_type'          => 'سنوي',
+                'data_status'              => 'current',
+                'financial_specialization' => 600.00,
+                'issue_date'               => '2025-12-31',
+                'affective_date'           => '2025-12-31',
+                'issued_by'                => 'مجلس الإدارة',
+                'document_number'          => 'RWD-2025-003',
+                'notes'                    => 'مكافأة نهاية السنة الممنوحة لجميع الموظفين بناءً على الأداء العام.',
+                'active'                   => true,
+            ]
+        );
+        $rewardAnnual->employees()->syncWithoutDetaching($employees->pluck('id'));
+
+        $this->command->info('Allocations seeded — job grades, bonuses, appreciations, sanctions, rewards.');
     }
 
     // ── Helpers ───────────────────────────────────────────────────────────────

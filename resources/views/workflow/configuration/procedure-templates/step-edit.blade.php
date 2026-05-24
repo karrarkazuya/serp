@@ -9,12 +9,13 @@
     ])->values()->toArray();
     $pathChoiceNamesInitial = old('path_choice_names', $step->pathChoices->pluck('name', 'target_step_id')->toArray());
     $existingInputs = old('inputs', $step->inputs->map(fn($inp) => [
-        'id'          => $inp->id,
-        'name'        => $inp->name,
-        'type'        => $inp->type,
-        'is_required' => $inp->is_required ? '1' : '0',
-        'sort_order'  => $inp->sort_order,
-        'options'     => $inp->options->pluck('name')->implode("\n"),
+        'id'             => $inp->id,
+        'name'           => $inp->name,
+        'type'           => $inp->type,
+        'is_required'    => $inp->is_required ? '1' : '0',
+        'sort_order'     => $inp->sort_order,
+        'options'        => $inp->options->pluck('name')->implode("\n"),
+        'guest_step_ids' => $inp->guestSteps->pluck('id')->toArray(),
     ])->values()->toArray());
 @endphp
 
@@ -210,11 +211,17 @@
                          x-data="{
                             tab: 'fields',
                             inputs: {{ Js::from($existingInputs) }},
+                            otherSteps: {{ Js::from($otherSteps) }},
                             addInput() {
-                                this.inputs.push({ id: 0, name: '', type: 'char', is_required: '0', sort_order: this.inputs.length, options: '' });
+                                this.inputs.push({ id: 0, name: '', type: 'char', is_required: '0', sort_order: this.inputs.length, options: '', guest_step_ids: [] });
                             },
                             removeInput(i) {
                                 this.inputs.splice(i, 1);
+                            },
+                            toggleGuestStep(inp, stepId) {
+                                const idx = inp.guest_step_ids.indexOf(stepId);
+                                if (idx === -1) inp.guest_step_ids.push(stepId);
+                                else inp.guest_step_ids.splice(idx, 1);
                             }
                          }">
                         <div class="flex items-end gap-1 pt-3 border-b border-gray-200">
@@ -240,6 +247,7 @@
                                             <th class="pb-2 text-left text-xs font-semibold text-gray-400 uppercase tracking-wide pr-3 w-32">{{ __('workflow.field_type_col') }}</th>
                                             <th class="pb-2 text-center text-xs font-semibold text-gray-400 uppercase tracking-wide pr-3 w-20">{{ __('workflow.field_required_col') }}</th>
                                             <th class="pb-2 text-left text-xs font-semibold text-gray-400 uppercase tracking-wide pr-3">{{ __('workflow.field_options_col') }} <span class="normal-case font-normal text-gray-300">{{ __('workflow.field_options_hint') }}</span></th>
+                                            <th class="pb-2 text-left text-xs font-semibold text-gray-400 uppercase tracking-wide pr-3" x-show="otherSteps.length > 0">Also visible in</th>
                                             <th class="w-8"></th>
                                         </tr>
                                     </thead>
@@ -284,6 +292,22 @@
                                                     <template x-if="inp.type !== 'select' && inp.type !== 'multiselect'">
                                                         <span class="text-gray-300 text-xs">—</span>
                                                     </template>
+                                                </td>
+                                                <td class="py-2 pr-3 align-top" x-show="otherSteps.length > 0">
+                                                    <div class="flex flex-col gap-1 pt-1.5">
+                                                        <template x-for="s in otherSteps" :key="s.id">
+                                                            <label class="flex items-center gap-1.5 text-xs text-gray-600 cursor-pointer select-none">
+                                                                <input type="checkbox"
+                                                                       :checked="inp.guest_step_ids.includes(s.id)"
+                                                                       @change="toggleGuestStep(inp, s.id)"
+                                                                       class="rounded border-gray-300 text-purple-600 focus:ring-purple-400">
+                                                                <span x-text="s.name" class="truncate max-w-28"></span>
+                                                            </label>
+                                                        </template>
+                                                        <template x-for="(gid, gi) in inp.guest_step_ids" :key="gi">
+                                                            <input type="hidden" :name="`inputs[${i}][guest_step_ids][${gi}]`" :value="gid">
+                                                        </template>
+                                                    </div>
                                                 </td>
                                                 <td class="py-2">
                                                     <button type="button" @click="removeInput(i)"

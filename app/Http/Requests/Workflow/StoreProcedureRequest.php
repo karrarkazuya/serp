@@ -14,7 +14,7 @@ class StoreProcedureRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'procedure_template_id' => 'required|exists:workflow_procedure_templates,id',
+            'procedure_template_id' => 'required|exists:workflow_procedure_templates,id,deleted_at,NULL',
             'name'                  => 'required|string|max:255',
             'description'           => 'nullable|string|max:5000',
         ];

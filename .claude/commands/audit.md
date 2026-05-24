@@ -1,4 +1,4 @@
-Audit the entire Laravel codebase in this project against the 7 non-negotiable rules defined in `docs/implement_rules.md`. Read that file first to refresh the exact rules, then inspect the codebase.
+Audit the entire Laravel codebase in this project against the 12 non-negotiable rules defined in `.claude/CLAUDE.md` (read it first to refresh the exact rules, then inspect the codebase).
 
 Check every violation — do not stop at the first one found per rule. Report findings grouped by rule number, each with the file path and line number. If a rule has no violations, say "✓ No violations".
 
@@ -36,6 +36,33 @@ Check every violation — do not stop at the first one found per rule. Report fi
 ### Rule 7 — All state-changing controller methods must use `DB::transaction`
 - Find all controller methods named: store, write, archive, unarchive, unlink, addComment, and any custom methods that call a service or execute DB writes
 - Flag any that do not wrap their logic in `DB::transaction`
+
+### Rule 8 — Soft deletes on every application table + model
+- Find every migration that creates an application table (excluding the documented Laravel-framework / pure-pivot exclusions in CLAUDE.md)
+- Flag any that omit `$table->softDeletes()`
+- Cross-check: every corresponding Eloquent model must `use SoftDeletes`
+
+### Rule 9 — Export pipeline + `ExportService::safeValue()`
+- For every model declared in `config/exportable.php`, confirm the matching index view has `<x-export>` + `<x-list :selectable>` + the row checkbox pattern
+- Confirm a matching `export()` method on the policy and `module.export` permission in the seeder
+- Flag any direct `$sheet->setValue()` / `fputcsv($handle, [..raw..])` outside `ExportService::safeValue()` / `setValueExplicit(..., TYPE_STRING)`
+
+### Rule 10 — Files through `FileService` + `/files/{uuid}` + safe image validation
+- Flag any controller call to `Storage::put()` / `$file->store()` / `Storage::delete()` for user uploads — must go through `FileService`
+- Flag any module-specific file-serving route (e.g. a fresh `/foo/avatar/{uuid}`) — must use `route('files.serve', $uuid)`
+- Flag any form-request validation that uses bare `'image'` for an upload field — must use `mimetypes:image/jpeg,image/png,image/gif,image/webp|mimes:jpg,jpeg,png,gif,webp` (SVG is stored-XSS via inline rendering)
+- Flag any new file-serve helper that gates by parent-child relation only (e.g. `$doc->employee_id === $employee->id`) without also checking `$companyContext->getActiveCompanyIds()` — that's the EmployeeDocument IDOR pattern
+
+### Rule 11 — Every form-request FK to a company-scoped table is company-scoped
+- For every Form Request in `app/Http/Requests/**`, list each rule that uses `'exists:<table>,id'` or `Rule::exists('<table>', 'id')`
+- For each, check whether `<table>` carries a `company_id` column (grep the migrations)
+- If yes, the rule must restrict by `company_id` via `Rule::exists(...)->where(...)->whereIn('company_id', $active)`. Bare `exists:` on a company-scoped table is a cross-tenant FK injection bug — flag with file path + the offending FK name
+- Inventory module: prefer the shared `App\Http\Requests\Inventory\Concerns\InventoryFkRules` trait
+
+### Rule 12 — No raw column identifiers as user-facing labels
+- Grep Blade views (`resources/views/**/*.blade.php`) for label text that matches a column-style identifier: snake_case strings rendered as `<label>`, `<th>`, `<option>`, search-filter chip text, group-by chip text, table-list headers
+- For every model with `$searchable` / `$sortable` / `$chatterTracked`, confirm each entry has a `'label'` key (or is a string label, not just a column key)
+- Flag any rendered text that prints a column name verbatim (e.g. `first_name`, `created_at`, `company_id`) instead of a human-readable label or `__('module.key')` translation
 
 ## Also check
 - Controller method names: flag any that use non-standard names (e.g. `index`, `update`, `destroy`, `delete`, `save`) instead of the required names (`read`, `write`, `unlink`, etc.)

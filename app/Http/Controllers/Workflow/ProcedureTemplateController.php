@@ -176,7 +176,7 @@ class ProcedureTemplateController extends Controller
         $data = $request->validate([
             'name'                 => 'required|string|max:255',
             'description'          => 'nullable|string|max:5000',
-            'default_group_id'     => 'nullable|exists:workflow_groups,id',
+            'default_group_id'     => 'nullable|exists:workflow_groups,id,deleted_at,NULL',
             'creator_see_tasks'    => 'boolean',
             'enabled'              => 'boolean',
             'departments'          => 'nullable|array',
@@ -249,14 +249,15 @@ class ProcedureTemplateController extends Controller
     {
         $this->authorize('update', $procedureTemplate);
         abort_if($step->procedure_template_id !== $procedureTemplate->id, 404);
-        $step->load(['inputs.options', 'nextSteps', 'defaultDepartment', 'pathChoices', 'subProcedures']);
+        $step->load(['inputs.options', 'inputs.guestSteps', 'nextSteps', 'defaultDepartment', 'pathChoices', 'subProcedures']);
         $siblings             = $procedureTemplate->steps()->where('id', '!=', $step->id)->orderBy('id')->get();
+        $otherSteps           = $siblings->map(fn ($s) => ['id' => $s->id, 'name' => $s->name])->values();
         $availableSubProcs    = \App\Models\Workflow\ProcedureTemplate::where('enabled', true)
             ->where('id', '!=', $procedureTemplate->id)
             ->orderBy('name')->get();
 
         return view('workflow.configuration.procedure-templates.step-edit',
-            compact('procedureTemplate', 'step', 'siblings', 'availableSubProcs'));
+            compact('procedureTemplate', 'step', 'siblings', 'availableSubProcs', 'otherSteps'));
     }
 
     public function updateStep(Request $request, ProcedureTemplate $procedureTemplate, ProcedureStep $step)
@@ -277,18 +278,20 @@ class ProcedureTemplateController extends Controller
             'path_choice_required'     => 'boolean',
             'enabled'                  => 'boolean',
             'next_step_ids'            => 'nullable|array',
-            'next_step_ids.*'          => 'exists:workflow_procedure_steps,id',
+            'next_step_ids.*'          => 'exists:workflow_procedure_steps,id,deleted_at,NULL',
             'sub_procedure_ids'        => 'nullable|array',
-            'sub_procedure_ids.*'      => 'exists:workflow_procedure_templates,id',
+            'sub_procedure_ids.*'      => 'exists:workflow_procedure_templates,id,deleted_at,NULL',
             'path_choice_names'        => 'nullable|array',
             'path_choice_names.*'      => 'nullable|string|max:255',
             'inputs'                   => 'nullable|array',
             'inputs.*.id'              => 'nullable|integer',
             'inputs.*.name'            => 'required_with:inputs.*|string|max:255',
             'inputs.*.type'            => 'required_with:inputs.*|string|in:char,int,float,date,datetime,boolean,select,multiselect,textarea,file,label',
-            'inputs.*.is_required'     => 'nullable|boolean',
-            'inputs.*.sort_order'      => 'nullable|integer',
-            'inputs.*.options'         => 'nullable|string',
+            'inputs.*.is_required'       => 'nullable|boolean',
+            'inputs.*.sort_order'        => 'nullable|integer',
+            'inputs.*.options'           => 'nullable|string',
+            'inputs.*.guest_step_ids'    => 'nullable|array',
+            'inputs.*.guest_step_ids.*'  => 'exists:workflow_procedure_steps,id,deleted_at,NULL',
         ]);
         $nextStepIds      = $data['next_step_ids'] ?? [];
         $subProcedureIds  = $data['sub_procedure_ids'] ?? [];

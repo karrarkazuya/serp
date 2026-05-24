@@ -159,8 +159,7 @@
 
             {{-- ─── LEFT: main card ─── --}}
             @php
-                $ticketInputDefs = $ticket->procedureStep?->inputs ?? $ticket->template?->inputs;
-                $defaultTab = ($ticketInputDefs && $ticketInputDefs->isNotEmpty()) ? 'fields' : 'activity';
+                $defaultTab = $ticket->inputs->isNotEmpty() ? 'fields' : 'activity';
             @endphp
             <div class="ticket-card relative flex-1 min-w-0 bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden"
                  x-data="{ tab: @js($defaultTab) }">
@@ -478,13 +477,14 @@
                 @endif
 
                 {{-- Tab bar --}}
+                @php $hasFields = $ticket->inputs->isNotEmpty() || $ticket->crossRefInputs->isNotEmpty(); @endphp
                 <div class="flex border-b border-gray-100 px-7">
-                    @if($ticketInputDefs && $ticketInputDefs->isNotEmpty())
+                    @if($hasFields)
                     <button @click="tab='fields'"
                             :class="tab==='fields' ? 'border-b-2 border-[#714B67] text-[#714B67] font-semibold' : 'text-gray-400 hover:text-gray-600'"
                             class="px-4 py-3 text-sm transition-colors -mb-px flex items-center gap-1.5">
                         {{ __('workflow.tab_fields') }}
-                        <span class="text-xs bg-gray-100 text-gray-500 rounded-full px-1.5 py-0.5 font-normal">{{ $ticketInputDefs->count() }}</span>
+                        <span class="text-xs bg-gray-100 text-gray-500 rounded-full px-1.5 py-0.5 font-normal">{{ $ticket->inputs->count() + $ticket->crossRefInputs->count() }}</span>
                     </button>
                     @endif
                     <button @click="tab='details'"
@@ -506,7 +506,7 @@
                 </div>
 
                 {{-- Fields tab --}}
-                @if($ticketInputDefs && $ticketInputDefs->isNotEmpty())
+                @if($hasFields)
                 <div x-show="tab==='fields'" style="display:none">
                     @can('update', $ticket)
                     <form id="ticket-fields-form" method="POST" action="{{ route('workflow.tickets.save-inputs', $ticket) }}"
@@ -521,49 +521,49 @@
                                 </tr>
                             </thead>
                             <tbody class="divide-y divide-gray-50">
-                                @foreach($ticketInputDefs->sortBy('sort_order') as $templateInput)
-                                @php $inp = $ticket->inputs->firstWhere('template_input_id', $templateInput->id); @endphp
+                                @foreach($ticket->inputs->filter(fn($i) => $i->template_input_id !== null)->sortBy(fn($i) => $i->templateInput?->sort_order ?? 0) as $inp)
+                                @php $templateInput = $inp->templateInput; @endphp
                                 <tr>
                                     <td class="px-7 py-3 text-sm text-gray-600">
-                                        {{ $templateInput->name }}@if($templateInput->is_required)<span class="text-red-400 ml-0.5">*</span>@endif
+                                        {{ $inp->name }}@if($inp->is_required)<span class="text-red-400 ml-0.5">*</span>@endif
                                     </td>
                                     <td class="px-4 py-3">
-                                        @if($templateInput->type === 'label')
+                                        @if($inp->type === 'label')
                                         <span class="text-sm text-gray-300">—</span>
-                                        @elseif($templateInput->type === 'select')
-                                        <select name="inputs[{{ $templateInput->id }}]" class="text-sm border border-gray-200 rounded-lg px-2.5 py-1.5 focus:outline-none focus:ring-1 focus:ring-[#714B67] min-w-36">
+                                        @elseif($inp->type === 'select')
+                                        <select name="inputs[{{ $inp->template_input_id }}]" class="text-sm border border-gray-200 rounded-lg px-2.5 py-1.5 focus:outline-none focus:ring-1 focus:ring-[#714B67] min-w-36">
                                             <option value="">{{ __('workflow.select_option') }}</option>
-                                            @foreach($templateInput->options as $opt)
+                                            @foreach(($templateInput?->options ?? collect()) as $opt)
                                             <option value="{{ $opt->id }}" {{ $inp?->value_select_id == $opt->id ? 'selected' : '' }}>{{ $opt->name }}</option>
                                             @endforeach
                                         </select>
-                                        @elseif($templateInput->type === 'boolean')
-                                        <select name="inputs[{{ $templateInput->id }}]" class="text-sm border border-gray-200 rounded-lg px-2.5 py-1.5 focus:outline-none focus:ring-1 focus:ring-[#714B67]">
+                                        @elseif($inp->type === 'boolean')
+                                        <select name="inputs[{{ $inp->template_input_id }}]" class="text-sm border border-gray-200 rounded-lg px-2.5 py-1.5 focus:outline-none focus:ring-1 focus:ring-[#714B67]">
                                             <option value="0" {{ !$inp?->value_boolean ? 'selected' : '' }}>{{ __('common.no') }}</option>
                                             <option value="1" {{ $inp?->value_boolean ? 'selected' : '' }}>{{ __('common.yes') }}</option>
                                         </select>
-                                        @elseif($templateInput->type === 'date')
-                                        <input type="date" name="inputs[{{ $templateInput->id }}]" value="{{ $inp?->value_date?->format('Y-m-d') }}"
+                                        @elseif($inp->type === 'date')
+                                        <input type="date" name="inputs[{{ $inp->template_input_id }}]" value="{{ $inp?->value_date?->format('Y-m-d') }}"
                                                class="text-sm border border-gray-200 rounded-lg px-2.5 py-1.5 focus:outline-none focus:ring-1 focus:ring-[#714B67]">
-                                        @elseif($templateInput->type === 'datetime')
-                                        <input type="datetime-local" name="inputs[{{ $templateInput->id }}]" value="{{ $inp?->value_datetime?->format('Y-m-d\TH:i') }}"
+                                        @elseif($inp->type === 'datetime')
+                                        <input type="datetime-local" name="inputs[{{ $inp->template_input_id }}]" value="{{ $inp?->value_datetime?->format('Y-m-d\TH:i') }}"
                                                class="text-sm border border-gray-200 rounded-lg px-2.5 py-1.5 focus:outline-none focus:ring-1 focus:ring-[#714B67]">
-                                        @elseif($templateInput->type === 'int')
-                                        <input type="number" name="inputs[{{ $templateInput->id }}]" value="{{ $inp?->value_int }}"
+                                        @elseif($inp->type === 'int')
+                                        <input type="number" name="inputs[{{ $inp->template_input_id }}]" value="{{ $inp?->value_int }}"
                                                class="text-sm border border-gray-200 rounded-lg px-2.5 py-1.5 focus:outline-none focus:ring-1 focus:ring-[#714B67] w-32" placeholder="—">
-                                        @elseif($templateInput->type === 'float')
-                                        <input type="number" step="any" name="inputs[{{ $templateInput->id }}]" value="{{ $inp?->value_float }}"
+                                        @elseif($inp->type === 'float')
+                                        <input type="number" step="any" name="inputs[{{ $inp->template_input_id }}]" value="{{ $inp?->value_float }}"
                                                class="text-sm border border-gray-200 rounded-lg px-2.5 py-1.5 focus:outline-none focus:ring-1 focus:ring-[#714B67] w-36" placeholder="—">
-                                        @elseif($templateInput->type === 'textarea')
-                                        <textarea name="inputs[{{ $templateInput->id }}]" rows="3"
+                                        @elseif($inp->type === 'textarea')
+                                        <textarea name="inputs[{{ $inp->template_input_id }}]" rows="3"
                                                   class="text-sm border border-gray-200 rounded-lg px-2.5 py-1.5 focus:outline-none focus:ring-1 focus:ring-[#714B67] w-full resize-y"
                                                   placeholder="—">{{ $inp?->value_text }}</textarea>
-                                        @elseif($templateInput->type === 'multiselect')
+                                        @elseif($inp->type === 'multiselect')
                                         <div class="flex flex-wrap gap-x-4 gap-y-1.5">
-                                            @foreach($templateInput->options as $opt)
+                                            @foreach(($templateInput?->options ?? collect()) as $opt)
                                             <label class="flex items-center gap-1.5 text-sm text-gray-700 cursor-pointer">
                                                 <input type="checkbox"
-                                                       name="inputs[{{ $templateInput->id }}][]"
+                                                       name="inputs[{{ $inp->template_input_id }}][]"
                                                        value="{{ $opt->id }}"
                                                        {{ $inp && $inp->selectedOptions->contains('id', $opt->id) ? 'checked' : '' }}
                                                        class="rounded border-gray-300 text-[#714B67] focus:ring-[#714B67]">
@@ -571,7 +571,7 @@
                                             </label>
                                             @endforeach
                                         </div>
-                                        @elseif($templateInput->type === 'file')
+                                        @elseif($inp->type === 'file')
                                         @php $isImage = str_starts_with($inp?->value_file_mime ?? '', 'image/'); @endphp
                                         @if($inp?->value_file_path)
                                         <div x-data="{
@@ -592,7 +592,7 @@
                                                 }
                                             }
                                         }" class="flex flex-col gap-1.5">
-                                            <input type="hidden" name="inputs_delete[{{ $templateInput->id }}]" :value="markedForDeletion ? '1' : '0'">
+                                            <input type="hidden" name="inputs_delete[{{ $inp->template_input_id }}]" :value="markedForDeletion ? '1' : '0'">
                                             {{-- Marked for deletion state --}}
                                             <div x-show="markedForDeletion" style="display:none" class="flex items-center gap-2 py-1">
                                                 <span class="text-xs text-red-500 italic">{{ __('workflow.will_be_removed_on_save') }}</span>
@@ -638,7 +638,7 @@
                                                     <div class="flex flex-wrap gap-2">
                                                         <label class="px-2.5 py-1 text-xs font-medium text-[#714B67] border border-[#714B67]/40 rounded-lg hover:bg-[#714B67]/5 cursor-pointer transition-colors">
                                                             {{ __('workflow.replace') }}
-                                                            <input type="file" name="inputs[{{ $templateInput->id }}]" class="sr-only" x-ref="replaceFile"
+                                                            <input type="file" name="inputs[{{ $inp->template_input_id }}]" class="sr-only" x-ref="replaceFile"
                                                                    accept=".jpg,.jpeg,.png,.gif,.webp,.pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt,.csv,.odt,.ods"
                                                                    @change="onFileChange($event)">
                                                         </label>
@@ -654,14 +654,14 @@
                                         @else
                                         <div class="flex flex-col gap-1.5">
                                             <input type="file"
-                                                   name="inputs[{{ $templateInput->id }}]"
+                                                   name="inputs[{{ $inp->template_input_id }}]"
                                                    accept=".jpg,.jpeg,.png,.gif,.webp,.pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt,.csv,.odt,.ods"
                                                    class="text-sm text-gray-600 file:mr-3 file:py-1 file:px-3 file:rounded file:border-0 file:text-xs file:font-medium file:bg-purple-50 file:text-purple-700 hover:file:bg-purple-100">
                                             <span class="text-xs text-gray-400">{{ __('workflow.file_max_info') }}</span>
                                         </div>
                                         @endif
                                         @else
-                                        <input type="text" name="inputs[{{ $templateInput->id }}]" value="{{ $inp?->value_char }}"
+                                        <input type="text" name="inputs[{{ $inp->template_input_id }}]" value="{{ $inp?->value_char }}"
                                                class="text-sm border border-gray-200 rounded-lg px-2.5 py-1.5 focus:outline-none focus:ring-1 focus:ring-[#714B67] min-w-48" placeholder="—">
                                         @endif
                                     </td>
@@ -676,12 +676,12 @@
                     @else
                     <table class="w-full">
                         <tbody class="divide-y divide-gray-50">
-                            @foreach($ticketInputDefs->sortBy('sort_order') as $templateInput)
-                            @php $inp = $ticket->inputs->firstWhere('template_input_id', $templateInput->id); @endphp
+                            @foreach($ticket->inputs->filter(fn($i) => $i->template_input_id !== null)->sortBy(fn($i) => $i->templateInput?->sort_order ?? 0) as $inp)
+                            @php $templateInput = $inp->templateInput; @endphp
                             <tr>
-                                <td class="px-7 py-3 text-sm text-gray-500 w-52">{{ $templateInput->name }}</td>
+                                <td class="px-7 py-3 text-sm text-gray-500 w-52">{{ $inp->name }}</td>
                                 <td class="px-4 py-3 text-sm text-gray-800 font-medium">
-                                    @if($templateInput->type === 'file' && $inp?->value_file_path)
+                                    @if($inp->type === 'file' && $inp?->value_file_path)
                                         @php $roIsImage = str_starts_with($inp->value_file_mime ?? '', 'image/'); @endphp
                                         @if($roIsImage)
                                         <button type="button"
@@ -695,7 +695,7 @@
                                         <a href="{{ route('workflow.tickets.input-file', [$ticket, $inp]) }}"
                                            class="text-purple-600 hover:underline" target="_blank">{{ $inp->value_file_name }}</a>
                                         @endif
-                                    @elseif($templateInput->type === 'textarea' && $inp?->value_text)
+                                    @elseif($inp->type === 'textarea' && $inp?->value_text)
                                         <span class="whitespace-pre-wrap">{{ $inp->value_text }}</span>
                                     @else
                                         {{ $inp?->getResultValue() ?: '—' }}
@@ -706,6 +706,49 @@
                         </tbody>
                     </table>
                     @endcan
+
+                    {{-- Cross-ref inputs from other tickets (read-only) --}}
+                    @if($ticket->crossRefInputs->isNotEmpty())
+                    @php $crossRefGrouped = $ticket->crossRefInputs->groupBy(fn($inp) => $inp->ownerTicket?->name ?? '—'); @endphp
+                    @foreach($crossRefGrouped as $sourceName => $crossInputs)
+                    <div class="border-t border-gray-100">
+                        <div class="px-7 py-2.5 bg-gray-50 flex items-center gap-2">
+                            <svg class="w-3.5 h-3.5 text-gray-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 9l3 3m0 0l-3 3m3-3H8m13 0a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                            <span class="text-xs font-semibold text-gray-400 uppercase tracking-wide">{{ __('workflow.from_ticket') }}: {{ $sourceName }}</span>
+                        </div>
+                        <table class="w-full">
+                            <tbody class="divide-y divide-gray-50">
+                                @foreach($crossInputs->sortBy(fn($i) => $i->templateInput?->sort_order ?? 0) as $inp)
+                                <tr>
+                                    <td class="px-7 py-3 text-sm text-gray-500 w-52">{{ $inp->name }}</td>
+                                    <td class="px-4 py-3 text-sm text-gray-800 font-medium">
+                                        @if($inp->type === 'file' && $inp->value_file_path)
+                                            @php $xIsImage = str_starts_with($inp->value_file_mime ?? '', 'image/'); @endphp
+                                            @if($xIsImage)
+                                            <button type="button"
+                                                    @click="$dispatch('lightbox-open', { url: '{{ route('workflow.tickets.input-file', [$inp->ownerTicket, $inp]) }}', name: @js($inp->value_file_name) })"
+                                                    class="block rounded-lg overflow-hidden border border-gray-200 hover:border-[#714B67]/50 transition-colors focus:outline-none">
+                                                <img src="{{ route('workflow.tickets.input-file', [$inp->ownerTicket, $inp]) }}"
+                                                     alt="{{ $inp->value_file_name }}"
+                                                     class="w-24 h-24 object-cover block">
+                                            </button>
+                                            @else
+                                            <a href="{{ route('workflow.tickets.input-file', [$inp->ownerTicket, $inp]) }}"
+                                               class="text-purple-600 hover:underline" target="_blank">{{ $inp->value_file_name }}</a>
+                                            @endif
+                                        @elseif($inp->type === 'textarea' && $inp->value_text)
+                                            <span class="whitespace-pre-wrap">{{ $inp->value_text }}</span>
+                                        @else
+                                            {{ $inp->getResultValue() ?: '—' }}
+                                        @endif
+                                    </td>
+                                </tr>
+                                @endforeach
+                            </tbody>
+                        </table>
+                    </div>
+                    @endforeach
+                    @endif
                 </div>
                 @endif
 

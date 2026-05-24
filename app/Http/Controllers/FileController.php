@@ -19,7 +19,24 @@ class FileController extends Controller
 
         abort_unless(Storage::disk($file->disk)->exists($file->path), 404);
 
-        $headers = ['Content-Type' => $file->mime_type ?? 'application/octet-stream'];
+        $mime = $file->mime_type ?? 'application/octet-stream';
+
+        // SVG is always served as a download, never inline. SVG can carry <script>
+        // and on-event handlers that execute in the app origin when rendered inline,
+        // so even though FileService should reject SVG uploads at the boundary, this
+        // is the second line of defense for any legacy or out-of-band file.
+        if ($mime === 'image/svg+xml') {
+            return Storage::disk($file->disk)->download($file->path, $file->original_name, [
+                'Content-Type'                => $mime,
+                'X-Content-Type-Options'      => 'nosniff',
+                'Content-Security-Policy'     => "default-src 'none'; sandbox",
+            ]);
+        }
+
+        $headers = [
+            'Content-Type'           => $mime,
+            'X-Content-Type-Options' => 'nosniff',
+        ];
 
         if ($file->isImage()) {
             return Storage::disk($file->disk)->response(

@@ -10,7 +10,6 @@ use App\Models\Workflow\WorkflowTemplateInput;
 use App\Models\Workflow\WorkflowUser;
 use App\Services\Chatter\ChatterService;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Storage;
 
 class TicketService
 {
@@ -56,6 +55,18 @@ class TicketService
             ));
         }
         $ticket->viewers()->sync($viewerIds);
+
+        // Freeze template inputs as record inputs so changing the template later
+        // does not affect this ticket's field structure.
+        foreach ($template->inputs()->orderBy('sort_order')->get() as $input) {
+            $ticket->inputs()->create([
+                'record_type'       => 'ticket',
+                'template_input_id' => $input->id,
+                'name'              => $input->name,
+                'type'              => $input->type,
+                'is_required'       => $input->is_required,
+            ]);
+        }
 
         if (!empty($ticket->assigned_to_user_id)) {
             $assignee = User::find($ticket->assigned_to_user_id);
@@ -226,14 +237,21 @@ class TicketService
         // Old files are intentionally kept on replacement — chatter logs reference them
         // for historical thumbnails. Orphaned files are cleaned up only on explicit deletion.
 
-        $record = $ticket->inputs()->updateOrCreate(
+        // firstOrCreate preserves the frozen name/type/is_required set at ticket creation.
+        // Only the value columns are updated — template renames or type changes never bleed in.
+        $record = $ticket->inputs()->firstOrCreate(
             ['template_input_id' => $templateInputId],
-            array_merge([
+            [
                 'name'        => $templateInput->name,
                 'type'        => $templateInput->type,
+                'is_required' => $templateInput->is_required,
                 'record_type' => 'ticket',
-            ], $valueData)
+            ]
         );
+
+        if (!empty($valueData)) {
+            $record->update($valueData);
+        }
 
         if ($selectedOptionIds !== null) {
             $record->selectedOptions()->sync($selectedOptionIds);

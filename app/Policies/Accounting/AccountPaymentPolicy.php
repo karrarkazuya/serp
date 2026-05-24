@@ -27,9 +27,16 @@ class AccountPaymentPolicy
         return $user->hasPermission('accounting.write');
     }
 
+    /**
+     * Confirming a payment posts the underlying account_move via
+     * AccountingService::confirmPayment(). Cancelling / resetting tears down
+     * that same posted move. All three are posting-class operations and must
+     * require accounting.post — not accounting.write — to preserve the
+     * permission separation that gates direct AccountMove posting.
+     */
     public function post(User $user, AccountPayment $_payment): bool
     {
-        return $user->hasPermission('accounting.write');
+        return $user->hasPermission('accounting.post');
     }
 
     public function delete(User $user, AccountPayment $_payment): bool

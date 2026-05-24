@@ -37,6 +37,11 @@ class WorkflowRecordInput extends Model
         return $this->belongsTo(WorkflowTemplateInput::class, 'template_input_id');
     }
 
+    public function ownerTicket(): BelongsTo
+    {
+        return $this->belongsTo(Ticket::class, 'record_id');
+    }
+
     public function selectedOption(): BelongsTo
     {
         return $this->belongsTo(WorkflowTemplateInputOption::class, 'value_select_id');

@@ -55,6 +55,16 @@ class AccountDocumentController extends Controller
         return $this->create($request, 'in_invoice');
     }
 
+    public function createCreditNote(Request $request)
+    {
+        return $this->create($request, 'out_refund');
+    }
+
+    public function createRefund(Request $request)
+    {
+        return $this->create($request, 'in_refund');
+    }
+
     public function storeInvoice(StoreDocumentRequest $request)
     {
         return $this->store($request, 'out_invoice');
@@ -63,6 +73,16 @@ class AccountDocumentController extends Controller
     public function storeBill(StoreDocumentRequest $request)
     {
         return $this->store($request, 'in_invoice');
+    }
+
+    public function storeCreditNote(StoreDocumentRequest $request)
+    {
+        return $this->store($request, 'out_refund');
+    }
+
+    public function storeRefund(StoreDocumentRequest $request)
+    {
+        return $this->store($request, 'in_refund');
     }
 
     public function showInvoice(AccountMove $invoice)
@@ -95,6 +115,16 @@ class AccountDocumentController extends Controller
         return $this->edit($bill, 'in_invoice');
     }
 
+    public function editCreditNote(AccountMove $creditNote)
+    {
+        return $this->edit($creditNote, 'out_refund');
+    }
+
+    public function editRefund(AccountMove $refund)
+    {
+        return $this->edit($refund, 'in_refund');
+    }
+
     public function updateInvoice(UpdateDocumentRequest $request, AccountMove $invoice)
     {
         return $this->write($request, $invoice, 'out_invoice');
@@ -103,6 +133,16 @@ class AccountDocumentController extends Controller
     public function updateBill(UpdateDocumentRequest $request, AccountMove $bill)
     {
         return $this->write($request, $bill, 'in_invoice');
+    }
+
+    public function updateCreditNote(UpdateDocumentRequest $request, AccountMove $creditNote)
+    {
+        return $this->write($request, $creditNote, 'out_refund');
+    }
+
+    public function updateRefund(UpdateDocumentRequest $request, AccountMove $refund)
+    {
+        return $this->write($request, $refund, 'in_refund');
     }
 
     public function postInvoice(AccountMove $invoice)
@@ -385,7 +425,11 @@ class AccountDocumentController extends Controller
 
         $items = $data['items'];
         $action = $data['action'] ?? 'save';
-        unset($data['items'], $data['action']);
+        // Belt-and-braces: company_id is already pinned at the form layer
+        // (UpdateDocumentRequest::rules pins it to $document->company_id), but
+        // strip it from $data so the service cannot mutate the move's
+        // company_id even if a future refactor loosens the form rule.
+        unset($data['items'], $data['action'], $data['company_id']);
 
         try {
             $document = DB::transaction(function () use ($document, $data, $items, $action) {
@@ -616,7 +660,11 @@ class AccountDocumentController extends Controller
                 'control_account_label' => 'Receivable Account',
                 'routes' => [
                     'index' => 'accounting.credit-notes.index',
+                    'create' => 'accounting.credit-notes.create',
+                    'store' => 'accounting.credit-notes.store',
                     'show' => 'accounting.credit-notes.show',
+                    'edit' => 'accounting.credit-notes.edit',
+                    'update' => 'accounting.credit-notes.update',
                     'post' => 'accounting.credit-notes.post',
                     'pay' => 'accounting.credit-notes.pay',
                     'credit' => null,
@@ -640,7 +688,11 @@ class AccountDocumentController extends Controller
                 'control_account_label' => 'Payable Account',
                 'routes' => [
                     'index' => 'accounting.refunds.index',
+                    'create' => 'accounting.refunds.create',
+                    'store' => 'accounting.refunds.store',
                     'show' => 'accounting.refunds.show',
+                    'edit' => 'accounting.refunds.edit',
+                    'update' => 'accounting.refunds.update',
                     'post' => 'accounting.refunds.post',
                     'pay' => 'accounting.refunds.pay',
                     'credit' => null,
