@@ -1,0 +1,50 @@
+<odoo>
+    <data>
+        <record id="view_res_company_form_inherit_hr_settings" model="ir.ui.view">
+            <field name="name">res.company.form.inherit.hr.settings</field>
+            <field name="model">res.company</field>
+            <field name="inherit_id" ref="base.view_company_form"/>
+            <field name="arch" type="xml">
+                <xpath expr="//page" position="after">
+                    <page string="HR Settings" groups="jtemployees.group_admin">
+                        <group>
+                            <group>
+                                <field name="jt_salary_start_date"/>
+                                <field name="jt_absence_multiplying_factor"/>
+                                <field name="jt_shortage_multiplying_factor"/>
+                                <field name="jt_overtime_multiplying_factor"/>
+                                <field name="jt_general_hours_per_day"/>
+                            </group>
+
+                            <group>
+                                <field name="jt_seniority_start_date"/>
+                                <field name="jt_seniority_percentage_per_year"/>
+                                <field name="jt_seniority_max_year"/>
+                                <field name="jt_marital_amount"/>
+                                <field name="jt_child_amount"/>
+                                <field name="jt_max_childs"/>
+                            </group>
+
+                            <group>
+                                <field name="jt_monthly_leave_requests"/>
+                                <field name="jt_max_monthly_leave_requests"/>
+                                <field name="jt_monthly_timeoff_requests"/>
+                                <field name="jt_max_monthly_timeoff_requests"/>
+                            </group>
+
+                            <group>
+                                <field name="jt_monthly_shortage_grace_hours"/>
+                                <field name="jt_shortage_flex_eligibility_threshold"/>
+                                <field name="jt_minimum_timeoff_request_minutes"/>
+                                <field name="jt_shortage_minimum_warning"/>
+                                <field name="jt_period_between_sessions"/>
+                                <field name="jt_insurance_percentage"/>
+                            </group>
+                        </group>
+                    </page>
+                </xpath>
+
+            </field>
+        </record>
+    </data>
+</odoo>

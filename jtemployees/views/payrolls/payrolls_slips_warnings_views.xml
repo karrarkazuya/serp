@@ -1,0 +1,45 @@
+<odoo>
+    <!-- explicit list view definition -->
+    <record model="ir.ui.view" id="jtemployees_payrolls_swarning_list">
+      <field name="name">Payrolls swarning</field>
+      <field name="model">jtemployees.payrolls.swarning</field>
+      <field name="type">list</field>
+      <field name="arch" type="xml">
+        <list>
+            <field name="id"/>
+            <field name="name" readonly="True"/>
+            <field name="employee" readonly="True"/>
+            <field name="date" readonly="True"/>
+            <field name="shortage_hours" readonly="True"/>
+        </list>
+      </field>
+    </record>
+
+    <!-- explicit list view definition -->
+    <record id="jtemployees_payrolls_swarning_form" model="ir.ui.view">
+        <field name="name">jtemployees.payrolls.swarning.form</field>
+        <field name="model">jtemployees.payrolls.swarning</field>
+        <field name="arch" type="xml">
+            <form string="Create Payroll Detail">
+                <sheet>
+                    <group>
+                        <field name="name" readonly="True"/>
+                        <field name="date" readonly="True"/>
+                        <field name="shortage_hours" readonly="True"/>
+                    </group>
+                </sheet>
+
+                <chatter reload_on_post="True"/>
+            </form>
+        </field>
+    </record>
+
+
+    <!-- actions opening views on models -->
+    <record model="ir.actions.act_window" id="jtemployees.action_payrolls_swarning">
+        <field name="name">Payroll Warnings</field>
+        <field name="res_model">jtemployees.payrolls.swarning</field>
+        <field name="view_mode">list,form</field>
+    </record>
+
+</odoo>

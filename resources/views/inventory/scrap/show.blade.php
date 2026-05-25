@@ -46,7 +46,7 @@
             <div class="flex items-center gap-3 mb-6">
                 <h1 class="text-2xl font-bold text-gray-900">{{ $scrapOrder->name }}</h1>
                 <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-{{ $scrapOrder->state_color }}-100 text-{{ $scrapOrder->state_color }}-700">
-                    {{ ucfirst($scrapOrder->state) }}
+                    {{ $scrapOrder->state_label }}
                 </span>
             </div>
             <div class="grid grid-cols-2 gap-x-8">

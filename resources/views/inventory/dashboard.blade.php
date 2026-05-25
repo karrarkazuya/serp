@@ -35,11 +35,8 @@
                     @if(($opType->ready_count ?? 0) > 0)
                     <span class="font-medium text-green-600">{{ $opType->ready_count }} {{ __('inventory.to_process') }}</span>
                     @endif
-                    @if(($opType->waiting_count ?? 0) > 0)
-                    <span>{{ $opType->waiting_count }} waiting</span>
-                    @endif
-                    @if(($opType->late_count ?? 0) > 0)
-                    <span class="text-red-500">{{ $opType->late_count }} {{ __('inventory.late') }}</span>
+                    @if(($opType->todo_count ?? 0) > 0)
+                    <span>{{ $opType->todo_count }} {{ __('inventory.waiting') }}</span>
                     @endif
                 </div>
             </a>
@@ -62,7 +59,7 @@
             </a>
             <a href="{{ route('inventory.reports.stock') }}" class="bg-white rounded-xl border border-gray-200 shadow-sm hover:shadow-md transition-all p-4 text-center">
                 <p class="text-2xl font-bold text-gray-900">{{ $stockLines }}</p>
-                <p class="text-xs text-gray-500 mt-1">Stock Lines</p>
+                <p class="text-xs text-gray-500 mt-1">{{ __('inventory.stock_lines') }}</p>
             </a>
         </div>
     </div>

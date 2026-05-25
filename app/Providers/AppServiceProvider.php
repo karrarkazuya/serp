@@ -37,6 +37,9 @@ use App\Models\Accounting\AccountTax;
 use App\Models\Accounting\CurrencyRate;
 use App\Models\Chat\ChatRoom;
 use App\Models\Contacts\Contact;
+use App\Models\Employees\Attendance;
+use App\Models\Employees\PlannedDay;
+use App\Models\Employees\PlannedRSchedule;
 use App\Models\Employees\Contract;
 use App\Models\Employees\Department as EmployeeDepartment;
 use App\Models\Employees\DepartureReason;
@@ -113,6 +116,8 @@ use App\Policies\Inventory\WarehousePolicy;
 use App\Policies\Chat\ChatRoomPolicy;
 use App\Policies\CompanyPolicy;
 use App\Policies\ContactPolicy;
+use App\Policies\Employees\AttendancePolicy;
+use App\Policies\Employees\PlannedDayPolicy;
 use App\Policies\Employees\BadgePolicy;
 use App\Policies\Employees\ChallengePolicy;
 use App\Policies\Employees\ContractPolicy;
@@ -186,6 +191,8 @@ class AppServiceProvider extends ServiceProvider
         Gate::policy(ChatRoom::class, ChatRoomPolicy::class);
         Gate::policy(Contact::class, ContactPolicy::class);
         Gate::policy(Employee::class, EmployeePolicy::class);
+        Gate::policy(Attendance::class, AttendancePolicy::class);
+        Gate::policy(PlannedDay::class, PlannedDayPolicy::class);
         Gate::policy(EmployeeDepartment::class, EmployeeDepartmentPolicy::class);
         Gate::policy(Job::class, JobPolicy::class);
         Gate::policy(WorkLocation::class, WorkLocationPolicy::class);
@@ -285,6 +292,9 @@ class AppServiceProvider extends ServiceProvider
             Badge::class,
             Challenge::class,
             Goal::class,
+            Attendance::class,
+            PlannedDay::class,
+            PlannedRSchedule::class,
             // Inventory module
             Product::class,
             ProductCategory::class,
@@ -330,6 +340,10 @@ class AppServiceProvider extends ServiceProvider
         // D8 (Odoo parity): block direct mutation/deletion of posted move lines.
         // Reset-to-draft is the supported path for editing posted entries.
         \App\Models\Accounting\AccountMoveLine::observe(\App\Observers\Accounting\AccountMoveLineObserver::class);
+
+        // When an employee's working schedule changes, wipe + regenerate their
+        // planned-days buffer so the new calendar takes effect from tomorrow.
+        Employee::observe(\App\Observers\Employees\EmployeeScheduleObserver::class);
 
         // Share company context with all views for the navbar switcher
         View::composer('components.navbar', function ($view) {

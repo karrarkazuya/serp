@@ -1,0 +1,387 @@
+<templates>
+  <t t-name="jtemployees.payroll_report">
+
+    <style>
+      .pr-wrap {
+        max-width: 1400px;
+        margin: 32px auto;
+        background: #fff;
+        border: 1px solid #e5e7eb;
+        font-size: 13px;
+        color: #1f2937;
+      }
+
+      .pr-header {
+        padding: 20px;
+        border-bottom: 1px solid #e5e7eb;
+      }
+
+      .pr-header .title {
+        font-size: 16px;
+        font-weight: 700;
+      }
+
+      /* FILTER BAR */
+      .pr-filter {
+        padding: 16px 20px;
+        border-bottom: 1px solid #e5e7eb;
+        background: #fff;
+      }
+
+      .pr-filter-row {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        flex-wrap: wrap;
+        margin-bottom: 10px;
+      }
+
+      .pr-filter .btn {
+        height: 34px;
+        padding: 0 14px;
+        font-size: 13px;
+        border-radius: 6px;
+        cursor: pointer;
+        border: 1px solid transparent;
+      }
+
+      .pr-filter .btn-primary {
+        background: #6b5ca5;
+        border-color: #6b5ca5;
+        color: #fff;
+      }
+
+      .pr-filter .btn-primary:hover { background: #5b4b90; }
+
+      .pr-filter .btn-outline {
+        background: #fff;
+        border: 1px solid #d1d5db;
+        color: #374151;
+      }
+
+      .pr-filter .btn-outline:hover { background: #f3f4f6; }
+
+      /* PILLS */
+      .pill-filter { min-width: 260px; }
+
+      .pill-box {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 6px;
+        min-height: 34px;
+        padding: 3px 8px;
+        border: 1px solid #d1d5db;
+        border-radius: 6px;
+        background: #fff;
+        cursor: pointer;
+      }
+
+      .pill {
+        background: #eef2ff;
+        color: #3730a3;
+        padding: 3px 8px;
+        font-size: 12px;
+        border-radius: 999px;
+        display: flex;
+        align-items: center;
+        gap: 4px;
+      }
+
+      .pill-remove {
+        cursor: pointer;
+        font-size: 12px;
+        color: #6366f1;
+        line-height: 1;
+      }
+
+      .pill-placeholder {
+        font-size: 13px;
+        color: #9ca3af;
+      }
+
+      /* PARTNER CHIP */
+      .partner-chip {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        height: 34px;
+        padding: 0 12px;
+        border: 1px solid #d1d5db;
+        border-radius: 6px;
+        background: #fff;
+        cursor: pointer;
+        font-size: 13px;
+        color: #374151;
+      }
+
+      .partner-chip.selected {
+        background: #eef2ff;
+        border-color: #6366f1;
+        color: #3730a3;
+        font-weight: 600;
+      }
+
+      .partner-chip-clear {
+        font-size: 12px;
+        color: #6366f1;
+        cursor: pointer;
+      }
+
+      /* COLUMN HEADER ROW */
+      .pr-col-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 8px 12px;
+        background: #fafafa;
+        border-bottom: 1px solid #e5e7eb;
+        font-weight: 600;
+        font-size: 12px;
+        color: #374151;
+      }
+
+      .pr-col-header .col-name { flex: 0 0 220px; }
+      .pr-col-nums { display: flex; }
+      .pr-col-nums span {
+        width: 110px;
+        text-align: right;
+        padding-right: 8px;
+        white-space: nowrap;
+      }
+
+      /* EMPLOYEE ROW */
+      .pr-employee-details { border-bottom: 1px solid #e5e7eb; }
+
+      .pr-employee-summary {
+        cursor: pointer;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 8px 12px;
+        font-weight: 600;
+      }
+
+      .pr-employee-summary:hover { background: #f9fafb; }
+
+      .pr-employee-name {
+        flex: 0 0 220px;
+        font-size: 14px;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+      }
+
+      .pr-caret {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 16px;
+        height: 16px;
+        color: #6b7280;
+        transition: transform 0.2s ease;
+      }
+
+      details[open] > summary .pr-caret { transform: rotate(90deg); }
+
+      .pr-nums { display: flex; }
+      .pr-nums span {
+        width: 110px;
+        text-align: right;
+        padding-right: 8px;
+        white-space: nowrap;
+        font-variant-numeric: tabular-nums;
+      }
+
+      /* DAY LINES TABLE */
+      .pr-lines-wrap { padding: 8px 16px 16px 32px; }
+
+      .pr-lines-table {
+        width: 100%;
+        border-collapse: separate;
+        border-spacing: 0;
+        font-size: 12px;
+      }
+
+      .pr-lines-table th {
+        background: #f3f4f6;
+        font-weight: 600;
+        padding: 6px 8px;
+        border-bottom: 1px solid #e5e7eb;
+        text-align: left;
+        color: #374151;
+      }
+
+      .pr-lines-table td {
+        padding: 5px 8px;
+        border-bottom: 1px solid #f1f5f9;
+        color: #4b5563;
+      }
+
+      .pr-lines-table tr:hover td { background: #f9fafb; }
+
+      /* GRAND TOTAL */
+      .pr-grand-total {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 10px 12px;
+        font-weight: 700;
+        border-top: 2px solid #9ca3af;
+        background: #f9fafb;
+      }
+
+      .pr-grand-total .col-name { flex: 0 0 220px; }
+
+      .center-text { text-align: center; }
+    </style>
+
+    <div class="pr-wrap">
+
+      <!-- HEADER -->
+      <div class="pr-header">
+        <div class="title"><t t-esc="state.report_name"/></div>
+      </div>
+
+      <!-- FILTER BAR -->
+      <div class="pr-filter">
+
+        <div class="pr-filter-row">
+          <button class="btn btn-primary" t-on-click="applyFilters">Apply</button>
+          <button class="btn btn-outline" t-on-click="print_pdf">PDF</button>
+          <button class="btn btn-outline" t-on-click="print_xlsx">XLSX</button>
+        </div>
+
+        <div class="pr-filter-row">
+
+          <!-- Partner selector -->
+          <t t-if="state.payroll_id">
+            <span class="partner-chip selected">
+              <t t-esc="state.payroll_name"/>
+              <span class="partner-chip-clear" t-on-click="clearPartner">×</span>
+            </span>
+          </t>
+          <t t-else="">
+            <span class="partner-chip" t-on-click="openPayrollSelector">
+              Payroll (click to select)
+            </span>
+          </t>
+
+          <!-- Employee pill filter -->
+          <div class="pill-filter">
+            <div class="pill-box" t-on-click="openEmployeeSelector">
+              <t t-foreach="state.employees_data" t-as="emp" t-key="emp.id">
+                <span class="pill">
+                  <t t-esc="emp.title"/>
+                  <span class="pill-remove"
+                        t-on-click.stop="removeEmployee"
+                        t-att-data-id="emp.id">×</span>
+                </span>
+              </t>
+              <span t-if="!state.employees_data.length" class="pill-placeholder">
+                Employees (click to filter)
+              </span>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- COLUMN HEADERS -->
+      <div class="pr-col-header">
+        <span class="col-name">Employee</span>
+        <div class="pr-col-nums">
+          <span>Basic Salary</span>
+          <span>Allocations</span>
+          <span>Bounces</span>
+          <span>Deductions</span>
+          <span>Shortage</span>
+          <span>Absence</span>
+          <span>Work Hours</span>
+          <span>Overtime Hours</span>
+          <span>Overtime Amount</span>
+          <span>Total Salary</span>
+          <span>Leave Days</span>
+        </div>
+      </div>
+
+      <!-- EMPLOYEE ROWS -->
+      <t t-foreach="state.data" t-as="emp" t-key="emp.employee_id">
+        <details class="pr-employee-details"
+                 t-on-toggle="toggleEmployee"
+                 t-att-data-employee-id="emp.employee_id">
+
+          <summary class="pr-employee-summary">
+            <span class="pr-employee-name">
+              <span class="pr-caret">▸</span>
+              <t t-esc="emp.employee_name"/>
+            </span>
+            <div class="pr-nums">
+              <span><t t-esc="emp.basic_salary"/></span>
+              <span><t t-esc="emp.allocations"/></span>
+              <span><t t-esc="emp.bounces"/></span>
+              <span><t t-esc="emp.deductions"/></span>
+              <span><t t-esc="emp.shortage"/></span>
+              <span><t t-esc="emp.absence"/></span>
+              <span><t t-esc="emp.total_hours"/></span>
+              <span><t t-esc="emp.overtime_hours"/></span>
+              <span><t t-esc="emp.overtime_amount"/></span>
+              <span><t t-esc="emp.total_salary"/></span>
+              <span><t t-esc="emp.leave_days"/></span>
+            </div>
+          </summary>
+
+          <div class="pr-lines-wrap">
+            <table class="pr-lines-table">
+              <thead>
+                <tr>
+                  <th>Type</th>
+                  <th>Title</th>
+                  <th>Date</th>
+                  <th>Hours</th>
+                  <th>Amount</th>
+                </tr>
+              </thead>
+              <tbody>
+                <t t-if="emp.lines_loaded"
+                   t-foreach="emp.lines"
+                   t-as="line"
+                   t-key="line.line_key">
+                  <tr>
+                    <td><t t-esc="line.detail"/></td>
+                    <td><t t-esc="line.sub"/></td>
+                    <td><t t-esc="line.date"/></td>
+                    <td><t t-esc="line.hours"/></td>
+                    <td><t t-esc="line.amount"/></td>
+                  </tr>
+                </t>
+                <tr t-if="!emp.lines_loaded">
+                  <td colspan="8" class="center-text">Loading…</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </details>
+      </t>
+
+      <!-- GRAND TOTAL -->
+      <div class="pr-grand-total" t-if="state.totals">
+        <span class="col-name">GRAND TOTAL</span>
+        <div class="pr-nums">
+          <span><t t-esc="state.totals.basic_salary"/></span>
+          <span><t t-esc="state.totals.allocations"/></span>
+          <span><t t-esc="state.totals.bounces"/></span>
+          <span><t t-esc="state.totals.deductions"/></span>
+          <span><t t-esc="state.totals.shortage"/></span>
+          <span><t t-esc="state.totals.absence"/></span>
+          <span></span>
+          <span></span>
+          <span><t t-esc="state.totals.overtime_amount"/></span>
+          <span><t t-esc="state.totals.total_salary"/></span>
+          <span></span>
+        </div>
+      </div>
+
+    </div>
+  </t>
+</templates>

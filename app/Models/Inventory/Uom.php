@@ -54,6 +54,19 @@ class Uom extends Model
 
     public function isReference(): bool { return $this->uom_type === 'reference'; }
 
+    // R5 / Rule 12: views must not render raw enum DB values. uom_type
+    // stored as 'reference' / 'bigger' / 'smaller' maps to a proper label.
+    public const TYPE_LABELS = [
+        'reference' => 'Reference',
+        'bigger'    => 'Bigger than reference',
+        'smaller'   => 'Smaller than reference',
+    ];
+
+    public function getTypeLabelAttribute(): string
+    {
+        return self::TYPE_LABELS[$this->uom_type] ?? $this->uom_type;
+    }
+
     public function convertQty(float $qty, Uom $to): float
     {
         if ($this->id === $to->id) return $qty;

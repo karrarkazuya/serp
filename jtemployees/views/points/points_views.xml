@@ -1,0 +1,59 @@
+<odoo>
+    <!-- explicit list view definition -->
+    <record model="ir.ui.view" id="jtemployees_points_list">
+      <field name="name">Evaluations Per Employee</field>
+      <field name="model">jtemployees.points</field>
+      <field name="type">list</field>
+      <field name="arch" type="xml">
+        <list>
+            <field name="name"/>
+            <field name="employee_id"/>
+            <field name="submitted"/>
+            <field name="total_points"/>
+            <field name="date"/>
+        </list>
+      </field>
+    </record>
+
+    <!-- explicit list view definition -->
+    <record id="jtemployees_points_form" model="ir.ui.view">
+        <field name="name">jtemployees.points.form</field>
+        <field name="model">jtemployees.points</field>
+        <field name="arch" type="xml">
+            <form string="Create Evaluation">
+                <sheet>
+                    <group>
+                        <field name="name"/>
+                        <field name="submitted" invisible="True"/>
+                        <field name="employee_id" domain="[('parent_id.user_id', '=', uid)]"/>
+                        <field name="hr_note"/>
+                        <field name="manager_note" readonly="1" />
+                        <field name="total_points" readonly="1" />
+                        <field name="points_inputs" widget="one2many" string="Points Inputs">
+                            <list editable="bottom">
+                                <field name="title"/>
+                                <field name="is_hr"/>
+                                <field name="points"/>
+                            </list>
+                        </field>
+                    </group>
+                    <header>
+                        <button name="calculate_evaluations" type="object" string="Confirm and lock evaluation" confirm="Once this evaluation is confirmed no data can be modified later" invisible="submitted" groups="jtemployees.group_admin,jtemployees.group_hr_admin,jtemployees.group_hr_manager" class="btn-primary"/>
+                    </header>
+                </sheet>
+
+
+
+                <chatter reload_on_post="True"/>
+            </form>
+        </field>
+    </record>
+
+    <!-- actions opening views on models -->
+    <record model="ir.actions.act_window" id="jtemployees.action_points">
+        <field name="name">Evaluations Per Employee</field>
+        <field name="res_model">jtemployees.points</field>
+        <field name="view_mode">list,form</field>
+    </record>
+
+</odoo>

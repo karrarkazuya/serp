@@ -9,7 +9,9 @@ use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\Contacts\ContactController;
 use App\Http\Controllers\Contacts\TagController;
+use App\Http\Controllers\Employees\AttendanceController;
 use App\Http\Controllers\Employees\EmployeeController;
+use App\Http\Controllers\Employees\PlannedScheduleController;
 use App\Http\Controllers\Employees\DepartmentController as EmployeeDepartmentController;
 use App\Http\Controllers\Employees\JobController;
 use App\Http\Controllers\Employees\WorkLocationController;
@@ -165,6 +167,26 @@ Route::middleware('auth')->group(function () {
         Route::get('/create', [EmployeeController::class, 'create'])->middleware('permission:employees.create')->name('create');
         Route::post('/', [EmployeeController::class, 'store'])->middleware('permission:employees.create')->name('store');
         Route::get('/check-link', [EmployeeController::class, 'checkLinkConflict'])->middleware('permission:employees.read')->name('check-link');
+
+        // Planned Schedule (per-employee — nested under /{employee})
+        // Note: no delete route on purpose — only the midnight cron removes
+        // planned days (after they pass and are recorded in attendance).
+        Route::prefix('{employee}/planned-schedule')->name('planned-schedule.')->group(function () {
+            Route::post('/day',     [PlannedScheduleController::class, 'setDay'])      ->middleware('permission:planned_schedules.write')->name('set-day');
+            Route::post('/pattern', [PlannedScheduleController::class, 'applyPattern'])->middleware('permission:planned_schedules.write')->name('pattern');
+        });
+
+        // Attendance (before /{employee} to avoid binding conflict)
+        Route::prefix('attendances')->name('attendances.')->group(function () {
+            Route::get('/', [AttendanceController::class, 'read'])->middleware('permission:attendance.read')->name('index');
+            Route::get('/create', [AttendanceController::class, 'create'])->middleware('permission:attendance.create')->name('create');
+            Route::post('/', [AttendanceController::class, 'store'])->middleware('permission:attendance.create')->name('store');
+            Route::get('/{attendance}', [AttendanceController::class, 'show'])->middleware('permission:attendance.read')->name('show');
+            Route::get('/{attendance}/edit', [AttendanceController::class, 'edit'])->middleware('permission:attendance.write')->name('edit');
+            Route::put('/{attendance}', [AttendanceController::class, 'write'])->middleware('permission:attendance.write')->name('update');
+            Route::delete('/{attendance}', [AttendanceController::class, 'unlink'])->middleware('permission:attendance.unlink')->name('delete');
+            Route::post('/{attendance}/comment', [AttendanceController::class, 'addComment'])->middleware('permission:attendance.write')->name('comment');
+        });
 
         // Departments (before /{employee} to avoid binding conflict)
         Route::prefix('departments')->name('departments.')->group(function () {
@@ -858,6 +880,10 @@ Route::middleware('auth')->group(function () {
             Route::get('/journal-audit',     [\App\Http\Controllers\Accounting\AccountingReportController::class, 'journalAudit'])     ->middleware('permission:accounting.read')->name('journal-audit');
             Route::get('/bank-reconciliation',[\App\Http\Controllers\Accounting\AccountingReportController::class, 'bankReconciliation'])->middleware('permission:accounting.read')->name('bank-reconciliation');
             Route::get('/executive-summary', [\App\Http\Controllers\Accounting\AccountingReportController::class, 'executiveSummary'])  ->middleware('permission:accounting.read')->name('executive-summary');
+
+            // Unified export endpoint — gated by accounting.export
+            Route::get('/{report}/export', \App\Http\Controllers\Accounting\AccountingReportExportController::class)
+                ->middleware('permission:accounting.export')->name('export');
         });
 
         // Accounting Settings (lock dates)

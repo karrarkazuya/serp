@@ -114,6 +114,21 @@ class EmployeeController extends Controller
             'subordinates', 'creator', 'updater',
         ]);
 
+        // Top up the planned-day buffer lazily so the tab always shows 30 rows
+        // even before the midnight cron has had a chance to run for a brand-new
+        // employee or one whose calendar was just assigned.
+        if ($employee->resource_calendar_id) {
+            app(\App\Services\Employees\PlannedScheduleService::class)->syncMissingDays($employee);
+        }
+        $plannedDays    = \App\Models\Employees\PlannedDay::with('resourceCalendar')
+            ->where('employee_id', $employee->id)
+            ->orderBy('planned_date')
+            ->get();
+        $plannedPattern = \App\Models\Employees\PlannedRSchedule::with('resourceCalendar')
+            ->where('employee_id', $employee->id)
+            ->orderBy('sequence')->orderBy('id')
+            ->get();
+
         $allIds = Employee::active()
             ->when(!empty($activeCompanyIds), fn($q) => $q->forCompanies($activeCompanyIds))
             ->orderBy('name')
@@ -135,7 +150,8 @@ class EmployeeController extends Controller
         }
 
         return view('employees.show', compact(
-            'employee', 'prevId', 'nextId', 'recordPosition', 'recordTotal', 'chain'
+            'employee', 'prevId', 'nextId', 'recordPosition', 'recordTotal', 'chain',
+            'plannedDays', 'plannedPattern',
         ));
     }
 

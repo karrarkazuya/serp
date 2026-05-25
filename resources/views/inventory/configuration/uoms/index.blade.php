@@ -43,7 +43,7 @@
             <tr x-show="open" class="hover:bg-purple-50/30 cursor-pointer" onclick="window.location='{{ route('inventory.config.uoms.show', $uom) }}'">
                 <td class="px-4 py-2 font-medium text-gray-900">{{ $uom->name }}@if($uom->symbol) <span class="text-gray-400 text-xs">({{ $uom->symbol }})</span>@endif</td>
                 <td class="px-3 py-2 text-sm text-gray-600">{{ $uom->category?->name }}</td>
-                <td class="px-3 py-2 text-sm text-gray-600">{{ ucfirst($uom->uom_type) }}</td>
+                <td class="px-3 py-2 text-sm text-gray-600">{{ $uom->type_label }}</td>
                 <td class="px-3 py-2 text-sm text-gray-800 text-end">{{ $uom->ratio }}</td>
                 <td class="px-3 py-2 text-sm text-gray-800 text-end">{{ $uom->rounding }}</td>
             </tr>
@@ -69,7 +69,7 @@
         <tr class="hover:bg-purple-50/30 cursor-pointer" onclick="window.location='{{ route('inventory.config.uoms.show', $uom) }}'">
             <td class="px-4 py-2 font-medium text-gray-900">{{ $uom->name }}@if($uom->symbol) <span class="text-gray-400 text-xs">({{ $uom->symbol }})</span>@endif</td>
             <td class="px-3 py-2 text-sm text-gray-600">{{ $uom->category?->name }}</td>
-            <td class="px-3 py-2 text-sm text-gray-600">{{ ucfirst($uom->uom_type) }}</td>
+            <td class="px-3 py-2 text-sm text-gray-600">{{ $uom->type_label }}</td>
             <td class="px-3 py-2 text-sm text-gray-800 text-end">{{ $uom->ratio }}</td>
             <td class="px-3 py-2 text-sm text-gray-800 text-end">{{ $uom->rounding }}</td>
         </tr>

@@ -93,6 +93,29 @@ class Product extends Model
     public function isTrackedBySerial(): bool { return $this->tracking === 'serial'; }
     public function requiresLotTracking(): bool { return $this->tracking !== 'none'; }
 
+    // R5 / Rule 12: views must not render raw enum DB values via ucfirst.
+    public const TYPE_LABELS = [
+        'storable'   => 'Storable Product',
+        'consumable' => 'Consumable',
+        'service'    => 'Service',
+    ];
+
+    public const TRACKING_LABELS = [
+        'none'   => 'No tracking',
+        'lot'    => 'By Lot',
+        'serial' => 'By Serial Number',
+    ];
+
+    public function getTypeLabelAttribute(): string
+    {
+        return self::TYPE_LABELS[$this->product_type] ?? $this->product_type;
+    }
+
+    public function getTrackingLabelAttribute(): string
+    {
+        return self::TRACKING_LABELS[$this->tracking] ?? $this->tracking;
+    }
+
     public function getOnHandQty(): float
     {
         return (float) $this->quants()

@@ -69,7 +69,7 @@
                             [__('inventory.unit_of_measure'), $product->uom?->name],
                             [__('inventory.purchase_uom'), $product->uomPo?->name],
                             [__('inventory.barcode'), $product->barcode],
-                            [__('inventory.tracking'), ucfirst($product->tracking ?? 'None')],
+                            [__('inventory.tracking'), $product->tracking_label],
                             [__('inventory.sales_price'), number_format($product->sale_price ?? 0, 2)],
                             [__('inventory.cost'), number_format($product->cost ?? 0, 2)],
                         ] as [$label, $value])

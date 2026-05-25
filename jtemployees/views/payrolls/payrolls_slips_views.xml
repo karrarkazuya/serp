@@ -1,0 +1,84 @@
+<odoo>
+    <!-- explicit list view definition -->
+    <record model="ir.ui.view" id="jtemployees_payrolls_slips_list">
+      <field name="name">Payrolls Slips</field>
+      <field name="model">jtemployees.payrolls.slips</field>
+      <field name="type">list</field>
+      <field name="arch" type="xml">
+        <list>
+            <field name="id"/>
+            <field name="payroll"/>
+            <field name="employee"/>
+            <field name="date_selected_from"/>
+            <field name="date_selected_to"/>
+            <field name="total_amount"/>
+            <field name="total_shortages"/>
+            <field name="total_absences"/>
+            <field name="total_overtime"/>
+            <field name="total_allocations"/>
+            <field name="total_rewards"/>
+            <field name="total_deductions"/>
+            <field name="total_unpaid"/>
+            <field name="warnings"/>
+            <field name="create_date"/>
+        </list>
+      </field>
+    </record>
+
+    <!-- explicit list view definition -->
+    <record id="jtemployees_payrolls_slips_form" model="ir.ui.view">
+        <field name="name">jtemployees.payrolls.slips.form</field>
+        <field name="model">jtemployees.payrolls.slips</field>
+        <field name="arch" type="xml">
+            <form string="Create Payroll Slip">
+                <sheet>
+                    <group>
+                        <field name="payroll" readonly="True"/>
+                        <field name="employee" readonly="True"/>
+                        <field name="date_selected_from" readonly="True" required="True"/>
+                        <field name="date_selected_to" readonly="True" required="True"/>
+                        <field name="total_amount" readonly="True"/>
+                        <field name="details" readonly="True"/>
+                        <field name="warnings" readonly="True"/>
+                        <field name="create_date"/>
+                    </group>
+                </sheet>
+
+                <chatter reload_on_post="True"/>
+            </form>
+        </field>
+    </record>
+
+    <!-- Search View -->
+    <record id="view_jtemployees_payrolls_slips_search" model="ir.ui.view">
+        <field name="name">jtemployees.payrolls.slips.search</field>
+        <field name="model">jtemployees.payrolls.slips</field>
+        <field name="arch" type="xml">
+            <search string="Search Section">
+                <field name="employee"/>
+                <filter 
+                string="Active" 
+                name="not_deleted"
+                domain="[('deleted', '=', False)]"
+                />
+                <filter 
+                string="Deleted" 
+                name="deleted"
+                domain="[('deleted', '=', True)]"
+                />
+            </search>
+        </field>
+    </record>
+    
+
+    <!-- actions opening views on models -->
+    <record model="ir.actions.act_window" id="jtemployees.action_payrolls_slips">
+        <field name="name">Payroll Slips</field>
+        <field name="res_model">jtemployees.payrolls.slips</field>
+        <field name="view_mode">list,form</field>
+        <field name="search_view_id" ref="view_jtemployees_payrolls_slips_search"/>
+        <field name="context">{'search_default_not_deleted': 1, 'search_default_deleted': 0}</field>
+        <field name="domain">[('related_company_id', 'in', allowed_company_ids)]</field>
+    </record>
+
+</odoo>

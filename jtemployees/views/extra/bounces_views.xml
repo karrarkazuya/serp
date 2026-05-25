@@ -1,0 +1,68 @@
+<odoo>
+    <!-- explicit list view definition -->
+    <record model="ir.ui.view" id="jtemployees_bounces_list">
+      <field name="name">Bounces and Deductions</field>
+      <field name="model">jtemployees.bounces</field>
+      <field name="type">list</field>
+      <field name="arch" type="xml">
+        <list>
+          <field name="name"/>
+          <field name="employee_ids"/>
+          <field name="amount"/>
+          <field name="date"/>
+        </list>
+      </field>
+    </record>
+
+    <!-- explicit list view definition -->
+    <record id="jtemployees_bounces_form" model="ir.ui.view">
+        <field name="name">jtemployees.bounces.form</field>
+        <field name="model">jtemployees.bounces</field>
+        <field name="arch" type="xml">
+            <form string="Create Bounces">
+                <sheet>
+                    <group>
+                        <field name="name"/>
+                        <field name="employee_ids"/>
+                        <field name="date"/>
+                        <field name="amount"/>
+                        <field name="company_id" readonly="1"/>
+                    </group>
+                </sheet>
+
+                <chatter reload_on_post="True"/>
+            </form>
+        </field>
+    </record>
+
+    <!-- Search View -->
+    <record id="view_jtemployees_bounces_search" model="ir.ui.view">
+        <field name="name">jtemployees.bounces.search</field>
+        <field name="model">jtemployees.bounces</field>
+        <field name="arch" type="xml">
+            <search string="Search Section">
+                <filter 
+                string="Active" 
+                name="not_deleted"
+                domain="[('deleted', '=', False)]"
+                />
+                <filter 
+                string="Deleted" 
+                name="deleted"
+                domain="[('deleted', '=', True)]"
+                />
+            </search>
+        </field>
+    </record>
+
+    <!-- actions opening views on models -->
+    <record model="ir.actions.act_window" id="jtemployees.action_bounces">
+        <field name="name">Bounces and Deductions</field>
+        <field name="res_model">jtemployees.bounces</field>
+        <field name="view_mode">list,form</field>
+        <field name="search_view_id" ref="view_jtemployees_bounces_search"/>
+        <field name="context">{'search_default_not_deleted': 1, 'search_default_deleted': 0}</field>
+        <field name="domain">[('company_id', 'in', allowed_company_ids)]</field>
+    </record>
+
+</odoo>

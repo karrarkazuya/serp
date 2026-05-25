@@ -36,7 +36,7 @@
             @foreach([
                 [__('inventory.category'), $uom->category?->name],
                 [__('inventory.symbol'), $uom->symbol],
-                [__('inventory.type'), ucfirst($uom->uom_type)],
+                [__('inventory.type'), $uom->type_label],
                 [__('inventory.ratio'), $uom->ratio],
                 [__('inventory.rounding'), $uom->rounding],
             ] as [$label, $value])

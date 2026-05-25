@@ -1,0 +1,50 @@
+<odoo>
+    <!-- explicit list view definition -->
+    <record model="ir.ui.view" id="jtemployees_payrolls_details_list">
+      <field name="name">Payrolls details</field>
+      <field name="model">jtemployees.payrolls.details</field>
+      <field name="type">list</field>
+      <field name="arch" type="xml">
+        <list>
+            <field name="id"/>
+            <field name="name" readonly="True"/>
+            <field name="amount" readonly="True"/>
+        </list>
+      </field>
+    </record>
+
+    <!-- explicit list view definition -->
+    <record id="jtemployees_payrolls_details_form" model="ir.ui.view">
+        <field name="name">jtemployees.payrolls.details.form</field>
+        <field name="model">jtemployees.payrolls.details</field>
+        <field name="arch" type="xml">
+            <form string="Create Payroll Detail">
+                <sheet>
+                    <group>
+                        <field name="name" readonly="True"/>
+                        <field name="amount" readonly="True"/>
+                        <field name="subs" widget="one2many" readonly="True" string="Details">
+                            <list editable="bottom">
+                                <field name="name" readonly="True"/>
+                                <field name="date" readonly="True"/>
+                                <field name="hours_readable" readonly="True"/>
+                                <field name="amount" readonly="True"/>
+                            </list>
+                        </field>
+                    </group>
+                </sheet>
+
+                <chatter reload_on_post="True"/>
+            </form>
+        </field>
+    </record>
+
+
+    <!-- actions opening views on models -->
+    <record model="ir.actions.act_window" id="jtemployees.action_payrolls_details">
+        <field name="name">Payroll details</field>
+        <field name="res_model">jtemployees.payrolls.details</field>
+        <field name="view_mode">list,form</field>
+    </record>
+
+</odoo>

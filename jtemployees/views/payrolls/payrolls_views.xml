@@ -1,0 +1,91 @@
+<odoo>
+    <!-- explicit list view definition -->
+    <record model="ir.ui.view" id="jtemployees_payrolls_list">
+      <field name="name">Payrolls</field>
+      <field name="model">jtemployees.payrolls</field>
+      <field name="type">list</field>
+      <field name="arch" type="xml">
+        <list>
+            <field name="id"/>
+            <field name="name"/>
+            <field name="state"/>
+            <field name="employee_ids"/>
+            <field name="is_monthly"/>
+            <field name="date_selected_from"/>
+            <field name="date_selected_to"/>
+        </list>
+      </field>
+    </record>
+
+    <!-- explicit list view definition -->
+    <record id="jtemployees_payrolls_form" model="ir.ui.view">
+        <field name="name">jtemployees.payrolls.form</field>
+        <field name="model">jtemployees.payrolls</field>
+        <field name="arch" type="xml">
+            <form string="Create Payroll">
+                <header invisible="not id">
+                    <field name="state" widget="statusbar" options="{'clickable': true}" context="{'form_view_initial_mode': 'edit'}" statusbar_visible="pending,accountent_review,approved"/>
+                </header>
+                <sheet>
+                    <group>
+                        <field name="name"/>
+                        <field name="employee_ids"/>
+                    </group>
+                    
+                    <group>
+                        <field name="match_period_amount"/>
+                        <field name="is_monthly"/>
+                        <field name="date_selected_from" invisible="is_monthly"/>
+                        <field name="date_selected_to" invisible="is_monthly"/>
+                        <field name="month_selected" invisible="not is_monthly"/>
+                        <field name="default_working_schedule"/>
+                    </group>
+
+                    <group string="Shortages calculation">
+                        <field name="shortages_ignored"/>
+                        <field name="shortages_ignored_from" invisible="shortages_ignored"/>
+                        <field name="shortages_ignored_to" invisible="shortages_ignored"/>
+                    </group>
+
+                    <group string="Payrolls">
+                        <field name="total_amount" invisible="not id" readonly="True"/>
+                        <field name="payrolls" invisible="not id"/>
+                    </group>
+                    
+                </sheet>
+
+                <chatter reload_on_post="True"/>
+            </form>
+        </field>
+    </record>
+
+     <!-- Search View -->
+    <record id="view_jtemployees_payrolls_search" model="ir.ui.view">
+        <field name="name">jtemployees.payrolls.search</field>
+        <field name="model">jtemployees.payrolls</field>
+        <field name="arch" type="xml">
+            <search string="Search Section">
+                <filter 
+                string="Active" 
+                name="not_deleted"
+                domain="[('deleted', '=', False)]"
+                />
+                <filter 
+                string="Deleted" 
+                name="deleted"
+                domain="[('deleted', '=', True)]"
+                />
+            </search>
+        </field>
+    </record>
+
+    <!-- actions opening views on models -->
+    <record model="ir.actions.act_window" id="jtemployees.action_payrolls">
+        <field name="name">Payrolls</field>
+        <field name="res_model">jtemployees.payrolls</field>
+        <field name="view_mode">list,form</field>
+        <field name="search_view_id" ref="view_jtemployees_payrolls_search"/>
+        <field name="context">{'search_default_not_deleted': 1, 'search_default_deleted': 0}</field>
+    </record>
+
+</odoo>

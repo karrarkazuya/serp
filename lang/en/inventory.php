@@ -205,6 +205,8 @@ return [
     'late'              => 'late',
     'to_process'        => 'to process',
     'to_replenish'      => 'To Replenish',
+    'waiting'           => 'waiting',
+    'stock_lines'       => 'Stock Lines',
 
     // Location type options
     'location_type_internal'  => 'Internal Location',

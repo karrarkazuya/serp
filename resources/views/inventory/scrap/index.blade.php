@@ -51,7 +51,7 @@
                 <td class="px-3 py-2 text-sm text-gray-600">{{ $scrap->date_done?->format('M d, Y') }}</td>
                 <td class="px-3 py-2">
                     <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-{{ $scrap->state_color }}-100 text-{{ $scrap->state_color }}-700">
-                        {{ ucfirst($scrap->state) }}
+                        {{ $scrap->state_label }}
                     </span>
                 </td>
             </tr>
@@ -83,7 +83,7 @@
             <td class="px-3 py-2 text-sm text-gray-600">{{ $scrap->date_done?->format('M d, Y') }}</td>
             <td class="px-3 py-2">
                 <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-{{ $scrap->state_color }}-100 text-{{ $scrap->state_color }}-700">
-                    {{ ucfirst($scrap->state) }}
+                    {{ $scrap->state_label }}
                 </span>
             </td>
         </tr>

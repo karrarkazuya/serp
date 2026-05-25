@@ -1,0 +1,104 @@
+<!-- security/my_module_security.xml -->
+<odoo>
+
+    <!-- Security Groups -->
+    <record id="jtemployees.group_accountant" model="res.groups">
+        <field name="name">Accountant</field>
+        <field name="comment">To read payrolls</field>
+        <field name="category_id" ref="jtemployees.security_groups_category"/>
+        <field name="implied_ids" eval="[(4, ref('base.group_user'))]"/>
+    </record>
+
+    <record id="model_accountant_jtemployees_payrolls_access" model="ir.model.access">
+        <field name="name">Payrolls Access</field>
+        <field name="model_id" ref="model_jtemployees_payrolls"/>
+        <field name="group_id" ref="jtemployees.group_accountant"/>
+        <field name="perm_read" eval="1"/>
+        <field name="perm_write" eval="1"/>
+        <field name="perm_create" eval="0"/>
+        <field name="perm_unlink" eval="0"/>
+    </record>
+
+    <record id="model_accountant_jtemployees_payrolls_slips_access" model="ir.model.access">
+        <field name="name">Payroll Slips Access</field>
+        <field name="model_id" ref="model_jtemployees_payrolls_slips"/>
+        <field name="group_id" ref="jtemployees.group_accountant"/>
+        <field name="perm_read" eval="1"/>
+        <field name="perm_write" eval="0"/>
+        <field name="perm_create" eval="0"/>
+        <field name="perm_unlink" eval="0"/>
+    </record>
+
+    <record id="model_accountant_jtemployees_payrolls_details_access" model="ir.model.access">
+        <field name="name">Payroll Details Access</field>
+        <field name="model_id" ref="model_jtemployees_payrolls_details"/>
+        <field name="group_id" ref="jtemployees.group_accountant"/>
+        <field name="perm_read" eval="1"/>
+        <field name="perm_write" eval="0"/>
+        <field name="perm_create" eval="0"/>
+        <field name="perm_unlink" eval="0"/>
+    </record>
+
+    <record id="model_accountant_jtemployees_payrolls_subs_details_access" model="ir.model.access">
+        <field name="name">Payroll Subs Details Access</field>
+        <field name="model_id" ref="model_jtemployees_payrolls_dsubs"/>
+        <field name="group_id" ref="jtemployees.group_accountant"/>
+        <field name="perm_read" eval="1"/>
+        <field name="perm_write" eval="0"/>
+        <field name="perm_create" eval="0"/>
+        <field name="perm_unlink" eval="0"/>
+    </record>
+
+    <record id="model_accountant_jtemployees_payrolls_swarning_access" model="ir.model.access">
+        <field name="name">Payroll Slip Warnings Access</field>
+        <field name="model_id" ref="model_jtemployees_payrolls_swarning"/>
+        <field name="group_id" ref="jtemployees.group_accountant"/>
+        <field name="perm_read" eval="1"/>
+        <field name="perm_write" eval="0"/>
+        <field name="perm_create" eval="0"/>
+        <field name="perm_unlink" eval="0"/>
+    </record>
+
+    <record id="model_accountant_jtemployees_report_general_access" model="ir.model.access">
+        <field name="name">General Report</field>
+        <field name="model_id" ref="model_jtemployees_report_general"/>
+        <field name="group_id" ref="jtemployees.group_accountant"/>
+        <field name="perm_read" eval="1"/>
+        <field name="perm_write" eval="0"/>
+        <field name="perm_create" eval="0"/>
+        <field name="perm_unlink" eval="0"/>
+    </record>
+
+    <record id="model_accountant_jtemployees_report_payroll_access" model="ir.model.access">
+        <field name="name">Payroll Report</field>
+        <field name="model_id" ref="model_jtemployees_report_payroll"/>
+        <field name="group_id" ref="jtemployees.group_accountant"/>
+        <field name="perm_read" eval="1"/>
+        <field name="perm_write" eval="0"/>
+        <field name="perm_create" eval="0"/>
+        <field name="perm_unlink" eval="0"/>
+    </record>
+
+    <record id="model_accountant_jtemployees_employee_select_wizard_access" model="ir.model.access">
+        <field name="name">Employee Select Wizard</field>
+        <field name="model_id" ref="model_jtemployees_employee_select_wizard"/>
+        <field name="group_id" ref="jtemployees.group_accountant"/>
+        <field name="perm_read" eval="1"/>
+        <field name="perm_write" eval="1"/>
+        <field name="perm_create" eval="1"/>
+        <field name="perm_unlink" eval="1"/>
+    </record>
+
+    <record id="model_accountant_jtemployees_payroll_select_wizard_access" model="ir.model.access">
+        <field name="name">Payroll Select Wizard</field>
+        <field name="model_id" ref="model_jtemployees_payroll_select_wizard"/>
+        <field name="group_id" ref="jtemployees.group_accountant"/>
+        <field name="perm_read" eval="1"/>
+        <field name="perm_write" eval="1"/>
+        <field name="perm_create" eval="1"/>
+        <field name="perm_unlink" eval="1"/>
+    </record>
+
+   
+
+</odoo>

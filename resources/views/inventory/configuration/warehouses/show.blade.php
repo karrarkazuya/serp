@@ -74,7 +74,7 @@
                     <a href="{{ route('inventory.config.operation-types.show', $opType) }}"
                        class="p-3 rounded-lg border border-gray-200 hover:border-purple-300 hover:bg-purple-50/50 transition-all">
                         <p class="text-sm font-medium text-gray-900">{{ $opType->name }}</p>
-                        <p class="text-xs text-gray-500 mt-0.5">{{ ucfirst($opType->code) }}</p>
+                        <p class="text-xs text-gray-500 mt-0.5">{{ $opType->code_label }}</p>
                     </a>
                     @endforeach
                 </div>

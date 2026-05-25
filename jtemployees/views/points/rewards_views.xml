@@ -1,0 +1,68 @@
+<odoo>
+    <!-- explicit list view definition -->
+    <record model="ir.ui.view" id="jtemployees_points_rewards_list">
+      <field name="name">Payroll Shortages</field>
+      <field name="model">jtemployees.points.rewards</field>
+      <field name="type">list</field>
+      <field name="arch" type="xml">
+        <list>
+          <field name="name"/>
+          <field name="employee_id"/>
+          <field name="type"/>
+          <field name="points"/>
+          <field name="create_date"/>
+        </list>
+      </field>
+    </record>
+
+    <!-- explicit list view definition -->
+    <record id="jtemployees_points_rewards_form" model="ir.ui.view">
+        <field name="name">jtemployees.points.rewards.form</field>
+        <field name="model">jtemployees.points.rewards</field>
+        <field name="arch" type="xml">
+            <form string="Create Payroll Shortages">
+                <sheet>
+                    <group>
+                        <field name="name"/>
+                        <field name="employee_id"/>
+                        <field name="type"/>
+                        <field name="points"/>
+                    </group>
+                </sheet>
+
+                <chatter reload_on_post="True"/>
+            </form>
+        </field>
+    </record>
+
+    <!-- Search View -->
+    <record id="view_jtemployees_points_rewards_search" model="ir.ui.view">
+        <field name="name">jtemployees.points.rewards.search</field>
+        <field name="model">jtemployees.points.rewards</field>
+        <field name="arch" type="xml">
+            <search string="Search Section">
+                <filter 
+                string="Active" 
+                name="not_deleted"
+                domain="[('deleted', '=', False)]"
+                />
+                <filter 
+                string="Deleted" 
+                name="deleted"
+                domain="[('deleted', '=', True)]"
+                />
+            </search>
+        </field>
+    </record>
+
+
+    <!-- actions opening views on models -->
+    <record model="ir.actions.act_window" id="jtemployees.action_points_rewards">
+        <field name="name">Points Rewards</field>
+        <field name="res_model">jtemployees.points.rewards</field>
+        <field name="view_mode">list,form</field>
+        <field name="search_view_id" ref="view_jtemployees_points_rewards_search"/>
+        <field name="context">{'search_default_not_deleted': 1, 'search_default_deleted': 0}</field>
+    </record>
+
+</odoo>

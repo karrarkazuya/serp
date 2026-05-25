@@ -1,0 +1,125 @@
+<odoo>
+  <data>
+    <record id="view_employee_form" model="ir.ui.view">
+        <field name="name">hr.employee.form</field>
+        <field name="model">hr.employee</field>
+        <field name="inherit_id" ref="hr.view_employee_form"/>
+        <field name="arch" type="xml">
+
+            <xpath expr="//sheet/group" position="before">
+                <group>
+                    <group>
+                        <field name="full_name_arabic"/>
+                        <field name="full_name"/>
+                        <field name="family_name"/>
+                        <field name="mother_name"/>
+                    </group>
+                </group>
+            </xpath>
+
+            <xpath expr="//sheet/group/group/field[@name='coach_id']" position="after">
+                <field name="jt_request_approval" widget="many2one_avatar_user"/>
+            </xpath>
+
+            <xpath expr="//notebook" position="inside">
+                <page name='jtemployees_employee_documents' string="Documents">
+                    <group name="employee_documents_row_group" groups="jtemployees.group_admin,jtemployees.group_hr_admin,jtemployees.group_hr_manager">
+                        <field name="images" widget="one2many" string="" domain="[('deleted', '=', False)]">
+                            <list>
+                                <field name="name"/>
+                                <field name="image" widget="image" height="64"/>
+                            </list>
+                        </field>
+                    </group>
+                </page>
+            </xpath>
+
+            <xpath expr="//notebook//page[@name='hr_settings']" position="inside">
+                <group groups="jtemployees.group_admin,jtemployees.group_hr_admin,jtemployees.group_hr_manager">
+                    <group string='HR Settings' name="jt_employee">
+                        <field name="jt_join_date"/>
+                        <field name="jt_migrate_date"/>
+                        <field name="jt_reassign_at"/>
+                        <field name="work_contact_id" readonly="1"/>
+                        <field name="jt_timeoff_readable" readonly="1"/>
+                        <field name="jt_leavedays" readonly="1"/>
+                        <field name="jt_grade_group" />
+                        <field name="jt_grade" />
+                        <field name="jt_fingerprint_id" />
+                    </group>
+
+                    <group string='HR Payrolls' name="jt_payrolls">
+                        <field name="jt_can_set_sub_schedule"/>
+                        <field name="jt_calendar_group_id" invisible="not jt_can_set_sub_schedule"/>
+                        <field name="jt_fixed_salary"/>
+                        <field name="jt_fixed_salary_amount" invisible="jt_fixed_salary"/>
+                        <field name="jt_fixed_insurance_salary_amount" invisible="jt_fixed_salary or not jt_separate_insu_salary"/>
+                        <field name="jt_has_overtime_limits"/>
+                        <field name="jt_overtime_amount_hourly" invisible="not jt_has_overtime_limits"/>
+                        <field name="jt_overtime_max_hours" invisible="not jt_has_overtime_limits"/>
+                        <field name="jt_has_location_checkin"/>
+                        <field name="jt_location_area" invisible="not jt_has_location_checkin"/>
+                        <field name="jt_location_area_checkout" invisible="not jt_has_location_checkin"/>
+                        <field name="jt_ignore_shortages"/>
+                        <field name="extra_allocations" widget="one2many" string="Extra Allocations" domain="[('deleted', '=', False)]">
+                            <list>
+                                <field name="name"/>
+                                <field name="deleted"/>
+                                <field name="amount"/>
+                            </list>
+                        </field>
+                    </group>
+                </group>
+            </xpath>
+
+            <xpath expr="//notebook//page[@name='hr_settings']" position="after">
+                <page string="Planned schedule" groups="jtemployees.group_admin,jtemployees.group_hr_admin,jtemployees.group_hr_manager">
+                    <group>
+                        <field name="resource_calendar_id"/>
+                    </group>
+                    <notebook>
+                        <page string="Days">
+                            <field name="jt_panned_days" widget="one2many" string="">
+                                <list>
+                                    <field name="date" readonly="True"/>
+                                    <field name="schedule_id"/>
+                                </list>
+                            </field>
+                        </page>
+
+                        <page string="Schedule being repeated">
+                            <field name="jt_repeating_schedules" widget="one2many" string="">
+                                <list>
+                                    <field name="schedule_id"/>
+                                </list>
+                            </field>
+                        </page>
+
+                    </notebook>
+                </page>
+            </xpath>
+
+        </field>
+    </record>
+
+    <record id="view_employee_filter" model="ir.ui.view">
+        <field name="name">hr.employee.search</field>
+        <field name="model">hr.employee</field>
+        <field name="inherit_id" ref="hr.view_employee_filter"/>
+        <field name="arch" type="xml">
+            <xpath expr="//field[@name='name']" position="before">
+                <field name="full_name_arabic"/>
+                <field name="full_name"/>
+            </xpath>
+        </field>
+    </record>
+
+
+    <record id="jtemployees.planned_scheduler"
+            model="ir.actions.client">
+        <field name="name">Working Planner</field>
+        <field name="tag">jtemployees.scheduler_planner</field>
+    </record>
+
+  </data>
+</odoo>

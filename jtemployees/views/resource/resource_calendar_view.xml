@@ -1,0 +1,108 @@
+<odoo>
+    <!-- Inherit the existing resource calendar form view -->
+    <record id="view_resource_calendar_form_inherit_jt" model="ir.ui.view">
+        <field name="name">resource.calendar.form.inherit.jt</field>
+        <field name="model">resource.calendar</field>
+        <field name="inherit_id" ref="resource.resource_calendar_form"/>
+        <field name="arch" type="xml">
+
+            <xpath expr="//group[@name='resource_details']" position="after">
+                <group>
+                    <field name="jt_group_id"/>
+                </group>
+            </xpath>
+
+            <xpath expr="//page[@name='working_hours']" position="replace">
+                <page string="Working Hours" name="working_hours" invisible="flexible_hours">
+                    <field name="two_weeks_explanation" invisible="not two_weeks_calendar" readonly="True"/>
+                    <field name="attendance_ids" widget="section_one2many" readonly="True"/>
+                </page>
+            </xpath>
+
+            <xpath expr="//page" position="after">
+                <page string="Modifier" name="simpler_form">
+
+                    <group>
+                        <group string="Working Days">
+                            <group>
+                                <group>
+                                    <field name="jt_has_saturday" readonly="not id"/>
+                                    <field name="jt_has_sunday" readonly="not id"/>
+                                    <field name="jt_has_monday" readonly="not id"/>
+                                    <field name="jt_has_tuesday" readonly="not id"/>
+                                </group>
+                                <group>
+                                    <field name="jt_has_wednesday" readonly="not id"/>
+                                    <field name="jt_has_thursday" readonly="not id"/>
+                                    <field name="jt_has_friday" readonly="not id"/>
+                                </group>
+                            </group>
+                        </group>
+
+                        <group string="Working Hours">
+                            <group >
+                                <field name="jt_start_time"  widget="float_time" readonly="not id"/>
+                            </group>
+                            <group >
+                                <field name="jt_end_time"    widget="float_time" readonly="not id"/>
+                            </group>
+                        </group>
+                    </group>
+                </page>
+
+                <page string="Employees" name="jt_employees">
+                    <field name="employee_ids_m2m"
+                        nolabel="1"
+                        mode="list"
+                        options="{'no_create': true, 'no_delete': true}">
+                        <list>
+                            <field name="name"/>
+                            <field name="department_id"/>
+                            <field name="job_title"/>
+                            <field name="work_email"/>
+                        </list>
+                    </field>
+                </page>
+
+            </xpath>
+
+
+            <xpath expr="//sheet" position="after">
+                <chatter reload_on_post="True"/>
+            </xpath>
+        </field>
+    </record>
+
+
+    <record id="hr_attendance_view_form" model="ir.ui.view">
+        <field name="name">hr.attendance.form.inherit.jt</field>
+        <field name="model">hr.attendance</field>
+        <field name="inherit_id" ref="hr_attendance.hr_attendance_view_form"/>
+        <field name="arch" type="xml">
+
+            <xpath expr="//group" position="after">
+                <group>
+                    <field name="jt_work_schedule" groups="jtemployees.group_admin,jtemployees.group_hr_admin,jtemployees.group_hr_manager" string="Working Schedule"/>
+                    <field name="jt_worked_hours_readable" readonly="True" string="Actual worked hours"/>
+                    <field name="jt_shortage_hours_readable" readonly="True"/>
+                    <field name="jt_hours_per_day" readonly="True"/>
+                </group>
+            </xpath>
+        </field>
+    </record>
+
+    <record id="view_attendance_tree" model="ir.ui.view">
+        <field name="name">hr.attendance.list.inherit.jt</field>
+        <field name="model">hr.attendance</field>
+        <field name="inherit_id" ref="hr_attendance.view_attendance_tree"/>
+        <field name="arch" type="xml">
+
+            <xpath expr="//field" position="after">
+                <field name="jt_work_schedule" string="Working Schedule"/>
+                <field name="jt_worked_hours_readable" readonly="True" string="Actual worked hours"/>
+                <field name="jt_shortage_hours_readable" readonly="True"/>
+                <field name="jt_hours_per_day" readonly="True"/>
+            </xpath>
+        </field>
+    </record>
+</odoo>

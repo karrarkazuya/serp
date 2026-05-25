@@ -61,4 +61,30 @@ class ProductCategory extends Model
         }
         $this->updateQuietly(['complete_name' => implode(' / ', $parts)]);
     }
+
+    // R5 / Rule 12: views must not render raw enum DB values. Map each
+    // stored value to a human label; views call $cat->removal_strategy_label
+    // and $cat->costing_method_label instead of ucwords/str_replace hacks.
+    public const REMOVAL_STRATEGIES = [
+        'fifo'             => 'FIFO (First In, First Out)',
+        'lifo'             => 'LIFO (Last In, First Out)',
+        'fefo'             => 'FEFO (First Expired, First Out)',
+        'closest_location' => 'Closest Location',
+    ];
+
+    public const COSTING_METHODS = [
+        'standard_price' => 'Standard Price',
+        'average_cost'   => 'Average Cost (AVCO)',
+        'fifo'           => 'First In, First Out (FIFO)',
+    ];
+
+    public function getRemovalStrategyLabelAttribute(): string
+    {
+        return self::REMOVAL_STRATEGIES[$this->removal_strategy] ?? $this->removal_strategy;
+    }
+
+    public function getCostingMethodLabelAttribute(): string
+    {
+        return self::COSTING_METHODS[$this->costing_method] ?? $this->costing_method;
+    }
 }

@@ -1,0 +1,64 @@
+<odoo>
+    <!-- explicit list view definition -->
+    <record model="ir.ui.view" id="jtemployees_extraallocations_list">
+      <field name="name">Extra Allocations</field>
+      <field name="model">jtemployees.extraallocations</field>
+      <field name="type">list</field>
+      <field name="arch" type="xml">
+        <list>
+          <field name="name"/>
+          <field name="employee_id"/>
+          <field name="amount"/>
+        </list>
+      </field>
+    </record>
+
+    <!-- explicit list view definition -->
+    <record id="jtemployees_extraallocations_form" model="ir.ui.view">
+        <field name="name">jtemployees.extraallocations.form</field>
+        <field name="model">jtemployees.extraallocations</field>
+        <field name="arch" type="xml">
+            <form string="Create Extra Allocations">
+                <sheet>
+                    <group>
+                        <field name="name"/>
+                        <field name="employee_id"/>
+                        <field name="amount"/>
+                    </group>
+                </sheet>
+
+                <chatter reload_on_post="True"/>
+            </form>
+        </field>
+    </record>
+
+    <!-- Search View -->
+    <record id="view_jtemployees_extra_allocations_search" model="ir.ui.view">
+        <field name="name">jtemployees.extraallocations.search</field>
+        <field name="model">jtemployees.extraallocations</field>
+        <field name="arch" type="xml">
+            <search string="Search Section">
+                <filter 
+                string="Active" 
+                name="not_deleted"
+                domain="[('deleted', '=', False)]"
+                />
+                <filter 
+                string="Deleted" 
+                name="deleted"
+                domain="[('deleted', '=', True)]"
+                />
+            </search>
+        </field>
+    </record>
+
+    <!-- actions opening views on models -->
+    <record model="ir.actions.act_window" id="jtemployees.action_extra_allocations">
+        <field name="name">Extra Allocations</field>
+        <field name="res_model">jtemployees.extraallocations</field>
+        <field name="view_mode">list,form</field>
+        <field name="search_view_id" ref="view_jtemployees_extra_allocations_search"/>
+        <field name="context">{'search_default_not_deleted': 1, 'search_default_deleted': 0}</field>
+    </record>
+
+</odoo>

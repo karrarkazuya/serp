@@ -1,0 +1,8 @@
+<!-- security/my_module_security.xml -->
+<odoo>
+    <record model="ir.module.category" id="jtemployees.security_groups_category">
+        <field name="name">JT HR</field>
+        <field name="description">Helps you handle your JT Employees.</field>
+        <field name="sequence">10</field>
+    </record>
+</odoo>

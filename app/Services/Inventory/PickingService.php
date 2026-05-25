@@ -360,12 +360,6 @@ class PickingService
         return $this->create($returnData, $movesData);
     }
 
-    public function updateMove(Picking $picking, int $moveId, array $data): void
-    {
-        $move = $picking->moves()->findOrFail($moveId);
-        $move->update(array_merge($data, ['updated_by' => auth()->id()]));
-    }
-
     public function addMoveLine(Move $move, array $data): MoveLine
     {
         $data['company_id']       = $move->company_id;

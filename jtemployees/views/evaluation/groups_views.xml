@@ -1,0 +1,49 @@
+<odoo>
+    <!-- explicit list view definition -->
+    <record model="ir.ui.view" id="jtemployees_evaluation_groups_list">
+      <field name="name">Evaluation Groups</field>
+      <field name="model">jtemployees.evaluation.groups</field>
+      <field name="type">list</field>
+      <field name="arch" type="xml">
+        <list>
+          <field name="id"/>
+          <field name="employee_id"/>
+          <field name="create_date"/>
+        </list>
+      </field>
+    </record>
+
+    <!-- explicit list view definition -->
+    <record id="jtemployees_evaluation_groups_form" model="ir.ui.view">
+        <field name="name">jtemployees.evaluation.groups.form</field>
+        <field name="model">jtemployees.evaluation.groups</field>
+        <field name="arch" type="xml">
+            <form string="Create Evaluation groups">
+                <sheet>
+                    <group>
+                        <field name="employee_id" readonly="id"/>
+                        <field name="create_date" readonly="id"/>
+                        <field name="values_id" widget="one2many" string="" domain="[('deleted', '=', False)]">
+                            <list create="False" delete="False">
+                                <field name="name"/>
+                                <field name="note"/>
+                                <field name="percentage"/>
+                            </list>
+                        </field>
+
+                    </group>
+                </sheet>
+
+                <chatter reload_on_post="True"/>
+            </form>
+        </field>
+    </record>
+
+    <!-- actions opening views on models -->
+    <record model="ir.actions.act_window" id="jtemployees.action_evaluation_groups">
+        <field name="name">Evaluation groups</field>
+        <field name="res_model">jtemployees.evaluation.groups</field>
+        <field name="view_mode">list,form</field>
+    </record>
+
+</odoo>

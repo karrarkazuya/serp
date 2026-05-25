@@ -1,0 +1,120 @@
+<odoo>
+  <data>
+  
+    <!-- Top menu item -->
+    <menuitem name="HR"
+        id="main_menu"
+        sequence="0"
+        web_icon="jtemployees,static/description/icon.png"
+        groups="jtemployees.group_admin,jtemployees.group_hr_admin,jtemployees.group_hr_manager,jtemployees.group_viewer,jtemployees.group_accountant">
+
+      <menuitem id="menu_action_jtemployees_dashboard"
+          name="Dashboard"
+          action="jtemployees.dashboard_jtemployees_action"
+          sequence="0"/>
+
+      <menuitem name="Employees"
+        id="employees"
+        sequence="1">
+        <menuitem name="Employees" id="jtemployees.menu_1_list" action="jtemployees.action_employees" groups="jtemployees.group_admin,jtemployees.group_hr_admin,jtemployees.group_hr_manager"/>
+
+        <menuitem id="jtemployees_planned_scheduler"
+              name="Working planner"
+              action="jtemployees.planned_scheduler"
+              groups="jtemployees.group_admin,jtemployees.group_hr_admin,jtemployees.group_hr_manager"/>
+      </menuitem>
+
+      <menuitem name="Evaluations"
+        id="evaluations"
+        sequence="2">
+          <menuitem name="Objectives" sequence="0" id="jtemployees.action_evaluation_objectives_menu" action="jtemployees.action_evaluation_objectives" groups="jtemployees.group_admin,jtemployees.group_hr_admin,jtemployees.group_hr_manager,jtemployees.group_viewer"/>
+          <menuitem name="Submittions" sequence="0" id="jtemployees.action_evaluation_groups_menu" action="jtemployees.action_evaluation_groups" groups="jtemployees.group_admin,jtemployees.group_hr_admin,jtemployees.group_hr_manager,jtemployees.group_viewer"/>
+      </menuitem>
+
+      <menuitem name="Requests"
+        id="requests"
+        sequence="3">
+          <menuitem name="Requests" id="jtemployees.menu_requests_list" action="jtemployees.action_requests" groups="jtemployees.group_admin,jtemployees.group_hr_admin,jtemployees.group_hr_manager,jtemployees.group_viewer"/>
+      </menuitem>
+
+
+      <menuitem name="My Employees"
+        id="my_employees"
+        sequence="4">
+          <menuitem name="My Employees" sequence="0" id="jtemployees.menu_my_employees_list" action="jtemployees.action_my_employees" groups="jtemployees.group_admin,jtemployees.group_hr_admin,jtemployees.group_hr_manager,jtemployees.group_viewer"/>
+          <menuitem name="Fingerprint Log" sequence="1" id="jtemployees.menu_fingerprint_log_list" action="jtemployees.action_fd_log" groups="jtemployees.group_admin,jtemployees.group_hr_admin,jtemployees.group_hr_manager,jtemployees.group_viewer"/>
+          <menuitem id="jtemployees_subs_planned_scheduler"
+              name="Working planner"
+              action="jtemployees.subs_planned_scheduler"
+              groups="jtemployees.group_admin,jtemployees.group_hr_admin,jtemployees.group_hr_manager,jtemployees.group_viewer"/>
+      </menuitem>
+
+   
+      <menuitem name="Payrolls"
+        id="payrolls"
+        sequence="5"
+        groups="jtemployees.group_admin,jtemployees.group_hr_admin,jtemployees.group_hr_manager,jtemployees.group_accountant"
+        >
+        <menuitem name="Payrolls" sequence="1" id="jtemployees.menu_2_list" action="jtemployees.action_payrolls" groups="jtemployees.group_admin,jtemployees.group_hr_admin,jtemployees.group_hr_manager,jtemployees.group_accountant"/>
+        <menuitem name="Payroll Slips" sequence="2" id="jtemployees.menu_payroll_slips_list" action="jtemployees.action_payrolls_slips" groups="jtemployees.group_admin,jtemployees.group_hr_admin,jtemployees.group_hr_manager,jtemployees.group_accountant"/>
+        <menuitem name="Bounces and Deductions" sequence="3" id="jtemployees.menu_bounces_list" action="jtemployees.action_bounces" groups="jtemployees.group_admin,jtemployees.group_hr_admin,jtemployees.group_hr_manager"/>
+        <menuitem name="Manual Shortages" sequence="4" id="jtemployees.menu_extrashortages_list" action="jtemployees.action_extra_shortages" groups="jtemployees.group_admin,jtemployees.group_hr_admin,jtemployees.group_hr_manager"/>
+      </menuitem>
+
+      <menuitem name="Payroll Slips" sequence="5" id="jtemployees.menu_payroll_slips_viewer_list" action="jtemployees.action_payrolls_slips" groups="jtemployees.group_viewer"/>
+
+
+      <menuitem name="Location Check"
+        id="locations_main"
+        sequence="6"
+        groups="jtemployees.group_admin,jtemployees.group_hr_admin,jtemployees.group_hr_manager,jtemployees.group_viewer">
+          <menuitem name="Areas"
+            id="jtemployees.menu_location_areas"
+            action="jtemployees.action_location_area"
+            groups="jtemployees.group_admin,jtemployees.group_hr_admin,jtemployees.group_hr_manager,jtemployees.group_viewer" />
+      </menuitem>
+
+      <menuitem name="Reports"
+        id="reports"
+        sequence="7"
+        groups="jtemployees.group_admin,jtemployees.group_hr_admin,jtemployees.group_hr_manager">
+          <menuitem name="General Report"
+            id="jtemployees.menu_general_report"
+            action="jtemployees.action_general_report_client"
+            sequence="1"
+            groups="jtemployees.group_admin,jtemployees.group_hr_admin,jtemployees.group_accountant" />
+          <menuitem name="Payroll Report"
+            id="jtemployees.menu_payroll_report"
+            action="jtemployees.action_payroll_report_client"
+            sequence="2"
+            groups="jtemployees.group_admin,jtemployees.group_hr_admin,jtemployees.group_accountant" />
+          <menuitem name="Absence"
+            id="jtemployees.menu_absence"
+            action="jtemployees.action_absence"
+            sequence="3"
+            groups="jtemployees.group_admin,jtemployees.group_hr_admin,jtemployees.group_hr_manager" />
+      </menuitem>
+
+      <menuitem name="Configuration"
+        id="configuration"
+        sequence="8">
+          <menuitem name="Announcement Wall" sequence="0" id="jtemployees.menu_announcement_wall_list" action="jtemployees.action_wall" groups="jtemployees.group_admin,jtemployees.group_hr_admin"/>
+          <menuitem name="Holidays" sequence="1" id="jtemployees.menu_holiday_list" action="jtemployees.action_holiday" groups="jtemployees.group_admin,jtemployees.group_hr_admin"/>
+          <menuitem name="Documents" sequence="2" id="jtemployees.menu_3_list" action="jtemployees.action_images" groups="jtemployees.group_admin,jtemployees.group_hr_admin,jtemployees.group_hr_manager"/>
+          <menuitem name="Levels" sequence="3" id="jtemployees.menu_6_list" action="jtemployees.action_grades_groups" groups="jtemployees.group_admin,jtemployees.group_hr_admin,jtemployees.group_hr_manager"/>
+          <menuitem name="Grades" sequence="4" id="jtemployees.menu_5_list" action="jtemployees.action_grades" groups="jtemployees.group_admin,jtemployees.group_hr_admin,jtemployees.group_hr_manager"/>
+          <menuitem name="Certificates" sequence="5" id="jtemployees.menu_8_list" action="jtemployees.action_certificates" groups="jtemployees.group_admin,jtemployees.group_hr_admin,jtemployees.group_hr_manager"/>
+          <menuitem name="Fingerprint Devices" sequence="6" id="jtemployees.menu_9_list" action="jtemployees.action_fd" groups="jtemployees.group_admin"/>
+          <menuitem name="Fingerprint Devices Log" sequence="7" id="jtemployees.menu_10_list" action="jtemployees.action_fd_log" groups="jtemployees.group_admin,jtemployees.group_hr_admin,jtemployees.group_hr_manager"/>
+      </menuitem>
+
+      <menuitem id="employee_contract_settings_menu_action"
+         name="Settings"
+         action="res_config_settings_action"
+         sequence="10"
+        groups="jtemployees.group_admin,jtemployees.group_hr_admin"/>
+      
+    </menuitem>
+
+  </data>
+</odoo>

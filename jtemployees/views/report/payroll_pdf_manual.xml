@@ -1,0 +1,101 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<odoo>
+
+  <record id="action_payroll_report_client" model="ir.actions.client">
+    <field name="name">Payroll Report</field>
+    <field name="tag">jtemployees.payroll_report</field>
+  </record>
+
+  <template id="payroll_report_pdf_manual">
+    <t t-call="web.basic_layout">
+      <div class="page">
+
+        <h2 style="text-align:center;">
+          <t t-esc="report_name"/>
+        </h2>
+
+        <table class="table table-sm table-bordered">
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>Employee</th>
+              <th style="text-align:right;">Basic Salary</th>
+              <th style="text-align:right;">Allocations</th>
+              <th style="text-align:right;">Bounces</th>
+              <th style="text-align:right;">Deductions</th>
+              <th style="text-align:right;">Shortage</th>
+              <th style="text-align:right;">Absence</th>
+              <th style="text-align:right;">Working Hours</th>
+              <th style="text-align:right;">Overtime Hours</th>
+              <th style="text-align:right;">Overtime Amount</th>
+              <th style="text-align:right;">Total Salary</th>
+              <th style="text-align:right;">Leave Days</th>
+            </tr>
+          </thead>
+          <tbody>
+            <t t-foreach="data" t-as="emp" t-key="emp['employee_id']">
+              <tr style="background:#f3f4f6; font-weight:600;">
+                <td><t t-esc="emp_index + 1"/></td>
+                <td><t t-esc="emp['employee_name']"/></td>
+                <td style="text-align:right;"><t t-esc="emp['basic_salary']"/></td>
+                <td style="text-align:right;"><t t-esc="emp['allocations']"/></td>
+                <td style="text-align:right;"><t t-esc="emp['bounces']"/></td>
+                <td style="text-align:right;"><t t-esc="emp['deductions']"/></td>
+                <td style="text-align:right;"><t t-esc="emp['shortage']"/></td>
+                <td style="text-align:right;"><t t-esc="emp['absence']"/></td>
+                <td style="text-align:right;"><t t-esc="emp['total_hours']"/></td>
+                <td style="text-align:right;"><t t-esc="emp['overtime_hours']"/></td>
+                <td style="text-align:right;"><t t-esc="emp['overtime_amount']"/></td>
+                <td style="text-align:right;"><t t-esc="emp['total_salary']"/></td>
+                <td style="text-align:right;"><t t-esc="emp['leave_days']"/></td>
+              </tr>
+
+              <t t-if="emp['lines']">
+                <tr style="background:#f9fafb; font-size:11px; font-style:italic;">
+                  <td></td>
+                  <td>Type</td>
+                  <td>Title</td>
+                  <td>Date</td>
+                  <td>Hours</td>
+                  <td>Amount</td>
+                  <td></td>
+                  <td></td>
+                </tr>
+                <t t-foreach="emp['lines']" t-as="line" t-key="line['line_key']">
+                  <tr style="font-size:11px;">
+                    <td></td>
+                    <td><t t-esc="line['detail']"/></td>
+                    <td><t t-esc="line['sub']"/></td>
+                    <td><t t-esc="line['date']"/></td>
+                    <td><t t-esc="line['hours']"/></td>
+                    <td><t t-esc="line['amount']"/></td>
+                    <td></td>
+                    <td></td>
+                  </tr>
+                </t>
+              </t>
+            </t>
+          </tbody>
+
+          <tfoot>
+            <tr style="font-weight:700; border-top:2px solid #9ca3af;">
+              <td colspan="2">GRAND TOTAL</td>
+              <td style="text-align:right;"><t t-esc="totals['basic_salary']"/></td>
+              <td style="text-align:right;"><t t-esc="totals['allocations']"/></td>
+              <td style="text-align:right;"><t t-esc="totals['bounces']"/></td>
+              <td style="text-align:right;"><t t-esc="totals['deductions']"/></td>
+              <td style="text-align:right;"><t t-esc="totals['shortage']"/></td>
+              <td style="text-align:right;"><t t-esc="totals['absence']"/></td>
+              <td></td>
+              <td></td>
+              <td style="text-align:right;"><t t-esc="totals['overtime_amount']"/></td>
+              <td style="text-align:right;"><t t-esc="totals['total_salary']"/></td>
+              <td></td>
+            </tr>
+          </tfoot>
+        </table>
+
+      </div>
+    </t>
+  </template>
+</odoo>

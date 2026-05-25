@@ -139,6 +139,7 @@
                 <div class="flex gap-6 mb-4">
                     <div class="flex-1 space-y-0">
                         @foreach([
+                            [__('employees.scientific_title'), $employee->scientific_title],
                             [__('employees.full_name_ar'),  $employee->name_ar],
                             [__('employees.full_name_en'),  $employee->name_en],
                             [__('employees.family_name'),   $employee->family_name],
@@ -742,26 +743,41 @@
 
                         {{-- Planned Schedule --}}
                         <div x-show="tab === 'schedule'" style="display:none" class="p-6">
-                            @if(!$employee->resourceCalendar || $employee->resourceCalendar->attendances->isEmpty())
+                            @if(!$employee->resourceCalendar)
                                 <div class="py-12 text-center text-gray-400 text-sm">{{ __('employees.no_schedule') }}</div>
                             @else
                             @php
+                                $hasWeeklyAttendances = $employee->resourceCalendar->attendances->isNotEmpty();
                                 $calStart    = now()->startOfMonth();
                                 $daysInMonth = $calStart->daysInMonth;
                                 $firstCol    = $calStart->dayOfWeek; // 0=Sun
-                                $attByDow    = $employee->resourceCalendar->attendances->groupBy('day_of_week');
+                                $attByDow    = $hasWeeklyAttendances ? $employee->resourceCalendar->attendances->groupBy('day_of_week') : collect();
                             @endphp
-                            <div x-data="{ subTab: 'calendar' }">
+                            {{-- Default to the 'planned' sub-tab so the editing UI is the first thing the user sees. --}}
+                            <div x-data="{ subTab: 'planned' }">
                                 <div class="flex items-center justify-between mb-4">
                                     <span class="text-sm font-semibold text-gray-700">{{ now()->format('F Y') }} — {{ $employee->resourceCalendar->name }}</span>
                                     <div class="flex gap-1">
+                                        <button type="button" @click="subTab = 'planned'" class="px-2.5 py-1 text-xs rounded border transition-colors" :class="subTab === 'planned' ? 'bg-purple-100 text-purple-700 border-purple-300' : 'text-gray-500 border-gray-200 hover:bg-gray-50'">{{ __('employees.planned_days_tab') }}</button>
                                         <button type="button" @click="subTab = 'calendar'" class="px-2.5 py-1 text-xs rounded border transition-colors" :class="subTab === 'calendar' ? 'bg-purple-100 text-purple-700 border-purple-300' : 'text-gray-500 border-gray-200 hover:bg-gray-50'">{{ __('employees.calendar_tab') }}</button>
                                         <button type="button" @click="subTab = 'pattern'" class="px-2.5 py-1 text-xs rounded border transition-colors" :class="subTab === 'pattern' ? 'bg-purple-100 text-purple-700 border-purple-300' : 'text-gray-500 border-gray-200 hover:bg-gray-50'">{{ __('employees.weekly_pattern') }}</button>
                                     </div>
                                 </div>
 
-                                {{-- Calendar view --}}
-                                <div x-show="subTab === 'calendar'">
+                                {{-- Planned days (dynamic, editable, 30-day buffer) — always available --}}
+                                <div x-show="subTab === 'planned'">
+                                    @include('employees._planned_schedule', [
+                                        'employee'        => $employee,
+                                        'plannedDays'     => $plannedDays ?? collect(),
+                                        'plannedPattern'  => $plannedPattern ?? collect(),
+                                    ])
+                                </div>
+
+                                {{-- Calendar view (read-only; only meaningful when the calendar has weekly attendance lines) --}}
+                                <div x-show="subTab === 'calendar'" style="display:none">
+                                    @if(!$hasWeeklyAttendances)
+                                        <div class="py-12 text-center text-gray-400 text-sm">{{ __('employees.no_weekly_pattern') }}</div>
+                                    @else
                                     <div class="grid grid-cols-7 gap-px bg-gray-100 rounded-xl overflow-hidden text-xs">
                                         @foreach(['Sun','Mon','Tue','Wed','Thu','Fri','Sat'] as $h)
                                         <div class="bg-gray-50 py-2 text-center font-semibold text-gray-500 uppercase tracking-wide">{{ $h }}</div>
@@ -786,10 +802,14 @@
                                         </div>
                                         @endfor
                                     </div>
+                                    @endif
                                 </div>
 
                                 {{-- Weekly pattern view --}}
                                 <div x-show="subTab === 'pattern'" style="display:none">
+                                    @if(!$hasWeeklyAttendances)
+                                        <div class="py-12 text-center text-gray-400 text-sm">{{ __('employees.no_weekly_pattern') }}</div>
+                                    @else
                                     @php $dayNames = \App\Models\Employees\ResourceCalendar::$dayNames; @endphp
                                     <table class="w-full text-sm">
                                         <thead>
@@ -811,6 +831,7 @@
                                             @endforeach
                                         </tbody>
                                     </table>
+                                    @endif
                                 </div>
                             </div>
                             @endif

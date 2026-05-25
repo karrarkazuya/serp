@@ -1,0 +1,48 @@
+<odoo>
+    <!-- explicit list view definition -->
+    <record model="ir.ui.view" id="jtemployees_points_groups_list">
+      <field name="name">Evaluations</field>
+      <field name="model">jtemployees.points.groups</field>
+      <field name="type">list</field>
+      <field name="arch" type="xml">
+        <list>
+            <field name="id"/>
+            <field name="parent_id"/>
+            <field name="name"/>
+            <field name="create_date"/>
+        </list>
+      </field>
+    </record>
+
+    <!-- explicit list view definition -->
+    <record id="jtemployees_points_groups_form" model="ir.ui.view">
+        <field name="name">jtemployees.points.groups.form</field>
+        <field name="model">jtemployees.points.groups</field>
+        <field name="arch" type="xml">
+            <form string="Create Evaluation">
+                <sheet>
+                    <group>
+                        <field name="name"/>
+                        <field name="parent_id" invisible="not id" readonly="True"/>
+                        <field name="point_ids" widget="one2many" string="Sub Employees" context="{'form_view_ref': 'jtemployees_points_form'}">
+                            <list>
+                                <field name="employee_id"/>
+                                <field name="total_points"/>
+                            </list>
+                        </field>
+                    </group>
+                </sheet>
+
+                <chatter reload_on_post="True"/>
+            </form>
+        </field>
+    </record>
+
+    <!-- actions opening views on models -->
+    <record model="ir.actions.act_window" id="jtemployees.action_points_groups">
+        <field name="name">Evaluations</field>
+        <field name="res_model">jtemployees.points.groups</field>
+        <field name="view_mode">list,form</field>
+    </record>
+
+</odoo>

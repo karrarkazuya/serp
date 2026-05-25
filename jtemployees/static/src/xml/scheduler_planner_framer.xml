@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<templates>
+    <t t-name="jtemployees.scheduler_planner_framer">
+        <div class="map-container">
+            <iframe src="/sshr/planned_days_scheduler_employee" class="map-iframe"></iframe>
+        </div>
+        <style>
+            .map-container {
+                width: 100%;
+                height: 100vh;
+                display: flex;
+                justify-content: center;
+                align-items: center;
+                overflow: hidden;
+            }
+            .map-iframe {
+                width: 100%;
+                height: 100vh;
+                border: none;
+            }
+        </style>
+    </t>
+</templates>

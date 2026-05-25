@@ -1,0 +1,44 @@
+<odoo>
+    <!-- explicit list view definition -->
+    <record model="ir.ui.view" id="jtemployees_evaluation_values_list">
+      <field name="name">Evaluation Values</field>
+      <field name="model">jtemployees.evaluation.values</field>
+      <field name="type">list</field>
+      <field name="arch" type="xml">
+        <list>
+          <field name="objective"/>
+          <field name="employee_id"/>
+          <field name="note"/>
+          <field name="percentage"/>
+        </list>
+      </field>
+    </record>
+
+    <!-- explicit list view definition -->
+    <record id="jtemployees_evaluation_values_form" model="ir.ui.view">
+        <field name="name">jtemployees.evaluation.values.form</field>
+        <field name="model">jtemployees.evaluation.values</field>
+        <field name="arch" type="xml">
+            <form string="Create Evaluation Values">
+                <sheet>
+                    <group>
+                        <field name="objective" readonly="True"/>
+                        <field name="employee_id" readonly="True"/>
+                        <field name="note"/>
+                        <field name="percentage"/>
+                    </group>
+                </sheet>
+
+                <chatter reload_on_post="True"/>
+            </form>
+        </field>
+    </record>
+
+    <!-- actions opening views on models -->
+    <record model="ir.actions.act_window" id="jtemployees.action_evaluation_values">
+        <field name="name">Evaluation Values</field>
+        <field name="res_model">jtemployees.evaluation.values</field>
+        <field name="view_mode">list,form</field>
+    </record>
+
+</odoo>

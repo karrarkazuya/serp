@@ -57,7 +57,12 @@
                 <div>
                     @foreach([
                         [__('inventory.sequence'), $operationType->sequence_prefix],
-                        [__('inventory.action'), ucwords(str_replace('_', ' ', $operationType->reservation_method))],
+                        // Was a `reservation_method` reference, but that
+                        // column doesn't exist — the row always rendered '-'.
+                        // Replaced with code_label (Receipt / Delivery /
+                        // Internal Transfer) which is what users actually
+                        // need to see in the "Action" row.
+                        [__('inventory.action'), $operationType->code_label],
                         [__('inventory.col_lot'), $operationType->use_create_lots ? __('inventory.yes') : __('inventory.no')],
                     ] as [$label, $value])
                     <div class="flex items-center gap-4 py-2 border-b border-gray-100">

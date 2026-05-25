@@ -44,8 +44,8 @@
             <tr x-show="open" class="hover:bg-purple-50/30 cursor-pointer" onclick="window.location='{{ route('inventory.config.product-categories.show', $category) }}'">
                 <td class="px-4 py-2 font-medium text-gray-900">{{ $category->complete_name }}</td>
                 <td class="px-3 py-2 text-sm text-gray-600">{{ $category->parent?->name ?? '-' }}</td>
-                <td class="px-3 py-2 text-sm text-gray-600">{{ ucwords(str_replace('_', ' ', $category->removal_strategy)) }}</td>
-                <td class="px-3 py-2 text-sm text-gray-600">{{ ucwords(str_replace('_', ' ', $category->costing_method)) }}</td>
+                <td class="px-3 py-2 text-sm text-gray-600">{{ $category->removal_strategy_label }}</td>
+                <td class="px-3 py-2 text-sm text-gray-600">{{ $category->costing_method_label }}</td>
             </tr>
             @endforeach
         </tbody>
@@ -68,8 +68,8 @@
         <tr class="hover:bg-purple-50/30 cursor-pointer" onclick="window.location='{{ route('inventory.config.product-categories.show', $category) }}'">
             <td class="px-4 py-2 font-medium text-gray-900">{{ $category->complete_name }}</td>
             <td class="px-3 py-2 text-sm text-gray-600">{{ $category->parent?->name ?? '-' }}</td>
-            <td class="px-3 py-2 text-sm text-gray-600">{{ ucwords(str_replace('_', ' ', $category->removal_strategy)) }}</td>
-            <td class="px-3 py-2 text-sm text-gray-600">{{ ucwords(str_replace('_', ' ', $category->costing_method)) }}</td>
+            <td class="px-3 py-2 text-sm text-gray-600">{{ $category->removal_strategy_label }}</td>
+            <td class="px-3 py-2 text-sm text-gray-600">{{ $category->costing_method_label }}</td>
         </tr>
         @endforeach
     </x-list>

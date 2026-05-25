@@ -11,6 +11,7 @@ use App\Models\Inventory\Quant;
 use App\Models\Inventory\ReorderRule;
 use App\Services\Company\CompanyContextService;
 use Illuminate\Http\Request;
+// Picking is still used by withCount() callbacks referencing STATE_ constants.
 
 class InventoryDashboardController extends Controller
 {
@@ -32,30 +33,14 @@ class InventoryDashboardController extends Controller
             ->orderBy('code')
             ->get();
 
-        // Alerts: products needing replenishment
+        // Alerts: products needing replenishment. R4 perf finding — the old
+        // implementation loaded EVERY active rule into memory and filtered
+        // in PHP. Predicate is just `qty_on_hand <= qty_min`, which the
+        // DB can evaluate via whereColumn.
         $replenishCount = ReorderRule::whereIn('company_id', $activeCompanyIds)
             ->where('active', true)
-            ->get()
-            ->filter(fn($r) => $r->needsReplenishment())
+            ->whereColumn('qty_on_hand', '<=', 'qty_min')
             ->count();
-
-        // Today's receipts and deliveries
-        $todayReceiptsCount = Picking::whereIn('company_id', $activeCompanyIds)
-            ->whereHas('operationType', fn($q) => $q->where('code', 'incoming'))
-            ->where('state', Picking::STATE_ASSIGNED)
-            ->count();
-
-        $todayDeliveriesCount = Picking::whereIn('company_id', $activeCompanyIds)
-            ->whereHas('operationType', fn($q) => $q->where('code', 'outgoing'))
-            ->where('state', Picking::STATE_ASSIGNED)
-            ->count();
-
-        // Low stock products (quants that are 0 or negative)
-        $lowStockCount = Quant::whereIn('company_id', $activeCompanyIds)
-            ->where('quantity', '<=', 0)
-            ->whereHas('location', fn($q) => $q->where('usage', 'internal'))
-            ->distinct('product_id')
-            ->count('product_id');
 
         $productCount = Product::whereIn('company_id', $activeCompanyIds)->where('active', true)->count();
         $lotCount     = Lot::whereIn('company_id', $activeCompanyIds)->count();
@@ -64,12 +49,13 @@ class InventoryDashboardController extends Controller
             ->where('quantity', '>', 0)
             ->count();
 
+        // R5: removed $readyReceiptsCount / $readyDeliveriesCount / $lowStockCount —
+        // the view never displayed them. The operation-type cards above
+        // already surface ready/todo counts via withCount, which is what
+        // the dashboard actually shows.
         return view('inventory.dashboard', compact(
             'operationTypes',
             'replenishCount',
-            'todayReceiptsCount',
-            'todayDeliveriesCount',
-            'lowStockCount',
             'productCount',
             'lotCount',
             'stockLines',

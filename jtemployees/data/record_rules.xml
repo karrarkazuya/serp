@@ -1,0 +1,142 @@
+<odoo>
+    <record id="jtemployees_objectives_rule" model="ir.rule">
+        <field name="name">JT HR: View Own Records or Group Editor</field>
+        <field name="model_id" ref="model_jtemployees_evaluation_objectives"/>
+        <field name="domain_force">[('parent_id', '=', user.employee_id.id)]</field>
+        <field name="groups" eval="[(4, ref('jtemployees.group_viewer'))]"/>
+    </record>
+
+    <record id="jtemployees_values_rule" model="ir.rule">
+        <field name="name">JT HR: View Own Records or Group Editor</field>
+        <field name="model_id" ref="model_jtemployees_evaluation_values"/>
+        <field name="domain_force">[('parent_id', '=', user.employee_id.id)]</field>
+        <field name="groups" eval="[(4, ref('jtemployees.group_viewer'))]"/>
+    </record>
+
+    <record id="jtemployees_requests_rule" model="ir.rule">
+        <field name="name">JT HR: View Requests</field>
+        <field name="model_id" ref="model_jtemployees_requests"/>
+        <field name="domain_force">['|',('parent_id', '=', user.employee_id.id),('employee_id', '=', user.employee_id.id)]</field>
+        <field name="groups" eval="[(4, ref('jtemployees.group_viewer'))]"/>
+    </record>
+
+    <record id="jtemployees_evaluation_groups_rule" model="ir.rule">
+        <field name="name">JT HR: Groups</field>
+        <field name="model_id" ref="model_jtemployees_evaluation_groups"/>
+        <field name="domain_force">['|',('parent_id', '=', user.employee_id.id),('employee_id', '=', user.employee_id.id)]</field>
+        <field name="groups" eval="[(4, ref('jtemployees.group_viewer'))]"/>
+    </record>
+
+    <record id="jtemployees_evaluation_values_rule" model="ir.rule">
+        <field name="name">JT HR: Values</field>
+        <field name="model_id" ref="model_jtemployees_evaluation_values"/>
+        <field name="domain_force">['|',('parent_id', '=', user.employee_id.id),('employee_id', '=', user.employee_id.id)]</field>
+        <field name="groups" eval="[(4, ref('jtemployees.group_viewer'))]"/>
+    </record>
+
+    <record id="jtemployees_evaluation_objectives_rule" model="ir.rule">
+        <field name="name">JT HR: Objectives</field>
+        <field name="model_id" ref="model_jtemployees_evaluation_objectives"/>
+        <field name="domain_force">['|',('parent_id', '=', user.employee_id.id),('employee_id', '=', user.employee_id.id)]</field>
+        <field name="groups" eval="[(4, ref('jtemployees.group_viewer'))]"/>
+    </record>
+
+    <record id="jtemployees_payrolls_slip_rule" model="ir.rule">
+        <field name="name">JT HR: Payroll Slip Only For Employees</field>
+        <field name="model_id" ref="model_jtemployees_payrolls_slips"/>
+        <field name="domain_force">[('employee', '=', user.employee_id.id), ('approved', '=', True), ('deleted', '=', False)]</field>
+        <field name="groups" eval="[(4, ref('jtemployees.group_viewer'))]"/>
+    </record>
+
+    <record id="jtemployees_payrolls_accountant_slip_rule" model="ir.rule">
+        <field name="name">JT HR: Payroll Slip Only For Accountant</field>
+        <field name="model_id" ref="model_jtemployees_payrolls_slips"/>
+        <field name="domain_force">[('deleted', '=', False)]</field>
+        <field name="groups" eval="[(4, ref('jtemployees.group_accountant'))]"/>
+    </record>
+
+    <record id="jtemployees_payrolls_details_rule" model="ir.rule">
+        <field name="name">JT HR: Payroll Slip Details Only For Employees</field>
+        <field name="model_id" ref="model_jtemployees_payrolls_details"/>
+        <field name="domain_force">[('employee', '=', user.employee_id.id), ('deleted', '=', False)]</field>
+        <field name="groups" eval="[(4, ref('jtemployees.group_viewer'))]"/>
+    </record>
+
+    <record id="jtemployees_payrolls_details_accountant_rule" model="ir.rule">
+        <field name="name">JT HR: Payroll Slip Details Only For Accountant</field>
+        <field name="model_id" ref="model_jtemployees_payrolls_details"/>
+        <field name="domain_force">[('deleted', '=', False)]</field>
+        <field name="groups" eval="[(4, ref('jtemployees.group_accountant'))]"/>
+    </record>
+
+    <record id="jtemployees_payrolls_dsubs_rule" model="ir.rule">
+        <field name="name">JT HR: Payroll Slip Details Subs Only For Employees</field>
+        <field name="model_id" ref="model_jtemployees_payrolls_dsubs"/>
+        <field name="domain_force">[('employee', '=', user.employee_id.id), ('deleted', '=', False)]</field>
+        <field name="groups" eval="[(4, ref('jtemployees.group_viewer'))]"/>
+    </record>
+
+    <record id="jtemployees_payrolls_swarning_rule" model="ir.rule">
+        <field name="name">JT HR: Payroll Slip Warnings Only For Employees</field>
+        <field name="model_id" ref="model_jtemployees_payrolls_swarning"/>
+        <field name="domain_force">[('employee', '=', user.employee_id.id), ('deleted', '=', False)]</field>
+        <field name="groups" eval="[(4, ref('jtemployees.group_viewer'))]"/>
+    </record>
+
+    <record id="jtemployees_payrolls_dsubs_accountant_rule" model="ir.rule">
+        <field name="name">JT HR: Payroll Slip Details Subs Only For Accountant</field>
+        <field name="model_id" ref="model_jtemployees_payrolls_dsubs"/>
+        <field name="domain_force">[('deleted', '=', False)]</field>
+        <field name="groups" eval="[(4, ref('jtemployees.group_accountant'))]"/>
+    </record>
+
+    <record id="jtemployees_payrolls_swarning_accountant_rule" model="ir.rule">
+        <field name="name">JT HR: Payroll Slip Warnings Only For Accountant</field>
+        <field name="model_id" ref="model_jtemployees_payrolls_swarning"/>
+        <field name="domain_force">[('deleted', '=', False)]</field>
+        <field name="groups" eval="[(4, ref('jtemployees.group_accountant'))]"/>
+    </record>
+
+    <record id="jtemployees_sub_employees_rule" model="ir.rule">
+        <field name="name">JT HR: Sub Employees Restrict</field>
+        <field name="model_id" ref="model_jtemployees_subs"/>
+        <field name="domain_force">[('employee_id', '!=', False), ('parent_employee_ids', '!=', False), ('parent_employee_ids', 'in', [user.employee_id.id])]</field>
+        <field name="groups" eval="[(4, ref('jtemployees.group_admin')), (4, ref('jtemployees.group_hr_admin')), (4, ref('jtemployees.group_hr_manager')), (4, ref('jtemployees.group_viewer')), (4, ref('jtemployees.group_accountant')), (4, ref('jtemployees.group_requests_approver'))]"/>
+    </record>
+
+    <record id="jtemployees_area_employees_rule" model="ir.rule">
+        <field name="name">JT HR: Area Restrict</field>
+        <field name="model_id" ref="model_jtemployees_location_areas"/>
+        <field name="domain_force">[('employee_id', '=', user.employee_id.id)]</field>
+        <field name="groups" eval="[(4, ref('jtemployees.group_viewer'))]"/>
+    </record>
+
+    <record id="jtemployees_resource_calendar_rule" model="ir.rule">
+        <field name="name">JT HR: Calendar</field>
+        <field name="model_id" ref="model_resource_calendar"/>
+        <field name="domain_force">[('jt_group_id', '=', user.employee_id.jt_calendar_group_id.id)]</field>
+        <field name="groups" eval="[(4, ref('jtemployees.group_viewer'))]"/>
+    </record>
+
+    <record id="jtemployees_finger_print_log_rule" model="ir.rule">
+        <field name="name">JT HR: Fingerprint log</field>
+        <field name="model_id" ref="model_jtemployees_fd_log"/>
+        <field name="domain_force">[('check_in', '!=', False), ('check_out', '!=', False), '|', ('employee_id.parent_id', '=', user.employee_id.id), ('employee_id', '=', user.employee_id.id)]</field>
+        <field name="groups" eval="[(4, ref('jtemployees.group_viewer'))]"/>
+    </record>
+
+    <record id="jtemployees_finger_location_area_rule" model="ir.rule">
+        <field name="name">JT HR: Location area</field>
+        <field name="model_id" ref="model_jtemployees_location_areas"/>
+        <field name="domain_force">[('employee_id', '=', user.employee_id.id)]</field>
+        <field name="groups" eval="[(4, ref('jtemployees.group_viewer'))]"/>
+    </record>
+
+    <record id="jtemployees_mail_message_rule" model="ir.rule">
+        <field name="name">JT HR: Mail Message</field>
+        <field name="model_id" ref="model_mail_message"/>
+        <field name="domain_force">[('model', '!=', 'hr.employee'), ('model', '!=', 'res.company')]</field>
+        <field name="groups" eval="[(4, ref('jtemployees.group_viewer'))]"/>
+    </record>
+    
+</odoo>

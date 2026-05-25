@@ -12,31 +12,29 @@
 
     <div class="flex-1 overflow-y-auto p-4">
         @include('accounting.reports._filters', [
-            'dateFrom'    => $dateFrom,
-            'dateTo'      => $dateTo,
-            'showJournal' => true,
-            'journalId'   => $journalId,
-            'showAccount' => true,
-            'accountId'   => $accountId,
+            'filters' => $filters, 'showJournal' => true, 'showAccount' => true, 'showPartner' => true,
+            'reportKey' => 'general-ledger',
         ])
 
         <div class="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
             <table class="min-w-full text-sm divide-y divide-gray-200">
-                <thead class="bg-gray-50">
+                <thead class="bg-gray-50 sticky top-0 z-10">
                     <tr>
-                        <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase">{{ __('accounting.col_date') }}</th>
-                        <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase">{{ __('accounting.journal_entries') }}</th>
-                        <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase">{{ __('accounting.col_account') }}</th>
-                        <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase">{{ __('accounting.col_label') }}</th>
-                        <th class="px-4 py-3 text-right text-xs font-semibold text-gray-500 uppercase">{{ __('accounting.col_debit') }}</th>
-                        <th class="px-4 py-3 text-right text-xs font-semibold text-gray-500 uppercase">{{ __('accounting.col_credit') }}</th>
+                        <th class="px-4 py-2.5 text-left text-xs font-semibold text-gray-600 uppercase">{{ __('accounting.col_date') }}</th>
+                        <th class="px-4 py-2.5 text-left text-xs font-semibold text-gray-600 uppercase">Entry</th>
+                        <th class="px-4 py-2.5 text-left text-xs font-semibold text-gray-600 uppercase">{{ __('accounting.col_journal') }}</th>
+                        <th class="px-4 py-2.5 text-left text-xs font-semibold text-gray-600 uppercase">{{ __('accounting.col_account') }}</th>
+                        <th class="px-4 py-2.5 text-left text-xs font-semibold text-gray-600 uppercase">{{ __('accounting.col_partner') }}</th>
+                        <th class="px-4 py-2.5 text-left text-xs font-semibold text-gray-600 uppercase">{{ __('accounting.col_label') }}</th>
+                        <th class="px-4 py-2.5 text-right text-xs font-semibold text-gray-600 uppercase">{{ __('accounting.col_debit') }}</th>
+                        <th class="px-4 py-2.5 text-right text-xs font-semibold text-gray-600 uppercase">{{ __('accounting.col_credit') }}</th>
                     </tr>
                 </thead>
                 <tbody class="divide-y divide-gray-100">
                     @forelse($lines as $line)
-                    <tr class="hover:bg-gray-50">
-                        <td class="px-4 py-2.5 tabular-nums text-gray-600">{{ $line->date?->format('Y-m-d') }}</td>
-                        <td class="px-4 py-2.5 text-purple-600">
+                    <tr class="hover:bg-purple-50/30">
+                        <td class="px-4 py-2 tabular-nums text-gray-600 whitespace-nowrap">{{ $line->date?->format('Y-m-d') }}</td>
+                        <td class="px-4 py-2">
                             @php
                                 $moveRoute = match($line->move?->move_type) {
                                     'out_invoice' => route('accounting.invoices.show', $line->move_id),
@@ -46,19 +44,20 @@
                                     default       => route('accounting.moves.show', $line->move_id),
                                 };
                             @endphp
-                            <a href="{{ $moveRoute }}" class="hover:underline">
-                                {{ $line->move?->display_name ?? $line->move_id }}
-                            </a>
+                            <a href="{{ $moveRoute }}" class="text-purple-600 hover:underline font-medium">{{ $line->move?->display_name ?? $line->move_id }}</a>
                         </td>
-                        <td class="px-4 py-2.5 font-mono text-gray-700">{{ $line->account?->code }} {{ $line->account?->name }}</td>
-                        <td class="px-4 py-2.5 text-gray-700">{{ $line->name ?: '—' }}</td>
-                        <td class="px-4 py-2.5 text-right tabular-nums text-gray-800"><x-money :amount="(float) $line->debit" :blank="true" /></td>
-                        <td class="px-4 py-2.5 text-right tabular-nums text-gray-800"><x-money :amount="(float) $line->credit" :blank="true" /></td>
+                        <td class="px-4 py-2 text-gray-600">{{ $line->journal?->name }}</td>
+                        <td class="px-4 py-2">
+                            <span class="font-mono text-gray-500 text-xs">{{ $line->account?->code }}</span>
+                            <span class="text-gray-700">{{ $line->account?->name }}</span>
+                        </td>
+                        <td class="px-4 py-2 text-gray-600">{{ $line->partner?->name ?? '—' }}</td>
+                        <td class="px-4 py-2 text-gray-700">{{ $line->name ?: '—' }}</td>
+                        <td class="px-4 py-2 text-right tabular-nums text-gray-800"><x-money :amount="(float) $line->debit" :blank="true" /></td>
+                        <td class="px-4 py-2 text-right tabular-nums text-gray-800"><x-money :amount="(float) $line->credit" :blank="true" /></td>
                     </tr>
                     @empty
-                    <tr>
-                        <td colspan="6" class="px-4 py-8 text-sm text-gray-400 text-center">{{ __('accounting.no_journal_items_filter') }}</td>
-                    </tr>
+                    <tr><td colspan="8" class="px-4 py-12 text-sm text-gray-400 text-center">{{ __('accounting.no_journal_items_filter') }}</td></tr>
                     @endforelse
                 </tbody>
             </table>

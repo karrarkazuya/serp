@@ -81,6 +81,31 @@ return [
         ],
     ],
 
+    'attendance' => [
+        'class'          => \App\Models\Employees\Attendance::class,
+        'permission'     => 'attendance.export',
+        'company_scoped' => true,
+        'filename'       => 'attendance',
+        'fields'         => [
+            ['key' => 'id',                 'label' => 'ID',                  'column' => 'id'],
+            ['key' => 'employee_id',        'label' => 'Employee ID',         'column' => 'employee_id'],
+            ['key' => 'attendance_date',    'label' => 'Date',                'column' => 'attendance_date'],
+            ['key' => 'check_in',           'label' => 'Check In',            'column' => 'check_in'],
+            ['key' => 'check_out',          'label' => 'Check Out',           'column' => 'check_out'],
+            ['key' => 'expected_check_in',  'label' => 'Expected Check In',   'column' => 'expected_check_in'],
+            ['key' => 'expected_check_out', 'label' => 'Expected Check Out',  'column' => 'expected_check_out'],
+            ['key' => 'expected_hours',     'label' => 'Expected Hours',      'column' => 'expected_hours'],
+            ['key' => 'worked_hours',       'label' => 'Worked Hours',        'column' => 'worked_hours'],
+            ['key' => 'overtime_hours',     'label' => 'Overtime Hours',      'column' => 'overtime_hours'],
+            ['key' => 'shortage_hours',     'label' => 'Shortage Hours',      'column' => 'shortage_hours'],
+            ['key' => 'is_day_off',         'label' => 'Day Off',             'column' => 'is_day_off'],
+            ['key' => 'is_absence',         'label' => 'Absence',             'column' => 'is_absence'],
+            ['key' => 'notes',              'label' => 'Notes',               'column' => 'notes'],
+            ['key' => 'created_at',         'label' => 'Created On',          'column' => 'created_at'],
+            ['key' => 'updated_at',         'label' => 'Updated On',          'column' => 'updated_at'],
+        ],
+    ],
+
     'workflow.tickets' => [
         'class'          => \App\Models\Workflow\Ticket::class,
         'permission'     => 'workflow.tickets.export',

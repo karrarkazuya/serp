@@ -7,6 +7,7 @@ use App\Models\Accounting\AccountJournal;
 use App\Models\Accounting\AccountMove;
 use App\Models\Contacts\Contact;
 use App\Models\Contacts\Tag;
+use App\Models\Employees\Attendance;
 use App\Models\Employees\Contract;
 use App\Models\Employees\Department;
 use App\Models\Employees\DepartureReason;
@@ -40,6 +41,7 @@ use App\Models\Workflow\TicketTemplate;
 use App\Models\Workflow\WorkflowTemplateInput;
 use App\Models\Workflow\WorkflowUser;
 use App\Services\Accounting\AccountingService;
+use App\Services\Employees\AttendanceService;
 use App\Services\Inventory\PickingService;
 use App\Services\Inventory\ProductService as InventoryProductService;
 use App\Services\Inventory\ScrapService;
@@ -578,8 +580,95 @@ class DemoSeeder extends Seeder
         }
 
         $this->seedAllocations($allEmployees);
+        $this->seedAttendances($allEmployees);
 
         $this->command->info('Employees seeded — ' . $allEmployees->count() . ' records created.');
+    }
+
+    // ── Attendance ───────────────────────────────────────────────────────────
+
+    private function seedAttendances(\Illuminate\Support\Collection $employees): void
+    {
+        $service = app(AttendanceService::class);
+        $today   = Carbon::today();
+
+        // 30 calendar days back, weighted random scenarios per employee per day.
+        $created = 0;
+        foreach ($employees as $employee) {
+            if (!$employee->resource_calendar_id) continue;
+
+            for ($i = 30; $i >= 1; $i--) {
+                $date = $today->copy()->subDays($i);
+
+                $exists = Attendance::where('employee_id', $employee->id)
+                    ->where('attendance_date', $date->toDateString())
+                    ->exists();
+                if ($exists) continue;
+
+                // Resolve scheduled blocks for this date — drives the scenario picker.
+                $sysDow = ($date->dayOfWeek + 1) % 7;
+                $blocks = $employee->resourceCalendar?->attendances
+                    ->where('day_of_week', $sysDow)
+                    ->values()
+                    ->all() ?? [];
+
+                if (empty($blocks)) {
+                    // Day off — no punches needed (recompute sets is_day_off).
+                    $service->create([
+                        'employee_id'     => $employee->id,
+                        'attendance_date' => $date->toDateString(),
+                    ]);
+                    $created++;
+                    continue;
+                }
+
+                $earliest = (float) collect($blocks)->min('hour_from');
+                $latest   = (float) collect($blocks)->max('hour_to');
+
+                // Pick scenario by weighted bucket.
+                $roll = mt_rand(1, 100);
+                $data = [
+                    'employee_id'     => $employee->id,
+                    'attendance_date' => $date->toDateString(),
+                ];
+
+                if ($roll <= 10) {
+                    // 10% absence — leave check_in/out null.
+                } elseif ($roll <= 25) {
+                    // 15% overtime — checked in early or out late.
+                    $checkIn  = $this->floatToCarbon($date, $earliest - (mt_rand(0, 30) / 60));
+                    $checkOut = $this->floatToCarbon($date, $latest + ((mt_rand(30, 120)) / 60));
+                    $data['check_in']  = $checkIn->toDateTimeString();
+                    $data['check_out'] = $checkOut->toDateTimeString();
+                } elseif ($roll <= 45) {
+                    // 20% shortage — short by 0.5–2h on the end.
+                    $checkIn  = $this->floatToCarbon($date, $earliest + (mt_rand(0, 15) / 60));
+                    $checkOut = $this->floatToCarbon($date, $latest - (mt_rand(30, 120) / 60));
+                    $data['check_in']  = $checkIn->toDateTimeString();
+                    $data['check_out'] = $checkOut->toDateTimeString();
+                } else {
+                    // 55% on-time present (small drift).
+                    $checkIn  = $this->floatToCarbon($date, $earliest + (mt_rand(-10, 10) / 60));
+                    $checkOut = $this->floatToCarbon($date, $latest + (mt_rand(-10, 10) / 60));
+                    $data['check_in']  = $checkIn->toDateTimeString();
+                    $data['check_out'] = $checkOut->toDateTimeString();
+                }
+
+                $service->create($data);
+                $created++;
+            }
+        }
+
+        $this->command->info("Attendance seeded — {$created} records.");
+    }
+
+    private function floatToCarbon(Carbon $date, float $hour): Carbon
+    {
+        $dayOffset = (int) floor($hour / 24);
+        $remaining = $hour - ($dayOffset * 24);
+        $h = (int) floor($remaining);
+        $m = (int) round(($remaining - $h) * 60);
+        return $date->copy()->startOfDay()->addDays($dayOffset)->addHours($h)->addMinutes($m);
     }
 
     // ── Allocations (Salary Components) ──────────────────────────────────────

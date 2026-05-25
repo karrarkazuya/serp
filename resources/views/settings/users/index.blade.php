@@ -149,7 +149,7 @@
     </x-list>
 
     @else
-    <x-list :paginator="$users" :empty-text="__('settings.no_users')" :selectable="true" :total-count="$users->total()">
+    <x-list :paginator="$users" :empty-text="__('settings.no_users')" :selectable="true" :total-count="$users->total()" :can-export="auth()->user()->can('export', \App\Models\User::class)">
         <x-slot:columns>
             <x-sortable-th column="name" :label="__('common.name')" class="px-6" :default="true" />
             <x-sortable-th column="email" :label="__('common.email')" />

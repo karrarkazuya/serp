@@ -431,6 +431,16 @@ class CoreSeeder extends Seeder
             ['name' => 'Edit Employees',   'key' => 'employees.write',  'module' => 'employees', 'description' => 'Edit and archive employee records.'],
             ['name' => 'Delete Employees', 'key' => 'employees.unlink', 'module' => 'employees', 'description' => 'Permanently delete employee records.'],
 
+            // Attendance
+            ['name' => 'Read Attendance',   'key' => 'attendance.read',   'module' => 'attendance', 'description' => 'View attendance records.'],
+            ['name' => 'Create Attendance', 'key' => 'attendance.create', 'module' => 'attendance', 'description' => 'Create attendance records and check-ins.'],
+            ['name' => 'Edit Attendance',   'key' => 'attendance.write',  'module' => 'attendance', 'description' => 'Edit attendance records and adjust hours.'],
+            ['name' => 'Delete Attendance', 'key' => 'attendance.unlink', 'module' => 'attendance', 'description' => 'Permanently delete attendance records.'],
+
+            // Planned schedules (per-employee schedule plan + repeat pattern)
+            ['name' => 'Read Planned Schedules',  'key' => 'planned_schedules.read',  'module' => 'attendance', 'description' => 'View an employee\'s planned working schedule.'],
+            ['name' => 'Edit Planned Schedules',  'key' => 'planned_schedules.write', 'module' => 'attendance', 'description' => 'Edit single days and apply repeat patterns to an employee\'s planned working schedule.'],
+
             // Workflow — Tickets
             ['name' => 'Read Tickets',   'key' => 'workflow.tickets.read',   'module' => 'workflow', 'description' => 'View tickets assigned or visible to the user.'],
             ['name' => 'Create Tickets', 'key' => 'workflow.tickets.create', 'module' => 'workflow', 'description' => 'Create new tickets from templates.'],
@@ -459,6 +469,7 @@ class CoreSeeder extends Seeder
             ['name' => 'Export Contacts',          'key' => 'contacts.export',              'module' => 'contacts',   'description' => 'Export contact records to XLSX or CSV.'],
             ['name' => 'Export Users',             'key' => 'users.export',                 'module' => 'users',      'description' => 'Export user records to XLSX or CSV.'],
             ['name' => 'Export Employees',         'key' => 'employees.export',             'module' => 'employees',  'description' => 'Export employee records to XLSX or CSV.'],
+            ['name' => 'Export Attendance',        'key' => 'attendance.export',            'module' => 'attendance', 'description' => 'Export attendance records to XLSX or CSV.'],
             ['name' => 'Export Tickets',           'key' => 'workflow.tickets.export',      'module' => 'workflow',   'description' => 'Export workflow ticket records to XLSX or CSV.'],
             ['name' => 'Export Procedures',        'key' => 'workflow.procedures.export',   'module' => 'workflow',   'description' => 'Export workflow procedure records to XLSX or CSV.'],
             ['name' => 'Export Inventory',         'key' => 'inventory.export',             'module' => 'inventory',  'description' => 'Export inventory records to XLSX or CSV.'],
@@ -505,6 +516,8 @@ class CoreSeeder extends Seeder
         $readPermissions = Permission::whereIn('key', [
             'contacts.read',
             'employees.read',
+            'attendance.read',
+            'planned_schedules.read',
             'workflow.tickets.read',
             'workflow.procedures.read',
         ])->pluck('id');

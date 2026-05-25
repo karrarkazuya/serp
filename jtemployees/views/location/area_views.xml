@@ -1,0 +1,95 @@
+<odoo>
+    <!-- explicit list view definition -->
+    <record model="ir.ui.view" id="jtemployees_location_areas_list">
+      <field name="name">Location areas</field>
+      <field name="model">jtemployees.location.areas</field>
+      <field name="type">list</field>
+      <field name="arch" type="xml">
+        <list>
+          <field name="name"/>
+          <field name="employee_id"/>
+          <field name="create_date"/>
+        </list>
+      </field>
+    </record>
+
+    <!-- explicit list view definition -->
+    <record id="jtemployees_location_areas_form" model="ir.ui.view">
+        <field name="name">jtemployees.location.areas.form</field>
+        <field name="model">jtemployees.location.areas</field>
+        <field name="arch" type="xml">
+            <form string="Create Location areas">
+                <sheet>
+                    <group>
+                        <field name="name"/>
+                        <field name="employee_id" invisible="True"/>
+                        
+
+                        <notebook>
+                            <page string="Map">
+                               <field name="map_url" widget="html" invisible="not id" />
+                            </page>
+
+                            <page string="Current check-in employees" groups="jtemployees.group_admin,jtemployees.group_hr_admin,jtemployees.group_hr_manager">
+                                <field name="checkin_employees_ids" readonly="True" />
+                            </page>
+
+                            <page string="Current check-out employees" groups="jtemployees.group_admin,jtemployees.group_hr_admin,jtemployees.group_hr_manager">
+                                <field name="checkout_employees_ids" readonly="True" />
+                            </page>
+
+                            <page string="Check-in logs" groups="jtemployees.group_admin,jtemployees.group_hr_admin,jtemployees.group_hr_manager">
+                                <field name="checkin_log_ids" readonly="True">
+                                    <list>
+                                        <field name="employee_id" readonly="True"/>
+                                        <field name="check_in" readonly="True"/>
+                                    </list>
+                                </field>
+                            </page>
+
+                            <page string="Check-out logs" groups="jtemployees.group_admin,jtemployees.group_hr_admin,jtemployees.group_hr_manager">
+                                <field name="checkout_log_ids" readonly="True">
+                                    <list>
+                                        <field name="employee_id" readonly="True"/>
+                                        <field name="check_out" readonly="True"/>
+                                    </list>
+                                </field>
+                            </page>
+
+                        </notebook>
+                    </group>
+                </sheet>
+
+                <chatter reload_on_post="True"/>
+            </form>
+        </field>
+    </record>
+
+    <record id="view_jtemployees_location_areas_search" model="ir.ui.view">
+        <field name="name">jtemployees.location.areas.search</field>
+        <field name="model">jtemployees.location.areas</field>
+        <field name="arch" type="xml">
+            <search string="Search Section">
+                <filter 
+                string="Active" 
+                name="not_deleted"
+                domain="[('deleted', '=', False)]"
+                />
+                <filter 
+                string="Deleted" 
+                name="deleted"
+                domain="[('deleted', '=', True)]"
+                />
+            </search>
+        </field>
+    </record>
+
+    <!-- actions opening views on models -->
+    <record model="ir.actions.act_window" id="jtemployees.action_location_area">
+        <field name="name">Location Areas</field>
+        <field name="res_model">jtemployees.location.areas</field>
+        <field name="view_mode">list,form</field>
+        <field name="context">{'search_default_not_deleted': 1, 'search_default_deleted': 0}</field>
+    </record>
+
+</odoo>

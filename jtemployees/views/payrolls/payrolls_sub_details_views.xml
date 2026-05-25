@@ -1,0 +1,27 @@
+<odoo>
+    <!-- explicit list view definition -->
+    <record model="ir.ui.view" id="jtemployees_payrolls_dsubs_list">
+      <field name="name">Payrolls Sub Details</field>
+      <field name="model">jtemployees.payrolls.dsubs</field>
+      <field name="type">list</field>
+      <field name="arch" type="xml">
+        <list>
+            <field name="id"/>
+            <field name="name"/>
+            <field name="date"/>
+            <field name="hours_readable"/>
+            <field name="amount"/>
+        </list>
+      </field>
+    </record>
+
+
+
+    <!-- actions opening views on models -->
+    <record model="ir.actions.act_window" id="jtemployees.action_payrolls_sub_details">
+        <field name="name">Payrolls Sub Details</field>
+        <field name="res_model">jtemployees.payrolls.dsubs</field>
+        <field name="view_mode">list</field>
+    </record>
+
+</odoo>

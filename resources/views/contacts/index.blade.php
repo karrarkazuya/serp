@@ -226,7 +226,8 @@
     <x-list :paginator="$contacts"
             :empty-text="__('contacts.no_contacts')"
             :selectable="true"
-            :total-count="$contacts->total()">
+            :total-count="$contacts->total()"
+            :can-export="auth()->user()->can('export', \App\Models\Contacts\Contact::class)">
         <x-slot:columns>
             <x-sortable-th column="name"    :label="__('contacts.name')"    class="px-4 py-2" :default="true" />
             <x-sortable-th column="email"   :label="__('contacts.email')"   class="px-3 py-2" />

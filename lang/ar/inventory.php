@@ -183,6 +183,8 @@ return [
     'late'              => 'متأخر',
     'to_process'        => 'للمعالجة',
     'to_replenish'      => 'للتزويد',
+    'waiting'           => 'بالانتظار',
+    'stock_lines'       => 'بنود المخزون',
 
     // Product type options
     'storable_product'    => 'منتج قابل للتخزين',

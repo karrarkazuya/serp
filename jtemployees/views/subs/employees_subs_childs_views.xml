@@ -1,0 +1,27 @@
+<odoo>
+  <data>
+    <!-- explicit list view definition -->
+    <record model="ir.ui.view" id="jtemployees_my_employees_childs_list">
+      <field name="name">Affected sub employees</field>
+      <field name="model">jtemployees.subs.childs</field>
+      <field name="type">list</field>
+      <field name="arch" type="xml">
+        <list>
+          <field name="employee_id"/>
+          <field name="resource_calendar_id"/>
+          <field name="has_location_checkin" />
+          <field name="location_area" />
+          <field name="location_area_checkout" />
+        </list>
+      </field>
+    </record>
+
+    <!-- actions opening views on models -->
+    <record model="ir.actions.act_window" id="jtemployees.action_my_employees_childs">
+        <field name="name">Affected sub employees</field>
+        <field name="res_model">jtemployees.subs.childs</field>
+        <field name="view_mode">list</field>
+    </record>
+
+  </data>
+</odoo>

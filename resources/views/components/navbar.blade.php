@@ -207,6 +207,42 @@
         </div>
         @endcan
 
+        {{-- Attendance dropdown --}}
+        @can('viewAny', \App\Models\Employees\Attendance::class)
+        <div x-data="{ open: false }" class="relative h-full shrink-0" @click.outside="open = false">
+            <button type="button"
+                    @click="open = !open"
+                    class="hidden sm:flex items-center h-full px-4 text-white/85 hover:text-white hover:bg-[#5c3d55] transition-colors text-sm font-semibold
+                           {{ request()->routeIs('employees.attendances.*', 'employees.leave-requests.*') ? 'bg-[#5c3d55]' : '' }}">
+                {{ __('employees.attendance_menu') }}
+                <svg class="ms-1 w-3.5 h-3.5 transition-transform" :class="open ? 'rotate-180' : ''" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
+                </svg>
+            </button>
+
+            <div x-show="open"
+                 x-transition:enter="transition ease-out duration-100"
+                 x-transition:enter-start="opacity-0 scale-95"
+                 x-transition:enter-end="opacity-100 scale-100"
+                 x-transition:leave="transition ease-in duration-75"
+                 x-transition:leave-start="opacity-100 scale-100"
+                 x-transition:leave-end="opacity-0 scale-95"
+                 class="absolute start-0 top-full w-56 bg-white rounded-b-lg shadow-xl border border-gray-200 z-50 py-1"
+                 style="display:none">
+                <a href="{{ route('employees.attendances.index') }}"
+                   class="block px-4 py-2.5 text-sm text-gray-800 hover:bg-gray-100 {{ request()->routeIs('employees.attendances.*') ? 'bg-gray-100 font-semibold' : '' }}">
+                    {{ __('employees.attendances_title') }}
+                </a>
+                <a href="#" onclick="event.preventDefault();"
+                   title="{{ __('employees.leave_requests_soon') }}"
+                   class="flex items-center justify-between px-4 py-2.5 text-sm text-gray-400 cursor-not-allowed">
+                    <span>{{ __('employees.leave_requests_menu') }}</span>
+                    <span class="text-[10px] uppercase tracking-wide text-purple-500 font-semibold">soon</span>
+                </a>
+            </div>
+        </div>
+        @endcan
+
         {{-- Configuration dropdown --}}
         @can('viewAny', \App\Models\Employees\Employee::class)
         <div x-data="{ open: false }" class="relative h-full shrink-0" @click.outside="open = false">

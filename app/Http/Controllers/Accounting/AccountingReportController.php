@@ -3,17 +3,13 @@
 namespace App\Http\Controllers\Accounting;
 
 use App\Http\Controllers\Controller;
-use App\Models\Accounting\AccountJournal;
-use App\Models\Accounting\AccountMove;
-use App\Models\Accounting\AccountMoveLine;
-use App\Services\Company\CompanyContextService;
+use App\Services\Accounting\AccountingReportService;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
 
 class AccountingReportController extends Controller
 {
     public function __construct(
-        private readonly CompanyContextService $companyContext,
+        private readonly AccountingReportService $reports,
     ) {}
 
     // ── General Ledger ──────────────────────────────────────────────────────
@@ -22,26 +18,15 @@ class AccountingReportController extends Controller
     {
         abort_unless(auth()->user()->hasPermission('accounting.read'), 403);
 
-        $activeCompanyIds = $this->companyContext->getActiveCompanyIds();
-        [$dateFrom, $dateTo, $accountId, $journalId] = $this->dateFilters($request);
+        $filters = $this->filters($request, [
+            'date_from', 'date_to', 'account_id', 'journal_id', 'partner_id',
+        ]);
+        $lines = $this->reports->generalLedger($filters)->paginate(100)->withQueryString();
 
-        $query = AccountMoveLine::query()
-            ->with(['account', 'journal', 'move'])
-            ->when(empty($activeCompanyIds), fn ($q) => $q->whereRaw('1 = 0'))
-            ->when(!empty($activeCompanyIds), fn ($q) => $q->whereIn('account_move_lines.company_id', $activeCompanyIds))
-            ->where('account_move_lines.state', 'posted')
-            ->when($dateFrom, fn ($q) => $q->where('account_move_lines.date', '>=', $dateFrom))
-            ->when($dateTo,   fn ($q) => $q->where('account_move_lines.date', '<=', $dateTo))
-            ->when($accountId, fn ($q) => $q->where('account_id', $accountId))
-            ->when($journalId, fn ($q) => $q->where('account_move_lines.journal_id', $journalId))
-            ->orderBy('account_move_lines.date')
-            ->orderBy('account_move_lines.id');
-
-        $lines = $query->paginate(100)->withQueryString();
-
-        return view('accounting.reports.general-ledger', compact(
-            'lines', 'dateFrom', 'dateTo', 'accountId', 'journalId'
-        ));
+        return view('accounting.reports.general-ledger', [
+            'lines'   => $lines,
+            'filters' => $filters,
+        ]);
     }
 
     // ── Trial Balance ───────────────────────────────────────────────────────
@@ -50,32 +35,17 @@ class AccountingReportController extends Controller
     {
         abort_unless(auth()->user()->hasPermission('accounting.read'), 403);
 
-        $activeCompanyIds = $this->companyContext->getActiveCompanyIds();
-        [$dateFrom, $dateTo] = $this->dateFilters($request);
+        $filters = $this->filters($request, [
+            'date_from', 'date_to', 'account_type', 'journal_id',
+        ]);
+        $rows = $this->reports->trialBalance($filters);
 
-        $rows = AccountMoveLine::query()
-            ->select(
-                'account_id',
-                DB::raw('SUM(debit) as total_debit'),
-                DB::raw('SUM(credit) as total_credit'),
-                DB::raw('SUM(debit) - SUM(credit) as balance')
-            )
-            ->with('account')
-            ->when(empty($activeCompanyIds), fn ($q) => $q->whereRaw('1 = 0'))
-            ->when(!empty($activeCompanyIds), fn ($q) => $q->whereIn('company_id', $activeCompanyIds))
-            ->where('state', 'posted')
-            ->when($dateFrom, fn ($q) => $q->where('date', '>=', $dateFrom))
-            ->when($dateTo,   fn ($q) => $q->where('date', '<=', $dateTo))
-            ->groupBy('account_id')
-            ->orderBy('account_id')
-            ->get();
-
-        $totalDebit  = $rows->sum('total_debit');
-        $totalCredit = $rows->sum('total_credit');
-
-        return view('accounting.reports.trial-balance', compact(
-            'rows', 'totalDebit', 'totalCredit', 'dateFrom', 'dateTo'
-        ));
+        return view('accounting.reports.trial-balance', [
+            'rows'         => $rows,
+            'totalDebit'   => (float) $rows->sum('total_debit'),
+            'totalCredit'  => (float) $rows->sum('total_credit'),
+            'filters'      => $filters,
+        ]);
     }
 
     // ── Profit & Loss ───────────────────────────────────────────────────────
@@ -84,22 +54,10 @@ class AccountingReportController extends Controller
     {
         abort_unless(auth()->user()->hasPermission('accounting.read'), 403);
 
-        $activeCompanyIds = $this->companyContext->getActiveCompanyIds();
-        [$dateFrom, $dateTo] = $this->dateFilters($request);
+        $filters = $this->filters($request, ['date_from', 'date_to', 'journal_id']);
+        $data    = $this->reports->profitAndLoss($filters);
 
-        $incomeTypes   = ['income', 'income_other'];
-        $expenseTypes  = ['expense', 'expense_depreciation', 'expense_direct_cost'];
-
-        $income  = $this->sumByAccountType($activeCompanyIds, $incomeTypes, $dateFrom, $dateTo);
-        $expense = $this->sumByAccountType($activeCompanyIds, $expenseTypes, $dateFrom, $dateTo);
-
-        $totalIncome  = $income->sum('net');
-        $totalExpense = $expense->sum('net');
-        $netProfit    = $totalIncome - $totalExpense;
-
-        return view('accounting.reports.profit-and-loss', compact(
-            'income', 'expense', 'totalIncome', 'totalExpense', 'netProfit', 'dateFrom', 'dateTo'
-        ));
+        return view('accounting.reports.profit-and-loss', array_merge($data, ['filters' => $filters]));
     }
 
     // ── Balance Sheet ───────────────────────────────────────────────────────
@@ -108,71 +66,22 @@ class AccountingReportController extends Controller
     {
         abort_unless(auth()->user()->hasPermission('accounting.read'), 403);
 
-        $activeCompanyIds = $this->companyContext->getActiveCompanyIds();
-        [$dateFrom, $dateTo] = $this->dateFilters($request);
+        $filters = $this->filters($request, ['date_to']);
+        $data    = $this->reports->balanceSheet($filters);
 
-        $assetTypes     = ['asset_receivable', 'asset_cash', 'asset_current', 'asset_non_current', 'asset_prepayments', 'asset_fixed'];
-        $liabilityTypes = ['liability_payable', 'liability_credit_card', 'liability_current', 'liability_non_current'];
-        $equityTypes    = ['equity', 'equity_unaffected'];
-
-        $assets      = $this->sumByAccountType($activeCompanyIds, $assetTypes, $dateFrom, $dateTo);
-        $liabilities = $this->sumByAccountType($activeCompanyIds, $liabilityTypes, $dateFrom, $dateTo);
-        $equity      = $this->sumByAccountType($activeCompanyIds, $equityTypes, $dateFrom, $dateTo);
-
-        // Also include current-year earnings (P&L)
-        $incomeTypes  = ['income', 'income_other'];
-        $expenseTypes = ['expense', 'expense_depreciation', 'expense_direct_cost'];
-        $income  = $this->sumByAccountType($activeCompanyIds, $incomeTypes, $dateFrom, $dateTo)->sum('net');
-        $expenses = $this->sumByAccountType($activeCompanyIds, $expenseTypes, $dateFrom, $dateTo)->sum('net');
-        $currentYearEarnings = $income - $expenses;
-
-        $totalAssets      = $assets->sum('net');
-        $totalLiabilities = $liabilities->sum('net');
-        $totalEquity      = $equity->sum('net') + $currentYearEarnings;
-
-        return view('accounting.reports.balance-sheet', compact(
-            'assets', 'liabilities', 'equity', 'currentYearEarnings',
-            'totalAssets', 'totalLiabilities', 'totalEquity', 'dateFrom', 'dateTo'
-        ));
+        return view('accounting.reports.balance-sheet', array_merge($data, ['filters' => $filters]));
     }
 
-    // ── Cash Flow Statement ─────────────────────────────────────────────────
+    // ── Cash Flow ───────────────────────────────────────────────────────────
 
     public function cashFlow(Request $request)
     {
         abort_unless(auth()->user()->hasPermission('accounting.read'), 403);
 
-        $activeCompanyIds = $this->companyContext->getActiveCompanyIds();
-        [$dateFrom, $dateTo] = $this->dateFilters($request);
+        $filters = $this->filters($request, ['date_from', 'date_to', 'journal_id']);
+        $data    = $this->reports->cashFlow($filters);
 
-        // Cash flow = movements in bank/cash accounts
-        $cashRows = AccountMoveLine::query()
-            ->select(
-                'account_move_lines.account_id',
-                'accounts.name as account_name',
-                'accounts.code as account_code',
-                DB::raw('SUM(account_move_lines.debit) as total_debit'),
-                DB::raw('SUM(account_move_lines.credit) as total_credit'),
-                DB::raw('SUM(account_move_lines.debit) - SUM(account_move_lines.credit) as net')
-            )
-            ->join('accounts', 'accounts.id', '=', 'account_move_lines.account_id')
-            ->when(empty($activeCompanyIds), fn ($q) => $q->whereRaw('1 = 0'))
-            ->when(!empty($activeCompanyIds), fn ($q) => $q->whereIn('account_move_lines.company_id', $activeCompanyIds))
-            ->where('account_move_lines.state', 'posted')
-            ->where('accounts.account_type', 'asset_cash')
-            ->when($dateFrom, fn ($q) => $q->where('account_move_lines.date', '>=', $dateFrom))
-            ->when($dateTo,   fn ($q) => $q->where('account_move_lines.date', '<=', $dateTo))
-            ->groupBy('account_move_lines.account_id', 'accounts.name', 'accounts.code')
-            ->orderBy('accounts.code')
-            ->get();
-
-        $totalInflow  = $cashRows->sum('total_debit');
-        $totalOutflow = $cashRows->sum('total_credit');
-        $netCashFlow  = $totalInflow - $totalOutflow;
-
-        return view('accounting.reports.cash-flow', compact(
-            'cashRows', 'totalInflow', 'totalOutflow', 'netCashFlow', 'dateFrom', 'dateTo'
-        ));
+        return view('accounting.reports.cash-flow', array_merge($data, ['filters' => $filters]));
     }
 
     // ── Tax Report ──────────────────────────────────────────────────────────
@@ -181,29 +90,13 @@ class AccountingReportController extends Controller
     {
         abort_unless(auth()->user()->hasPermission('accounting.read'), 403);
 
-        $activeCompanyIds = $this->companyContext->getActiveCompanyIds();
-        [$dateFrom, $dateTo] = $this->dateFilters($request);
+        $filters = $this->filters($request, ['date_from', 'date_to', 'tax_use']);
+        $rows    = $this->reports->taxReport($filters);
 
-        $rows = AccountMoveLine::query()
-            ->select(
-                'tax_line_id',
-                DB::raw('SUM(debit) as total_debit'),
-                DB::raw('SUM(credit) as total_credit'),
-                DB::raw('SUM(tax_base_amount) as total_base'),
-                DB::raw('SUM(debit) - SUM(credit) as net')
-            )
-            ->with('taxLine')
-            ->when(empty($activeCompanyIds), fn ($q) => $q->whereRaw('1 = 0'))
-            ->when(!empty($activeCompanyIds), fn ($q) => $q->whereIn('company_id', $activeCompanyIds))
-            ->where('state', 'posted')
-            ->whereNotNull('tax_line_id')
-            ->when($dateFrom, fn ($q) => $q->where('date', '>=', $dateFrom))
-            ->when($dateTo,   fn ($q) => $q->where('date', '<=', $dateTo))
-            ->groupBy('tax_line_id')
-            ->orderBy('tax_line_id')
-            ->get();
-
-        return view('accounting.reports.tax-report', compact('rows', 'dateFrom', 'dateTo'));
+        return view('accounting.reports.tax-report', [
+            'rows'    => $rows,
+            'filters' => $filters,
+        ]);
     }
 
     // ── Partner Ledger ──────────────────────────────────────────────────────
@@ -212,57 +105,50 @@ class AccountingReportController extends Controller
     {
         abort_unless(auth()->user()->hasPermission('accounting.read'), 403);
 
-        $activeCompanyIds = $this->companyContext->getActiveCompanyIds();
-        [$dateFrom, $dateTo, , , $partnerId] = $this->dateFilters($request);
+        $filters = $this->filters($request, [
+            'date_from', 'date_to', 'partner_id', 'account_id', 'partner_scope',
+        ]);
 
-        $rows = AccountMoveLine::query()
-            ->select(
-                'partner_id',
-                DB::raw('SUM(debit) as total_debit'),
-                DB::raw('SUM(credit) as total_credit'),
-                DB::raw('SUM(debit) - SUM(credit) as balance')
-            )
-            ->with('partner')
-            ->when(empty($activeCompanyIds), fn ($q) => $q->whereRaw('1 = 0'))
-            ->when(!empty($activeCompanyIds), fn ($q) => $q->whereIn('company_id', $activeCompanyIds))
-            ->where('state', 'posted')
-            ->whereNotNull('partner_id')
-            ->when($dateFrom,  fn ($q) => $q->where('date', '>=', $dateFrom))
-            ->when($dateTo,    fn ($q) => $q->where('date', '<=', $dateTo))
-            ->when($partnerId, fn ($q) => $q->where('partner_id', $partnerId))
-            ->groupBy('partner_id')
-            ->orderBy('partner_id')
-            ->get();
+        $scope = $filters['partner_scope'] ?? 'ar_ap';
+        if ($scope === 'receivable')      $filters['receivable_only'] = true;
+        elseif ($scope === 'payable')     $filters['payable_only']    = true;
+        elseif ($scope === 'ar_ap')       $filters['ar_ap_only']      = true;
+        // 'all' = no scope restriction
 
-        return view('accounting.reports.partner-ledger', compact('rows', 'dateFrom', 'dateTo', 'partnerId'));
+        $rows = $this->reports->partnerLedger($filters);
+
+        return view('accounting.reports.partner-ledger', [
+            'rows'    => $rows,
+            'filters' => $filters,
+        ]);
     }
 
-    // ── Aged Receivable ─────────────────────────────────────────────────────
+    // ── Aged Receivable / Payable ──────────────────────────────────────────
 
     public function agedReceivable(Request $request)
     {
         abort_unless(auth()->user()->hasPermission('accounting.read'), 403);
 
-        $activeCompanyIds = $this->companyContext->getActiveCompanyIds();
-        $asOf = $request->query('as_of', now()->toDateString());
+        $filters = $this->filters($request, ['as_of', 'partner_id']);
+        $rows    = $this->reports->agedReport($filters['as_of'], 'out_invoice', $filters['partner_id'] ?? null);
 
-        $rows = $this->agedReport($activeCompanyIds, $asOf, 'out_invoice');
-
-        return view('accounting.reports.aged-receivable', compact('rows', 'asOf'));
+        return view('accounting.reports.aged-receivable', [
+            'rows'    => $rows,
+            'filters' => $filters,
+        ]);
     }
-
-    // ── Aged Payable ────────────────────────────────────────────────────────
 
     public function agedPayable(Request $request)
     {
         abort_unless(auth()->user()->hasPermission('accounting.read'), 403);
 
-        $activeCompanyIds = $this->companyContext->getActiveCompanyIds();
-        $asOf = $request->query('as_of', now()->toDateString());
+        $filters = $this->filters($request, ['as_of', 'partner_id']);
+        $rows    = $this->reports->agedReport($filters['as_of'], 'in_invoice', $filters['partner_id'] ?? null);
 
-        $rows = $this->agedReport($activeCompanyIds, $asOf, 'in_invoice');
-
-        return view('accounting.reports.aged-payable', compact('rows', 'asOf'));
+        return view('accounting.reports.aged-payable', [
+            'rows'    => $rows,
+            'filters' => $filters,
+        ]);
     }
 
     // ── Journal Audit ───────────────────────────────────────────────────────
@@ -271,22 +157,15 @@ class AccountingReportController extends Controller
     {
         abort_unless(auth()->user()->hasPermission('accounting.read'), 403);
 
-        $activeCompanyIds = $this->companyContext->getActiveCompanyIds();
-        [$dateFrom, $dateTo, , $journalId] = $this->dateFilters($request);
+        $filters = $this->filters($request, [
+            'date_from', 'date_to', 'journal_id', 'partner_id', 'state', 'move_type',
+        ]);
+        $moves = $this->reports->journalAudit($filters)->paginate(100)->withQueryString();
 
-        $moves = AccountMove::query()
-            ->with(['journal', 'partner', 'company'])
-            ->when(empty($activeCompanyIds), fn ($q) => $q->whereRaw('1 = 0'))
-            ->when(!empty($activeCompanyIds), fn ($q) => $q->whereIn('company_id', $activeCompanyIds))
-            ->where('state', 'posted')
-            ->when($dateFrom,  fn ($q) => $q->where('date', '>=', $dateFrom))
-            ->when($dateTo,    fn ($q) => $q->where('date', '<=', $dateTo))
-            ->when($journalId, fn ($q) => $q->where('journal_id', $journalId))
-            ->orderBy('date')
-            ->orderBy('name')
-            ->paginate(100)->withQueryString();
-
-        return view('accounting.reports.journal-audit', compact('moves', 'dateFrom', 'dateTo', 'journalId'));
+        return view('accounting.reports.journal-audit', [
+            'moves'   => $moves,
+            'filters' => $filters,
+        ]);
     }
 
     // ── Bank Reconciliation ─────────────────────────────────────────────────
@@ -295,37 +174,19 @@ class AccountingReportController extends Controller
     {
         abort_unless(auth()->user()->hasPermission('accounting.read'), 403);
 
-        $activeCompanyIds = $this->companyContext->getActiveCompanyIds();
-
-        $bankJournals = AccountJournal::query()
-            ->when(empty($activeCompanyIds), fn ($q) => $q->whereRaw('1 = 0'))
-            ->when(!empty($activeCompanyIds), fn ($q) => $q->whereIn('company_id', $activeCompanyIds))
-            ->whereIn('type', ['bank', 'cash'])
-            ->where('active', true)
-            ->orderBy('name')
-            ->get();
-
-        $journalId = $request->query('journal_id');
-        [$dateFrom, $dateTo] = $this->dateFilters($request);
+        $filters = $this->filters($request, ['date_from', 'date_to', 'journal_id']);
+        $data    = $this->reports->bankReconciliation($filters);
 
         $lines = collect();
-        if ($journalId) {
-            $lines = AccountMoveLine::query()
-                ->with(['move', 'account'])
-                ->when(empty($activeCompanyIds), fn ($q) => $q->whereRaw('1 = 0'))
-                ->when(!empty($activeCompanyIds), fn ($q) => $q->whereIn('account_move_lines.company_id', $activeCompanyIds))
-                ->where('account_move_lines.journal_id', $journalId)
-                ->where('account_move_lines.state', 'posted')
-                ->when($dateFrom, fn ($q) => $q->where('account_move_lines.date', '>=', $dateFrom))
-                ->when($dateTo,   fn ($q) => $q->where('account_move_lines.date', '<=', $dateTo))
-                ->orderBy('account_move_lines.date')
-                ->orderBy('account_move_lines.id')
-                ->paginate(100)->withQueryString();
+        if ($data['lines_query']) {
+            $lines = $data['lines_query']->paginate(100)->withQueryString();
         }
 
-        return view('accounting.reports.bank-reconciliation', compact(
-            'bankJournals', 'journalId', 'lines', 'dateFrom', 'dateTo'
-        ));
+        return view('accounting.reports.bank-reconciliation', [
+            'bankJournals' => $data['bank_journals'],
+            'lines'        => $lines,
+            'filters'      => $filters,
+        ]);
     }
 
     // ── Executive Summary ───────────────────────────────────────────────────
@@ -334,164 +195,89 @@ class AccountingReportController extends Controller
     {
         abort_unless(auth()->user()->hasPermission('accounting.read'), 403);
 
-        $activeCompanyIds = $this->companyContext->getActiveCompanyIds();
-        [$dateFrom, $dateTo] = $this->dateFilters($request);
+        $filters = $this->filters($request, ['date_from', 'date_to']);
+        $data    = $this->reports->executiveSummary($filters);
 
-        $incomeTypes  = ['income', 'income_other'];
-        $expenseTypes = ['expense', 'expense_depreciation', 'expense_direct_cost'];
-        $assetTypes   = ['asset_receivable', 'asset_cash', 'asset_current', 'asset_non_current', 'asset_prepayments', 'asset_fixed'];
-        $liabTypes    = ['liability_payable', 'liability_credit_card', 'liability_current', 'liability_non_current'];
-
-        $totalIncome    = $this->sumByAccountType($activeCompanyIds, $incomeTypes, $dateFrom, $dateTo)->sum('net');
-        $totalExpense   = $this->sumByAccountType($activeCompanyIds, $expenseTypes, $dateFrom, $dateTo)->sum('net');
-        $netProfit      = $totalIncome - $totalExpense;
-        $totalAssets    = $this->sumByAccountType($activeCompanyIds, $assetTypes, null, $dateTo)->sum('net');
-        $totalLiabs     = $this->sumByAccountType($activeCompanyIds, $liabTypes, null, $dateTo)->sum('net');
-
-        $draftCount   = AccountMove::query()
-            ->when(empty($activeCompanyIds), fn ($q) => $q->whereRaw('1 = 0'))
-            ->when(!empty($activeCompanyIds), fn ($q) => $q->whereIn('company_id', $activeCompanyIds))
-            ->where('state', 'draft')->count();
-
-        $overdueCount = AccountMove::query()
-            ->when(empty($activeCompanyIds), fn ($q) => $q->whereRaw('1 = 0'))
-            ->when(!empty($activeCompanyIds), fn ($q) => $q->whereIn('company_id', $activeCompanyIds))
-            ->whereIn('move_type', ['out_invoice', 'in_invoice'])
-            ->where('state', 'posted')
-            ->whereIn('payment_state', ['not_paid', 'partial'])
-            ->where('invoice_date_due', '<', now()->toDateString())
-            ->count();
-
-        return view('accounting.reports.executive-summary', compact(
-            'totalIncome', 'totalExpense', 'netProfit',
-            'totalAssets', 'totalLiabs', 'draftCount', 'overdueCount',
-            'dateFrom', 'dateTo'
-        ));
+        return view('accounting.reports.executive-summary', array_merge($data, ['filters' => $filters]));
     }
 
-    // ── Private Helpers ─────────────────────────────────────────────────────
-
-    private function dateFilters(Request $request): array
-    {
-        $dateFrom  = $request->query('date_from');
-        $dateTo    = $request->query('date_to');
-        $accountId = $request->query('account_id');
-        $journalId = $request->query('journal_id');
-        $partnerId = $request->query('partner_id');
-        return [$dateFrom, $dateTo, $accountId, $journalId, $partnerId];
-    }
-
-    private function sumByAccountType(array $companyIds, array $types, ?string $dateFrom, ?string $dateTo): \Illuminate\Support\Collection
-    {
-        return AccountMoveLine::query()
-            ->select(
-                'account_move_lines.account_id',
-                'accounts.code as account_code',
-                'accounts.name as account_name',
-                'accounts.account_type',
-                DB::raw('SUM(account_move_lines.debit) as total_debit'),
-                DB::raw('SUM(account_move_lines.credit) as total_credit'),
-                DB::raw('SUM(account_move_lines.debit) - SUM(account_move_lines.credit) as net')
-            )
-            ->join('accounts', 'accounts.id', '=', 'account_move_lines.account_id')
-            ->when(empty($companyIds), fn ($q) => $q->whereRaw('1 = 0'))
-            ->when(!empty($companyIds), fn ($q) => $q->whereIn('account_move_lines.company_id', $companyIds))
-            ->where('account_move_lines.state', 'posted')
-            ->whereIn('accounts.account_type', $types)
-            ->when($dateFrom, fn ($q) => $q->where('account_move_lines.date', '>=', $dateFrom))
-            ->when($dateTo,   fn ($q) => $q->where('account_move_lines.date', '<=', $dateTo))
-            ->groupBy('account_move_lines.account_id', 'accounts.code', 'accounts.name', 'accounts.account_type')
-            ->orderBy('accounts.code')
-            ->get();
-    }
+    // ── Shared filter normalization ─────────────────────────────────────────
 
     /**
-     * D1 / Odoo parity: bucket by per-line `date_maturity` and compute the
-     * actual outstanding residual (line.balance - matched_amount), not the
-     * move header's gross `amount_total`. Multi-installment invoices have N
-     * receivable/payable lines, each with its own due date — the aged report
-     * MUST bucket each installment separately. Without this, a "30% now,
-     * 70% in 60 days" invoice reports the full 100% in the 60-day bucket
-     * even after the 30% leg has been paid.
-     *
-     * Lines with no `date_maturity` (legacy single-counterpart invoices, or
-     * direct journal entries that happened to use a receivable/payable
-     * account) fall back to their own `date` for bucketing.
+     * Read and validate report filters from the request. Returns a normalised
+     * array. Unknown keys are dropped. Date strings that don't parse are
+     * dropped. Scoped IDs that don't belong to the active companies are
+     * dropped so users can't filter on out-of-scope partner/journal/account
+     * via query manipulation.
      */
-    private function agedReport(array $companyIds, string $asOf, string $moveType): \Illuminate\Support\Collection
+    private function filters(Request $request, array $keys): array
     {
-        $internalType = $moveType === 'out_invoice' ? 'receivable' : 'payable';
+        $out = [];
 
-        $lines = AccountMoveLine::query()
-            ->with(['move', 'account', 'partner', 'matchedDebits', 'matchedCredits'])
-            ->whereHas('account', fn ($q) => $q->where('internal_type', $internalType))
-            ->whereHas('move', fn ($q) => $q->where('move_type', $moveType)->where('state', '!=', 'cancelled'))
-            ->when(empty($companyIds), fn ($q) => $q->whereRaw('1 = 0'))
-            ->when(!empty($companyIds), fn ($q) => $q->whereIn('company_id', $companyIds))
-            ->where('state', 'posted')
-            ->whereNotNull('partner_id')
-            ->get();
-
-        $asOfDate = now()->parse($asOf);
-
-        // D1 (Odoo parity): assign installment_number (1-based) per move so the
-        // report can show "2/3" next to the invoice number. Sort within each
-        // move by date_maturity ASC then sequence, mirroring the order used in
-        // documentCounterpartLines().
-        $installmentMeta = [];
-        foreach ($lines->groupBy('move_id') as $moveId => $moveLines) {
-            $sorted = $moveLines->sortBy([
-                fn ($a, $b) => ($a->date_maturity?->timestamp ?? 0) <=> ($b->date_maturity?->timestamp ?? 0),
-                fn ($a, $b) => $a->sequence <=> $b->sequence,
-            ])->values();
-            $total = $sorted->count();
-            foreach ($sorted as $idx => $line) {
-                $installmentMeta[$line->id] = ['number' => $idx + 1, 'total' => $total];
+        // Date-range preset overrides date_from/date_to when set.
+        $preset = $request->query('preset');
+        if (in_array('date_from', $keys, true) || in_array('date_to', $keys, true)) {
+            if ($preset && $resolved = $this->reports->resolvePreset($preset)) {
+                $out['date_from'] = $resolved[0];
+                $out['date_to']   = $resolved[1];
+                $out['preset']    = $preset;
+            } else {
+                $range = $this->reports->parseDateRange($request->query('date_from'), $request->query('date_to'));
+                if (in_array('date_from', $keys, true)) $out['date_from'] = $range['date_from'];
+                if (in_array('date_to',   $keys, true)) $out['date_to']   = $range['date_to'];
             }
         }
 
-        return $lines
-            ->map(function (AccountMoveLine $line) use ($asOfDate, $installmentMeta) {
-                $matched  = (float) $line->matchedDebits->sum('amount') + (float) $line->matchedCredits->sum('amount');
-                $balance  = (float) $line->debit - (float) $line->credit;
-                $residual = round(abs($balance) - $matched, 2);
+        if (in_array('as_of', $keys, true)) {
+            $out['as_of'] = $this->reports->parseDate($request->query('as_of')) ?? now()->toDateString();
+        }
 
-                // Use date_maturity when set (multi-installment invoices via
-                // splitGrandTotalAcrossPaymentTerm); fall back to line.date
-                // for legacy single-counterpart rows.
-                $dueDate = $line->date_maturity ?? $line->date;
+        if (in_array('account_id', $keys, true)) {
+            $out['account_id'] = $this->reports->validateScopedId($request->query('account_id'), 'accounts');
+        }
+        if (in_array('journal_id', $keys, true)) {
+            $out['journal_id'] = $this->reports->validateScopedId($request->query('journal_id'), 'account_journals');
+        }
+        if (in_array('partner_id', $keys, true)) {
+            // Contacts can be global (company_id NULL) so we don't strictly
+            // scope by company here — the report's own company gate prevents
+            // data leak. We do still validate as integer.
+            $raw = $request->query('partner_id');
+            $out['partner_id'] = ($raw && ctype_digit((string) $raw)) ? (int) $raw : null;
+        }
 
-                $meta = $installmentMeta[$line->id] ?? ['number' => 1, 'total' => 1];
+        if (in_array('state', $keys, true)) {
+            $state = $request->query('state');
+            $out['state'] = in_array($state, ['draft', 'posted', 'cancelled'], true) ? $state : null;
+        }
 
-                return (object) [
-                    'move_id'            => $line->move_id,
-                    'line_id'            => $line->id,
-                    'name'               => $line->move?->name,
-                    'invoice_date'       => $line->move?->date,
-                    'invoice_date_due'   => $dueDate,
-                    'partner_id'         => $line->partner_id,
-                    'partner_name'       => $line->partner?->name,
-                    'residual'           => $residual,
-                    'days_overdue'       => max(0, (int) ($asOfDate->diffInDays($dueDate, false) * -1)),
-                    'installment_number' => $meta['number'],
-                    'total_installments' => $meta['total'],
-                ];
-            })
-            // Drop fully-paid installments (residual <= rounding floor).
-            ->filter(fn ($row) => $row->residual > 0.005)
-            // Aged report shows only items due on or before $asOf.
-            ->filter(fn ($row) => $row->invoice_date_due && $row->invoice_date_due <= $asOfDate)
-            ->map(function ($row) {
-                $row->bucket = match (true) {
-                    $row->days_overdue <= 0  => 'Current',
-                    $row->days_overdue <= 30 => '1–30',
-                    $row->days_overdue <= 60 => '31–60',
-                    $row->days_overdue <= 90 => '61–90',
-                    default                  => '90+',
-                };
-                return $row;
-            })
-            ->sortBy('invoice_date_due')
-            ->values();
+        if (in_array('move_type', $keys, true)) {
+            $moveType = $request->query('move_type');
+            $out['move_type'] = in_array($moveType, ['entry', 'out_invoice', 'in_invoice', 'out_refund', 'in_refund'], true) ? $moveType : null;
+        }
+
+        if (in_array('account_type', $keys, true)) {
+            $type = $request->query('account_type');
+            $valid = array_merge(
+                AccountingReportService::INCOME_TYPES,
+                AccountingReportService::EXPENSE_TYPES,
+                AccountingReportService::ASSET_TYPES,
+                AccountingReportService::LIAB_TYPES,
+                AccountingReportService::EQUITY_TYPES,
+            );
+            $out['account_type'] = in_array($type, $valid, true) ? $type : null;
+        }
+
+        if (in_array('tax_use', $keys, true)) {
+            $use = $request->query('tax_use');
+            $out['tax_use'] = in_array($use, ['sale', 'purchase', 'none'], true) ? $use : null;
+        }
+
+        if (in_array('partner_scope', $keys, true)) {
+            $scope = $request->query('partner_scope', 'ar_ap');
+            $out['partner_scope'] = in_array($scope, ['ar_ap', 'receivable', 'payable', 'all'], true) ? $scope : 'ar_ap';
+        }
+
+        return $out;
     }
 }

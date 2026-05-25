@@ -1,0 +1,673 @@
+<odoo>
+  <data>
+
+    <template id="dashboard_template" name="HR Profile Page">
+        <t t-name="hr_profile_ui">
+
+            <style>
+                /* Base Styles */
+                .container {
+                    background: #f8f9fa;
+                    padding: 20px;
+                    border-radius: 8px;
+                    width: 100%;
+                    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+                    box-sizing: border-box;
+                }
+                
+                .profile-card {
+                    background: #fff;
+                    border: 1px solid #e0e0e0;
+                    border-radius: 10px;
+                    padding: 25px;
+                    box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+                    transition: transform 0.2s ease, box-shadow 0.2s ease;
+                }
+                
+                .profile-card:hover {
+                    box-shadow: 0 6px 16px rgba(0,0,0,0.08);
+                }
+
+                /* Header */
+                .profile-header {
+                    display: flex;
+                    align-items: center;
+                    margin-bottom: 25px;
+                    padding-bottom: 20px;
+                    border-bottom: 1px solid #f0f0f0;
+                }
+                
+                .profile-header img {
+                    width: 100px;
+                    height: 100px;
+                    border-radius: 50%;
+                    object-fit: cover;
+                    margin-right: 25px;
+                    border: 3px solid #e9ecef;
+                    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+                }
+                
+                .profile-header-content h1 {
+                    font-size: 24px;
+                    margin: 0 0 5px 0;
+                    color: #2c3e50;
+                    font-weight: 600;
+                }
+                
+                .profile-header-content h2 {
+                    font-size: 16px;
+                    margin: 0 0 10px 0;
+                    color: #6c757d;
+                    font-weight: normal;
+                }
+                
+                .profile-header .meta {
+                    font-size: 14px;
+                    color: #7f8c8d;
+                    background: #f8f9fa;
+                    padding: 6px 12px;
+                    border-radius: 4px;
+                    display: inline-block;
+                }
+
+                /* Sections */
+                .section {
+                    margin-top: 25px;
+                }
+                
+                .section h3, .section h4 {
+                    font-size: 18px;
+                    margin-bottom: 15px;
+                    border-bottom: 2px solid #3498db;
+                    padding-bottom: 8px;
+                    color: #2c3e50;
+                    font-weight: 600;
+                }
+                
+                .section h4 {
+                    font-size: 16px;
+                    border-bottom: 1px solid #bdc3c7;
+                    padding-bottom: 6px;
+                }
+
+                /* Table */
+                table {
+                    width: 100%;
+                    border-collapse: collapse;
+                    margin-bottom: 15px;
+                    border-radius: 6px;
+                    overflow: hidden;
+                    box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+                }
+                
+                table th, table td {
+                    border: 1px solid #e5e5e5;
+                    padding: 10px 12px;
+                    font-size: 14px;
+                }
+                
+                table th {
+                    background: #3498db;
+                    color: white;
+                    text-align: left;
+                    font-weight: 600;
+                }
+                
+                td.label {
+                    width: 200px;
+                    font-weight: 600;
+                    background: #f8f9fa;
+                    color: #495057;
+                }
+                
+                td.value {
+                    color: #2c3e50;
+                }
+                
+                .text-center { text-align: center; }
+                .text-end { text-align: right; }
+
+                .flex-container {
+                    display: flex;
+                    gap: 20px;
+                }
+
+                hr {
+                    margin-top: 2em;
+                    margin-bottom: 2em;
+                    border: 0;
+                    border-top: 1px solid #e0e0e0;
+                }
+
+                .date {
+                    color: #7f8c8d;
+                    font-size: 14px;
+                    font-style: italic;
+                }
+
+                .image {
+                    width: 100%;
+                    max-width: 400px;
+                    border-radius: 6px;
+                    margin-bottom: 15px;
+                    box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+                }
+
+                .text-lg {
+                    font-size: 20px;
+                    font-weight: 600;
+                    color: #2c3e50;
+                    margin-bottom: 10px;
+                }
+                
+                .announcement-item {
+                    background: #f8f9fa;
+                    border-radius: 8px;
+                    padding: 15px;
+                    margin-bottom: 20px;
+                    border-left: 4px solid #3498db;
+                }
+                
+                .announcement-item:last-child {
+                    margin-bottom: 0;
+                }
+                
+                .badge {
+                    display: inline-block;
+                    padding: 4px 8px;
+                    background: #e74c3c;
+                    color: white;
+                    border-radius: 4px;
+                    font-size: 12px;
+                    font-weight: 600;
+                    margin-left: 8px;
+                }
+                
+                /* Responsive Design */
+                @media (max-width: 1024px) {
+                    .flex-container {
+                        flex-direction: column;
+                    }
+                    
+                    .container {
+                        padding: 15px;
+                    }
+                    
+                    .profile-card {
+                        padding: 20px;
+                    }
+                }
+                
+                @media (max-width: 768px) {
+                    .profile-header {
+                        flex-direction: column;
+                        text-align: center;
+                    }
+                    
+                    .profile-header img {
+                        margin-right: 0;
+                        margin-bottom: 15px;
+                    }
+                    
+                    table {
+                        display: block;
+                        overflow-x: auto;
+                    }
+                    
+                    td.label {
+                        width: 150px;
+                    }
+                    
+                    .container {
+                        padding: 10px;
+                    }
+                    
+                    .profile-card {
+                        padding: 15px;
+                    }
+                }
+                
+                @media (max-width: 480px) {
+                    .profile-header img {
+                        width: 80px;
+                        height: 80px;
+                    }
+                    
+                    .profile-header-content h1 {
+                        font-size: 20px;
+                    }
+                    
+                    .section h3 {
+                        font-size: 16px;
+                    }
+                    
+                    table th, table td {
+                        padding: 8px 10px;
+                        font-size: 13px;
+                    }
+                    
+                    .text-lg {
+                        font-size: 18px;
+                    }
+                }
+                
+                /* Animation */
+                @keyframes fadeIn {
+                    from { opacity: 0; transform: translateY(10px); }
+                    to { opacity: 1; transform: translateY(0); }
+                }
+                
+                .profile-card {
+                    animation: fadeIn 0.5s ease-out;
+                }
+                
+                .announcement-item {
+                    animation: fadeIn 0.5s ease-out;
+                    animation-fill-mode: both;
+                }
+                
+                .announcement-item:nth-child(1) { animation-delay: 0.1s; }
+                .announcement-item:nth-child(2) { animation-delay: 0.2s; }
+                .announcement-item:nth-child(3) { animation-delay: 0.3s; }
+                .announcement-item:nth-child(4) { animation-delay: 0.4s; }
+                .announcement-item:nth-child(5) { animation-delay: 0.5s; }
+            </style>
+
+            <div class="flex-container">
+                <div class="container">
+                    <div class="profile-card" t-if="result">
+
+                        <!-- Header -->
+                        <div class="profile-header">
+                            <img t-att-src="result['image'] if result.get('image') else '/web/static/img/placeholder.png'"/>
+                            <div class="profile-header-content">
+                                <h1><t t-esc="result.get('full_name') or result.get('name')"/></h1>
+                                <h2>
+                                    <t t-esc="result.get('title') or ''"/>
+                                    <t t-if="result.get('position')"> – <t t-esc="result.get('position')"/></t>
+                                </h2>
+                                <div class="meta">Family Name: <t t-esc="result.get('family_name') or '—'"/></div>
+                            </div>
+                        </div>
+
+                        <!-- Employee Info -->
+                        <div class="section">
+                            <h3>Employee Information</h3>
+                            <table>
+                                <tr><td class="label">Employee ID</td><td class="value"><t t-esc="result.get('id')"/></td></tr>
+                                <tr><td class="label">Barcode</td><td class="value"><t t-esc="result.get('barcode') or '—'"/></td></tr>
+                                <tr><td class="label">PIN</td><td class="value"><t t-esc="result.get('pin') or '—'"/></td></tr>
+                                <tr><td class="label">Department</td><td class="value"><t t-esc="result['department'][0]['name'] if result.get('department') else '—'"/></td></tr>
+                                <tr>
+                                    <td class="label">Manager</td>
+                                    <td class="value">
+                                        <span t-esc="result['parent'][0]['name'] if result.get('parent') else '—'"/>
+                                        <t t-if="result.get('parent')"> (<t t-esc="result['parent'][0]['job_title']"/>)</t>
+                                    </td>
+                                </tr>
+                            </table>
+                        </div>
+
+                        <!-- Allocations -->
+                        <div class="section">
+                            <h3>Allocations</h3>
+                            <table>
+                                <tr><td class="label">Leave Days</td><td class="value"><t t-esc="result['current_allocations']['leave_days']"/></td></tr>
+                                <tr><td class="label">Timeoffs</td><td class="value"><t t-esc="result['current_allocations']['timeoffs']"/></td></tr>
+                            </table>
+                        </div>
+
+                        <!-- Extra Salary Allocations -->
+                        <div class="section" t-if="result.get('extra_salary_allocations')">
+                            <h3>Extra Salary Allocations</h3>
+                            <table>
+                                <thead>
+                                    <tr><th>Name</th><th class="text-end">Amount</th></tr>
+                                </thead>
+                                <tbody>
+                                    <t t-foreach="result.get('extra_salary_allocations')" t-as="alloc">
+                                        <tr>
+                                            <td><t t-esc="alloc.get('name')"/></td>
+                                            <td class="text-end"><t t-esc="alloc.get('amount')"/></td>
+                                        </tr>
+                                    </t>
+                                </tbody>
+                            </table>
+                        </div>
+
+                        <!-- Attendance Info -->
+                        <div class="section" t-if="result.get('attendance_info')">
+                            <h3>Attendance Info</h3>
+                            <table>
+                                <tr><td class="label">Overtime Hours</td><td class="value"><t t-esc="result['attendance_info']['over_time_hours']"/></td></tr>
+                                <tr><td class="label">Time Off Requested</td><td class="value"><t t-esc="result['attendance_info']['time_off_requested']"/></td></tr>
+                                <tr><td class="label">Leave Days Requested</td><td class="value"><t t-esc="result['attendance_info']['leave_days_requested']"/></td></tr>
+                                <tr><td class="label">Hours per Day</td><td class="value"><t t-esc="result['attendance_info']['hour_per_day']"/></td></tr>
+                                <tr><td class="label">Total Shortage Hours</td><td class="value"><t t-esc="result['attendance_info']['shortage_hours']"/></td></tr>
+                            </table>
+
+                            <!-- Shortage Details -->
+                            <div class="section">
+                                <h4>Shortage Details</h4>
+                                <table>
+                                    <thead>
+                                        <tr><th>Date</th><th class="text-center">Hours</th><th>Reason</th></tr>
+                                    </thead>
+                                    <tbody>
+                                        <t t-foreach="result['attendance_info']['shortages_details']" t-as="short">
+                                            <tr>
+                                                <td><t t-esc="short['date']"/></td>
+                                                <td class="text-center"><t t-esc="short['hours']"/></td>
+                                                <td><t t-esc="short['reason']"/></td>
+                                            </tr>
+                                        </t>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+
+                    </div>
+                </div>
+
+                <div class="container">
+                    <div class="profile-card">
+
+                        <!-- Announcements Wall -->
+                        <div class="section">
+                            <h3>Announcements Wall</h3>
+                            <div>
+                                <t t-foreach="wall_result" t-as="wall_result_item">
+                                    <div class="announcement-item">
+                                        <img class="image" t-if="wall_result_item['image']" t-att-src="wall_result_item['image'] if wall_result_item.get('image') else '/web/static/img/placeholder.png'"/>
+                                        <p class="text-lg">
+                                            <t t-esc="wall_result_item.get('name')"/>
+                                            <t t-if="wall_result_item.get('is_important')"><span class="badge">Important</span></t>
+                                        </p>
+                                        <p><t t-esc="wall_result_item.get('details')"/></p>
+                                        <p class="date"><t t-esc="wall_result_item.get('created_at')"/></p>
+                                    </div>
+                                </t>
+                            </div>
+                        </div>
+
+                    </div>
+                </div>
+            </div>
+        </t>
+    </template>
+
+
+
+    <template id="map_area_view">
+        <t t-call="web.html_container">
+            <t t-set="title">Location</t>
+            <t t-esc="0"/>
+            
+            <!-- Leaflet CSS -->
+            <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+            <link rel="stylesheet" href="https://unpkg.com/leaflet-path-drag@1.2.0/dist/L.Path.Drag.css" />
+            
+            <style>
+                .button-container {
+                    margin-top: 10px;
+                }
+                .button-container button {
+                    margin-right: 10px;
+                }
+                #map {
+                    height: 400px;
+                    width: 100%;
+                }
+                .leaflet-editing-icon {
+                    border-radius: 50%;
+                    width: 10px !important;
+                    height: 10px !important;
+                    background: white;
+                    border: 2px solid #3388ff;
+                    margin-left: -5px !important;
+                    margin-top: -5px !important;
+                }
+            </style>
+            
+            <div>
+                <div id="map"></div>
+                <div style="display: flex; margin-top: 1em;">
+                    <button onclick="submitData()">
+                        Save Location
+                    </button>
+                </div>
+            </div>
+
+            <!-- Leaflet JS -->
+            <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+            <script src="https://unpkg.com/leaflet-editable@1.2.0/src/Leaflet.Editable.js"></script>
+
+            <script>
+                let bounds = {
+                    north: <t t-esc='north'/>,
+                    south: <t t-esc='south'/>,
+                    east:  <t t-esc='east'/>,
+                    west:  <t t-esc='west'/>
+                };
+
+                var modelId = parseInt("<t t-esc='record_id'/>");
+                
+                let map;
+                let rectangle;
+
+                function initMap() {
+                    var latitude = parseFloat("<t t-esc='north'/>");
+                    var longitude = parseFloat("<t t-esc='west'/>");
+                    
+                    // Initialize the map with editable option
+                    map = L.map('map', {
+                        editable: true
+                    }).setView([latitude, longitude], 15);
+
+                    // Add OpenStreetMap tile layer
+                    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                        attribution: 'OpenStreetMap contributors',
+                        maxZoom: 19
+                    }).addTo(map);
+
+                    if(bounds['north'] != 0){
+                        // Create rectangle with existing bounds
+                        var rectangleBounds = [
+                            [bounds.south, bounds.west],
+                            [bounds.north, bounds.east]
+                        ];
+                        
+                        rectangle = L.rectangle(rectangleBounds, {
+                            color: '#3388ff',
+                            weight: 2,
+                            fillOpacity: 0.2
+                        }).addTo(map);
+                        
+                        // Enable editing
+                        rectangle.enableEdit();
+                        
+                        // Fit map to rectangle bounds
+                        map.fitBounds(rectangleBounds);
+                    }
+
+                    // Try HTML5 geolocation to get the user's current position
+                    if (navigator.geolocation) {
+                        navigator.geolocation.getCurrentPosition(function(position) {
+                            var pos = [position.coords.latitude, position.coords.longitude];
+
+                            if(latitude == 0){
+                                // Set the map's center to the user's current location
+                                map.setView(pos, 15);
+                            }
+
+                            if(bounds['north'] == 0){
+                                const userLat = position.coords.latitude;
+                                const userLng = position.coords.longitude;
+                                
+                                bounds = {
+                                    north: userLat + 0.001,
+                                    south: userLat - 0.001,
+                                    east: userLng + 0.001,
+                                    west: userLng - 0.001
+                                };
+                                
+                                var rectangleBounds = [
+                                    [bounds.south, bounds.west],
+                                    [bounds.north, bounds.east]
+                                ];
+                                
+                                rectangle = L.rectangle(rectangleBounds, {
+                                    color: '#3388ff',
+                                    weight: 2,
+                                    fillOpacity: 0.2
+                                }).addTo(map);
+                                
+                                // Enable editing
+                                rectangle.enableEdit();
+                            }
+
+                        }, function() {
+                            if(latitude == 0){
+                                handleLocationError(true);
+                            }
+                        });
+                    } else {
+                        if(latitude == 0){
+                            handleLocationError(false);
+                        }
+                    }
+                }
+
+                function handleLocationError(browserHasGeolocation) {
+                    var message = browserHasGeolocation ?
+                        'Error: The Geolocation service failed.' :
+                        'Error: Your browser does not support geolocation.';
+                    console.error(message);
+                }
+
+                function submitData() {
+                    if (rectangle) {
+                        var rectBounds = rectangle.getBounds();
+                        bounds = {
+                            north: rectBounds.getNorth(),
+                            south: rectBounds.getSouth(),
+                            east: rectBounds.getEast(),
+                            west: rectBounds.getWest()
+                        };
+                    }
+                    
+                    const data = JSON.stringify(bounds, null, 2);
+
+                    const baseURL = '/jt_api/hr/area_update';
+                    const params = {
+                        record_id: modelId,
+                        data: data
+                    };
+
+                    try {
+                        const url = new URL(baseURL, window.location.origin);
+
+                            Object.keys(params).forEach(key => url.searchParams.append(key, params[key]));
+
+                            fetch(url)
+                                .then(response => response.text())
+                                .then(data => {
+                                    console.log('Data saved successfully');
+                                })
+                                .catch(error => {
+                                    console.error('Error fetching data:', error);
+                                    alert('Failed to fetch data');
+                                });
+                        } catch (error) {
+                            console.error('Error constructing URL:', error);
+                            alert('Failed to construct URL');
+                        }
+                    }
+
+                    document.addEventListener("DOMContentLoaded", function() {
+                        initMap();
+                    });
+                </script>
+        </t>
+    </template>
+
+
+    <template id="map_pin_view">
+        <t t-call="web.html_container">
+            <t t-set="title">Location</t>
+            <t t-esc="0"/>
+            
+            <!-- Leaflet CSS -->
+            <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+            <link rel="stylesheet" href="https://unpkg.com/leaflet-path-drag@1.2.0/dist/L.Path.Drag.css" />
+            
+            <style>
+                .button-container {
+                    margin-top: 10px;
+                }
+                .button-container button {
+                    margin-right: 10px;
+                }
+                #map {
+                    height: 400px;
+                    width: 100%;
+                }
+                .leaflet-editing-icon {
+                    border-radius: 50%;
+                    width: 10px !important;
+                    height: 10px !important;
+                    background: white;
+                    border: 2px solid #3388ff;
+                    margin-left: -5px !important;
+                    margin-top: -5px !important;
+                }
+            </style>
+            
+            <div>
+                <div id="map"></div>
+            </div>
+
+            <!-- Leaflet JS -->
+            <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+            <script src="https://unpkg.com/leaflet-editable@1.2.0/src/Leaflet.Editable.js"></script>
+
+            <script>
+           
+                let map;
+
+                function initMap() {
+                    var latitude = parseFloat("<t t-esc='latitude'/>");
+                    var longitude = parseFloat("<t t-esc='longitude'/>");
+                    
+                    // Initialize the map with editable option
+                    map = L.map('map', {
+                        editable: true
+                    }).setView([latitude, longitude], 15);
+
+                    // Add OpenStreetMap tile layer
+                    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                        attribution: 'OpenStreetMap contributors',
+                        maxZoom: 19
+                    }).addTo(map);
+
+                    L.marker([latitude, longitude], {
+                        draggable: false
+                    }).addTo(map);
+                }
+
+                function handleLocationError(browserHasGeolocation) {
+                    var message = browserHasGeolocation ?
+                        'Error: The Geolocation service failed.' :
+                        'Error: Your browser does not support geolocation.';
+                    console.error(message);
+                }
+
+                document.addEventListener("DOMContentLoaded", function() {
+                    initMap();
+                });
+            </script>
+        </t>
+    </template>
+
+  </data>
+</odoo>

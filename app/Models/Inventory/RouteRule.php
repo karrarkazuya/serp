@@ -30,4 +30,16 @@ class RouteRule extends Model
     public function creator(): BelongsTo       { return $this->belongsTo(User::class, 'created_by'); }
 
     public function scopeActive(Builder $q): Builder { return $q->where('active', true); }
+
+    // R5 / Rule 12: views must not render raw enum DB values via ucfirst.
+    public const ACTION_LABELS = [
+        'pull'      => 'Pull From',
+        'push'      => 'Push To',
+        'pull_push' => 'Pull & Push',
+    ];
+
+    public function getActionLabelAttribute(): string
+    {
+        return self::ACTION_LABELS[$this->action] ?? $this->action;
+    }
 }

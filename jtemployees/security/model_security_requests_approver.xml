@@ -1,0 +1,14 @@
+<!-- security/my_module_security.xml -->
+<odoo>
+
+    <!-- Security Groups -->
+    <record id="jtemployees.group_requests_approver" model="res.groups">
+        <field name="name">Requests Approver</field>
+        <field name="comment">For HR managers for requests approver</field>
+        <field name="category_id" ref="jtemployees.security_groups_category"/>
+        <field name="implied_ids" eval="[(4, ref('base.group_user'))]"/>
+    </record>
+
+   
+
+</odoo>

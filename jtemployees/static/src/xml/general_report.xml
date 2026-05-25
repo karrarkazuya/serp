@@ -1,0 +1,378 @@
+<templates>
+  <t t-name="jtemployees.general_report">
+
+    <style>
+      .gr-wrap {
+        max-width: 1400px;
+        margin: 32px auto;
+        background: #fff;
+        border: 1px solid #e5e7eb;
+        font-size: 13px;
+        color: #1f2937;
+      }
+
+      .gr-header {
+        padding: 20px;
+        border-bottom: 1px solid #e5e7eb;
+      }
+
+      .gr-header .title {
+        font-size: 16px;
+        font-weight: 700;
+      }
+
+      .gr-header .period {
+        margin-top: 6px;
+        display: inline-block;
+        padding: 4px 12px;
+        border: 1px solid #e5e7eb;
+        border-radius: 6px;
+        font-size: 12px;
+        background: #f9fafb;
+        color: #374151;
+      }
+
+      /* FILTER BAR */
+      .gr-filter {
+        padding: 16px 20px;
+        border-bottom: 1px solid #e5e7eb;
+        background: #fff;
+      }
+
+      .gr-filter-row {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        flex-wrap: wrap;
+        margin-bottom: 10px;
+      }
+
+      .gr-filter input[type="date"] {
+        height: 34px;
+        min-width: 140px;
+        padding: 4px 10px;
+        font-size: 13px;
+        border: 1px solid #d1d5db;
+        border-radius: 6px;
+        background: #fff;
+      }
+
+      .gr-filter .btn {
+        height: 34px;
+        padding: 0 14px;
+        font-size: 13px;
+        border-radius: 6px;
+        cursor: pointer;
+        border: 1px solid transparent;
+      }
+
+      .gr-filter .btn-primary {
+        background: #6b5ca5;
+        border-color: #6b5ca5;
+        color: #fff;
+      }
+
+      .gr-filter .btn-primary:hover { background: #5b4b90; }
+
+      .gr-filter .btn-outline {
+        background: #fff;
+        border: 1px solid #d1d5db;
+        color: #374151;
+      }
+
+      .gr-filter .btn-outline:hover { background: #f3f4f6; }
+
+      /* PILLS */
+      .pill-filter { min-width: 260px; }
+
+      .pill-box {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 6px;
+        min-height: 34px;
+        padding: 3px 8px;
+        border: 1px solid #d1d5db;
+        border-radius: 6px;
+        background: #fff;
+        cursor: pointer;
+      }
+
+      .pill {
+        background: #eef2ff;
+        color: #3730a3;
+        padding: 3px 8px;
+        font-size: 12px;
+        border-radius: 999px;
+        display: flex;
+        align-items: center;
+        gap: 4px;
+      }
+
+      .pill-remove {
+        cursor: pointer;
+        font-size: 12px;
+        color: #6366f1;
+        line-height: 1;
+      }
+
+      .pill-placeholder {
+        font-size: 13px;
+        color: #9ca3af;
+      }
+
+      /* COLUMN HEADER ROW */
+      .gr-col-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 8px 12px;
+        background: #fafafa;
+        border-bottom: 1px solid #e5e7eb;
+        font-weight: 600;
+        font-size: 12px;
+        color: #374151;
+      }
+
+      .gr-col-header .col-name { flex: 0 0 220px; }
+      .gr-col-nums {
+        display: flex;
+        gap: 0;
+      }
+
+      .gr-col-nums span {
+        width: 110px;
+        text-align: right;
+        padding-right: 8px;
+        white-space: nowrap;
+      }
+
+      /* EMPLOYEE ROW */
+      .gr-employee-details {
+        border-bottom: 1px solid #e5e7eb;
+      }
+
+      .gr-employee-summary {
+        cursor: pointer;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 8px 12px;
+        font-weight: 600;
+      }
+
+      .gr-employee-summary:hover { background: #f9fafb; }
+
+      .gr-employee-name {
+        flex: 0 0 220px;
+        font-size: 14px;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+      }
+
+      .gr-caret {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 16px;
+        height: 16px;
+        color: #6b7280;
+        transition: transform 0.2s ease;
+      }
+
+      details[open] > summary .gr-caret { transform: rotate(90deg); }
+
+      .gr-nums {
+        display: flex;
+        gap: 0;
+      }
+
+      .gr-nums span {
+        width: 110px;
+        text-align: right;
+        padding-right: 8px;
+        white-space: nowrap;
+        font-variant-numeric: tabular-nums;
+      }
+
+      /* DAY LINES TABLE */
+      .gr-lines-wrap { padding: 8px 16px 16px 32px; }
+
+      .gr-lines-table {
+        width: 100%;
+        border-collapse: separate;
+        border-spacing: 0;
+        font-size: 12px;
+      }
+
+      .gr-lines-table th {
+        background: #f3f4f6;
+        font-weight: 600;
+        padding: 6px 8px;
+        border-bottom: 1px solid #e5e7eb;
+        text-align: left;
+        color: #374151;
+      }
+
+      .gr-lines-table td {
+        padding: 5px 8px;
+        border-bottom: 1px solid #f1f5f9;
+        color: #4b5563;
+      }
+
+      .gr-lines-table tr:hover td { background: #f9fafb; }
+
+      /* GRAND TOTAL */
+      .gr-grand-total {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 10px 12px;
+        font-weight: 700;
+        border-top: 2px solid #9ca3af;
+        background: #f9fafb;
+      }
+
+      .gr-grand-total .col-name { flex: 0 0 220px; }
+
+      .center-text { text-align: center; }
+    </style>
+
+    <div class="gr-wrap">
+
+      <!-- HEADER -->
+      <div class="gr-header">
+        <div class="title"><t t-esc="state.report_name"/></div>
+        <div class="period">
+          <t t-esc="state.parameters.date_from"/> → <t t-esc="state.parameters.date_to"/>
+        </div>
+      </div>
+
+      <!-- FILTER BAR -->
+      <div class="gr-filter">
+
+        <div class="gr-filter-row">
+          <input type="date" t-model="state.date_from"/>
+          <input type="date" t-model="state.date_to"/>
+          <button class="btn btn-primary" t-on-click="applyFilters">Apply</button>
+          <button class="btn btn-outline" t-on-click="print_pdf">PDF</button>
+          <button class="btn btn-outline" t-on-click="print_xlsx">XLSX</button>
+        </div>
+
+        <!-- Employee pill filter -->
+        <div class="gr-filter-row">
+          <div class="pill-filter">
+            <div class="pill-box" t-on-click="openEmployeeSelector">
+              <t t-foreach="state.employees_data" t-as="emp" t-key="emp.id">
+                <span class="pill">
+                  <t t-esc="emp.title"/>
+                  <span class="pill-remove"
+                        t-on-click.stop="removeEmployee"
+                        t-att-data-id="emp.id">×</span>
+                </span>
+              </t>
+              <span t-if="!state.employees_data.length" class="pill-placeholder">
+                Employees (click to filter)
+              </span>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- COLUMN HEADERS -->
+      <div class="gr-col-header">
+        <span class="col-name">Employee</span>
+        <div class="gr-col-nums">
+          <span>Allocations</span>
+          <span>Bounces/Deductions</span>
+          <span>Shortage</span>
+          <span>Working Hours</span>
+          <span>Absence</span>
+          <span>Overtime Hours</span>
+          <span>Leave Days</span>
+        </div>
+      </div>
+
+      <!-- EMPLOYEE ROWS -->
+      <t t-foreach="state.data" t-as="emp" t-key="emp.employee_id">
+        <details class="gr-employee-details"
+                 t-on-toggle="toggleEmployee"
+                 t-att-data-employee-id="emp.employee_id">
+
+          <summary class="gr-employee-summary">
+            <span class="gr-employee-name">
+              <span class="gr-caret">▸</span>
+              <t t-esc="emp.employee_name"/>
+            </span>
+            <div class="gr-nums">
+              <span><t t-esc="emp.allocations"/></span>
+              <span><t t-esc="emp.bounces"/></span>
+              <span><t t-esc="emp.shortage"/></span>
+              <span><t t-esc="emp.total_hours"/></span>
+              <span><t t-esc="emp.absence"/></span>
+              <span><t t-esc="emp.overtime_hours"/></span>
+              <span><t t-esc="emp.leave_days"/></span>
+            </div>
+          </summary>
+
+          <div class="gr-lines-wrap">
+            <table class="gr-lines-table">
+              <thead>
+                <tr>
+                  <th>Day</th>
+                  <th>Worked From</th>
+                  <th>Worked To</th>
+                  <th>Working Schedule</th>
+                  <th>Working Schedule From</th>
+                  <th>Working Schedule To</th>
+                  <th>Total Shortage</th>
+                  <th>Leave Requests</th>
+                  <th>Timeoff Requests</th>
+                  <th>Overtime Requests</th>
+                </tr>
+              </thead>
+              <tbody>
+                <t t-if="emp.lines_loaded"
+                   t-foreach="emp.lines"
+                   t-as="line"
+                   t-key="line.line_key">
+                  <tr>
+                    <td><t t-esc="line.day"/></td>
+                    <td><t t-esc="line.worked_from"/></td>
+                    <td><t t-esc="line.worked_to"/></td>
+                    <td><t t-esc="line.working_schedule"/></td>
+                    <td><t t-esc="line.working_schedule_from"/></td>
+                    <td><t t-esc="line.working_schedule_to"/></td>
+                    <td><t t-esc="line.total_shortage"/></td>
+                    <td><t t-esc="line.leave_requests"/></td>
+                    <td><t t-esc="line.timeoff_requests"/></td>
+                    <td><t t-esc="line.overtime_requests"/></td>
+                  </tr>
+                </t>
+                <tr t-if="!emp.lines_loaded">
+                  <td colspan="8" class="center-text">Loading…</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </details>
+      </t>
+
+      <!-- GRAND TOTAL -->
+      <div class="gr-grand-total" t-if="state.totals">
+        <span class="col-name">GRAND TOTAL</span>
+        <div class="gr-nums">
+          <span><t t-esc="state.totals.allocations"/></span>
+          <span><t t-esc="state.totals.bounces"/></span>
+          <span><t t-esc="state.totals.shortage"/></span>
+          <span></span>
+          <span></span>
+          <span></span>
+        </div>
+      </div>
+
+    </div>
+  </t>
+</templates>

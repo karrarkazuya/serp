@@ -1,0 +1,42 @@
+<odoo>
+    <!-- explicit list view definition -->
+    <record model="ir.ui.view" id="jtemployees_grades_groups_list">
+      <field name="name">Levels</field>
+      <field name="model">jtemployees.grades.groups</field>
+      <field name="type">list</field>
+      <field name="arch" type="xml">
+        <list>
+          <field name="name"/>
+          <field name="grades"/>
+          <field name="department"/>
+        </list>
+      </field>
+    </record>
+
+    <!-- explicit list view definition -->
+    <record id="jtemployees_grades_groups_form" model="ir.ui.view">
+        <field name="name">jtemployees.grades.groups.form</field>
+        <field name="model">jtemployees.grades.groups</field>
+        <field name="arch" type="xml">
+            <form string="Create Grades Groups">
+                <sheet>
+                    <group>
+                        <field name="name"/>
+                        <field name="grades"/>
+                        <field name="department"/>
+                    </group>
+                </sheet>
+
+                <chatter reload_on_post="True"/>
+            </form>
+        </field>
+    </record>
+
+    <!-- actions opening views on models -->
+    <record model="ir.actions.act_window" id="jtemployees.action_grades_groups">
+        <field name="name">Levels</field>
+        <field name="res_model">jtemployees.grades.groups</field>
+        <field name="view_mode">list,form</field>
+    </record>
+
+</odoo>

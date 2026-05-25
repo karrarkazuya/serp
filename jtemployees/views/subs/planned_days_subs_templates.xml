@@ -1,0 +1,480 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<odoo>
+
+    <template id="sub_planned_working_schedules_gantt">
+        <t t-call="web.html_container">
+
+            <style>
+                /* ===== CORE TABLE ===== */
+                .planning-wrapper {
+                    overflow-x: auto;
+                    border: 1px solid #ddd;
+                    -webkit-overflow-scrolling: touch;
+                }
+
+                .planning-table {
+                    table-layout: fixed;
+                    min-width: 1200px;
+                    border-collapse: collapse;
+                    font-size: 12px;
+                }
+
+                .planning-table th,
+                .planning-table td {
+                    border: 1px solid #ccc;
+                    padding: 4px;
+                    text-align: center;
+                    vertical-align: middle;
+                }
+
+                /* ===== EMPLOYEE COLUMN ===== */
+                .employee-col {
+                    position: sticky;
+                    left: 0;
+                    z-index: 3;
+                    background: #f8f9fa;
+                    min-width: 180px;
+                    max-width: 180px;
+                    text-align: left;
+                    font-weight: 600;
+                    white-space: nowrap;
+                }
+
+                /* ===== DATE HEADER ===== */
+                .date-col {
+                    width: 160px;
+                    min-width: 240px;
+                    max-width: 240px;
+                    background: #fafafa;
+                    position: sticky;
+                    top: 0;
+                    z-index: 2;
+                }
+
+                thead th.employee-col {
+                    position: sticky;
+                    top: 0;
+                    z-index: 4;
+                }
+
+                /* ===== SELECT ===== */
+                select {
+                    width: 100%;
+                    min-width: 140px;
+                    font-size: 12px;
+                    padding: 4px;
+                }
+
+                select.planning-changed {
+                    background-color: #ffe5e5;
+                    border: 2px solid #dc3545;
+                }
+
+                .planning-marked {
+                    background-color: darkslateblue;
+                    color: #ffe5e5;
+                }
+
+                /* ===== MARK BUTTON ===== */
+                .planning-mark-btn {
+                    margin-right: 6px;
+                    padding: 4px 10px;
+                    font-size: 11px;
+                    font-weight: 600;
+                    border-radius: 6px;
+                    border: 1px solid #6c757d;
+                    background: linear-gradient(180deg, #f8f9fa, #e9ecef);
+                    color: #343a40;
+                    cursor: pointer;
+                    white-space: nowrap;
+                    transition: all 0.15s ease-in-out;
+                }
+
+                .planning-mark-btn:hover {
+                    background: linear-gradient(180deg, #e9ecef, #dee2e6);
+                    border-color: #495057;
+                }
+
+                /* When marked (same class your JS already applies) */
+                .planning-mark-btn.planning-marked {
+                    background: linear-gradient(180deg, #3f51b5, #2c387e);
+                    border-color: #2c387e;
+                    color: #ffffff;
+                }
+
+                /* Active press feedback */
+                .planning-mark-btn:active {
+                    transform: scale(0.97);
+                }
+
+                /* Mobile refinement */
+                @media (max-width: 768px) {
+                    .planning-mark-btn {
+                        padding: 3px 8px;
+                        font-size: 10px;
+                    }
+                }
+
+
+                /* ===== SAVE BAR ===== */
+                .planning-save-bar {
+                    position: sticky;
+                    top: 0;
+                    z-index: 10;
+                    background: #ffffff;
+                    padding: 10px;
+                    display: flex;
+                    justify-content: flex-end;
+                    gap: 10px;
+                }
+
+                /* ===== MOBILE ===== */
+                @media (max-width: 768px) {
+                    h2 {
+                        font-size: 18px;
+                    }
+
+                    .planning-table {
+                        font-size: 11px;
+                    }
+
+                    select {
+                        font-size: 11px;
+                        min-width: 120px;
+                    }
+
+                    .employee-col {
+                        min-width: 140px;
+                        max-width: 140px;
+                    }
+                }
+
+                .container-lg,
+                .container-md,
+                .container-sm,
+                .container,
+                .o_container_small {
+                    max-width: fit-content !important;
+                }
+            </style>
+
+            <!-- ===== SAVE BAR ===== -->
+            <div class="planning-save-bar">
+                <button
+                    type="button"
+                    class="btn btn-secondary"
+                    onclick="reloadPage()"
+                >
+                    Reset
+                </button>
+                <button
+                    id="scheme_button"
+                    type="button"
+                    class="btn btn-primary"
+                    onclick="confirmPlannedSchedule()"
+                    style="display: none;"
+                >
+                    Save scheme
+                </button>
+
+                <button
+                    id="changes_button"
+                    type="button"
+                    class="btn btn-primary"
+                    onclick="confirmSavePlanning()"
+                    style="display: none;"
+                >
+                    Save Changes
+                </button>
+            </div>
+
+            <div class="mt-4">
+
+                <div class="planning-wrapper">
+
+                    <table class="planning-table">
+
+                        <!-- HEADER -->
+                        <thead>
+                            <tr>
+                                <th class="employee-col">
+                                    Employee
+                                </th>
+
+                                <t t-foreach="days" t-as="header_day">
+                                    <th class="date-col">
+                                        <t t-esc="header_day"/>
+                                    </th>
+                                </t>
+                            </tr>
+                        </thead>
+
+                        <!-- BODY -->
+                        <tbody>
+                            <t t-foreach="employee_data" t-as="emp">
+                                <tr>
+
+                                    <td class="employee-col">
+                                        <t t-esc="emp['name']"/>
+                                    </td>
+
+                                    <t t-foreach="emp['days']" t-as="day">
+                                        <td>
+                                            <div style="display: flex;">
+                                                <button
+                                                    type="button"
+                                                    class="planning-mark-btn"
+                                                    t-if="day['id'] != 0"
+                                                    t-att-data-day-id="day['id']"
+                                                    t-att-data-employee-id="emp['id']"
+                                                    onclick="onPlanningMark(this)"
+                                                >
+                                                    Mark
+                                                </button>
+                                                <select
+                                                    t-if="day['id'] != 0"
+                                                    t-att-data-day-id="day['id']"
+                                                    t-att-data-employee-id="emp['id']"
+                                                    onchange="onPlanningChange(this)">
+                                                    <t t-foreach="day['available_schedules']" t-as="sched">
+                                                        <option
+                                                            t-att-value="sched['id']"
+                                                            t-att-selected="int(sched['id']) == int(day['working_schedule_id']) and 'selected' or None"
+                                                        >
+                                                            <t t-esc="sched['title']"/>
+                                                        </option>
+                                                    </t>
+                                                </select>
+                                            </div>
+                                        </td>
+                                    </t>
+
+                                </tr>
+                            </t>
+                        </tbody>
+
+                    </table>
+
+                </div>
+            </div>
+
+            <!-- ===== CONFIRMATION JS ===== -->
+            <script>
+                
+                let markedRowEmployeeId = null;
+                const markedCells = new Set();
+                const planningChanges = {};
+                // =============================
+                // CHANGE TRACKING (EXISTING)
+                // =============================
+                function onPlanningChange(el) {
+                    const dayId = el.dataset.dayId;
+                    const employeeId = el.dataset.employeeId;
+                    const scheduleId = el.value;
+
+                    el.classList.add('planning-changed');
+                    
+                    clearMarkedCells();
+
+                    planningChanges[dayId] = {
+                        day_id: parseInt(dayId),
+                        employee_id: parseInt(employeeId),
+                        working_schedule_id: parseInt(scheduleId)
+                    };
+                    showById("changes_button");
+                }
+
+                function confirmSavePlanning() {
+                    if (!confirm("Are you sure you want to save the planned working schedules?")) {
+                        return;
+                    }
+
+                    const changesArray = Object.values(planningChanges);
+
+                    if (!changesArray.length) {
+                        alert("No changes to save.");
+                        return;
+                    }
+
+                    submitData("schedule_changes", JSON.stringify(changesArray, null, 2));
+                }
+
+                function clearChangedCells() {
+                    document.querySelectorAll('.planning-changed').forEach(el =&gt; {
+                        el.classList.remove('planning-changed');
+                    });
+                    planningChanges = {};
+                    hideById("changes_button");
+                }
+
+                // =============================
+                // MARKING LOGIC (NEW)
+                // =============================
+
+                function onPlanningMark(el) {
+
+                    // ❌ Disable marking if there are unsaved changes
+                    if (Object.keys(planningChanges).length !== 0) {
+                        alert("Please save or discard changes before marking.");
+                        return;
+                    }
+
+                    const dayId = el.dataset.dayId;
+                    const employeeId = el.dataset.employeeId;
+
+                    // Reset if switching rows
+                    if (markedRowEmployeeId !== null) {
+                        if (markedRowEmployeeId !== employeeId) {
+                            clearMarkedCells();
+                        }
+                    }
+
+                    markedRowEmployeeId = employeeId;
+
+                    // Get all mark buttons for this employee row (DOM order = date order)
+                    const row = el.closest('tr');
+                    const buttons = Array.from(row.querySelectorAll('button[data-day-id]'));
+
+                    const clickedIndex = buttons.indexOf(el);
+
+                    // If already marked → unmark only if it's at the edge
+                    if (markedCells.has(dayId)) {
+                        markedCells.delete(dayId);
+                        el.classList.remove('planning-marked');
+
+                        if (markedCells.size === 0) {
+                            hideById("scheme_button");
+                        }
+
+                        return;
+                    }
+
+                    // Determine range to mark
+                    let indicesToMark = [clickedIndex];
+
+                    if (markedCells.size &gt; 0) {
+                        const markedIndices = buttons
+                            .map((btn, idx) =&gt; markedCells.has(btn.dataset.dayId) ? idx : null)
+                            .filter(idx =&gt; idx !== null);
+
+                        const minIndex = Math.min.apply(null, markedIndices);
+                        const maxIndex = Math.max.apply(null, markedIndices);
+
+                        const start = Math.min(minIndex, clickedIndex);
+                        const end = Math.max(maxIndex, clickedIndex);
+
+                        indicesToMark = [];
+                        for (let i = start; i &lt;= end; i++) {
+                            indicesToMark.push(i);
+                        }
+                    }
+
+                    // Enforce max 7
+                    if (indicesToMark.length &gt; 7) {
+                        alert("You can mark up to 7 consecutive days per employee.");
+                        return;
+                    }
+
+                    // Apply marks
+                    indicesToMark.forEach(function (idx) {
+                        const btn = buttons[idx];
+                        const id = btn.dataset.dayId;
+
+                        if (!markedCells.has(id)) {
+                            markedCells.add(id);
+                            btn.classList.add('planning-marked');
+                        }
+                    });
+
+                    showById("scheme_button");
+                }
+
+                function clearMarkedCells() {
+                    document.querySelectorAll('.planning-marked').forEach(el =&gt; {
+                        el.classList.remove('planning-marked');
+                    });
+                    markedCells.clear();
+                    markedRowEmployeeId = null;
+                    hideById("scheme_button");
+                }
+
+                function confirmPlannedSchedule() {
+
+                    if (markedCells.size &lt; 2) {
+                        alert("You have to select at least 2 cells");
+                        return;
+                    }
+
+                    if (!confirm("Are you sure you want to create days scheme for the selected days?")) {
+                        return;
+                    }
+
+                    if (!markedCells.size) {
+                        alert("No marked days.");
+                        return;
+                    }
+
+                    const result = {
+                        employee_id: parseInt(markedRowEmployeeId),
+                        day_ids: Array.from(markedCells).map(id =&gt; parseInt(id))
+                    };
+
+                    submitData("create_scheme", JSON.stringify(result, null, 2));
+                }
+
+                function hideById(id) {
+                    const el = document.getElementById(id);
+                    if (el) {
+                        el.style.display = 'none';
+                    }
+                }
+
+                function showById(id) {
+                    const el = document.getElementById(id);
+                    if (el) {
+                        el.style.display = '';
+                    }
+                }
+
+                function reloadPage(){
+                    window.location.reload();
+                }
+
+
+                function submitData(type, data) {
+
+                    const baseURL = '/sshr/planned_days_sub_employee_submit';
+                    const params = {
+                        type: type,
+                        data: data
+                    };
+
+                    try {
+                        const url = new URL(baseURL, window.location.origin);
+
+                        Object.keys(params).forEach(key =&gt; url.searchParams.append(key, params[key]));
+
+                        fetch(url)
+                            .then(response =&gt; response.text())
+                            .then(data =&gt; {
+                                console.log('Data saved successfully');
+                                reloadPage();
+                            })
+                            .catch(error =&gt; {
+                                reloadPage();
+                            });
+                    } catch (error) {
+                        console.error('Error constructing URL:', error);
+                        alert('Failed to construct URL');
+                    }
+                    
+                }
+            
+            </script>
+
+
+
+        </t>
+    </template>
+
+</odoo>

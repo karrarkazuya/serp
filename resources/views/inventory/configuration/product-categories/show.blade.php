@@ -43,8 +43,8 @@
             <h1 class="text-2xl font-bold text-gray-900 mb-6">{{ $productCategory->complete_name }}</h1>
             @foreach([
                 [__('inventory.parent'), $productCategory->parent?->complete_name],
-                [__('inventory.removal_strategy'), ucwords(str_replace('_', ' ', $productCategory->removal_strategy))],
-                [__('inventory.costing_method'), ucwords(str_replace('_', ' ', $productCategory->costing_method))],
+                [__('inventory.removal_strategy'), $productCategory->removal_strategy_label],
+                [__('inventory.costing_method'), $productCategory->costing_method_label],
             ] as [$label, $value])
             <div class="flex items-center gap-4 py-2 border-b border-gray-100">
                 <span class="w-40 shrink-0 text-sm text-gray-500">{{ $label }}</span>

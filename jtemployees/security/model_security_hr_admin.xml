@@ -1,0 +1,340 @@
+<odoo>
+    <!-- Security Groups -->
+    <record id="jtemployees.group_hr_admin" model="res.groups">
+        <field name="name">HR Head</field>
+        <field name="category_id" ref="jtemployees.security_groups_category"/>
+        <field name="implied_ids" eval="[(4, ref('base.group_user'))]"/>
+    </record>
+
+    <!-- HR Head Access Controls -->
+   <record id="model_hr_admin_images_access" model="ir.model.access">
+        <field name="name">Images Access</field>
+        <field name="model_id" ref="model_jtemployees_images"/>
+        <field name="group_id" ref="jtemployees.group_hr_admin"/>
+        <field name="perm_read" eval="1"/>
+        <field name="perm_write" eval="1"/>
+        <field name="perm_create" eval="1"/>
+        <field name="perm_unlink" eval="1"/>
+    </record>
+
+    <record id="model_hr_admin_employees_access" model="ir.model.access">
+        <field name="name">Employees Access</field>
+        <field name="model_id" ref="model_hr_employee"/>
+        <field name="group_id" ref="jtemployees.group_hr_admin"/>
+        <field name="perm_read" eval="1"/>
+        <field name="perm_write" eval="1"/>
+        <field name="perm_create" eval="1"/>
+        <field name="perm_unlink" eval="1"/>
+    </record>
+
+    <record id="model_hr_admin_jtemployees_certificates_access" model="ir.model.access">
+        <field name="name">Certificates Access</field>
+        <field name="model_id" ref="model_jtemployees_certificates"/>
+        <field name="group_id" ref="jtemployees.group_hr_admin"/>
+        <field name="perm_read" eval="1"/>
+        <field name="perm_write" eval="1"/>
+        <field name="perm_create" eval="1"/>
+        <field name="perm_unlink" eval="1"/>
+    </record>
+
+    <record id="model_hr_admin_jtemployees_grades_access" model="ir.model.access">
+        <field name="name">Grades Access</field>
+        <field name="model_id" ref="model_jtemployees_grades"/>
+        <field name="group_id" ref="jtemployees.group_hr_admin"/>
+        <field name="perm_read" eval="1"/>
+        <field name="perm_write" eval="1"/>
+        <field name="perm_create" eval="1"/>
+        <field name="perm_unlink" eval="1"/>
+    </record>
+
+    <record id="model_hr_admin_jtemployees_grades_groups_access" model="ir.model.access">
+        <field name="name">Grades Groups Access</field>
+        <field name="model_id" ref="model_jtemployees_grades_groups"/>
+        <field name="group_id" ref="jtemployees.group_hr_admin"/>
+        <field name="perm_read" eval="1"/>
+        <field name="perm_write" eval="1"/>
+        <field name="perm_create" eval="1"/>
+        <field name="perm_unlink" eval="1"/>
+    </record>
+
+    <record id="model_hr_admin_jtemployees_evaluation_objectives_access" model="ir.model.access">
+        <field name="name">Evaluations objectives</field>
+        <field name="model_id" ref="model_jtemployees_evaluation_objectives"/>
+        <field name="group_id" ref="jtemployees.group_hr_admin"/>
+        <field name="perm_read" eval="1"/>
+        <field name="perm_write" eval="1"/>
+        <field name="perm_create" eval="1"/>
+        <field name="perm_unlink" eval="1"/>
+    </record>
+
+    <record id="model_hr_admin_jtemployees_evaluation_values_access" model="ir.model.access">
+        <field name="name">Evaluations values</field>
+        <field name="model_id" ref="model_jtemployees_evaluation_values"/>
+        <field name="group_id" ref="jtemployees.group_hr_admin"/>
+        <field name="perm_read" eval="1"/>
+        <field name="perm_write" eval="1"/>
+        <field name="perm_create" eval="1"/>
+        <field name="perm_unlink" eval="1"/>
+    </record>
+
+    <record id="model_hr_admin_jtemployees_evaluation_groups_access" model="ir.model.access">
+        <field name="name">Evaluations groups</field>
+        <field name="model_id" ref="model_jtemployees_evaluation_groups"/>
+        <field name="group_id" ref="jtemployees.group_hr_admin"/>
+        <field name="perm_read" eval="1"/>
+        <field name="perm_write" eval="1"/>
+        <field name="perm_create" eval="1"/>
+        <field name="perm_unlink" eval="1"/>
+    </record>
+
+    <record id="model_hr_admin_jtemployees_payrolls_access" model="ir.model.access">
+        <field name="name">Payrolls Access</field>
+        <field name="model_id" ref="model_jtemployees_payrolls"/>
+        <field name="group_id" ref="jtemployees.group_hr_admin"/>
+        <field name="perm_read" eval="1"/>
+        <field name="perm_write" eval="0"/>
+        <field name="perm_create" eval="1"/>
+        <field name="perm_unlink" eval="1"/>
+    </record>
+
+    <record id="model_hr_admin_jtemployees_payrolls_slips_access" model="ir.model.access">
+        <field name="name">Payroll Slips Access</field>
+        <field name="model_id" ref="model_jtemployees_payrolls_slips"/>
+        <field name="group_id" ref="jtemployees.group_hr_admin"/>
+        <field name="perm_read" eval="1"/>
+        <field name="perm_write" eval="1"/>
+        <field name="perm_create" eval="1"/>
+        <field name="perm_unlink" eval="1"/>
+    </record>
+
+    <record id="model_hr_admin_jtemployees_payrolls_details_access" model="ir.model.access">
+        <field name="name">Payroll Details Access</field>
+        <field name="model_id" ref="model_jtemployees_payrolls_details"/>
+        <field name="group_id" ref="jtemployees.group_hr_admin"/>
+        <field name="perm_read" eval="1"/>
+        <field name="perm_write" eval="1"/>
+        <field name="perm_create" eval="1"/>
+        <field name="perm_unlink" eval="1"/>
+    </record>
+
+    <record id="model_hr_admin_jtemployees_payrolls_subs_details_access" model="ir.model.access">
+        <field name="name">Payroll Subs Details Access</field>
+        <field name="model_id" ref="model_jtemployees_payrolls_dsubs"/>
+        <field name="group_id" ref="jtemployees.group_hr_admin"/>
+        <field name="perm_read" eval="1"/>
+        <field name="perm_write" eval="1"/>
+        <field name="perm_create" eval="1"/>
+        <field name="perm_unlink" eval="1"/>
+    </record>
+
+    <record id="model_hr_admin_jtemployees_payrolls_swarning_access" model="ir.model.access">
+        <field name="name">Payroll Slip Warnings Access</field>
+        <field name="model_id" ref="model_jtemployees_payrolls_swarning"/>
+        <field name="group_id" ref="jtemployees.group_hr_admin"/>
+        <field name="perm_read" eval="1"/>
+        <field name="perm_write" eval="1"/>
+        <field name="perm_create" eval="1"/>
+        <field name="perm_unlink" eval="1"/>
+    </record>
+
+    <record id="model_hr_admin_jtemployees_extraallocations_access" model="ir.model.access">
+        <field name="name">Extra Allocations Access</field>
+        <field name="model_id" ref="model_jtemployees_extraallocations"/>
+        <field name="group_id" ref="jtemployees.group_hr_admin"/>
+        <field name="perm_read" eval="1"/>
+        <field name="perm_write" eval="1"/>
+        <field name="perm_create" eval="1"/>
+        <field name="perm_unlink" eval="1"/>
+    </record>
+
+    <record id="model_hr_admin_jtemployees_extrashortages_access" model="ir.model.access">
+        <field name="name">Extra Shortages Access</field>
+        <field name="model_id" ref="model_jtemployees_extrashortages"/>
+        <field name="group_id" ref="jtemployees.group_hr_admin"/>
+        <field name="perm_read" eval="1"/>
+        <field name="perm_write" eval="1"/>
+        <field name="perm_create" eval="1"/>
+        <field name="perm_unlink" eval="1"/>
+    </record>
+
+    <record id="model_hr_admin_jtemployees_requests_access" model="ir.model.access">
+        <field name="name">Requests Access</field>
+        <field name="model_id" ref="model_jtemployees_requests"/>
+        <field name="group_id" ref="jtemployees.group_hr_admin"/>
+        <field name="perm_read" eval="1"/>
+        <field name="perm_write" eval="1"/>
+        <field name="perm_create" eval="1"/>
+        <field name="perm_unlink" eval="1"/>
+    </record>
+
+    <record id="model_hr_admin_jtemployees_bounces_access" model="ir.model.access">
+        <field name="name">Bounces Access</field>
+        <field name="model_id" ref="model_jtemployees_bounces"/>
+        <field name="group_id" ref="jtemployees.group_hr_admin"/>
+        <field name="perm_read" eval="1"/>
+        <field name="perm_write" eval="1"/>
+        <field name="perm_create" eval="1"/>
+        <field name="perm_unlink" eval="1"/>
+    </record>
+
+    <record id="model_hr_admin_jtemployees_location_area_access" model="ir.model.access">
+        <field name="name">Location Areas</field>
+        <field name="model_id" ref="model_jtemployees_location_areas"/>
+        <field name="group_id" ref="jtemployees.group_hr_admin"/>
+        <field name="perm_read" eval="1"/>
+        <field name="perm_write" eval="1"/>
+        <field name="perm_create" eval="1"/>
+        <field name="perm_unlink" eval="1"/>
+    </record>
+
+    <record id="model_hr_adminjtemployees_wall_access" model="ir.model.access">
+        <field name="name">Announcement Wall</field>
+        <field name="model_id" ref="model_jtemployees_wall"/>
+        <field name="group_id" ref="jtemployees.group_hr_admin"/>
+        <field name="perm_read" eval="1"/>
+        <field name="perm_write" eval="1"/>
+        <field name="perm_create" eval="1"/>
+        <field name="perm_unlink" eval="1"/>
+    </record>
+
+    <record id="model_hr_admin_jtemployees_holiday_access" model="ir.model.access">
+        <field name="name">Holidays</field>
+        <field name="model_id" ref="model_jtemployees_holiday"/>
+        <field name="group_id" ref="jtemployees.group_hr_admin"/>
+        <field name="perm_read" eval="1"/>
+        <field name="perm_write" eval="1"/>
+        <field name="perm_create" eval="1"/>
+        <field name="perm_unlink" eval="1"/>
+    </record>
+
+    <record id="model_hr_admin_jtemployees_subs_access" model="ir.model.access">
+        <field name="name">Sub Employees</field>
+        <field name="model_id" ref="model_jtemployees_subs"/>
+        <field name="group_id" ref="jtemployees.group_hr_admin"/>
+        <field name="perm_read" eval="1"/>
+        <field name="perm_write" eval="1"/>
+        <field name="perm_create" eval="0"/>
+        <field name="perm_unlink" eval="0"/>
+    </record>
+
+    <record id="model_hr_admin_jtemployees_subs_childs_access" model="ir.model.access">
+        <field name="name">Sub Employees</field>
+        <field name="model_id" ref="model_jtemployees_subs_childs"/>
+        <field name="group_id" ref="jtemployees.group_hr_admin"/>
+        <field name="perm_read" eval="1"/>
+        <field name="perm_write" eval="0"/>
+        <field name="perm_create" eval="0"/>
+        <field name="perm_unlink" eval="0"/>
+    </record>
+
+    <record id="model_hr_admin_jtemployees_fd_log_access" model="ir.model.access">
+        <field name="name">Fingerprint Devices Log</field>
+        <field name="model_id" ref="model_jtemployees_fd_log"/>
+        <field name="group_id" ref="jtemployees.group_hr_admin"/>
+        <field name="perm_read" eval="1"/>
+        <field name="perm_write" eval="0"/>
+        <field name="perm_create" eval="0"/>
+        <field name="perm_unlink" eval="0"/>
+    </record>
+
+    <record id="model_hr_admin_jtemployees_planned_days_access" model="ir.model.access">
+        <field name="name">Planned days</field>
+        <field name="model_id" ref="model_jtemployees_planned_days"/>
+        <field name="group_id" ref="jtemployees.group_hr_admin"/>
+        <field name="perm_read" eval="1"/>
+        <field name="perm_write" eval="1"/>
+        <field name="perm_create" eval="0"/>
+        <field name="perm_unlink" eval="0"/>
+    </record>
+
+    <record id="model_hr_admin_jtemployees_planned_rschedules_access" model="ir.model.access">
+        <field name="name">Planned days</field>
+        <field name="model_id" ref="model_jtemployees_planned_rschedules"/>
+        <field name="group_id" ref="jtemployees.group_hr_admin"/>
+        <field name="perm_read" eval="1"/>
+        <field name="perm_write" eval="1"/>
+        <field name="perm_create" eval="0"/>
+        <field name="perm_unlink" eval="0"/>
+    </record>
+
+     <record id="model_hr_admin_approver_resource_calendar_access" model="ir.model.access">
+        <field name="name">Edit working schedules</field>
+        <field name="model_id" ref="model_resource_calendar"/>
+        <field name="group_id" ref="jtemployees.group_hr_admin"/>
+        <field name="perm_read" eval="1"/>
+        <field name="perm_write" eval="1"/>
+        <field name="perm_create" eval="1"/>
+        <field name="perm_unlink" eval="1"/>
+    </record>
+
+     <record id="model_hr_admin_approver_resource_calendar_attendance_access" model="ir.model.access">
+        <field name="name">Edit working schedules attendance</field>
+        <field name="model_id" ref="model_resource_calendar_attendance"/>
+        <field name="group_id" ref="jtemployees.group_hr_admin"/>
+        <field name="perm_read" eval="1"/>
+        <field name="perm_write" eval="1"/>
+        <field name="perm_create" eval="1"/>
+        <field name="perm_unlink" eval="1"/>
+    </record>
+
+    <record id="model_hr_admin_jtemployees_calendar_groups_access" model="ir.model.access">
+        <field name="name">Calendar Groups</field>
+        <field name="model_id" ref="model_jtemployees_calendar_groups"/>
+        <field name="group_id" ref="jtemployees.group_hr_admin"/>
+        <field name="perm_read" eval="1"/>
+        <field name="perm_write" eval="1"/>
+        <field name="perm_create" eval="1"/>
+        <field name="perm_unlink" eval="1"/>
+    </record>
+
+    <record id="model_hr_admin_jtemployees_report_absence_access" model="ir.model.access">
+        <field name="name">Absence</field>
+        <field name="model_id" ref="model_jtemployees_report_absence"/>
+        <field name="group_id" ref="jtemployees.group_hr_admin"/>
+        <field name="perm_read" eval="1"/>
+        <field name="perm_write" eval="0"/>
+        <field name="perm_create" eval="0"/>
+        <field name="perm_unlink" eval="0"/>
+    </record>
+
+    <record id="model_hr_admin_jtemployees_report_general_access" model="ir.model.access">
+        <field name="name">General Report</field>
+        <field name="model_id" ref="model_jtemployees_report_general"/>
+        <field name="group_id" ref="jtemployees.group_hr_admin"/>
+        <field name="perm_read" eval="1"/>
+        <field name="perm_write" eval="0"/>
+        <field name="perm_create" eval="0"/>
+        <field name="perm_unlink" eval="0"/>
+    </record>
+
+    <record id="model_hr_admin_jtemployees_report_payroll_access" model="ir.model.access">
+        <field name="name">Payroll Report</field>
+        <field name="model_id" ref="model_jtemployees_report_payroll"/>
+        <field name="group_id" ref="jtemployees.group_hr_admin"/>
+        <field name="perm_read" eval="1"/>
+        <field name="perm_write" eval="0"/>
+        <field name="perm_create" eval="0"/>
+        <field name="perm_unlink" eval="0"/>
+    </record>
+
+    <record id="model_hr_admin_jtemployees_employee_select_wizard_access" model="ir.model.access">
+        <field name="name">Employee Select Wizard</field>
+        <field name="model_id" ref="model_jtemployees_employee_select_wizard"/>
+        <field name="group_id" ref="jtemployees.group_hr_admin"/>
+        <field name="perm_read" eval="1"/>
+        <field name="perm_write" eval="1"/>
+        <field name="perm_create" eval="1"/>
+        <field name="perm_unlink" eval="1"/>
+    </record>
+
+    <record id="model_hr_admin_jtemployees_payroll_select_wizard_access" model="ir.model.access">
+        <field name="name">Payroll Select Wizard</field>
+        <field name="model_id" ref="model_jtemployees_payroll_select_wizard"/>
+        <field name="group_id" ref="jtemployees.group_hr_admin"/>
+        <field name="perm_read" eval="1"/>
+        <field name="perm_write" eval="1"/>
+        <field name="perm_create" eval="1"/>
+        <field name="perm_unlink" eval="1"/>
+    </record>
+
+</odoo>

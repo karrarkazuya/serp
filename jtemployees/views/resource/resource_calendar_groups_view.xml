@@ -1,0 +1,57 @@
+<odoo>
+  <data>
+    <!-- explicit list view definition -->
+    <record model="ir.ui.view" id="jtemployees_calendar_groups_list">
+      <field name="name">Calendar Groups</field>
+      <field name="model">jtemployees.calendar.groups</field>
+      <field name="type">list</field>
+      <field name="arch" type="xml">
+        <list>
+          <field name="name"/>
+        </list>
+      </field>
+    </record>
+
+    <!-- explicit list view definition -->
+    <record id="jtemployees_calendar_groups_form" model="ir.ui.view">
+        <field name="name">temployees.planned.days.form</field>
+        <field name="model">jtemployees.calendar.groups</field>
+        <field name="arch" type="xml">
+            <form string="Create calendar_groups Form">
+                <sheet>
+                    <group>
+                        <field name="name" readonly="True" />
+                    </group>
+
+                    <notebook>
+                      <page string="Employees" name="jt_employees">
+                          <field name="employee_ids_m2m"
+                              nolabel="1"
+                              mode="list"
+                              options="{'no_create': true, 'no_delete': true}">
+                              <list>
+                                  <field name="name"/>
+                                  <field name="department_id"/>
+                                  <field name="job_title"/>
+                                  <field name="work_email"/>
+                              </list>
+                          </field>
+                      </page>
+                  </notebook>
+                </sheet>
+
+                <chatter reload_on_post="True"/>
+            </form>
+        </field>
+    </record>
+
+
+    <!-- actions opening views on models -->
+    <record model="ir.actions.act_window" id="jtemployees.action_calendar_groups">
+        <field name="name">Calendar Groups</field>
+        <field name="res_model">jtemployees.calendar.groups</field>
+        <field name="view_mode">list,form</field>
+    </record>
+
+  </data>
+</odoo>

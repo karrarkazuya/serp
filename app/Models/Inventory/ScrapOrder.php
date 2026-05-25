@@ -74,4 +74,16 @@ class ScrapOrder extends Model
     {
         return $this->state === 'done' ? 'green' : 'gray';
     }
+
+    // R5 / Rule 12: views must not render raw state values via ucfirst().
+    // Maps the stored state to a proper human label.
+    public const STATE_LABELS = [
+        'draft' => 'Draft',
+        'done'  => 'Done',
+    ];
+
+    public function getStateLabelAttribute(): string
+    {
+        return self::STATE_LABELS[$this->state] ?? ucfirst($this->state);
+    }
 }

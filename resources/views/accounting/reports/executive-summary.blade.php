@@ -11,53 +11,44 @@
     </x-toolbar>
 
     <div class="flex-1 overflow-y-auto p-4">
-        @include('accounting.reports._filters', ['dateFrom' => $dateFrom, 'dateTo' => $dateTo])
+        @include('accounting.reports._filters', [
+            'filters' => $filters,
+            'reportKey' => 'executive-summary',
+        ])
 
-        <div class="grid grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
+        <div class="grid grid-cols-2 lg:grid-cols-3 gap-3 mb-4">
             @php
             $cards = [
-                ['label' => __('accounting.total') . ' ' . __('accounting.income'),   'value' => $totalIncome,   'color' => 'green'],
-                ['label' => __('accounting.total') . ' ' . __('accounting.expense'),  'value' => $totalExpense,  'color' => 'red'],
-                ['label' => $netProfit >= 0 ? __('accounting.net_profit') : __('accounting.net_loss'), 'value' => abs($netProfit), 'color' => $netProfit >= 0 ? 'green' : 'red'],
-                ['label' => __('accounting.total_assets'),   'value' => $totalAssets,   'color' => 'blue'],
-                ['label' => __('accounting.total_liabilities'), 'value' => $totalLiabs, 'color' => 'orange'],
-                ['label' => __('accounting.draft_entries'),  'value' => $draftCount,    'color' => 'gray', 'is_count' => true],
+                ['label' => __('accounting.total') . ' ' . __('accounting.income'),    'value' => $total_income,  'color' => 'green'],
+                ['label' => __('accounting.total') . ' ' . __('accounting.expense'),   'value' => $total_expense, 'color' => 'red'],
+                ['label' => $net_profit >= 0 ? __('accounting.net_profit') : __('accounting.net_loss'),
+                 'value' => abs($net_profit), 'color' => $net_profit >= 0 ? 'green' : 'red', 'big' => true],
+                ['label' => __('accounting.total_assets'),      'value' => $total_assets, 'color' => 'blue'],
+                ['label' => __('accounting.total_liabilities'), 'value' => $total_liabs,  'color' => 'orange'],
+                ['label' => __('accounting.draft_entries'),     'value' => $draft_count,  'color' => 'gray', 'count' => true],
             ];
             @endphp
-
             @foreach($cards as $card)
             @php
-            $textColor = match($card['color']) {
-                'green'  => 'text-green-700',
-                'red'    => 'text-red-600',
-                'blue'   => 'text-blue-700',
-                'orange' => 'text-orange-700',
-                default  => 'text-gray-700',
-            };
-            $bgColor = match($card['color']) {
-                'green'  => 'bg-green-50 border-green-200',
-                'red'    => 'bg-red-50 border-red-200',
-                'blue'   => 'bg-blue-50 border-blue-200',
-                'orange' => 'bg-orange-50 border-orange-200',
-                default  => 'bg-gray-50 border-gray-200',
-            };
+            $bgFor = ['green' => 'bg-green-50 border-green-200', 'red' => 'bg-red-50 border-red-200', 'blue' => 'bg-blue-50 border-blue-200', 'orange' => 'bg-orange-50 border-orange-200', 'gray' => 'bg-gray-50 border-gray-200'];
+            $txFor = ['green' => 'text-green-700', 'red' => 'text-red-600', 'blue' => 'text-blue-700', 'orange' => 'text-orange-700', 'gray' => 'text-gray-700'];
             @endphp
-            <div class="rounded-xl border {{ $bgColor }} p-5">
-                <p class="text-xs font-medium text-gray-500 mb-1">{{ $card['label'] }}</p>
-                <p class="text-2xl font-bold tabular-nums {{ $textColor }}">
-                    @if(isset($card['is_count'])){{ $card['value'] }}@else<x-money :amount="(float) $card['value']" />@endif
+            <div class="rounded-xl border {{ $bgFor[$card['color']] }} p-5 shadow-sm">
+                <p class="text-xs font-medium text-gray-500 mb-1 uppercase tracking-wide">{{ $card['label'] }}</p>
+                <p class="{{ ($card['big'] ?? false) ? 'text-3xl' : 'text-2xl' }} font-bold tabular-nums {{ $txFor[$card['color']] }}">
+                    @if($card['count'] ?? false){{ $card['value'] }}@else<x-money :amount="(float) $card['value']" />@endif
                 </p>
             </div>
             @endforeach
         </div>
 
-        @if($overdueCount > 0)
+        @if($overdue_count > 0)
         <div class="bg-red-50 border border-red-200 rounded-xl p-4 flex items-center gap-3">
             <svg class="w-5 h-5 text-red-500 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/>
             </svg>
             <div>
-                <p class="text-sm font-semibold text-red-800">{{ $overdueCount }} overdue document{{ $overdueCount !== 1 ? 's' : '' }}</p>
+                <p class="text-sm font-semibold text-red-800">{{ $overdue_count }} overdue document{{ $overdue_count !== 1 ? 's' : '' }}</p>
                 <p class="text-xs text-red-600">Invoices or bills past their due date with outstanding balances.</p>
             </div>
             <div class="ms-auto flex gap-2">

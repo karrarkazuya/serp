@@ -1,0 +1,43 @@
+<odoo>
+  <data>
+    <!-- explicit list view definition -->
+    <record model="ir.ui.view" id="jtemployees_planned_rschedules_list">
+      <field name="name">Schedules to repeate</field>
+      <field name="model">jtemployees.planned.rschedules</field>
+      <field name="type">list</field>
+      <field name="arch" type="xml">
+        <list>
+          <field name="employee_id"/>
+          <field name="schedule_id"/>
+        </list>
+      </field>
+    </record>
+
+    <!-- explicit list view definition -->
+    <record id="jtemployees_planned_rschedules_form" model="ir.ui.view">
+        <field name="name">temployees.planned.rschedules.form</field>
+        <field name="model">jtemployees.planned.rschedules</field>
+        <field name="arch" type="xml">
+            <form string="Create planned_rschedules Form">
+                <sheet>
+                    <group>
+                        <field name="employee_id" readonly="True" />
+                        <field name="schedule_id"/>
+                    </group>
+                </sheet>
+
+                <chatter reload_on_post="True"/>
+            </form>
+        </field>
+    </record>
+
+
+    <!-- actions opening views on models -->
+    <record model="ir.actions.act_window" id="jtemployees.action_planned_rschedules">
+        <field name="name">Schedules to repeate</field>
+        <field name="res_model">jtemployees.planned.rschedules</field>
+        <field name="view_mode">list,form</field>
+    </record>
+
+  </data>
+</odoo>
