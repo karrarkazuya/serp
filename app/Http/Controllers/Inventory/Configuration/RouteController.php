@@ -6,15 +6,19 @@ use App\Helpers\GroupsQuery;
 use App\Helpers\SearchFilters;
 use App\Helpers\SortsTable;
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Inventory\Concerns\InventoryFkRules;
 use App\Models\Inventory\Route;
 use App\Models\Inventory\RouteRule;
 use App\Services\Chatter\ChatterService;
 use App\Services\Company\CompanyContextService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\Rule;
 
 class RouteController extends Controller
 {
+    use InventoryFkRules;
+
     public function __construct(
         private readonly CompanyContextService $companyContext,
         private readonly ChatterService $chatterService,
@@ -74,13 +78,19 @@ class RouteController extends Controller
     {
         $this->authorize('create', Route::class);
         $activeCompanyIds = $this->companyContext->getActiveCompanyIds();
+
+        // Rule 11: warehouse FKs must stay in the actor's active companies.
+        // A route that lists a Company B warehouse as supplier_wh / supplied_wh
+        // would silently generate cross-tenant replenishment pickings when the
+        // route fires.
+        $warehouseRule = $this->companyScopedExists('inventory_warehouses', $activeCompanyIds);
+
         $data = $request->validate([
-            'company_id'        => ['required', 'exists:companies,id'],
+            'company_id'        => ['required', Rule::exists('companies', 'id')->whereIn('id', $activeCompanyIds)],
             'name'              => ['required', 'string', 'max:255'],
-            'supplied_wh_id'    => ['nullable', 'exists:inventory_warehouses,id'],
-            'supplier_wh_id'    => ['nullable', 'exists:inventory_warehouses,id'],
+            'supplied_wh_id'    => ['nullable', $warehouseRule],
+            'supplier_wh_id'    => ['nullable', $warehouseRule],
         ]);
-        abort_unless(in_array($data['company_id'], $activeCompanyIds), 403);
         $data['active']     = true;
         $data['created_by'] = auth()->id();
         $data['updated_by'] = auth()->id();
@@ -113,16 +123,31 @@ class RouteController extends Controller
         $this->authorize('update', $route);
         $activeCompanyIds = $this->companyContext->getActiveCompanyIds();
         abort_unless(in_array($route->company_id, $activeCompanyIds), 403);
+
+        // Rule 11: every FK in the route + its nested rules must stay inside
+        // the actor's active companies. Without this, an editor could repoint
+        // the route at Company B warehouses or stitch in rules that source/sink
+        // stock at Company B locations — the route engine would later move
+        // stock across tenant boundaries when the rule fires.
+        $warehouseRule  = $this->companyScopedExists('inventory_warehouses',      $activeCompanyIds);
+        $opTypeRule     = $this->companyScopedExists('inventory_operation_types', $activeCompanyIds);
+        $locationRule   = $this->inventoryLocationRule($activeCompanyIds);
+        $ruleScopedRule = Rule::exists('inventory_route_rules', 'id')->where(function ($q) use ($route) {
+            // Nested rule ids must belong to THIS route — prevents pulling
+            // another route's rule rows into the update by id-injection.
+            $q->where('route_id', $route->id);
+        });
+
         $data = $request->validate([
             'name'              => ['required', 'string', 'max:255'],
-            'supplied_wh_id'    => ['nullable', 'exists:inventory_warehouses,id'],
-            'supplier_wh_id'    => ['nullable', 'exists:inventory_warehouses,id'],
+            'supplied_wh_id'    => ['nullable', $warehouseRule],
+            'supplier_wh_id'    => ['nullable', $warehouseRule],
             'rules'             => ['nullable', 'array'],
-            'rules.*.id'        => ['nullable', 'exists:inventory_route_rules,id'],
+            'rules.*.id'        => ['nullable', $ruleScopedRule],
             'rules.*.name'                    => ['required_without:rules.*.delete', 'string', 'max:255'],
-            'rules.*.operation_type_id'       => ['required_without:rules.*.delete', 'exists:inventory_operation_types,id'],
-            'rules.*.source_location_id'      => ['nullable', 'exists:inventory_locations,id'],
-            'rules.*.destination_location_id' => ['nullable', 'exists:inventory_locations,id'],
+            'rules.*.operation_type_id'       => ['required_without:rules.*.delete', $opTypeRule],
+            'rules.*.source_location_id'      => ['nullable', $locationRule],
+            'rules.*.destination_location_id' => ['nullable', $locationRule],
             'rules.*.action'                  => ['required_without:rules.*.delete', 'in:pull,push,pull_push'],
             'rules.*.sequence'                => ['nullable', 'integer'],
             'rules.*.delete'                  => ['nullable', 'boolean'],

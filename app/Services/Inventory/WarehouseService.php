@@ -51,10 +51,20 @@ class WarehouseService
 
     public function setupWarehouseLocationsAndTypes(Warehouse $warehouse): void
     {
-        $short = strtoupper($warehouse->short_name);
+        $short     = strtoupper($warehouse->short_name);
         $companyId = $warehouse->company_id;
 
-        // Create the parent view location for the warehouse
+        // Odoo parity: only create the intermediate locations that the
+        // warehouse's reception/delivery step setting actually uses. A
+        // one-step warehouse doesn't need Input/Output/Packing — creating
+        // them anyway clutters the location tree and lets users pick
+        // intermediate locations that the operation flow never touches.
+        $needsInput  = $warehouse->reception_steps !== 'one_step';   // two/three step receipts
+        $needsQc     = $warehouse->reception_steps === 'three_steps';
+        $needsOutput = $warehouse->delivery_steps  !== 'one_step';   // two/three step delivery
+        $needsPack   = $warehouse->delivery_steps  === 'three_steps';
+
+        // Parent view location for the warehouse
         $viewLoc = Location::create([
             'company_id' => $companyId,
             'name'       => $short,
@@ -64,7 +74,7 @@ class WarehouseService
             'updated_by' => auth()->id(),
         ]);
 
-        // Main stock location
+        // Main stock location — always present
         $stockLoc = Location::create([
             'company_id' => $companyId,
             'parent_id'  => $viewLoc->id,
@@ -75,8 +85,8 @@ class WarehouseService
             'updated_by' => auth()->id(),
         ]);
 
-        // Input location (used for two-step reception)
-        $inputLoc = Location::create([
+        // Input location (2-step + 3-step reception)
+        $inputLoc = $needsInput ? Location::create([
             'company_id' => $companyId,
             'parent_id'  => $viewLoc->id,
             'name'       => 'Input',
@@ -84,10 +94,21 @@ class WarehouseService
             'active'     => true,
             'created_by' => auth()->id(),
             'updated_by' => auth()->id(),
-        ]);
+        ]) : null;
 
-        // Output location (used for two-step delivery)
-        $outputLoc = Location::create([
+        // Quality Control location (3-step reception only)
+        $qcLoc = $needsQc ? Location::create([
+            'company_id' => $companyId,
+            'parent_id'  => $viewLoc->id,
+            'name'       => 'Quality Control',
+            'usage'      => 'internal',
+            'active'     => true,
+            'created_by' => auth()->id(),
+            'updated_by' => auth()->id(),
+        ]) : null;
+
+        // Output location (2-step + 3-step delivery)
+        $outputLoc = $needsOutput ? Location::create([
             'company_id' => $companyId,
             'parent_id'  => $viewLoc->id,
             'name'       => 'Output',
@@ -95,10 +116,10 @@ class WarehouseService
             'active'     => true,
             'created_by' => auth()->id(),
             'updated_by' => auth()->id(),
-        ]);
+        ]) : null;
 
-        // Packing zone (used for three-step delivery)
-        $packLoc = Location::create([
+        // Packing zone (3-step delivery only)
+        $packLoc = $needsPack ? Location::create([
             'company_id' => $companyId,
             'parent_id'  => $viewLoc->id,
             'name'       => 'Packing Zone',
@@ -106,7 +127,7 @@ class WarehouseService
             'active'     => true,
             'created_by' => auth()->id(),
             'updated_by' => auth()->id(),
-        ]);
+        ]) : null;
 
         // Get global virtual locations
         $supplierLoc  = Location::where('usage', 'supplier')->whereNull('company_id')->first();
@@ -163,17 +184,18 @@ class WarehouseService
         $deliveryType->update(['return_picking_type_id' => $receiptType->id]);
         $internalType->update(['return_picking_type_id' => $internalType->id]);
 
-        // Update warehouse with location references
+        // Update warehouse with location references (null when the step
+        // setting doesn't use that intermediate location).
         $warehouse->update([
-            'view_location_id'        => $viewLoc->id,
-            'lot_stock_id'            => $stockLoc->id,
-            'wh_input_stock_loc_id'   => $inputLoc->id,
-            'wh_output_stock_loc_id'  => $outputLoc->id,
-            'wh_pack_stock_loc_id'    => $packLoc->id,
+            'view_location_id'       => $viewLoc->id,
+            'lot_stock_id'           => $stockLoc->id,
+            'wh_input_stock_loc_id'  => $inputLoc?->id,
+            'wh_qc_stock_loc_id'     => $qcLoc?->id,
+            'wh_output_stock_loc_id' => $outputLoc?->id,
+            'wh_pack_stock_loc_id'   => $packLoc?->id,
         ]);
 
-        // Update complete_names
-        foreach ([$viewLoc, $stockLoc, $inputLoc, $outputLoc, $packLoc] as $loc) {
+        foreach (array_filter([$viewLoc, $stockLoc, $inputLoc, $qcLoc, $outputLoc, $packLoc]) as $loc) {
             $loc->refresh();
             $loc->updateCompleteName();
         }

@@ -82,9 +82,16 @@
                                step="0.001" min="0"
                                class="w-40 border-0 border-b border-gray-300 focus:border-[#714B67] focus:outline-none focus:ring-0 text-sm px-0 py-1 tabular-nums"
                                required>
-                        <input type="text" name="currency" value="{{ old('currency', 'IQD') }}"
-                               class="w-16 border-0 border-b border-gray-300 focus:border-[#714B67] focus:outline-none focus:ring-0 text-sm px-0 py-1 font-mono uppercase"
-                               :placeholder="__('accounting.ph_iqd')">
+                        <div class="w-24">
+                            <x-relation-dropdown
+                                table="currencies"
+                                field="code"
+                                name="currency"
+                                relation="many2one"
+                                :compact="true"
+                                :selected="old('currency', 'IQD')"
+                            />
+                        </div>
                     </div>
                 </div>
 

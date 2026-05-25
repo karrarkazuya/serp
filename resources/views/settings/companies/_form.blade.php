@@ -64,8 +64,14 @@
 
         <div>
             <label class="block text-xs font-medium text-gray-600 mb-1">{{ __('settings.currency') }}</label>
-            <input type="text" name="currency" value="{{ $old('currency', 'USD') }}" placeholder="USD"
-                   class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500">
+            <x-relation-dropdown
+                table="currencies"
+                field="code"
+                name="currency"
+                relation="many2one"
+                :compact="true"
+                :selected="$old('currency', 'USD')"
+            />
         </div>
     </div>
 </div>

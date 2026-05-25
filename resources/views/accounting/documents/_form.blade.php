@@ -80,6 +80,7 @@ window._docFormData = {
 };
 </script>
 <div class="p-6"
+     @currency-change.window="currency = $event.detail.value"
      x-data="{
         tab: 'lines',
         lines: window._docFormData.lines,
@@ -264,7 +265,17 @@ window._docFormData = {
                     class="flex-1"
                 />
                 <span class="text-sm font-semibold text-gray-700">in</span>
-                <input type="text" name="currency" x-model="currency" maxlength="10" class="w-28 text-sm text-gray-800 bg-transparent border-0 border-b border-dotted border-gray-300 focus:border-purple-500 focus:outline-none focus:ring-0 px-0 py-1" :placeholder="__('accounting.ph_iqd')">
+                <div class="w-28">
+                    <x-relation-dropdown
+                        table="currencies"
+                        field="code"
+                        name="currency"
+                        relation="many2one"
+                        :compact="true"
+                        :selected="old('currency', $val('currency', 'IQD'))"
+                        event="currency-change"
+                    />
+                </div>
             </div>
         </div>
     </div>
@@ -332,7 +343,7 @@ window._docFormData = {
                                    @input.debounce.300ms="accountSearch(i, line.account_label)"
                                    @focus="line.account_open = true"
                                    @blur="setTimeout(() => line.account_open = false, 150)"
-                                   :placeholder="__('accounting.ph_search_account')"
+                                   placeholder="{{ __('accounting.ph_search_account') }}"
                                    autocomplete="off"
                                    class="w-full text-sm font-medium text-gray-700 bg-white border-0 border-b border-purple-400 focus:outline-none focus:ring-0 px-0 py-1">
                             <div x-show="line.account_open && line.account_results.length > 0"

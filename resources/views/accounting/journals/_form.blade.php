@@ -15,7 +15,7 @@
 
 <div class="p-6">
     <div class="mb-6">
-        <input type="text" name="name" value="{{ $val('name') }}" required :placeholder="__('accounting.field_journal_name')"
+        <input type="text" name="name" value="{{ $val('name') }}" required placeholder="{{ __('accounting.field_journal_name') }}"
                class="w-full text-3xl font-bold text-gray-900 placeholder-gray-300 border-0 border-b-2 focus:outline-none focus:border-purple-500 pb-1 bg-transparent {{ $errors->has('name') ? 'border-red-400' : 'border-gray-200' }}">
     </div>
 
@@ -38,7 +38,16 @@
 
             <div class="flex items-center gap-4 py-2 border-b border-gray-100">
                 <label class="w-40 shrink-0 text-sm text-gray-500">{{ __('accounting.field_currency') }}</label>
-                <input type="text" name="currency" value="{{ $val('currency') }}" maxlength="10" class="flex-1 text-sm text-gray-800 bg-transparent border-0 focus:outline-none focus:ring-0 px-0 py-0.5" :placeholder="__('accounting.ph_usd')">
+                <div class="flex-1">
+                    <x-relation-dropdown
+                        table="currencies"
+                        field="code"
+                        name="currency"
+                        relation="many2one"
+                        :compact="true"
+                        :selected="old('currency', $val('currency'))"
+                    />
+                </div>
             </div>
 
             <div class="flex items-center gap-4 py-2 border-b border-gray-100">
@@ -93,7 +102,7 @@
 
             <div class="flex items-center gap-4 py-2 border-b border-gray-100">
                 <label class="w-40 shrink-0 text-sm text-gray-500">{{ __('accounting.field_sequence_prefix') }}</label>
-                <input type="text" name="sequence_prefix" value="{{ $val('sequence_prefix') }}" maxlength="32" class="flex-1 text-sm text-gray-800 bg-transparent border-0 focus:outline-none focus:ring-0 px-0 py-0.5" :placeholder="__('accounting.ph_inv_prefix')">
+                <input type="text" name="sequence_prefix" value="{{ $val('sequence_prefix') }}" maxlength="32" class="flex-1 text-sm text-gray-800 bg-transparent border-0 focus:outline-none focus:ring-0 px-0 py-0.5" placeholder="{{ __('accounting.ph_inv_prefix') }}">
             </div>
 
             <div class="flex items-center gap-4 py-2 border-b border-gray-100">

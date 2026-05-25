@@ -13,6 +13,16 @@ class ScrapService
 
     public function create(array $data): ScrapOrder
     {
+        // Serialize concurrent creates per company so two callers don't both
+        // compute count+1 and hand out the same name. Locking the latest row
+        // for this company forces the second writer to wait for the first
+        // commit. Caller (controller) already wraps this in DB::transaction.
+        ScrapOrder::where('company_id', $data['company_id'])
+            ->lockForUpdate()
+            ->orderByDesc('id')
+            ->limit(1)
+            ->get();
+
         $count = ScrapOrder::where('company_id', $data['company_id'])->count() + 1;
         $data['name']  = 'SP/' . str_pad($count, 5, '0', STR_PAD_LEFT);
         $data['state'] = 'draft';

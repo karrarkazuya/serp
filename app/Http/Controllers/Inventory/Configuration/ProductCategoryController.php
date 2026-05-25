@@ -98,6 +98,15 @@ class ProductCategoryController extends Controller
             'removal_strategy' => ['required', 'in:fifo,lifo,fefo,closest_location'],
             'costing_method'   => ['required', 'in:standard_price,average_cost,fifo'],
         ]);
+
+        // Reject hierarchy cycles (A→B→A). Walks up to 64 levels.
+        if (array_key_exists('parent_id', $data) && $data['parent_id']) {
+            $parentId = (int) $data['parent_id'];
+            if ($parentId === $productCategory->id || $this->isCategoryDescendantOf($parentId, $productCategory->id)) {
+                return back()->withInput()->with('error', 'Selected parent would create a circular category hierarchy.');
+            }
+        }
+
         $data['updated_by'] = auth()->id();
         DB::transaction(function () use ($productCategory, $data) {
             $productCategory->update($data);
@@ -106,13 +115,33 @@ class ProductCategoryController extends Controller
         return redirect()->route('inventory.config.product-categories.show', $productCategory)->with('success', 'Category updated.');
     }
 
+    private function isCategoryDescendantOf(int $candidateAncestorId, int $rootId): bool
+    {
+        $cursor = $candidateAncestorId;
+        for ($i = 0; $i < 64 && $cursor; $i++) {
+            $parent = ProductCategory::where('id', $cursor)->value('parent_id');
+            if ($parent === null) return false;
+            if ((int) $parent === $rootId) return true;
+            $cursor = (int) $parent;
+        }
+        return false;
+    }
+
     public function unlink(Request $_request, ProductCategory $productCategory)
     {
         abort_unless($_request->user()->hasPermission('inventory.config'), 403);
-        if ($productCategory->children()->exists()) {
-            return back()->with('error', 'Cannot delete a category with sub-categories.');
+
+        try {
+            DB::transaction(function () use ($productCategory) {
+                ProductCategory::whereKey($productCategory->id)->lockForUpdate()->firstOrFail();
+                if ($productCategory->children()->exists()) {
+                    throw new \RuntimeException('Cannot delete a category with sub-categories.');
+                }
+                $productCategory->delete();
+            });
+        } catch (\RuntimeException $e) {
+            return back()->with('error', $e->getMessage());
         }
-        DB::transaction(fn () => $productCategory->delete());
         return redirect()->route('inventory.config.product-categories.index')->with('success', 'Category deleted.');
     }
 }

@@ -25,12 +25,29 @@ class StoreScrapOrderRequest extends FormRequest
         $lotRule      = $this->companyScopedExists('inventory_lots', $activeCompanyIds);
         $pickingRule  = $this->companyScopedExists('inventory_pickings', $activeCompanyIds);
 
+        // O-S1 (Odoo parity): the scrap DESTINATION must be a scrap-flagged
+        // location. Without this guard, a user could create a "scrap" order
+        // whose destination is a regular internal location — the validate()
+        // flow would faithfully move stock there, effectively teleporting
+        // inventory between locations while bypassing pickings and audit.
+        // Allow null `company_id` so shared scrap locations work.
+        $scrapDestRule = Rule::exists('inventory_locations', 'id')->where(function ($q) use ($activeCompanyIds) {
+            $q->where('scrap_location', true)->where('active', true);
+            if (empty($activeCompanyIds)) {
+                $q->whereRaw('1 = 0');
+                return;
+            }
+            $q->where(function ($qq) use ($activeCompanyIds) {
+                $qq->whereNull('company_id')->orWhereIn('company_id', $activeCompanyIds);
+            });
+        });
+
         return [
             'company_id'        => ['required', Rule::exists('companies', 'id')->whereIn('id', $activeCompanyIds)],
             'product_id'        => ['required', $productRule],
             'uom_id'            => ['required', 'exists:inventory_uoms,id'],
             'location_id'       => ['required', $locationRule],
-            'scrap_location_id' => ['required', $locationRule],
+            'scrap_location_id' => ['required', $scrapDestRule],
             'lot_id'            => ['nullable', $lotRule],
             'picking_id'        => ['nullable', $pickingRule],
             'scrap_qty'         => ['required', 'numeric', 'min:0.0001'],

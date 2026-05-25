@@ -38,7 +38,16 @@
 
             <div class="flex items-center gap-4 py-2 border-b border-gray-100">
                 <label class="w-36 shrink-0 text-sm text-gray-500">{{ __('accounting.field_currency') }}</label>
-                <input type="text" name="currency" value="{{ $val('currency') }}" maxlength="10" class="flex-1 text-sm text-gray-800 bg-transparent border-0 focus:outline-none focus:ring-0 px-0 py-0.5" placeholder="{{ __('accounting.ph_usd') }}">
+                <div class="flex-1">
+                    <x-relation-dropdown
+                        table="currencies"
+                        field="code"
+                        name="currency"
+                        relation="many2one"
+                        :compact="true"
+                        :selected="old('currency', $val('currency'))"
+                    />
+                </div>
             </div>
 
             <div class="flex items-center gap-4 py-2 border-b border-gray-100">

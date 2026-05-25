@@ -43,7 +43,7 @@
             </div>
             <div class="flex-1 min-w-50">
                 <label class="block text-xs font-semibold text-gray-500 mb-1">Search</label>
-                <input type="text" name="search" value="{{ request('search') }}" :placeholder="__('accounting.ph_search_model')"
+                <input type="text" name="search" value="{{ request('search') }}" placeholder="{{ __('accounting.ph_search_model') }}"
                        class="w-full text-sm border border-gray-300 rounded px-2 py-1.5 focus:outline-none focus:ring-0 focus:border-purple-500">
             </div>
             <button type="submit" class="px-3 py-1.5 text-sm font-medium text-white bg-[#71639e] hover:bg-[#5c527f] rounded">{{ __('accounting.btn_filter') }}</button>

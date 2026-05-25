@@ -22,7 +22,7 @@ class RelationLookupController extends Controller
         // Custom messages so the dropdown UI can surface a human explanation instead of
         // a generic "Lookup failed" — see the JSON 422 handler in relation-dropdown.blade.php.
         $request->validate([
-            'search'    => 'sometimes|string|max:100',
+            'search'    => 'sometimes|nullable|string|max:100',
             'page'      => 'sometimes|integer|min:1|max:10000',
             'per_page'  => 'sometimes|integer|min:1|max:50',
             'exclude'   => 'sometimes|array|max:500',

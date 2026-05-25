@@ -69,7 +69,18 @@ class ScrapOrderController extends Controller
         $this->authorize('create', ScrapOrder::class);
         $activeCompanyIds = $this->companyContext->getActiveCompanyIds();
         $defaultCompanyId = count($activeCompanyIds) === 1 ? $activeCompanyIds[0] : null;
-        $scrapLocations   = Location::where('scrap_location', true)->where('active', true)->get();
+        // O-S1 (Odoo parity): the scrap-destination dropdown must NOT leak
+        // other tenants' scrap locations. Allow shared (company_id=null) +
+        // the actor's active companies only.
+        $scrapLocations = Location::where('scrap_location', true)
+            ->where('active', true)
+            ->where(function ($q) use ($activeCompanyIds) {
+                $q->whereNull('company_id');
+                if (!empty($activeCompanyIds)) {
+                    $q->orWhereIn('company_id', $activeCompanyIds);
+                }
+            })
+            ->get();
         return view('inventory.scrap.create', compact('defaultCompanyId', 'scrapLocations'));
     }
 

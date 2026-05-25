@@ -15,6 +15,15 @@ class AdjustmentService
 
     public function create(array $data): InventoryAdjustment
     {
+        // Serialize concurrent creates per company so two callers don't both
+        // compute count+1 and hand out the same INV/YYYY/NNNNN. Caller
+        // (controller) already wraps this in DB::transaction.
+        InventoryAdjustment::where('company_id', $data['company_id'])
+            ->lockForUpdate()
+            ->orderByDesc('id')
+            ->limit(1)
+            ->get();
+
         $count = InventoryAdjustment::where('company_id', $data['company_id'])->count() + 1;
         $data['name']  = 'INV/' . date('Y') . '/' . str_pad($count, 5, '0', STR_PAD_LEFT);
         $data['state'] = 'draft';

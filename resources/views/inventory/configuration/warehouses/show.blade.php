@@ -81,6 +81,14 @@
             </div>
             @endif
         </div>
+
+        <div class="bg-white mx-4 mb-4 rounded-xl border border-gray-200 shadow-sm overflow-hidden">
+            <x-chatter
+                model-type="App\Models\Inventory\Warehouse"
+                :model-id="$warehouse->id"
+                :can-comment="auth()->user()->can('update', $warehouse)"
+            />
+        </div>
     </div>
 </div>
 @endsection

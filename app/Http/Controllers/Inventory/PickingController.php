@@ -251,6 +251,7 @@ class PickingController extends Controller
 
     public function write(UpdatePickingRequest $request, Picking $picking)
     {
+        $this->authorize('update', $picking);
         $activeCompanyIds = $this->companyContext->getActiveCompanyIds();
         abort_unless(in_array($picking->company_id, $activeCompanyIds), 403);
         abort_if($picking->isDone() || $picking->isCancelled(), 403);

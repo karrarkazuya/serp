@@ -73,7 +73,15 @@ class WarehouseController extends Controller
 
     public function store(StoreWarehouseRequest $request)
     {
+        $this->authorize('create', Warehouse::class);
+        $activeCompanyIds = $this->companyContext->getActiveCompanyIds();
+
         $data = $request->validated();
+        // Defense in depth: StoreWarehouseRequest already scopes company_id,
+        // but a quick guard here means the rule can't disappear silently if
+        // the request is refactored.
+        abort_unless(in_array($data['company_id'], $activeCompanyIds), 403);
+
         $data['active']     = true;
         $data['created_by'] = auth()->id();
         $data['updated_by'] = auth()->id();
@@ -91,6 +99,7 @@ class WarehouseController extends Controller
 
     public function write(UpdateWarehouseRequest $request, Warehouse $warehouse)
     {
+        $this->authorize('update', $warehouse);
         $activeCompanyIds = $this->companyContext->getActiveCompanyIds();
         abort_unless(in_array($warehouse->company_id, $activeCompanyIds), 403);
         DB::transaction(fn () => $this->warehouseService->update($warehouse, $request->validated()));

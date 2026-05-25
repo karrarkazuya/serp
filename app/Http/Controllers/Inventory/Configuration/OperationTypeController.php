@@ -154,10 +154,21 @@ class OperationTypeController extends Controller
         $this->authorize('delete', $operationType);
         $activeCompanyIds = $this->companyContext->getActiveCompanyIds();
         abort_unless(in_array($operationType->company_id, $activeCompanyIds), 403);
-        if ($operationType->pickings()->exists()) {
-            return back()->with('error', 'Cannot delete an operation type with existing transfers.');
+
+        // Wrap usage check + delete in a single transaction with a parent-row
+        // lock so a concurrent picking create can't slip past the check and
+        // end up orphaned (pickings.operation_type_id is nullOnDelete).
+        try {
+            DB::transaction(function () use ($operationType) {
+                OperationType::whereKey($operationType->id)->lockForUpdate()->firstOrFail();
+                if ($operationType->pickings()->exists()) {
+                    throw new \RuntimeException('Cannot delete an operation type with existing transfers.');
+                }
+                $operationType->delete();
+            });
+        } catch (\RuntimeException $e) {
+            return back()->with('error', $e->getMessage());
         }
-        DB::transaction(fn () => $operationType->delete());
         return redirect()->route('inventory.config.operation-types.index')->with('success', 'Operation type deleted.');
     }
 }

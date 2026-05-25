@@ -382,9 +382,16 @@
                     </div>
                     <div class="flex items-center gap-4">
                         <label class="w-32 shrink-0 text-sm font-semibold text-gray-700">{{ __('accounting.field_currency') }}</label>
-                        <input type="text" name="currency" value="{{ $val('currency') }}" maxlength="10"
-                               :placeholder="'{{ __('accounting.ph_iqd') }}'"
-                               class="flex-1 text-sm text-gray-800 bg-transparent border-0 border-b border-dotted border-gray-300 focus:border-purple-500 focus:outline-none focus:ring-0 px-0 py-1">
+                        <div class="flex-1">
+                            <x-relation-dropdown
+                                table="currencies"
+                                field="code"
+                                name="currency"
+                                relation="many2one"
+                                :compact="true"
+                                :selected="old('currency', $val('currency', 'IQD'))"
+                            />
+                        </div>
                     </div>
                 </div>
                 <div class="space-y-3">

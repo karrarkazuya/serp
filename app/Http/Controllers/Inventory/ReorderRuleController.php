@@ -30,23 +30,31 @@ class ReorderRuleController extends Controller
 
         $activeCompanyIds = $this->companyContext->getActiveCompanyIds();
 
-        // Refresh all on-hand quantities in one pass: one aggregate query + one transaction
-        $onHandMap = Quant::selectRaw('company_id, product_id, location_id, SUM(quantity) as total')
-            ->whereIn('company_id', $activeCompanyIds)
-            ->groupBy('company_id', 'product_id', 'location_id')
-            ->get()
-            ->keyBy(fn ($q) => "{$q->company_id}_{$q->product_id}_{$q->location_id}");
+        // R4 finding: the old behaviour ran a full quant-aggregation + every
+        // active rule update on EVERY index load — heavy writes on a read
+        // endpoint that scaled with rule count. Now opt-in via `?refresh=1`
+        // (the "Refresh forecasts" button) and otherwise show the cached
+        // qty_on_hand. Per-rule updates also still happen via the picking
+        // validate / scrap validate / adjustment validate paths, so the
+        // cached number stays close to truth without page-load churn.
+        if ($request->boolean('refresh')) {
+            $onHandMap = Quant::selectRaw('company_id, product_id, location_id, SUM(quantity) as total')
+                ->whereIn('company_id', $activeCompanyIds)
+                ->groupBy('company_id', 'product_id', 'location_id')
+                ->get()
+                ->keyBy(fn ($q) => "{$q->company_id}_{$q->product_id}_{$q->location_id}");
 
-        DB::transaction(function () use ($activeCompanyIds, $onHandMap) {
-            ReorderRule::whereIn('company_id', $activeCompanyIds)->where('active', true)
-                ->each(function (ReorderRule $rule) use ($onHandMap) {
-                    $key    = "{$rule->company_id}_{$rule->product_id}_{$rule->location_id}";
-                    $onHand = (float) ($onHandMap[$key]->total ?? 0);
-                    if (abs((float) $rule->qty_on_hand - $onHand) > 0.0001) {
-                        $rule->update(['qty_on_hand' => $onHand]);
-                    }
-                });
-        });
+            DB::transaction(function () use ($activeCompanyIds, $onHandMap) {
+                ReorderRule::whereIn('company_id', $activeCompanyIds)->where('active', true)
+                    ->each(function (ReorderRule $rule) use ($onHandMap) {
+                        $key    = "{$rule->company_id}_{$rule->product_id}_{$rule->location_id}";
+                        $onHand = (float) ($onHandMap[$key]->total ?? 0);
+                        if (abs((float) $rule->qty_on_hand - $onHand) > 0.0001) {
+                            $rule->update(['qty_on_hand' => $onHand]);
+                        }
+                    });
+            });
+        }
 
         $query = ReorderRule::query()->with(['product.uom', 'location', 'warehouse', 'route'])->forCompanies($activeCompanyIds);
 

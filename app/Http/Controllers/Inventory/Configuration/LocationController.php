@@ -72,6 +72,7 @@ class LocationController extends Controller
 
     public function store(StoreLocationRequest $request)
     {
+        $this->authorize('create', Location::class);
         $data = $request->validated();
         $activeCompanyIds = $this->companyContext->getActiveCompanyIds();
         if (!empty($data['company_id'])) {
@@ -100,15 +101,45 @@ class LocationController extends Controller
 
     public function write(UpdateLocationRequest $request, Location $location)
     {
+        $this->authorize('update', $location);
         $activeCompanyIds = $this->companyContext->getActiveCompanyIds();
         abort_unless(in_array($location->company_id, $activeCompanyIds), 403);
         $data = $request->validated();
+
+        // Reject hierarchy cycles (A→B→A). Form validation can only check that
+        // the parent exists — it can't catch loops. Walk upward from the
+        // proposed parent up to 64 steps (mirrors Contact/Employee guard) so
+        // already-corrupted rows can't hang the request.
+        if (array_key_exists('parent_id', $data) && $data['parent_id']) {
+            $parentId = (int) $data['parent_id'];
+            if ($parentId === $location->id || $this->isLocationDescendantOf($parentId, $location->id)) {
+                return back()->withInput()->with('error', 'Selected parent would create a circular location hierarchy.');
+            }
+        }
+
         $data['updated_by'] = auth()->id();
         DB::transaction(function () use ($location, $data) {
             $location->update($data);
             $location->updateCompleteName();
         });
         return redirect()->route('inventory.config.locations.show', $location)->with('success', 'Location updated.');
+    }
+
+    /**
+     * True if $candidateAncestorId is anywhere in the ancestor chain of
+     * $rootId. Walks up to 64 levels — past that we assume cycle-corrupted
+     * data and bail rather than loop forever.
+     */
+    private function isLocationDescendantOf(int $candidateAncestorId, int $rootId): bool
+    {
+        $cursor = $candidateAncestorId;
+        for ($i = 0; $i < 64 && $cursor; $i++) {
+            $parent = Location::where('id', $cursor)->value('parent_id');
+            if ($parent === null) return false;
+            if ((int) $parent === $rootId) return true;
+            $cursor = (int) $parent;
+        }
+        return false;
     }
 
     public function archive(Request $_request, Location $location)
@@ -134,10 +165,24 @@ class LocationController extends Controller
         $this->authorize('delete', $location);
         $activeCompanyIds = $this->companyContext->getActiveCompanyIds();
         abort_unless(in_array($location->company_id, $activeCompanyIds), 403);
-        if ($location->children()->exists()) {
-            return back()->with('error', 'Cannot delete a location with sub-locations.');
+
+        // Wrap the "has children" check inside the same transaction that
+        // performs the delete and lock the parent row. Without this, a
+        // concurrent child INSERT between the check and the delete would orphan
+        // the new child (parent FK is nullOnDelete → child becomes a stranded
+        // root). lockForUpdate on the parent row serializes against any
+        // child-create that referenced this id.
+        try {
+            DB::transaction(function () use ($location) {
+                Location::whereKey($location->id)->lockForUpdate()->firstOrFail();
+                if ($location->children()->exists()) {
+                    throw new \RuntimeException('Cannot delete a location with sub-locations.');
+                }
+                $location->delete();
+            });
+        } catch (\RuntimeException $e) {
+            return back()->with('error', $e->getMessage());
         }
-        DB::transaction(fn () => $location->delete());
         return redirect()->route('inventory.config.locations.index')->with('success', 'Location deleted.');
     }
 

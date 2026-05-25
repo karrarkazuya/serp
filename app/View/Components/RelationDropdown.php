@@ -8,6 +8,7 @@ use Illuminate\Contracts\View\View;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Schema;
+use Illuminate\Support\Str;
 use Illuminate\View\Component;
 
 class RelationDropdown extends Component
@@ -15,6 +16,8 @@ class RelationDropdown extends Component
     public string $inputName;
 
     public string $componentId;
+
+    public string $displayLabel;
 
     /** @var array<int, array{id:int|string,label:string,color:?string}> */
     public array $selectedOptions = [];
@@ -78,6 +81,7 @@ class RelationDropdown extends Component
         $this->componentId = 'rel_' . md5($this->table . '_' . $this->name . '_' . uniqid('', true));
         $this->multiple = $this->multiple ?? in_array($this->relation, ['many2many', 'one2many'], true);
         $this->inputName = $this->multiple && !str_ends_with($this->name, '[]') ? "{$this->name}[]" : $this->name;
+        $this->displayLabel = $label ?? Str::headline(Str::beforeLast(rtrim($this->name, '[]'), '_id'));
         $this->selectedValues = collect((array) $this->selected)
             ->filter(fn ($value) => $value !== null && $value !== '')
             ->map(fn ($value) => is_numeric($value) ? (int) $value : $value)

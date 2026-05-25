@@ -18,8 +18,11 @@ class PickingService
     {
         $operationType = OperationType::findOrFail($data['operation_type_id']);
 
-        $data['name']  = $operationType->nextSequenceName();
-        $operationType->incrementSequence();
+        // Atomic read-then-increment under SELECT FOR UPDATE — see
+        // OperationType::reserveNextSequenceName(). The old separate
+        // nextSequenceName() + incrementSequence() raced against concurrent
+        // creates and could collide on the UNIQUE(company_id, name) index.
+        $data['name']  = $operationType->reserveNextSequenceName();
         $data['state'] = Picking::STATE_DRAFT;
 
         $picking = Picking::create($data);
@@ -95,13 +98,35 @@ class PickingService
                 $move->moveLines()->delete();
             }
 
-            // Lock quants for this product/location (FIFO by in_date)
-            $quants = Quant::where('company_id', $move->company_id)
-                ->where('product_id', $move->product_id)
-                ->where('location_id', $move->location_src_id)
-                ->lockForUpdate()
-                ->orderBy('in_date')
-                ->get();
+            // Odoo parity: removal_strategy comes from the product's category
+            // (defaults to FIFO). Reservation order:
+            //   fifo → earliest in_date first
+            //   lifo → latest in_date first
+            //   fefo → earliest lot.expiration_date first (lots with no
+            //          expiration sort last so they're not consumed before
+            //          expiring stock)
+            //   closest_location → would need warehouse coordinates; falls
+            //          back to FIFO until that's modeled
+            // Reads quants under lockForUpdate so concurrent moves can't both
+            // claim the same available units.
+            $strategy = $move->product?->category?->removal_strategy ?? 'fifo';
+            $quantQuery = Quant::where('inventory_quants.company_id', $move->company_id)
+                ->where('inventory_quants.product_id', $move->product_id)
+                ->where('inventory_quants.location_id', $move->location_src_id)
+                ->lockForUpdate();
+
+            if ($strategy === 'fefo') {
+                $quantQuery->leftJoin('inventory_lots', 'inventory_quants.lot_id', '=', 'inventory_lots.id')
+                    ->orderByRaw('inventory_lots.expiration_date IS NULL')
+                    ->orderBy('inventory_lots.expiration_date')
+                    ->orderBy('inventory_quants.in_date')
+                    ->select('inventory_quants.*');
+            } elseif ($strategy === 'lifo') {
+                $quantQuery->orderByDesc('inventory_quants.in_date');
+            } else {
+                $quantQuery->orderBy('inventory_quants.in_date');
+            }
+            $quants = $quantQuery->get();
 
             foreach ($quants as $quant) {
                 if ($reserved >= $toReserve) break;
@@ -171,12 +196,31 @@ class PickingService
                             "Please fill in the detailed operations before validating."
                         );
                     }
+                    $isSerial = $move->product?->isTrackedBySerial();
                     foreach ($move->moveLines as $line) {
                         if (!$line->lot_id && !$line->lot_name) {
                             throw new \RuntimeException(
                                 "All lines for product \"{$move->product->name}\" must have a lot/serial number assigned."
                             );
                         }
+                        // Odoo parity: serial-tracked products require exactly
+                        // one unit per move line — each serial is a physical
+                        // single-instance asset. Lot-tracked allows N per line.
+                        if ($isSerial && abs((float) $line->qty_done - 1.0) > 0.0001) {
+                            throw new \RuntimeException(sprintf(
+                                'Serial-tracked product "%s" requires exactly 1 unit per serial. Line has %s.',
+                                $move->product->name,
+                                number_format((float) $line->qty_done, 4)
+                            ));
+                        }
+                    }
+                    // Odoo parity: a serial number is a unique physical asset.
+                    // The same serial cannot exist twice on hand at the same
+                    // time within the same product. For an INCOMING move,
+                    // check that none of the lot_names being created already
+                    // exist with on-hand stock for this product.
+                    if ($isSerial && $opType->code === 'incoming') {
+                        $this->assertSerialsNotAlreadyOnHand($move);
                     }
                 }
             }
@@ -194,18 +238,35 @@ class PickingService
 
             // Only storable products affect stock quants
             if ($move->product?->isStorable()) {
+                // R2 finding: refuse over-delivery from an INTERNAL source. A
+                // user with inventory.write could otherwise inflate qty_done
+                // (the field is user-controlled) and silently drive the source
+                // quant negative — the "delivered" units would then be covered
+                // up via a later inventory adjustment, hiding theft. Virtual
+                // sources (supplier / customer / inventory) skip the check
+                // because they intentionally don't carry stock.
+                $srcLocation = $move->srcLocation ?? \App\Models\Inventory\Location::find($move->location_src_id);
+                $srcIsInternal = $srcLocation && $srcLocation->usage === 'internal';
+
                 if ($move->moveLines->count() > 0) {
                     // Lot-tracked: move quants per move line
                     foreach ($move->moveLines as $line) {
-                        if ((float) $line->qty_done <= 0) continue;
+                        $lineQty = (float) $line->qty_done;
+                        if ($lineQty <= 0) continue;
                         $lot = $this->resolveOrCreateLot($line);
-                        $this->updateQuant($picking->company_id, $move->product_id, $move->location_src_id,  $lot?->id, -(float) $line->qty_done);
-                        $this->updateQuant($picking->company_id, $move->product_id, $move->location_dest_id, $lot?->id,  (float) $line->qty_done);
+                        if ($srcIsInternal) {
+                            $this->assertSufficientOnHand($move, $lot?->id, $lineQty);
+                        }
+                        $this->updateQuant($picking->company_id, $move->product_id, $move->location_src_id,  $lot?->id, -$lineQty);
+                        $this->updateQuant($picking->company_id, $move->product_id, $move->location_dest_id, $lot?->id,  $lineQty);
                         $line->update(['lot_id' => $lot?->id, 'updated_by' => auth()->id()]);
                     }
                     $qtyDone = $move->moveLines->sum('qty_done');
                 } else {
                     // Simple (no lots)
+                    if ($srcIsInternal) {
+                        $this->assertSufficientOnHand($move, null, $qtyDone);
+                    }
                     $this->updateQuant($picking->company_id, $move->product_id, $move->location_src_id,  null, -$qtyDone);
                     $this->updateQuant($picking->company_id, $move->product_id, $move->location_dest_id, null,  $qtyDone);
                 }
@@ -416,6 +477,76 @@ class PickingService
         }
 
         return null;
+    }
+
+    /**
+     * Odoo parity: refuse to receive a serial number that already has
+     * on-hand stock for this product. A serial identifies a single physical
+     * unit — duplicates would silently merge two distinct objects into a
+     * single tracked record. Checks both the existing lot_id route (caller
+     * supplied an existing Lot row by id) and the new lot_name route
+     * (resolveOrCreateLot would find-or-create a lot with that name).
+     *
+     * Caller is already inside the validate() transaction.
+     */
+    private function assertSerialsNotAlreadyOnHand(Move $move): void
+    {
+        foreach ($move->moveLines as $line) {
+            $lotName = $line->lot_id
+                ? Lot::where('id', $line->lot_id)->value('name')
+                : $line->lot_name;
+            if (!$lotName) continue;
+
+            $lot = Lot::where('company_id', $move->company_id)
+                ->where('product_id', $move->product_id)
+                ->where('name', $lotName)
+                ->first();
+            if (!$lot) continue;  // brand-new serial, fine
+
+            $onHand = (float) Quant::where('company_id', $move->company_id)
+                ->where('product_id', $move->product_id)
+                ->where('lot_id', $lot->id)
+                ->whereHas('location', fn ($q) => $q->where('usage', 'internal'))
+                ->sum('quantity');
+            if ($onHand > 0.0001) {
+                throw new \RuntimeException(sprintf(
+                    'Serial "%s" for product "%s" is already on hand (qty %s). Serials are unique physical units and cannot be received twice.',
+                    $lotName,
+                    $move->product?->name ?? '#' . $move->product_id,
+                    number_format($onHand, 4)
+                ));
+            }
+        }
+    }
+
+    /**
+     * R2 guard: refuse to move more units out of an internal location than
+     * exist on hand. Without this check, a user with inventory.write could
+     * inflate qty_done on a delivery picking and silently take the source
+     * quant negative — "delivered" units could then be hidden via a later
+     * inventory adjustment, covering up theft.
+     *
+     * Caller must already be inside the validate() transaction so the
+     * sum-then-act check is atomic against concurrent moves.
+     */
+    private function assertSufficientOnHand(Move $move, ?int $lotId, float $qty): void
+    {
+        $onHand = (float) Quant::where('company_id', $move->company_id)
+            ->where('product_id', $move->product_id)
+            ->where('location_id', $move->location_src_id)
+            ->where('lot_id', $lotId)
+            ->lockForUpdate()
+            ->sum('quantity');
+
+        if ($qty > $onHand + 0.0001) {
+            $productName = $move->product?->name ?? "#{$move->product_id}";
+            throw new \RuntimeException(sprintf(
+                'Insufficient stock for "%s" at source location. Available: %s, requested: %s.',
+                $productName,
+                number_format($onHand, 4),
+                number_format($qty, 4)
+            ));
+        }
     }
 
     /**

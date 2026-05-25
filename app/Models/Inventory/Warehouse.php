@@ -43,7 +43,7 @@ class Warehouse extends Model
 
     protected $fillable = [
         'company_id', 'partner_id', 'lot_stock_id',
-        'wh_input_stock_loc_id', 'wh_output_stock_loc_id', 'wh_pack_stock_loc_id', 'view_location_id',
+        'wh_input_stock_loc_id', 'wh_qc_stock_loc_id', 'wh_output_stock_loc_id', 'wh_pack_stock_loc_id', 'view_location_id',
         'name', 'short_name', 'reception_steps', 'delivery_steps', 'active',
     ];
 
@@ -53,6 +53,7 @@ class Warehouse extends Model
     public function partner(): BelongsTo        { return $this->belongsTo(Contact::class, 'partner_id'); }
     public function stockLocation(): BelongsTo  { return $this->belongsTo(Location::class, 'lot_stock_id'); }
     public function inputLocation(): BelongsTo  { return $this->belongsTo(Location::class, 'wh_input_stock_loc_id'); }
+    public function qcLocation(): BelongsTo     { return $this->belongsTo(Location::class, 'wh_qc_stock_loc_id'); }
     public function outputLocation(): BelongsTo { return $this->belongsTo(Location::class, 'wh_output_stock_loc_id'); }
     public function packLocation(): BelongsTo   { return $this->belongsTo(Location::class, 'wh_pack_stock_loc_id'); }
     public function viewLocation(): BelongsTo   { return $this->belongsTo(Location::class, 'view_location_id'); }

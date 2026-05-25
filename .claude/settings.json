@@ -254,7 +254,22 @@
       "Bash(grep -nA 25 \"private function print\\\\b\\\\|public function printRefund\" /Users/karrar/Projects/web/serp/app/Http/Controllers/Accounting/AccountDocumentController.php)",
       "Bash(grep -nA 25 \"private function createBill\\\\b\" /Users/karrar/Projects/web/serp/tests/Feature/Accounting/AccountingRealLifeTest.php)",
       "Bash(vendor/bin/phpunit --filter \"test_refund_post_pay_print_cancel$\")",
-      "Bash(grep -nA 30 \"private function markPaid\\\\b\" /Users/karrar/Projects/web/serp/app/Http/Controllers/Accounting/AccountDocumentController.php)"
+      "Bash(grep -nA 30 \"private function markPaid\\\\b\" /Users/karrar/Projects/web/serp/app/Http/Controllers/Accounting/AccountDocumentController.php)",
+      "Bash(grep -nA 10 \"public function unlink\\\\b\" app/Http/Controllers/Inventory/Configuration/OperationTypeController.php)",
+      "Bash(grep -n 'ucfirst\\\\|$label\\\\|$name' resources/views/components/relation-dropdown.blade.php)",
+      "Bash(php -l app/View/Components/RelationDropdown.php)",
+      "Bash(grep -nB 1 -A 30 \"Schema::create\\('inventory_scrap_orders'\\\\|Schema::create\\('inventory_adjustments'\" database/migrations/2026_01_01_000032_create_inventory_stock_tables.php)",
+      "Bash(grep -nA 15 \"nextSequenceName\\\\|incrementSequence\" app/Models/Inventory/OperationType.php)",
+      "Bash(sed -n '31,65p' database/migrations/2026_01_01_000032_create_inventory_stock_tables.php)",
+      "Bash(sed -n '59,90p' database/migrations/2026_01_01_000032_create_inventory_stock_tables.php)",
+      "Bash(grep -n 'protected $table\\\\|category\\(\\)' app/Models/Inventory/Quant.php app/Models/Inventory/Product.php)",
+      "Bash(grep -n 'protected $table' app/Models/Inventory/Quant.php)",
+      "Bash(grep -nB 1 -A 10 \"->each\\(function\" app/Http/Controllers/Inventory/ReorderRuleController.php)",
+      "Bash(grep -nB 1 -A 10 '\\\\->each\\(function' app/Http/Controllers/Inventory/ReorderRuleController.php)",
+      "Bash(grep -rEn \">[a-z_]+_id<|\\\\{\\\\{\\\\s*\\\\\\\\\\\\$[a-z]+->[a-z_]+_id\\\\s*\\\\}\\\\}\" resources/views/inventory/)",
+      "Bash(grep -n '\\\\$route' resources/views/inventory/configuration/routes/show.blade.php)",
+      "Bash(grep -n '\\\\$uom' resources/views/inventory/configuration/uoms/show.blade.php)",
+      "Bash(grep -n '\\\\$warehouse' resources/views/inventory/configuration/warehouses/show.blade.php)"
     ],
     "additionalDirectories": [
       "/Users/karrar/Projects/web/serp/storage/app/public/avatars/contacts"

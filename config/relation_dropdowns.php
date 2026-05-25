@@ -373,6 +373,16 @@ return [
         'fields' => ['currency'],
     ],
 
+    'currencies' => [
+        'read' => 'accounting.read',
+        'write' => 'accounting.write',
+        'create_permission' => 'accounting.write',
+        'color' => null,
+        'fields' => ['code', 'name'],
+        'value_column' => 'code',
+        'active_only' => true,
+    ],
+
     'accounting_payment_terms' => [
         'read' => 'accounting.read',
         'write' => 'accounting.write',

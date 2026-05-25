@@ -83,4 +83,21 @@ class OperationType extends Model
     {
         $this->increment('sequence_next_number');
     }
+
+    /**
+     * Atomically reserve the next sequence name and bump the counter in a
+     * single locked read-modify-write. Without this, two concurrent picking
+     * creates can both read sequence_next_number=N, both produce name "WH/IN/N",
+     * and the second INSERT collides with the UNIQUE(company_id, name) index
+     * (random user-facing 500s). Caller must already be inside a transaction.
+     */
+    public function reserveNextSequenceName(): string
+    {
+        $locked = self::whereKey($this->id)->lockForUpdate()->firstOrFail();
+        $padding = max(1, (int) $locked->sequence_padding);
+        $num     = str_pad((string) $locked->sequence_next_number, $padding, '0', STR_PAD_LEFT);
+        $name    = $locked->sequence_prefix . $num;
+        $locked->update(['sequence_next_number' => $locked->sequence_next_number + 1]);
+        return $name;
+    }
 }

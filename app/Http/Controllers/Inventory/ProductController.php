@@ -168,6 +168,7 @@ class ProductController extends Controller
 
     public function write(UpdateProductRequest $request, Product $product)
     {
+        $this->authorize('update', $product);
         $activeCompanyIds = $this->companyContext->getActiveCompanyIds();
         abort_unless(in_array($product->company_id, $activeCompanyIds) || is_null($product->company_id), 403);
 

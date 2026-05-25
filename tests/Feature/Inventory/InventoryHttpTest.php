@@ -79,23 +79,30 @@ class InventoryHttpTest extends TestCase
 
     public function test_warehouse_service_creates_locations_and_operation_types(): void
     {
+        // Odoo parity: 3-step receipts + 3-step delivery → provisions every
+        // intermediate location (Input, Quality Control, Output, Packing Zone).
         $this->actingAs($this->admin);
         $warehouseService = app(WarehouseService::class);
 
         $warehouse = $warehouseService->create([
-            'company_id' => $this->company->id,
-            'name'       => 'Main WH',
-            'short_name' => 'MWH',
-            'active'     => true,
+            'company_id'      => $this->company->id,
+            'name'            => 'Main WH',
+            'short_name'      => 'MWH',
+            'reception_steps' => 'three_steps',
+            'delivery_steps'  => 'three_steps',
+            'active'          => true,
         ]);
 
         $this->assertDatabaseHas('inventory_warehouses', ['name' => 'Main WH', 'company_id' => $this->company->id]);
 
         $locations = Location::where('company_id', $this->company->id)->get();
-        $this->assertGreaterThanOrEqual(5, $locations->count());
+        // View + Stock + Input + Quality Control + Output + Packing Zone = 6
+        $this->assertSame(6, $locations->count());
         $this->assertTrue($locations->contains('name', 'Stock'));
         $this->assertTrue($locations->contains('name', 'Input'));
+        $this->assertTrue($locations->contains('name', 'Quality Control'));
         $this->assertTrue($locations->contains('name', 'Output'));
+        $this->assertTrue($locations->contains('name', 'Packing Zone'));
 
         $opTypes = OperationType::where('company_id', $this->company->id)->get();
         $this->assertSame(3, $opTypes->count());
@@ -105,6 +112,45 @@ class InventoryHttpTest extends TestCase
 
         $this->assertNotNull($warehouse->lot_stock_id);
         $this->assertNotNull($warehouse->view_location_id);
+        $this->assertNotNull($warehouse->wh_input_stock_loc_id);
+        $this->assertNotNull($warehouse->wh_qc_stock_loc_id);
+        $this->assertNotNull($warehouse->wh_output_stock_loc_id);
+        $this->assertNotNull($warehouse->wh_pack_stock_loc_id);
+    }
+
+    public function test_one_step_warehouse_does_not_create_intermediate_locations(): void
+    {
+        // Odoo parity: a one-step reception + one-step delivery warehouse
+        // needs only View + Stock — no Input, QC, Output, or Packing Zone.
+        // The old behaviour created all five even when unused, which cluttered
+        // the location tree and let users pick locations the operation flow
+        // never touched.
+        $this->actingAs($this->admin);
+        $warehouseService = app(WarehouseService::class);
+
+        $warehouse = $warehouseService->create([
+            'company_id'      => $this->company->id,
+            'name'            => 'Tiny WH',
+            'short_name'      => 'TWH',
+            'reception_steps' => 'one_step',
+            'delivery_steps'  => 'one_step',
+            'active'          => true,
+        ]);
+
+        $names = Location::where('company_id', $this->company->id)->pluck('name')->all();
+        $this->assertContains('Stock',         $names);
+        $this->assertContains('TWH',           $names);  // view location
+        $this->assertNotContains('Input',           $names);
+        $this->assertNotContains('Quality Control', $names);
+        $this->assertNotContains('Output',          $names);
+        $this->assertNotContains('Packing Zone',    $names);
+
+        $this->assertNotNull($warehouse->view_location_id);
+        $this->assertNotNull($warehouse->lot_stock_id);
+        $this->assertNull($warehouse->wh_input_stock_loc_id);
+        $this->assertNull($warehouse->wh_qc_stock_loc_id);
+        $this->assertNull($warehouse->wh_output_stock_loc_id);
+        $this->assertNull($warehouse->wh_pack_stock_loc_id);
     }
 
     public function test_receipt_and_delivery_operation_types_have_cross_return_types(): void
