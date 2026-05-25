@@ -43,6 +43,17 @@ class EmployeeRequestService
             $end   = $end->copy()->endOfDay();
         }
 
+        // DoS guard: cap the range so submission can't loop ~36500 iterations
+        // on a 100-year leave. Approved requests would also spawn an
+        // attendance row per day — a real DB-fill risk without this.
+        if ($subtype->type === RequestSubtype::TYPE_LEAVE) {
+            if ($start->diffInDays($end) > 365) {
+                throw new RuntimeException(__('employees.request_too_long_days'));
+            }
+        } elseif ($start->diffInHours($end) > 48) {
+            throw new RuntimeException(__('employees.request_too_long_hours'));
+        }
+
         // Serialize all submissions for this employee so two parallel submits
         // can't both pass the overlap check before either commits. The
         // controller owns the surrounding DB::transaction.
@@ -94,7 +105,9 @@ class EmployeeRequestService
         ]);
 
         $request->logSystemMessage(__('employees.request_created_log'));
-        $this->notifyOnSubmission($request);
+        // Fire AFTER the surrounding transaction commits so a notification-row
+        // insert failure can never roll back the request itself.
+        DB::afterCommit(fn () => $this->notifyOnSubmission($request));
         return $request;
     }
 

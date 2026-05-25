@@ -551,6 +551,8 @@ return [
     'request_submitted'           => 'تم إرسال الطلب.',
     'request_decision_recorded'   => 'تم تسجيل القرار.',
     'request_overlap'             => 'لديك طلب آخر يغطي هذه التواريخ.',
+    'request_too_long_days'       => 'طلبات الإجازة لا يجوز أن تتجاوز 365 يوماً.',
+    'request_too_long_hours'      => 'طلبات الاستئذان / الوقت الإضافي لا يجوز أن تتجاوز 48 ساعة.',
     'request_no_schedule_assigned' => 'لا يوجد جدول عمل مخصص لهذا الموظف.',
     'request_overtime_in_working_hours' => 'الوقت الإضافي لا يجوز أن يتداخل مع ساعات العمل في :date.',
     'request_time_off_outside_working_hours' => 'الاستئذان يجب أن يكون داخل ساعات العمل بالكامل في :date.',

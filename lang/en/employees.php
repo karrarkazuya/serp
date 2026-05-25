@@ -551,6 +551,8 @@ return [
     'request_submitted'           => 'Request submitted.',
     'request_decision_recorded'   => 'Decision recorded.',
     'request_overlap'             => 'You already have another request covering these dates.',
+    'request_too_long_days'       => 'Leave requests cannot exceed 365 days.',
+    'request_too_long_hours'      => 'Time-off / overtime requests cannot exceed 48 hours.',
     'request_no_schedule_assigned' => 'This employee has no working schedule assigned.',
     'request_overtime_in_working_hours' => 'Overtime cannot overlap working hours on :date.',
     'request_time_off_outside_working_hours' => 'Time off must be entirely within working hours on :date.',

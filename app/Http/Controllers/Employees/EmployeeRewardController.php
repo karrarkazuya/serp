@@ -5,12 +5,14 @@ namespace App\Http\Controllers\Employees;
 use App\Http\Controllers\Controller;
 use App\Models\Employees\Employee;
 use App\Models\Employees\EmployeeReward;
+use App\Services\Company\CompanyContextService;
 use App\Services\FileService;
 use App\Helpers\GroupsQuery;
 use App\Helpers\SearchFilters;
 use App\Helpers\SortsTable;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\Rule;
 
 class EmployeeRewardController extends Controller
 {
@@ -85,7 +87,7 @@ class EmployeeRewardController extends Controller
             'expiry_date'              => 'nullable|date',
             'notify_before_days'       => 'nullable|integer|min:0|max:365',
             'notes'                    => 'nullable|string',
-            'file'                     => 'nullable|file|max:10240',
+            'file'                     => 'nullable|file|max:10240|mimetypes:image/jpeg,image/png,image/gif,image/webp,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document,application/vnd.ms-excel,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.ms-powerpoint,application/vnd.openxmlformats-officedocument.presentationml.presentation,application/vnd.oasis.opendocument.text,application/vnd.oasis.opendocument.spreadsheet,text/plain,text/csv|mimes:jpg,jpeg,png,gif,webp,pdf,doc,docx,xls,xlsx,ppt,pptx,odt,ods,txt,csv',
         ]);
 
         $fileRecord = null;
@@ -134,7 +136,7 @@ class EmployeeRewardController extends Controller
             'expiry_date'              => 'nullable|date',
             'notify_before_days'       => 'nullable|integer|min:0|max:365',
             'notes'                    => 'nullable|string',
-            'file'                     => 'nullable|file|max:10240',
+            'file'                     => 'nullable|file|max:10240|mimetypes:image/jpeg,image/png,image/gif,image/webp,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document,application/vnd.ms-excel,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.ms-powerpoint,application/vnd.openxmlformats-officedocument.presentationml.presentation,application/vnd.oasis.opendocument.text,application/vnd.oasis.opendocument.spreadsheet,text/plain,text/csv|mimes:jpg,jpeg,png,gif,webp,pdf,doc,docx,xls,xlsx,ppt,pptx,odt,ods,txt,csv',
         ]);
 
         if ($request->hasFile('file')) {
@@ -161,9 +163,14 @@ class EmployeeRewardController extends Controller
     {
         $this->authorize('update', Employee::class);
 
+        // Rule 11: only employees in the actor's active companies.
+        $activeCompanyIds = app(CompanyContextService::class)->getActiveCompanyIds();
+        $employeeRule = Rule::exists('hr_employees', 'id')->where(function ($q) use ($activeCompanyIds) {
+            empty($activeCompanyIds) ? $q->whereRaw('1 = 0') : $q->whereIn('company_id', $activeCompanyIds);
+        });
         $data = $request->validate([
             'employee_ids'   => 'nullable|array',
-            'employee_ids.*' => 'exists:hr_employees,id',
+            'employee_ids.*' => $employeeRule,
         ]);
 
         $newIds = collect($data['employee_ids'] ?? [])->map(fn ($id) => (int) $id);

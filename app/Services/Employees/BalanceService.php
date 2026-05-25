@@ -61,8 +61,11 @@ class BalanceService
                         $balance = $this->getOrCreate($employee);
 
                         // Determine how many months to credit (catch-up).
+                        // Signed diff so a future-dated last_credited_month
+                        // (clock skew, backup restore) doesn't over-credit
+                        // — Carbon's default diffInMonths is absolute.
                         $monthsToCredit = $balance->last_credited_month
-                            ? max(0, $balance->last_credited_month->diffInMonths($asOf))
+                            ? max(0, (int) $balance->last_credited_month->diffInMonths($asOf, false))
                             : 1; // never credited — credit for the asOf month only
 
                         if ($monthsToCredit === 0) continue;

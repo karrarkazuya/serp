@@ -286,7 +286,10 @@
       "Bash(sed -n '225,232p' /Users/karrar/Projects/web/serp/resources/views/contacts/index.blade.php)",
       "Bash(php -l /Users/karrar/Projects/web/serp/app/View/Components/TableList.php)",
       "Bash(php -l /Users/karrar/Projects/web/serp/resources/views/components/list.blade.php)",
-      "Bash(php -l app/Services/Employees/EmployeeRequestService.php app/Services/Employees/BalanceService.php app/Http/Controllers/Employees/EmployeeRequestController.php app/Http/Controllers/Employees/RequestSubtypeController.php app/Http/Controllers/Employees/RequestBalanceConfigController.php)"
+      "Bash(php -l app/Services/Employees/EmployeeRequestService.php app/Services/Employees/BalanceService.php app/Http/Controllers/Employees/EmployeeRequestController.php app/Http/Controllers/Employees/RequestSubtypeController.php app/Http/Controllers/Employees/RequestBalanceConfigController.php)",
+      "Bash(grep -rn '->can\\('\\\\''update'\\\\'', $.*EmployeeRequest\\\\|can\\('\\\\''update'\\\\''.*$r\\\\|can\\('\\\\''update'\\\\''.*$employeeRequest' /Users/karrar/Projects/web/serp/app /Users/karrar/Projects/web/serp/resources)",
+      "Bash(awk '/Route::/{r=$0} /->middleware\\\\\\(/{m=1} /;/{if\\(m==0 && r ~ /Route::/\\) print NR-1\": \"r; r=\"\"; m=0}' /Users/karrar/Projects/web/serp/routes/web.php)",
+      "Bash(awk '/employees\\\\./{r=$0; m=0; n=NR} /->middleware\\\\\\(/{m=1} /->name|;$/ {if\\(r!=\"\" && m==0\\) print n\": \"substr\\(r, 1, 120\\); r=\"\"; m=0}' /Users/karrar/Projects/web/serp/routes/web.php)"
     ],
     "additionalDirectories": [
       "/Users/karrar/Projects/web/serp/storage/app/public/avatars/contacts"

@@ -16,6 +16,7 @@ use App\Services\Employees\EmployeeRequestService;
 use App\Services\FileService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use RuntimeException;
 
 class EmployeeRequestController extends Controller
@@ -107,14 +108,13 @@ class EmployeeRequestController extends Controller
                   || $request->user()->hasPermission('attendance.self.request'), 403);
 
         // SECURITY: a request is always for the actor themselves — never for
-        // another employee, even if the actor is HR. Block immediately if the
-        // user isn't linked to an employee record.
+        // another employee, even if the actor is HR. Redirect with a friendly
+        // error (and log a warning so HR can debug from the log) if the user
+        // isn't linked to an employee record.
         $myEmployee = Employee::where('user_id', $request->user()->id)->first();
-        abort_if(
-            $myEmployee === null,
-            422,
-            __('employees.request_self_only_no_employee'),
-        );
+        if ($myEmployee === null) {
+            return $this->redirectMissingEmployee($request);
+        }
 
         $activeCompanyIds = $this->companyContext->getActiveCompanyIds();
         $fromMy = $request->query('from') === 'my'
@@ -127,7 +127,17 @@ class EmployeeRequestController extends Controller
             })
             ->orderBy('type')->orderBy('name')->get();
 
-        return view('employees.requests.create', compact('myEmployee', 'subtypes', 'fromMy'));
+        // Working-day map (S-ERP dow 0=Sat .. 6=Fri) for the day-off hint JS.
+        // True = working day in the employee's schedule. Empty calendar = every
+        // day treated as working so the hint never fires for an unconfigured emp.
+        $workingDays = [0, 1, 2, 3, 4, 5, 6];
+        if ($myEmployee->resource_calendar_id) {
+            $myEmployee->loadMissing('resourceCalendar.attendances');
+            $workingDays = $myEmployee->resourceCalendar?->attendances
+                ?->pluck('day_of_week')->unique()->values()->all() ?? [];
+        }
+
+        return view('employees.requests.create', compact('myEmployee', 'subtypes', 'fromMy', 'workingDays'));
     }
 
     public function store(StoreEmployeeRequestRequest $request)
@@ -138,11 +148,9 @@ class EmployeeRequestController extends Controller
         // employee_id POSTed (even by HR users) is ignored and overwritten
         // with the current user's own employee record.
         $myEmployee = Employee::where('user_id', $request->user()->id)->first();
-        abort_if(
-            $myEmployee === null,
-            422,
-            __('employees.request_self_only_no_employee'),
-        );
+        if ($myEmployee === null) {
+            return $this->redirectMissingEmployee($request);
+        }
         $data['employee_id'] = $myEmployee->id;
 
         // Handle attachment upload via FileService (Rule 10). Permission gate
@@ -214,5 +222,24 @@ class EmployeeRequestController extends Controller
         $request->validate(['body' => 'required|string|max:5000']);
         DB::transaction(fn () => $employeeRequest->logComment($request->body));
         return back()->with('success', __('employees.comment_added'));
+    }
+
+    /**
+     * Called when the actor has no Employee record. Friendly redirect with a
+     * flash message + Log::warning so the issue surfaces in laravel.log
+     * (abort() with 4xx codes never reaches the log by default).
+     */
+    private function redirectMissingEmployee(Request $request)
+    {
+        Log::warning('Request submission blocked — actor has no Employee record', [
+            'user_id'    => $request->user()->id,
+            'user_email' => $request->user()->email,
+            'route'      => $request->route()?->getName(),
+            'url'        => $request->fullUrl(),
+        ]);
+        $target = $request->user()->hasPermission('attendance.requests.read')
+            ? route('employees.requests.index')
+            : route('dashboard');
+        return redirect($target)->with('error', __('employees.request_self_only_no_employee'));
     }
 }

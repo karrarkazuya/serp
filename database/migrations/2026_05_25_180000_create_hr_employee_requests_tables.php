@@ -30,6 +30,8 @@ return new class extends Migration
 
             $table->index(['type', 'active']);
             $table->index('company_id');
+            // Prevent duplicate subtypes within the same scope (company or global).
+            $table->unique(['company_id', 'name'], 'hr_request_subtypes_scope_name_uq');
         });
 
         // Per-company balance accumulator config.
@@ -68,7 +70,9 @@ return new class extends Migration
             $table->foreignId('employee_id')->constrained('hr_employees')->cascadeOnDelete();
             $table->foreignId('company_id')->constrained('companies')->cascadeOnDelete();
             $table->enum('type', ['leave', 'time_off', 'overtime']);
-            $table->foreignId('subtype_id')->constrained('hr_request_subtypes')->cascadeOnDelete();
+            // restrict (not cascade) so deleting a subtype can never sweep
+            // requests away — requests are immutable per spec.
+            $table->foreignId('subtype_id')->constrained('hr_request_subtypes')->restrictOnDelete();
             $table->dateTime('start_at');
             $table->dateTime('end_at');
             $table->decimal('duration_days',  8, 2)->default(0); // populated for leave

@@ -62,8 +62,11 @@ class UpdateEmployeeRequest extends FormRequest
             'coach_id'          => ['nullable', $empRule],
             'expense_manager_id'    => ['nullable', $empRule],
             'attendance_manager_id' => ['nullable', $empRule],
-            'user_id'           => 'nullable|exists:users,id',
-            'contact_id'        => ['nullable', $contactRule],
+            // SECURITY: global uniqueness on user_id — see StoreEmployeeRequest
+            // for the privilege-escalation rationale. Ignore the current
+            // employee's id so editing itself is allowed.
+            'user_id'           => ['nullable', 'exists:users,id', 'unique:hr_employees,user_id,' . ($this->route('employee')?->id ?? 'NULL') . ',id,deleted_at,NULL'],
+            'contact_id'        => ['nullable', $contactRule, 'unique:hr_employees,contact_id,' . ($this->route('employee')?->id ?? 'NULL') . ',id,deleted_at,NULL'],
 
             'private_email'     => 'nullable|email|max:255',
             'private_phone'     => 'nullable|string|max:50',

@@ -39,20 +39,12 @@ class EmployeeRequestPolicy
             || $user->hasPermission('attendance.self.request');
     }
 
-    /**
-     * Submitter may edit only while still pending (and not locked).
-     * HR or the assigned manager may always act (approve/reject).
-     */
-    public function update(User $user, EmployeeRequest $request): bool
-    {
-        if ($request->isLocked()) return false;
-        return $this->view($user, $request);
-    }
+    // No update() ability on purpose — requests are immutable after submit.
+    // Approve/reject is a separate action (approveAsManager / approveAsHr).
 
     public function approveAsManager(User $user, EmployeeRequest $request): bool
     {
         if ($request->isLocked()) return false;
-        if ($this->isOwnRequest($user, $request)) return false; // no self-approval
         $managerUserId = $request->employee?->attendanceManager?->user_id;
         return $managerUserId !== null && $user->id === $managerUserId;
     }
@@ -60,15 +52,8 @@ class EmployeeRequestPolicy
     public function approveAsHr(User $user, EmployeeRequest $request): bool
     {
         if ($request->isLocked()) return false;
-        if ($this->isOwnRequest($user, $request)) return false; // no self-approval, even for HR
         return $user->hasPermission('attendance.hr_approve')
             && $this->isWithinActiveCompanies($request);
-    }
-
-    private function isOwnRequest(User $user, EmployeeRequest $request): bool
-    {
-        return $request->employee?->user_id !== null
-            && $user->id === $request->employee->user_id;
     }
 
     /**

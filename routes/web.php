@@ -64,8 +64,11 @@ use Illuminate\Support\Facades\Route;
 | Public routes
 |--------------------------------------------------------------------------
 */
-// Public shared-link route — no authentication required
-Route::get('/share/{token}', [SharedLinkController::class, 'show'])->name('share.show');
+// Public shared-link route — no authentication required. Throttled to
+// frustrate token-enumeration scans (the token is the only secret).
+Route::get('/share/{token}', [SharedLinkController::class, 'show'])
+    ->middleware('throttle:30,1')
+    ->name('share.show');
 
 Route::middleware('guest')->group(function () {
     Route::get('/login', [LoginController::class, 'showLoginForm'])->name('login');
@@ -85,8 +88,12 @@ Route::middleware('auth')->group(function () {
     Route::get('/files/{uuid}', [FileController::class, 'serve'])->name('files.serve');
     Route::get('/files/{uuid}/thumbnail', [FileController::class, 'thumbnail'])->name('files.thumbnail');
 
-    // Generic export — permission checked dynamically inside the controller
-    Route::post('/export', [ExportController::class, 'export'])->name('export');
+    // Generic export — permission checked dynamically inside the controller.
+    // Throttled because exports run heavy queries + build files; cap per-user
+    // to 20/min so one user can't saturate workers.
+    Route::post('/export', [ExportController::class, 'export'])
+        ->middleware('throttle:20,1')
+        ->name('export');
 
     // Notifications
     Route::prefix('notifications')->name('notifications.')->group(function () {

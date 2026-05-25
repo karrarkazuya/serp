@@ -5,6 +5,7 @@
 {{-- JSON moved out of x-data="…" because @json's double-quote-laden output
      would close the attribute prematurely and dump the rest as text. --}}
 <script type="application/json" id="request-form-subtypes">@json($subtypes)</script>
+<script type="application/json" id="request-form-working-days">@json(array_values($workingDays))</script>
 
 <div class="flex flex-col h-full bg-gray-50"
      x-data="{
@@ -13,11 +14,29 @@
         startAt: '{{ old('start_at') }}',
         endAt: '{{ old('end_at') }}',
         subtypes: JSON.parse(document.getElementById('request-form-subtypes').textContent || '[]'),
+        workingDays: JSON.parse(document.getElementById('request-form-working-days').textContent || '[]'),
         get isLeave() { return this.type === 'leave'; },
         get currentSubtype() {
             return this.subtypes.find(s => String(s.id) === String(this.subtypeId)) || null;
         },
         get filteredSubtypes() { return this.subtypes.filter(s => s.type === this.type); },
+        // Convert a Carbon-style sys dow (0=Sat..6=Fri) from a JS Date.
+        sysDowOf(d) { return (d.getDay() + 1) % 7; },
+        // For a leave range, return the day-off date labels that the schedule
+        // marks as off. Empty array = no hint.
+        dayOffWarnings() {
+            if (!this.isLeave || !this.startAt || !this.endAt) return [];
+            const a = new Date(this.startAt + 'T00:00:00'),
+                  b = new Date(this.endAt   + 'T00:00:00');
+            if (isNaN(a) || isNaN(b) || b < a) return [];
+            const labels = [];
+            for (let d = new Date(a); d <= b; d.setDate(d.getDate() + 1)) {
+                if (!this.workingDays.includes(this.sysDowOf(d))) {
+                    labels.push(d.toDateString().slice(0, 10));
+                }
+            }
+            return labels;
+        },
         duration() {
             if (!this.startAt || !this.endAt) return '—';
             const a = new Date(this.startAt), b = new Date(this.endAt);
@@ -107,6 +126,15 @@
                         <div class="text-sm text-gray-600 bg-purple-50/40 border border-purple-100 rounded p-3 flex flex-col gap-1">
                             <div><span class="font-semibold">{{ __('employees.request_from') }} → {{ __('employees.request_to') }}:</span> <span x-text="periodText()"></span></div>
                             <div><span class="font-semibold">Duration:</span> <span x-text="duration()"></span></div>
+                        </div>
+                        {{-- Leave-only: warn if the range crosses day-off days per the
+                             schedule. Submission still succeeds — the user can ignore. --}}
+                        <div x-show="isLeave && dayOffWarnings().length > 0" style="display:none"
+                             class="mt-2 text-sm text-amber-700 bg-amber-50 border border-amber-200 rounded p-3">
+                            <p class="font-semibold mb-1">{{ __('employees.request_hint_includes_day_off') }}</p>
+                            <p class="text-xs text-amber-600">
+                                <span x-text="dayOffWarnings().join(', ')"></span>
+                            </p>
                         </div>
                     </div>
 

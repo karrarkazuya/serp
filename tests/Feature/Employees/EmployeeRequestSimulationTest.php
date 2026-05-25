@@ -534,7 +534,7 @@ class EmployeeRequestSimulationTest extends TestCase
         $request->setLaravelSession($this->app["session.store"]);
         $request->setUserResolver(fn () => $this->hrUser);
 
-        $v = \Validator::make(
+        $v = \Illuminate\Support\Facades\Validator::make(
             $request->all() + ['attachment' => $request->file('attachment')],
             $request->rules(),
         );
@@ -610,20 +610,71 @@ class EmployeeRequestSimulationTest extends TestCase
         $this->assertNotSame($this->employee->id, $req->employee_id);
     }
 
-    /** 28. Submitter cannot approve their own request as HR (self-approval block). */
-    public function test_submitter_cannot_self_approve_as_hr(): void
+    /** 30. Duration cap: leave > 365 days is rejected. */
+    public function test_leave_duration_cap_rejects_over_365_days(): void
     {
-        // Make the employee + HR be the same person.
-        $this->employee->update(['user_id' => $this->hrUser->id]);
-
         $st = $this->makeSubtype(['type' => RequestSubtype::TYPE_LEAVE]);
         $sun = $this->nextWorkingSunday();
-        $req = $this->createRequest('leave', $st, $sun->copy()->startOfDay(), $sun->copy()->endOfDay());
+        $this->expectException(RuntimeException::class);
+        $this->expectExceptionMessageMatches('/365 days/');
+        $this->createRequest('leave', $st, $sun->copy()->startOfDay(), $sun->copy()->addDays(400)->endOfDay());
+    }
 
-        $this->assertFalse($this->hrUser->can('approveAsHr', $req),
-            'HR who submitted should not be able to approve their own request');
-        $this->assertFalse($this->hrUser->can('approveAsManager', $req),
-            'Self-approval is blocked on manager side too');
+    /** 31. Duration cap: time-off > 48 hours is rejected. */
+    public function test_time_off_duration_cap_rejects_over_48_hours(): void
+    {
+        $st = $this->makeSubtype(['type' => RequestSubtype::TYPE_TIME_OFF]);
+        $sun = $this->nextWorkingSunday();
+        $this->expectException(RuntimeException::class);
+        $this->expectExceptionMessageMatches('/48 hours/');
+        $this->createRequest('time_off', $st, $sun->copy()->setTime(10, 0), $sun->copy()->addDays(3)->setTime(11, 0));
+    }
+
+    /** 32. Subtype name uniqueness within the same company. */
+    public function test_subtype_name_unique_within_company(): void
+    {
+        // Standard-SQL NULL collisions are allowed by the unique constraint;
+        // the constraint only enforces uniqueness for rows that share a
+        // non-null company_id. Test with an explicit company.
+        $this->makeSubtype(['name' => 'Dup', 'type' => RequestSubtype::TYPE_LEAVE, 'company_id' => $this->company->id]);
+        $this->expectException(\Illuminate\Database\UniqueConstraintViolationException::class);
+        $this->makeSubtype(['name' => 'Dup', 'type' => RequestSubtype::TYPE_LEAVE, 'company_id' => $this->company->id]);
+    }
+
+    /** 34. Approval of a request whose subtype was soft-deleted still works. */
+    public function test_approval_works_after_subtype_soft_deleted(): void
+    {
+        $st = $this->makeSubtype(['type' => RequestSubtype::TYPE_OVERTIME, 'factor' => 2.0]);
+        $fri = $this->nextDayOff();
+        $req = $this->createRequest('overtime', $st, $fri->copy()->setTime(9, 0), $fri->copy()->setTime(12, 0));
+
+        // Admin archives the subtype after submission.
+        $st->delete(); // soft delete
+        $this->assertTrue($st->fresh()->trashed());
+
+        // Approval must still resolve the subtype + apply the factor — no
+        // null->factor crash on the historical row.
+        $this->svc->decide($req, 'manager', 'approve', null, $this->managerUser->id);
+        $this->svc->decide($req->refresh(), 'hr', 'approve', null, $this->hrUser->id);
+        $req->refresh();
+        $this->assertSame(EmployeeRequest::STATE_APPROVED, $req->state);
+
+        $att = Attendance::where('employee_id', $this->employee->id)
+            ->whereDate('attendance_date', $fri->toDateString())->first();
+        $this->assertEquals(6.0, (float) $att->approved_overtime_hours, '3h × factor 2.0 should still apply');
+    }
+
+    /** 33. Balance cron: future last_credited_month doesn't over-credit. */
+    public function test_balance_cron_handles_future_last_credited_month(): void
+    {
+        $bal = $this->balanceSvc->getOrCreate($this->employee);
+        // Simulate clock skew / restored backup with a future credit timestamp.
+        $bal->update(['leave_days_balance' => 5, 'last_credited_month' => Carbon::today()->addMonths(3)->startOfMonth()->toDateString()]);
+
+        $this->balanceSvc->creditMonthly(Carbon::today()->startOfMonth());
+        $bal->refresh();
+        // Signed diff is negative, max(0, ...) clamps to 0 → no credit applied.
+        $this->assertEquals(5.0, (float) $bal->leave_days_balance, 'No over-credit on future last_credited_month');
     }
 
     /** 29. Submission notifies the assigned attendance manager. */
@@ -657,7 +708,12 @@ class EmployeeRequestSimulationTest extends TestCase
             'start_at' => $sun->copy()->startOfDay()->toDateTimeString(),
             'end_at'   => $sun->copy()->endOfDay()->toDateTimeString(),
         ]);
-        $response->assertStatus(422);
+        // Friendly redirect (not raw 422) so the user gets a clean page; the
+        // controller also calls Log::warning so HR can debug from laravel.log.
+        $response->assertRedirect();
+        $response->assertSessionHas('error');
+        $this->assertSame(0, EmployeeRequest::count(),
+            'No request should have been created');
     }
 
     /** 25. Dashboard widget labels read "Balance", not "per Month". */

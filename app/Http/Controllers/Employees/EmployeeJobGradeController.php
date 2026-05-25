@@ -5,11 +5,13 @@ namespace App\Http\Controllers\Employees;
 use App\Http\Controllers\Controller;
 use App\Models\Employees\Employee;
 use App\Models\Employees\EmployeeJobGrade;
+use App\Services\Company\CompanyContextService;
 use App\Helpers\GroupsQuery;
 use App\Helpers\SearchFilters;
 use App\Helpers\SortsTable;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\Rule;
 
 class EmployeeJobGradeController extends Controller
 {
@@ -115,9 +117,14 @@ class EmployeeJobGradeController extends Controller
     {
         $this->authorize('update', Employee::class);
 
+        // Rule 11: only employees in the actor's active companies.
+        $activeCompanyIds = app(CompanyContextService::class)->getActiveCompanyIds();
+        $employeeRule = Rule::exists('hr_employees', 'id')->where(function ($q) use ($activeCompanyIds) {
+            empty($activeCompanyIds) ? $q->whereRaw('1 = 0') : $q->whereIn('company_id', $activeCompanyIds);
+        });
         $data = $request->validate([
             'employee_ids'   => 'nullable|array',
-            'employee_ids.*' => 'exists:hr_employees,id',
+            'employee_ids.*' => $employeeRule,
         ]);
 
         $newIds = collect($data['employee_ids'] ?? [])->map(fn ($id) => (int) $id);

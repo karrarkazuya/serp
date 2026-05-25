@@ -100,17 +100,23 @@ class EmployeeRequest extends Model
 
     public function employee(): BelongsTo
     {
-        return $this->belongsTo(Employee::class, 'employee_id');
+        // withTrashed: archiving an employee with historical requests must not
+        // null out the relation — approval / notification / show pages still
+        // need to resolve the person's name + manager link.
+        return $this->belongsTo(Employee::class, 'employee_id')->withTrashed();
     }
 
     public function company(): BelongsTo
     {
-        return $this->belongsTo(Company::class);
+        return $this->belongsTo(Company::class)->withTrashed();
     }
 
     public function subtype(): BelongsTo
     {
-        return $this->belongsTo(RequestSubtype::class, 'subtype_id');
+        // withTrashed: an archived/soft-deleted subtype must still resolve on
+        // historical requests so approval/recompute can read its factor + flags
+        // (the FK is restrictOnDelete, so hard delete is already blocked).
+        return $this->belongsTo(RequestSubtype::class, 'subtype_id')->withTrashed();
     }
 
     public function managerDecisionUser(): BelongsTo

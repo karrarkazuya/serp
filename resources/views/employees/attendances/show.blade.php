@@ -8,7 +8,13 @@
     <x-toolbar>
         <x-slot:breadcrumb>
             <a href="{{ route('employees.attendances.index') }}" class="text-xs text-purple-600 hover:text-purple-700">{{ __('employees.attendances_title') }}</a>
-            <span class="text-sm font-semibold text-gray-800">{{ $attendance->employee?->name }} — {{ $attendance->attendance_date?->format('M d, Y') }}</span>
+            @if($attendance->employee)
+                <a href="{{ route('employees.show', $attendance->employee) }}" class="text-sm font-semibold text-gray-800 hover:text-purple-700">{{ $attendance->employee->name }}</a>
+            @else
+                <span class="text-sm font-semibold text-gray-800">—</span>
+            @endif
+            <span class="text-xs text-gray-400">/</span>
+            <span class="text-sm text-gray-500">{{ $attendance->attendance_date?->format('M d, Y') }}</span>
         </x-slot:breadcrumb>
         <x-slot:actions>
             <div class="flex items-center gap-2">
@@ -26,7 +32,16 @@
         <div class="bg-white rounded-xl border border-gray-200 shadow-sm p-6">
             <div class="flex items-center gap-3 mb-6">
                 <div>
-                    <h1 class="text-2xl font-bold text-gray-900">{{ $attendance->employee?->name }}</h1>
+                    @if($attendance->employee)
+                        <a href="{{ route('employees.show', $attendance->employee) }}" class="block">
+                            <h1 class="text-2xl font-bold text-gray-900 hover:text-purple-700">{{ $attendance->employee->name }}</h1>
+                            @if($attendance->employee->job_title || $attendance->employee->job?->name)
+                                <p class="text-xs text-purple-600 mt-0.5">{{ $attendance->employee->job_title ?? $attendance->employee->job?->name }}</p>
+                            @endif
+                        </a>
+                    @else
+                        <h1 class="text-2xl font-bold text-gray-900">—</h1>
+                    @endif
                     <p class="text-sm text-gray-500 mt-0.5">{{ $attendance->attendance_date?->format('l, M d, Y') }}</p>
                 </div>
                 <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-{{ $attendance->status_color }}-100 text-{{ $attendance->status_color }}-700">

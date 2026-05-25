@@ -108,7 +108,7 @@ class EmployeeDocumentController extends Controller
             'expiry_date'             => 'nullable|date',
             'notify_before_days'      => 'nullable|integer|min:0|max:365',
             'notes'                   => 'nullable|string',
-            'file'                    => 'nullable|file|max:10240',
+            'file'                    => 'nullable|file|max:10240|mimetypes:image/jpeg,image/png,image/gif,image/webp,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document,application/vnd.ms-excel,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.ms-powerpoint,application/vnd.openxmlformats-officedocument.presentationml.presentation,application/vnd.oasis.opendocument.text,application/vnd.oasis.opendocument.spreadsheet,text/plain,text/csv|mimes:jpg,jpeg,png,gif,webp,pdf,doc,docx,xls,xlsx,ppt,pptx,odt,ods,txt,csv',
         ]);
 
         $employee = Employee::findOrFail($data['employee_id']);
@@ -165,7 +165,7 @@ class EmployeeDocumentController extends Controller
             'expiry_date'             => 'nullable|date',
             'notify_before_days'      => 'nullable|integer|min:0|max:365',
             'notes'                   => 'nullable|string',
-            'file'                    => 'nullable|file|max:10240',
+            'file'                    => 'nullable|file|max:10240|mimetypes:image/jpeg,image/png,image/gif,image/webp,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document,application/vnd.ms-excel,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.ms-powerpoint,application/vnd.openxmlformats-officedocument.presentationml.presentation,application/vnd.oasis.opendocument.text,application/vnd.oasis.opendocument.spreadsheet,text/plain,text/csv|mimes:jpg,jpeg,png,gif,webp,pdf,doc,docx,xls,xlsx,ppt,pptx,odt,ods,txt,csv',
         ]);
 
         $fileRecord = null;
@@ -252,7 +252,7 @@ class EmployeeDocumentController extends Controller
             'expiry_date'             => 'nullable|date',
             'notify_before_days'      => 'nullable|integer|min:0|max:365',
             'notes'                   => 'nullable|string',
-            'file'                    => 'nullable|file|max:10240',
+            'file'                    => 'nullable|file|max:10240|mimetypes:image/jpeg,image/png,image/gif,image/webp,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document,application/vnd.ms-excel,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.ms-powerpoint,application/vnd.openxmlformats-officedocument.presentationml.presentation,application/vnd.oasis.opendocument.text,application/vnd.oasis.opendocument.spreadsheet,text/plain,text/csv|mimes:jpg,jpeg,png,gif,webp,pdf,doc,docx,xls,xlsx,ppt,pptx,odt,ods,txt,csv',
         ]);
 
         $fileRecord = null;
