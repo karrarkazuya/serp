@@ -581,8 +581,209 @@ class DemoSeeder extends Seeder
 
         $this->seedAllocations($allEmployees);
         $this->seedAttendances($allEmployees);
+        $this->seedRequests($allEmployees, $company);
 
         $this->command->info('Employees seeded — ' . $allEmployees->count() . ' records created.');
+    }
+
+    // ── Leave / Time-off / Overtime requests ─────────────────────────────────
+
+    private function seedRequests(\Illuminate\Support\Collection $employees, \App\Models\Settings\Company $company): void
+    {
+        // 1. Per-company balance config.
+        \App\Models\Employees\RequestBalanceConfig::updateOrCreate(
+            ['company_id' => $company->id],
+            ['leave_days_per_month' => 1.75, 'leave_days_max' => 30, 'time_off_hours_per_month' => 8],
+        );
+
+        // 2. Subtypes (global = company_id null so every company can use them).
+        $subtypeDefs = [
+            ['name' => 'Sick Leave',         'type' => 'leave',    'cuts_salary' => false, 'cuts_balance' => true,  'requires_attachment' => true],
+            ['name' => 'Paid Leave',         'type' => 'leave',    'cuts_salary' => true,  'cuts_balance' => false],
+            ['name' => 'Unpaid Leave',       'type' => 'leave',    'cuts_salary' => false, 'cuts_balance' => true],
+            ['name' => 'Remote Work',        'type' => 'leave',    'cuts_salary' => false, 'cuts_balance' => false],
+            ['name' => 'Personal Time Off',  'type' => 'time_off', 'cuts_salary' => false, 'cuts_balance' => true],
+            ['name' => 'Doctor Visit',       'type' => 'time_off', 'cuts_salary' => false, 'cuts_balance' => false],
+            ['name' => 'Overtime',           'type' => 'overtime', 'cuts_salary' => false, 'cuts_balance' => false, 'factor' => 2.0],
+        ];
+        $subtypes = collect();
+        foreach ($subtypeDefs as $def) {
+            $subtypes[$def['name']] = \App\Models\Employees\RequestSubtype::firstOrCreate(
+                ['name' => $def['name'], 'company_id' => null],
+                array_merge([
+                    'cuts_salary' => false, 'cuts_balance' => false, 'factor' => 1.0,
+                    'requires_title' => true, 'requires_description' => false, 'requires_attachment' => false,
+                    'active' => true,
+                ], $def),
+            );
+        }
+
+        // 3. Seed an employee record for the admin user so they can submit + HR-approve.
+        $admin = \App\Models\User::where('email', 'admin@example.com')->first();
+        if ($admin && !\App\Models\Employees\Employee::where('user_id', $admin->id)->exists()) {
+            $hrDept = \App\Models\Employees\Department::where('name', 'Human Resources')->first();
+            $adminEmployee = \App\Models\Employees\Employee::create([
+                'name'                  => 'System Admin',
+                'name_en'               => 'System Admin',
+                'employee_code'         => 'ADMIN-001',
+                'work_email'            => 'admin@example.com',
+                'company_id'            => $company->id,
+                'department_id'         => $hrDept?->id,
+                'employment_status'     => 'active',
+                'hire_date'             => '2024-01-01',
+                'user_id'               => $admin->id,
+                'resource_calendar_id'  => \App\Models\Employees\ResourceCalendar::first()->id,
+                'attendance_manager_id' => $employees->where('job_title', 'Chief Executive Officer')->first()?->id,
+                'active'                => true,
+            ]);
+            $employees = $employees->push($adminEmployee);
+        }
+
+        // 4. Give every employee an initial balance for testing.
+        $balanceSvc = app(\App\Services\Employees\BalanceService::class);
+        foreach ($employees as $emp) {
+            $bal = $balanceSvc->getOrCreate($emp);
+            $bal->update([
+                'leave_days_balance'     => 10,
+                'time_off_hours_balance' => 8,
+                'last_credited_month'    => now()->startOfMonth()->toDateString(),
+            ]);
+        }
+
+        // 5. Sample requests across various states.
+        $requestSvc = app(\App\Services\Employees\EmployeeRequestService::class);
+
+        // Make Sick Leave NOT require an attachment in demo so the seeder
+        // can drive it without uploading a real file.
+        $subtypes['Sick Leave']->update(['requires_attachment' => false]);
+
+        // Mix of FUTURE and PAST samples — the past ones let the user see
+        // how the approval back-links the attendance row. The seedRequests
+        // step below ensures attendance exists for every past-sample date.
+        // Time-off offsets are chosen to land on Sun-Thu (working days for
+        // the Standard 40 schedule) so the validation doesn't reject them.
+        // Helpers to anchor on the nearest working day rather than guessing offsets.
+        $todayDow      = (now()->dayOfWeek + 1) % 7;          // S-ERP: Sat=0..Fri=6
+        $nextWorkingOffset = function (int $startOffset) use ($todayDow): int {
+            $d = $startOffset;
+            // Working days for Standard 40 = Sun..Thu  (sys dow 1..5).
+            while (true) {
+                $dow = (($todayDow + $d) % 7 + 7) % 7;
+                if ($dow >= 1 && $dow <= 5) return $d;
+                $d += ($startOffset >= 0 ? 1 : -1);
+            }
+        };
+
+        $samples = [
+            // [employee_idx, subtype, start_offset, end_offset, type, title, startH|null, endH|null]
+            // ── Past (linked to attendance — visible on the attendance show page) ──
+            [5,  'Sick Leave',         -7, -6, 'leave',    'Flu — bed rest',    null, null],
+            [6,  'Paid Leave',         -5, -5, 'leave',    'Personal day',      null, null],
+            [7,  'Unpaid Leave',       -10,-9, 'leave',    'Family emergency',  null, null],
+            [8,  'Personal Time Off',  $nextWorkingOffset(-3), $nextWorkingOffset(-3), 'time_off', 'Bank visit',        10.0, 12.0],
+            [9,  'Doctor Visit',       $nextWorkingOffset(-2), $nextWorkingOffset(-2), 'time_off', 'Specialist',        14.0, 16.0],
+            [10, 'Overtime',           -1, -1, 'overtime', 'Production deploy', 19.0, 22.0],
+            // ── Future ──
+            [3,  'Paid Leave',          5,  7, 'leave',    'Family event',     null, null],
+            [4,  'Unpaid Leave',       10, 12, 'leave',    'Personal time',    null, null],
+            [11, 'Remote Work',         2,  2, 'leave',    'Working from home',null, null],
+            [12, 'Personal Time Off',  $nextWorkingOffset(3), $nextWorkingOffset(3), 'time_off', 'Errand',            9.0, 11.0],
+        ];
+
+        foreach ($samples as $i => [$idx, $stName, $startOff, $endOff, $type, $title, $startH, $endH]) {
+            $emp = $employees->values()->get($idx);
+            if (!$emp) continue;
+            $subtype = $subtypes[$stName];
+            $startDate = now()->copy()->addDays($startOff)->startOfDay();
+            $endDate   = now()->copy()->addDays($endOff)->endOfDay();
+            if ($type !== 'leave') {
+                $startDate = $startDate->copy()->setTime((int) floor($startH), (int) (($startH - floor($startH)) * 60));
+                $endDate   = now()->copy()->addDays($endOff)->setTime((int) floor($endH), (int) (($endH - floor($endH)) * 60));
+            }
+
+            // For PAST samples: ensure an attendance row exists for every
+            // covered day so the approval-side-effect has something to back-link
+            // to. Days where the employee was scheduled to work get a normal
+            // punch-in/out; day-offs get an empty row.
+            if ($startOff < 0) {
+                $cursor = $startDate->copy()->startOfDay();
+                $stop   = $endDate->copy()->endOfDay();
+                while ($cursor->lte($stop)) {
+                    $exists = \App\Models\Employees\Attendance::where('employee_id', $emp->id)
+                        ->whereDate('attendance_date', $cursor->toDateString())
+                        ->exists();
+                    if (!$exists) {
+                        $sysDow = ($cursor->dayOfWeek + 1) % 7;
+                        $blocks = $emp->resourceCalendar?->attendances
+                            ->where('day_of_week', $sysDow)->values()->all() ?? [];
+                        $data = [
+                            'employee_id'          => $emp->id,
+                            'company_id'           => $emp->company_id,
+                            'resource_calendar_id' => $emp->resource_calendar_id,
+                            'attendance_date'      => $cursor->toDateString(),
+                        ];
+                        if (!empty($blocks)) {
+                            // Working day → realistic punch matching the schedule.
+                            $earliest = (float) collect($blocks)->min('hour_from');
+                            $latest   = (float) collect($blocks)->max('hour_to');
+                            $data['check_in']  = $this->floatToCarbon($cursor, $earliest + mt_rand(-5, 10) / 60)->toDateTimeString();
+                            $data['check_out'] = $this->floatToCarbon($cursor, $latest   + mt_rand(-5, 10) / 60)->toDateTimeString();
+                        }
+                        app(\App\Services\Employees\AttendanceService::class)
+                            ->create($data);
+                    }
+                    $cursor->addDay();
+                }
+            }
+
+            try {
+                $req = $requestSvc->create([
+                    'employee_id' => $emp->id,
+                    'subtype_id'  => $subtype->id,
+                    'type'        => $type,
+                    'start_at'    => $startDate->toDateTimeString(),
+                    'end_at'      => $endDate->toDateTimeString(),
+                    'title'       => $title,
+                    'description' => null,
+                    'attachment'  => null,
+                ]);
+            } catch (\Throwable $e) {
+                $this->command->warn("  request seed skipped (#$i $stName): " . $e->getMessage());
+                continue;
+            }
+
+            // Drive a few to terminal states for demo variety. Past samples are
+            // always fully approved so the attendance back-link shows up on the
+            // attendance show page (the whole point of the past demo data).
+            $managerUserId = $emp->attendanceManager?->user_id ?? $admin?->id ?? 1;
+            $hrUserId      = $admin?->id ?? 1;
+            try {
+                if ($startOff < 0) {
+                    $requestSvc->decide($req, 'manager', 'approve', null, $managerUserId);
+                    $requestSvc->decide($req->refresh(), 'hr', 'approve', null, $hrUserId);
+                    continue;
+                }
+                switch ($i % 4) {
+                    case 0: // manager approves; HR also approves => approved
+                        $requestSvc->decide($req, 'manager', 'approve', null, $managerUserId);
+                        $requestSvc->decide($req->refresh(), 'hr', 'approve', null, $hrUserId);
+                        break;
+                    case 1: // manager approves; HR pending => pending
+                        $requestSvc->decide($req, 'manager', 'approve', null, $managerUserId);
+                        break;
+                    case 2: // manager rejects => rejected
+                        $requestSvc->decide($req, 'manager', 'reject', 'Conflicts with project deadline', $managerUserId);
+                        break;
+                    case 3: // HR override approve
+                        $requestSvc->decide($req, 'hr', 'approve', null, $hrUserId);
+                        break;
+                }
+            } catch (\Throwable $e) {
+                $this->command->warn("  decision seed skipped (#$i): " . $e->getMessage());
+            }
+        }
+
+        $this->command->info('Requests seeded — ' . count($samples) . ' samples + admin employee.');
     }
 
     // ── Attendance ───────────────────────────────────────────────────────────

@@ -96,7 +96,7 @@ class EmployeeController extends Controller
         return view('employees.index', compact('employees', 'view'));
     }
 
-    public function show(Employee $employee)
+    public function show(Request $request, Employee $employee)
     {
         $this->authorize('view', $employee);
 
@@ -129,6 +129,23 @@ class EmployeeController extends Controller
             ->orderBy('sequence')->orderBy('id')
             ->get();
 
+        // Recent requests for this employee — surfaced on the HR-view Requests
+        // tab. Only loaded when the actor has HR-side perms; the policy still
+        // gates individual click-throughs.
+        $employeeRequests = collect();
+        $employeeBalance  = null;
+        if ($request->user()->hasPermission('attendance.requests.read')) {
+            $employeeRequests = \App\Models\Employees\EmployeeRequest::with('subtype')
+                ->where('employee_id', $employee->id)
+                ->orderByDesc('created_at')
+                ->limit(50)
+                ->get();
+            $employeeBalance = \App\Models\Employees\EmployeeBalance::firstOrCreate(
+                ['employee_id' => $employee->id],
+                ['leave_days_balance' => 0, 'time_off_hours_balance' => 0],
+            );
+        }
+
         $allIds = Employee::active()
             ->when(!empty($activeCompanyIds), fn($q) => $q->forCompanies($activeCompanyIds))
             ->orderBy('name')
@@ -151,7 +168,7 @@ class EmployeeController extends Controller
 
         return view('employees.show', compact(
             'employee', 'prevId', 'nextId', 'recordPosition', 'recordTotal', 'chain',
-            'plannedDays', 'plannedPattern',
+            'plannedDays', 'plannedPattern', 'employeeRequests', 'employeeBalance',
         ));
     }
 

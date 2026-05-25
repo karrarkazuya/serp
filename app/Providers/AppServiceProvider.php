@@ -38,8 +38,12 @@ use App\Models\Accounting\CurrencyRate;
 use App\Models\Chat\ChatRoom;
 use App\Models\Contacts\Contact;
 use App\Models\Employees\Attendance;
+use App\Models\Employees\EmployeeBalance;
+use App\Models\Employees\EmployeeRequest;
 use App\Models\Employees\PlannedDay;
 use App\Models\Employees\PlannedRSchedule;
+use App\Models\Employees\RequestBalanceConfig;
+use App\Models\Employees\RequestSubtype;
 use App\Models\Employees\Contract;
 use App\Models\Employees\Department as EmployeeDepartment;
 use App\Models\Employees\DepartureReason;
@@ -117,7 +121,9 @@ use App\Policies\Chat\ChatRoomPolicy;
 use App\Policies\CompanyPolicy;
 use App\Policies\ContactPolicy;
 use App\Policies\Employees\AttendancePolicy;
+use App\Policies\Employees\EmployeeRequestPolicy;
 use App\Policies\Employees\PlannedDayPolicy;
+use App\Policies\Employees\RequestSubtypePolicy;
 use App\Policies\Employees\BadgePolicy;
 use App\Policies\Employees\ChallengePolicy;
 use App\Policies\Employees\ContractPolicy;
@@ -193,6 +199,8 @@ class AppServiceProvider extends ServiceProvider
         Gate::policy(Employee::class, EmployeePolicy::class);
         Gate::policy(Attendance::class, AttendancePolicy::class);
         Gate::policy(PlannedDay::class, PlannedDayPolicy::class);
+        Gate::policy(EmployeeRequest::class, EmployeeRequestPolicy::class);
+        Gate::policy(RequestSubtype::class, RequestSubtypePolicy::class);
         Gate::policy(EmployeeDepartment::class, EmployeeDepartmentPolicy::class);
         Gate::policy(Job::class, JobPolicy::class);
         Gate::policy(WorkLocation::class, WorkLocationPolicy::class);
@@ -295,6 +303,10 @@ class AppServiceProvider extends ServiceProvider
             Attendance::class,
             PlannedDay::class,
             PlannedRSchedule::class,
+            RequestSubtype::class,
+            RequestBalanceConfig::class,
+            EmployeeBalance::class,
+            EmployeeRequest::class,
             // Inventory module
             Product::class,
             ProductCategory::class,

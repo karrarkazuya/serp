@@ -27,10 +27,7 @@ class AttendancePolicy
         return $user->hasPermission('attendance.write');
     }
 
-    public function delete(User $user, ?Attendance $_attendance = null): bool
-    {
-        return $user->hasPermission('attendance.unlink');
-    }
+    // No delete ability on purpose — attendance records are immutable history.
 
     public function comment(User $user, Attendance $_attendance): bool
     {

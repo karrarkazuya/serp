@@ -16,3 +16,12 @@ Schedule::command('attendance:apply-planned-schedules')
     ->dailyAt('00:00')
     ->withoutOverlapping(10)
     ->runInBackground();
+
+// Credit each employee's monthly leave + time-off balance on the 1st of
+// every month. Idempotent on three layers: scheduler withoutOverlapping,
+// Cache::lock in the command, and BalanceService's last_credited_month
+// check (so a manual mid-month run is also a no-op).
+Schedule::command('attendance:credit-balances')
+    ->monthlyOn(1, '00:05')
+    ->withoutOverlapping(10)
+    ->runInBackground();

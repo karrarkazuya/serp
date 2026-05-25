@@ -153,7 +153,40 @@ $icons = [
         </div>
     </header>
 
-    <div class="relative z-0 mx-auto flex min-h-[calc(100vh-4rem)] max-w-5xl items-start justify-center px-6 pb-16 pt-6">
+    <div class="relative z-0 mx-auto flex min-h-[calc(100vh-4rem)] max-w-5xl flex-col items-center px-6 pb-16 pt-6">
+
+        @if(!empty($selfRequestsWidget))
+        <div class="mb-8 w-full max-w-3xl rounded-xl border border-purple-200 bg-white p-5 shadow-sm">
+            <div class="mb-3 flex items-center justify-between">
+                <h2 class="text-sm font-semibold text-gray-700">{{ __('employees.my_requests_title') }}</h2>
+                <a href="{{ route('employees.my-requests') }}" class="text-xs text-purple-600 hover:text-purple-700">{{ __('employees.my_requests_title') }} →</a>
+            </div>
+            <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                <a href="{{ route('employees.my-requests') }}" class="rounded-lg border border-gray-200 p-3 hover:border-purple-300 hover:bg-purple-50/30">
+                    <p class="text-xs text-gray-500 uppercase tracking-wide">{{ __('employees.my_requests_title') }}</p>
+                    <p class="text-2xl font-bold text-gray-900 mt-1">{{ $selfRequestsWidget['my_pending'] }}</p>
+                </a>
+                <a href="{{ route('employees.my-requests') }}" class="rounded-lg border border-gray-200 p-3 hover:border-purple-300 hover:bg-purple-50/30">
+                    <p class="text-xs text-gray-500 uppercase tracking-wide">{{ __('employees.pending_my_approval_title') }}</p>
+                    <p class="text-2xl font-bold text-gray-900 mt-1">{{ $selfRequestsWidget['awaiting_my_action'] }}</p>
+                </a>
+                @if($selfRequestsWidget['balance'])
+                <div class="rounded-lg border border-gray-200 p-3">
+                    <p class="text-xs text-gray-500 uppercase tracking-wide">{{ __('employees.balance_leave_days') }}</p>
+                    <p class="text-2xl font-bold text-gray-900 mt-1">{{ number_format((float) $selfRequestsWidget['balance']->leave_days_balance, 1) }}</p>
+                </div>
+                <div class="rounded-lg border border-gray-200 p-3">
+                    <p class="text-xs text-gray-500 uppercase tracking-wide">{{ __('employees.balance_time_off_hours') }}</p>
+                    <p class="text-2xl font-bold text-gray-900 mt-1">{{ number_format((float) $selfRequestsWidget['balance']->time_off_hours_balance, 1) }}</p>
+                </div>
+                @endif
+            </div>
+            <div class="mt-3 text-end">
+                <a href="{{ route('employees.requests.create', ['from' => 'my']) }}" class="inline-flex items-center px-3 py-1.5 text-xs font-semibold text-white bg-[#714B67] hover:bg-[#5c3d55] rounded">{{ __('employees.new_request') }}</a>
+            </div>
+        </div>
+        @endif
+
         @if($modules->isEmpty())
             <div class="mt-28 text-center text-sm text-gray-400">{{ __('common.no_modules') }}</div>
         @else

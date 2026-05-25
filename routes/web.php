@@ -11,7 +11,10 @@ use App\Http\Controllers\Contacts\ContactController;
 use App\Http\Controllers\Contacts\TagController;
 use App\Http\Controllers\Employees\AttendanceController;
 use App\Http\Controllers\Employees\EmployeeController;
+use App\Http\Controllers\Employees\EmployeeRequestController;
 use App\Http\Controllers\Employees\PlannedScheduleController;
+use App\Http\Controllers\Employees\RequestBalanceConfigController;
+use App\Http\Controllers\Employees\RequestSubtypeController;
 use App\Http\Controllers\Employees\DepartmentController as EmployeeDepartmentController;
 use App\Http\Controllers\Employees\JobController;
 use App\Http\Controllers\Employees\WorkLocationController;
@@ -168,6 +171,42 @@ Route::middleware('auth')->group(function () {
         Route::post('/', [EmployeeController::class, 'store'])->middleware('permission:employees.create')->name('store');
         Route::get('/check-link', [EmployeeController::class, 'checkLinkConflict'])->middleware('permission:employees.read')->name('check-link');
 
+        // ─ Leave / Time-off / Overtime requests ────────────────────────────
+        // Self-service personal queue (employee + their pending-approval list).
+        Route::get('/my-requests', [EmployeeRequestController::class, 'myIndex'])
+            ->middleware('permission:attendance.self.request')->name('my-requests');
+
+        // HR + self-service list/create. The controller distinguishes by
+        // whichever permission the caller holds.
+        Route::prefix('requests')->name('requests.')->group(function () {
+            Route::get('/',                 [EmployeeRequestController::class, 'read'])  ->middleware('permission:attendance.requests.read')                   ->name('index');
+            Route::get('/create',           [EmployeeRequestController::class, 'create'])->middleware('permission_any:attendance.requests.write,attendance.self.request')->name('create');
+            Route::post('/',                [EmployeeRequestController::class, 'store']) ->middleware('permission_any:attendance.requests.write,attendance.self.request')->name('store');
+            Route::get('/{employeeRequest}',[EmployeeRequestController::class, 'show'])  ->middleware('permission_any:attendance.requests.read,attendance.self.request') ->name('show');
+            Route::post('/{employeeRequest}/decide',  [EmployeeRequestController::class, 'decide'])    ->middleware('permission_any:attendance.requests.write,attendance.hr_approve,attendance.self.request')->name('decide');
+            Route::post('/{employeeRequest}/comment', [EmployeeRequestController::class, 'addComment'])->middleware('permission_any:attendance.requests.read,attendance.self.request')                                ->name('comment');
+        });
+
+        // Request subtypes config
+        Route::prefix('request-subtypes')->name('request-subtypes.')->group(function () {
+            Route::get('/',                       [RequestSubtypeController::class, 'read'])     ->middleware('permission:attendance.requests.config')->name('index');
+            Route::get('/create',                 [RequestSubtypeController::class, 'create'])   ->middleware('permission:attendance.requests.config')->name('create');
+            Route::post('/',                      [RequestSubtypeController::class, 'store'])    ->middleware('permission:attendance.requests.config')->name('store');
+            Route::get('/{subtype}',              [RequestSubtypeController::class, 'show'])     ->middleware('permission:attendance.requests.config')->name('show');
+            Route::get('/{subtype}/edit',         [RequestSubtypeController::class, 'edit'])     ->middleware('permission:attendance.requests.config')->name('edit');
+            Route::put('/{subtype}',              [RequestSubtypeController::class, 'write'])    ->middleware('permission:attendance.requests.config')->name('update');
+            Route::patch('/{subtype}/archive',    [RequestSubtypeController::class, 'archive'])  ->middleware('permission:attendance.requests.config')->name('archive');
+            Route::patch('/{subtype}/unarchive',  [RequestSubtypeController::class, 'unarchive'])->middleware('permission:attendance.requests.config')->name('unarchive');
+            Route::delete('/{subtype}',           [RequestSubtypeController::class, 'unlink'])   ->middleware('permission:attendance.requests.config')->name('delete');
+            Route::post('/{subtype}/comment',     [RequestSubtypeController::class, 'addComment'])->middleware('permission:attendance.requests.config')->name('comment');
+        });
+
+        // Balance config (single page per company)
+        Route::prefix('request-balance-config')->name('request-balance-config.')->group(function () {
+            Route::get('/',  [RequestBalanceConfigController::class, 'show'])->middleware('permission:attendance.requests.config')->name('show');
+            Route::post('/', [RequestBalanceConfigController::class, 'save'])->middleware('permission:attendance.requests.config')->name('save');
+        });
+
         // Planned Schedule (per-employee — nested under /{employee})
         // Note: no delete route on purpose — only the midnight cron removes
         // planned days (after they pass and are recorded in attendance).
@@ -184,7 +223,7 @@ Route::middleware('auth')->group(function () {
             Route::get('/{attendance}', [AttendanceController::class, 'show'])->middleware('permission:attendance.read')->name('show');
             Route::get('/{attendance}/edit', [AttendanceController::class, 'edit'])->middleware('permission:attendance.write')->name('edit');
             Route::put('/{attendance}', [AttendanceController::class, 'write'])->middleware('permission:attendance.write')->name('update');
-            Route::delete('/{attendance}', [AttendanceController::class, 'unlink'])->middleware('permission:attendance.unlink')->name('delete');
+            // No delete — attendance records are immutable history.
             Route::post('/{attendance}/comment', [AttendanceController::class, 'addComment'])->middleware('permission:attendance.write')->name('comment');
         });
 

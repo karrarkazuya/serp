@@ -285,7 +285,8 @@
       "Bash(sed -n '149,155p' /Users/karrar/Projects/web/serp/resources/views/settings/users/index.blade.php)",
       "Bash(sed -n '225,232p' /Users/karrar/Projects/web/serp/resources/views/contacts/index.blade.php)",
       "Bash(php -l /Users/karrar/Projects/web/serp/app/View/Components/TableList.php)",
-      "Bash(php -l /Users/karrar/Projects/web/serp/resources/views/components/list.blade.php)"
+      "Bash(php -l /Users/karrar/Projects/web/serp/resources/views/components/list.blade.php)",
+      "Bash(php -l app/Services/Employees/EmployeeRequestService.php app/Services/Employees/BalanceService.php app/Http/Controllers/Employees/EmployeeRequestController.php app/Http/Controllers/Employees/RequestSubtypeController.php app/Http/Controllers/Employees/RequestBalanceConfigController.php)"
     ],
     "additionalDirectories": [
       "/Users/karrar/Projects/web/serp/storage/app/public/avatars/contacts"

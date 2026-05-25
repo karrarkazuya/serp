@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Chat\ChatRoom;
+use App\Models\Employees\EmployeeRequest as HrEmployeeRequest;
 use App\Models\File;
 use App\Models\User;
 use App\Models\Workflow\Ticket;
@@ -88,6 +89,11 @@ class FileController extends Controller
         } elseif ($context instanceof ChatRoom) {
             // User must be a member of the chat room
             abort_unless($context->members()->where('user_id', $user->id)->exists(), 403);
+        } elseif ($context instanceof HrEmployeeRequest) {
+            // Attachments belong to an employee request — gate on whether the
+            // user can view the parent request (HR + active company OR
+            // submitter OR assigned attendance manager).
+            abort_unless($user->can('view', $context), 403);
         }
     }
 }

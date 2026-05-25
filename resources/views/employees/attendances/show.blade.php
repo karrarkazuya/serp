@@ -17,20 +17,7 @@
                    class="px-3 py-1.5 text-sm text-gray-600 bg-white border border-gray-300 rounded hover:bg-gray-50">{{ __('common.edit') }}</a>
                 @endcan
 
-                @can('delete', $attendance)
-                <div x-data="{ confirming: false }">
-                    <button type="button" x-show="!confirming" @click="confirming = true"
-                            class="px-3 py-1.5 text-sm text-red-600 bg-white border border-red-200 rounded hover:bg-red-50">{{ __('common.delete') }}</button>
-                    <div x-show="confirming" style="display:none" class="flex items-center gap-1.5">
-                        <span class="text-xs text-red-600">{{ __('common.are_you_sure') }}</span>
-                        <form method="POST" action="{{ route('employees.attendances.delete', $attendance) }}">
-                            @csrf @method('DELETE')
-                            <button type="submit" class="px-2 py-1 text-xs bg-red-600 text-white rounded">{{ __('common.yes') }}</button>
-                        </form>
-                        <button type="button" @click="confirming = false" class="px-2 py-1 text-xs text-gray-500 border border-gray-300 rounded">{{ __('common.cancel') }}</button>
-                    </div>
-                </div>
-                @endcan
+                {{-- No delete on purpose: attendance is immutable history. --}}
             </div>
         </x-slot:actions>
     </x-toolbar>
@@ -49,6 +36,25 @@
                     {{ __('employees.attendance_status_' . $statusKey) }}
                 </span>
             </div>
+
+            @if($attendance->request)
+            {{-- Surface the linked request so HR knows why expected_hours
+                 was reduced (time off) or why the row is tagged not-absence
+                 (leave). One-click navigation to the parent request. --}}
+            <div class="mb-4 rounded-lg border border-purple-200 bg-purple-50/40 p-3 text-sm flex items-center justify-between">
+                <span class="text-gray-700">
+                    @if($attendance->request->type === 'time_off')
+                        {{ __('employees.request_attendance_note', ['hours' => number_format((float) $attendance->request->duration_hours, 2)]) }}
+                    @elseif($attendance->request->type === 'overtime')
+                        {{ __('employees.request_attendance_overtime_note') }}
+                    @else
+                        {{ __('employees.request_attendance_leave_note') }}
+                    @endif
+                    <span class="text-gray-500"> — {{ $attendance->request->subtype?->name }}</span>
+                </span>
+                <a href="{{ route('employees.requests.show', $attendance->request) }}" class="text-purple-700 hover:text-purple-900 font-semibold">{{ __('employees.view_request') }} →</a>
+            </div>
+            @endif
 
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-x-8">
                 <div>
@@ -97,6 +103,15 @@
                     <p class="text-xl font-bold text-red-700 mt-1">{{ number_format((float) $attendance->shortage_hours, 2) }} {{ $unit }}</p>
                 </div>
             </div>
+
+            @if((float) $attendance->approved_overtime_hours > 0)
+            {{-- approved_overtime_hours is a separate bucket — distinct from
+                 the over-working overtime above. Per spec: keep both. --}}
+            <div class="mt-3 rounded-lg border border-blue-200 bg-blue-50/40 p-3 flex items-center justify-between">
+                <span class="text-xs font-semibold text-blue-600 uppercase tracking-wide">{{ __('employees.approved_overtime_hours_label') }}</span>
+                <span class="text-xl font-bold text-blue-700">{{ number_format((float) $attendance->approved_overtime_hours, 2) }} {{ $unit }}</span>
+            </div>
+            @endif
 
             @if($attendance->notes)
             <div class="mt-6">

@@ -441,6 +441,14 @@ class CoreSeeder extends Seeder
             ['name' => 'Read Planned Schedules',  'key' => 'planned_schedules.read',  'module' => 'attendance', 'description' => 'View an employee\'s planned working schedule.'],
             ['name' => 'Edit Planned Schedules',  'key' => 'planned_schedules.write', 'module' => 'attendance', 'description' => 'Edit single days and apply repeat patterns to an employee\'s planned working schedule.'],
 
+            // Leave / Time-off / Overtime requests — HR side
+            ['name' => 'Read Requests',           'key' => 'attendance.requests.read',   'module' => 'attendance', 'description' => 'HR: view all leave / time-off / overtime requests in the company.'],
+            ['name' => 'Edit Requests',           'key' => 'attendance.requests.write',  'module' => 'attendance', 'description' => 'HR: act as approver (attendance manager) on requests they are assigned to.'],
+            ['name' => 'HR Approve Requests',     'key' => 'attendance.hr_approve',      'module' => 'attendance', 'description' => 'HR: approve or reject any request, overriding the attendance manager.'],
+            ['name' => 'Configure Request Types', 'key' => 'attendance.requests.config', 'module' => 'attendance', 'description' => 'Manage request subtypes and per-company balance settings.'],
+            // Employee-side: submit and see your own requests, and act on those where you are an approver.
+            ['name' => 'Self-Service Requests',   'key' => 'attendance.self.request',    'module' => 'attendance', 'description' => 'Employee: submit personal requests and act on requests where you are the attendance manager.'],
+
             // Workflow — Tickets
             ['name' => 'Read Tickets',   'key' => 'workflow.tickets.read',   'module' => 'workflow', 'description' => 'View tickets assigned or visible to the user.'],
             ['name' => 'Create Tickets', 'key' => 'workflow.tickets.create', 'module' => 'workflow', 'description' => 'Create new tickets from templates.'],
@@ -470,6 +478,8 @@ class CoreSeeder extends Seeder
             ['name' => 'Export Users',             'key' => 'users.export',                 'module' => 'users',      'description' => 'Export user records to XLSX or CSV.'],
             ['name' => 'Export Employees',         'key' => 'employees.export',             'module' => 'employees',  'description' => 'Export employee records to XLSX or CSV.'],
             ['name' => 'Export Attendance',        'key' => 'attendance.export',            'module' => 'attendance', 'description' => 'Export attendance records to XLSX or CSV.'],
+            ['name' => 'Export Requests',          'key' => 'attendance.requests.export',   'module' => 'attendance', 'description' => 'Export leave / time-off / overtime requests to XLSX or CSV.'],
+            ['name' => 'Export Request Subtypes',  'key' => 'attendance.subtypes.export',   'module' => 'attendance', 'description' => 'Export request subtype configuration to XLSX or CSV.'],
             ['name' => 'Export Tickets',           'key' => 'workflow.tickets.export',      'module' => 'workflow',   'description' => 'Export workflow ticket records to XLSX or CSV.'],
             ['name' => 'Export Procedures',        'key' => 'workflow.procedures.export',   'module' => 'workflow',   'description' => 'Export workflow procedure records to XLSX or CSV.'],
             ['name' => 'Export Inventory',         'key' => 'inventory.export',             'module' => 'inventory',  'description' => 'Export inventory records to XLSX or CSV.'],
@@ -518,6 +528,7 @@ class CoreSeeder extends Seeder
             'employees.read',
             'attendance.read',
             'planned_schedules.read',
+            'attendance.self.request',
             'workflow.tickets.read',
             'workflow.procedures.read',
         ])->pluck('id');

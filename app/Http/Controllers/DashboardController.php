@@ -72,6 +72,27 @@ class DashboardController extends Controller
         $activeCompanyIds = $companyContext->getActiveCompanyIds();
         $companyLabel = $companyContext->getLabel();
 
-        return view('dashboard', compact('modules', 'allowedCompanies', 'activeCompanyIds', 'companyLabel'));
+        // Self-service widget: only present if the user can see their own
+        // requests + approve requests assigned to them.
+        $selfRequestsWidget = null;
+        if ($user->hasPermission('attendance.self.request')) {
+            $myEmployee = \App\Models\Employees\Employee::where('user_id', $user->id)->first();
+            $selfRequestsWidget = [
+                'my_pending'       => \App\Models\Employees\EmployeeRequest::query()
+                    ->whereHas('employee', fn ($q) => $q->where('user_id', $user->id))
+                    ->where('state', \App\Models\Employees\EmployeeRequest::STATE_PENDING)
+                    ->count(),
+                'awaiting_my_action' => \App\Models\Employees\EmployeeRequest::query()
+                    ->where('manager_status', \App\Models\Employees\EmployeeRequest::STATE_PENDING)
+                    ->where('state', \App\Models\Employees\EmployeeRequest::STATE_PENDING)
+                    ->whereHas('employee.attendanceManager', fn ($q) => $q->where('user_id', $user->id))
+                    ->count(),
+                'balance' => $myEmployee
+                    ? \App\Models\Employees\EmployeeBalance::firstOrCreate(['employee_id' => $myEmployee->id])
+                    : null,
+            ];
+        }
+
+        return view('dashboard', compact('modules', 'allowedCompanies', 'activeCompanyIds', 'companyLabel', 'selfRequestsWidget'));
     }
 }

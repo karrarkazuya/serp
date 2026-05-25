@@ -198,15 +198,21 @@
                 {{-- Tabs --}}
                 <div x-data="{ tab: 'work' }" class="border-t border-gray-200">
                     <div class="flex items-end gap-1 pt-3 border-b border-gray-200 overflow-x-auto">
-                        @foreach([
-                            ['work',     __('employees.work_info')],
-                            ['private',  __('employees.private_info')],
-                            ['hr',       __('employees.hr_settings')],
-                            ['contracts',__('employees.contracts_tab')],
-                            ['skills',   __('employees.skills_tab')],
-                            ['documents',__('employees.documents_tab')],
-                            ['schedule', __('employees.planned_schedule')],
-                        ] as [$key, $label])
+                        @php
+                            $tabs = [
+                                ['work',     __('employees.work_info')],
+                                ['private',  __('employees.private_info')],
+                                ['hr',       __('employees.hr_settings')],
+                                ['contracts',__('employees.contracts_tab')],
+                                ['skills',   __('employees.skills_tab')],
+                                ['documents',__('employees.documents_tab')],
+                                ['schedule', __('employees.planned_schedule')],
+                            ];
+                            if (auth()->user()->hasPermission('attendance.requests.read')) {
+                                $tabs[] = ['requests', __('employees.requests_title')];
+                            }
+                        @endphp
+                        @foreach($tabs as [$key, $label])
                         <button type="button"
                                 @click="tab = '{{ $key }}'"
                                 id="tab-{{ $key }}"
@@ -836,6 +842,54 @@
                             </div>
                             @endif
                         </div>
+
+                        {{-- Requests (HR view only) --}}
+                        @if(auth()->user()->hasPermission('attendance.requests.read'))
+                        <div x-show="tab === 'requests'" style="display:none" class="p-6">
+                            {{-- Balance summary at the top of the tab --}}
+                            @if(isset($employeeBalance))
+                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-4">
+                                <div class="rounded-lg border border-purple-200 bg-purple-50/30 p-3">
+                                    <p class="text-xs text-purple-600 uppercase tracking-wide font-semibold">{{ __('employees.balance_leave_days') }}</p>
+                                    <p class="text-2xl font-bold text-gray-900 mt-1">{{ number_format((float) $employeeBalance->leave_days_balance, 2) }}</p>
+                                </div>
+                                <div class="rounded-lg border border-purple-200 bg-purple-50/30 p-3">
+                                    <p class="text-xs text-purple-600 uppercase tracking-wide font-semibold">{{ __('employees.balance_time_off_hours') }}</p>
+                                    <p class="text-2xl font-bold text-gray-900 mt-1">{{ number_format((float) $employeeBalance->time_off_hours_balance, 2) }}</p>
+                                </div>
+                            </div>
+                            @endif
+
+                            @if(($employeeRequests ?? collect())->isEmpty())
+                                <div class="py-12 text-center text-gray-400 text-sm">{{ __('employees.no_requests') }}</div>
+                            @else
+                            <table class="w-full text-sm">
+                                <thead class="bg-gray-50">
+                                    <tr>
+                                        <th class="text-start px-4 py-2 text-xs font-semibold text-gray-500 uppercase">{{ __('employees.request_type') }}</th>
+                                        <th class="text-start px-3 py-2 text-xs font-semibold text-gray-500 uppercase">{{ __('employees.request_subtype') }}</th>
+                                        <th class="text-start px-3 py-2 text-xs font-semibold text-gray-500 uppercase">{{ __('employees.request_from') }}</th>
+                                        <th class="text-start px-3 py-2 text-xs font-semibold text-gray-500 uppercase">{{ __('employees.request_to') }}</th>
+                                        <th class="text-start px-3 py-2 text-xs font-semibold text-gray-500 uppercase">{{ __('employees.request_state') }}</th>
+                                    </tr>
+                                </thead>
+                                <tbody class="divide-y divide-gray-100">
+                                @foreach($employeeRequests as $r)
+                                <tr class="hover:bg-purple-50/30 cursor-pointer" onclick="window.location='{{ route('employees.requests.show', $r) }}'">
+                                    <td class="px-4 py-2 text-gray-800">{{ __('employees.' . $r->type) }}</td>
+                                    <td class="px-3 py-2 text-gray-700">{{ $r->subtype?->name }}</td>
+                                    <td class="px-3 py-2 text-gray-700 whitespace-nowrap">{{ $r->start_at?->format($r->type === 'leave' ? 'M d, Y' : 'M d H:i') }}</td>
+                                    <td class="px-3 py-2 text-gray-700 whitespace-nowrap">{{ $r->end_at?->format($r->type === 'leave' ? 'M d, Y' : 'M d H:i') }}</td>
+                                    <td class="px-3 py-2">
+                                        <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-{{ $r->state_color }}-100 text-{{ $r->state_color }}-700">{{ __('employees.request_state_' . $r->state) }}</span>
+                                    </td>
+                                </tr>
+                                @endforeach
+                                </tbody>
+                            </table>
+                            @endif
+                        </div>
+                        @endif
 
                     </div>{{-- end min-h-64 --}}
                 </div>{{-- end x-data tabs --}}

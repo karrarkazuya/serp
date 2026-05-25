@@ -30,7 +30,10 @@
 
     @if($canEdit)
     {{-- Pattern wizard launcher --}}
-    <div x-data="{ open: false, items: @json($plannedPattern->pluck('resource_calendar_id')->all() ?: []) }">
+    {{-- JSON moved out of the x-data attribute — @json's double quotes would
+         otherwise close the attribute and break the page. --}}
+    <script type="application/json" id="planned-pattern-items">@json($plannedPattern->pluck('resource_calendar_id')->all() ?: [])</script>
+    <div x-data="{ open: false, items: JSON.parse(document.getElementById('planned-pattern-items').textContent || '[]') }">
         <div class="flex items-center gap-2 flex-wrap">
             <button type="button" @click="open = true"
                     class="px-3 py-1.5 text-sm font-medium text-white bg-[#714B67] hover:bg-[#5c3d55] rounded shadow-sm">

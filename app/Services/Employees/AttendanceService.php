@@ -92,7 +92,9 @@ class AttendanceService
             $attendance->is_absence   = false;
         } else {
             $attendance->worked_hours = 0;
-            $attendance->is_absence   = !$attendance->is_day_off;
+            // An approved leave / time-off request linked to the row is not an
+            // absence — the employee was legitimately off.
+            $attendance->is_absence   = !$attendance->is_day_off && !$attendance->request_id;
         }
 
         // Overtime / shortage are zero on day-off rows

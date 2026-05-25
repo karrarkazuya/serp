@@ -84,6 +84,7 @@ class Attendance extends Model
         'check_in', 'check_out',
         'expected_check_in', 'expected_check_out',
         'expected_hours', 'worked_hours', 'overtime_hours', 'shortage_hours',
+        'approved_overtime_hours', 'request_id',
         'is_day_off', 'is_absence',
         'notes',
         'created_by', 'updated_by',
@@ -95,10 +96,11 @@ class Attendance extends Model
         'check_out'          => 'datetime',
         'expected_check_in'  => 'datetime',
         'expected_check_out' => 'datetime',
-        'expected_hours'     => 'decimal:2',
-        'worked_hours'       => 'decimal:2',
-        'overtime_hours'     => 'decimal:2',
-        'shortage_hours'     => 'decimal:2',
+        'expected_hours'         => 'decimal:2',
+        'worked_hours'           => 'decimal:2',
+        'overtime_hours'         => 'decimal:2',
+        'shortage_hours'         => 'decimal:2',
+        'approved_overtime_hours' => 'decimal:2',
         'is_day_off'         => 'boolean',
         'is_absence'         => 'boolean',
     ];
@@ -116,6 +118,11 @@ class Attendance extends Model
     public function resourceCalendar(): BelongsTo
     {
         return $this->belongsTo(ResourceCalendar::class, 'resource_calendar_id');
+    }
+
+    public function request(): BelongsTo
+    {
+        return $this->belongsTo(EmployeeRequest::class, 'request_id');
     }
 
     public function creator(): BelongsTo

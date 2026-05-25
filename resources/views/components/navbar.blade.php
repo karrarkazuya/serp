@@ -233,12 +233,17 @@
                    class="block px-4 py-2.5 text-sm text-gray-800 hover:bg-gray-100 {{ request()->routeIs('employees.attendances.*') ? 'bg-gray-100 font-semibold' : '' }}">
                     {{ __('employees.attendances_title') }}
                 </a>
-                <a href="#" onclick="event.preventDefault();"
-                   title="{{ __('employees.leave_requests_soon') }}"
-                   class="flex items-center justify-between px-4 py-2.5 text-sm text-gray-400 cursor-not-allowed">
-                    <span>{{ __('employees.leave_requests_menu') }}</span>
-                    <span class="text-[10px] uppercase tracking-wide text-purple-500 font-semibold">soon</span>
+                @if(auth()->user()->hasPermission('attendance.requests.read'))
+                <a href="{{ route('employees.requests.index') }}"
+                   class="block px-4 py-2.5 text-sm text-gray-800 hover:bg-gray-100 {{ request()->routeIs('employees.requests.*') ? 'bg-gray-100 font-semibold' : '' }}">
+                    {{ __('employees.requests_title') }}
                 </a>
+                @elseif(auth()->user()->hasPermission('attendance.self.request'))
+                <a href="{{ route('employees.my-requests') }}"
+                   class="block px-4 py-2.5 text-sm text-gray-800 hover:bg-gray-100 {{ request()->routeIs('employees.my-requests', 'employees.requests.*') ? 'bg-gray-100 font-semibold' : '' }}">
+                    {{ __('employees.my_requests_title') }}
+                </a>
+                @endif
             </div>
         </div>
         @endcan
@@ -288,6 +293,16 @@
                    class="block px-4 py-2.5 text-sm text-gray-800 hover:bg-gray-100 {{ request()->routeIs('employees.schedules.*') ? 'bg-gray-100 font-semibold' : '' }}">
                     Working Schedules
                 </a>
+                @if(auth()->user()->hasPermission('attendance.requests.config'))
+                <a href="{{ route('employees.request-subtypes.index') }}"
+                   class="block px-4 py-2.5 text-sm text-gray-800 hover:bg-gray-100 {{ request()->routeIs('employees.request-subtypes.*') ? 'bg-gray-100 font-semibold' : '' }}">
+                    {{ __('employees.subtypes_title') }}
+                </a>
+                <a href="{{ route('employees.request-balance-config.show') }}"
+                   class="block px-4 py-2.5 text-sm text-gray-800 hover:bg-gray-100 {{ request()->routeIs('employees.request-balance-config.*') ? 'bg-gray-100 font-semibold' : '' }}">
+                    {{ __('employees.balance_config_title') }}
+                </a>
+                @endif
                 <a href="{{ route('employees.categories.index') }}"
                    class="block px-4 py-2.5 text-sm text-gray-800 hover:bg-gray-100 {{ request()->routeIs('employees.categories.*') ? 'bg-gray-100 font-semibold' : '' }}">
                     Tags

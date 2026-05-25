@@ -74,7 +74,8 @@ class AttendanceController extends Controller
         $activeCompanyIds = $this->companyContext->getActiveCompanyIds();
         abort_unless(empty($activeCompanyIds) || in_array($attendance->company_id, $activeCompanyIds), 403);
 
-        $attendance->load(['employee.department', 'employee.job', 'company', 'resourceCalendar.attendances']);
+        $attendance->load(['employee.department', 'employee.job', 'company', 'resourceCalendar.attendances',
+            'request:id,type,subtype_id,start_at,end_at,state', 'request.subtype:id,name,type']);
 
         return view('employees.attendances.show', compact('attendance'));
     }
@@ -124,18 +125,7 @@ class AttendanceController extends Controller
             ->with('success', __('employees.attendance_updated'));
     }
 
-    public function unlink(Request $_request, Attendance $attendance)
-    {
-        $this->authorize('delete', $attendance);
-
-        $activeCompanyIds = $this->companyContext->getActiveCompanyIds();
-        abort_unless(empty($activeCompanyIds) || in_array($attendance->company_id, $activeCompanyIds), 403);
-
-        DB::transaction(fn () => $attendance->delete());
-
-        return redirect()->route('employees.attendances.index')
-            ->with('success', __('employees.attendance_deleted'));
-    }
+    // No unlink — attendance records are immutable history.
 
     public function addComment(Request $request, Attendance $attendance)
     {
