@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Employees;
 
 use App\Http\Controllers\Controller;
+use App\Http\Controllers\Employees\Concerns\ScopesEmployeeAllocation;
 use App\Models\Employees\Employee;
 use App\Models\Employees\EmployeeAppreciation;
 use App\Services\Company\CompanyContextService;
@@ -12,19 +13,21 @@ use App\Helpers\SearchFilters;
 use App\Helpers\SortsTable;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Validation\Rule;
 
 class EmployeeAppreciationController extends Controller
 {
+    use ScopesEmployeeAllocation;
+
     public function __construct(
         private readonly FileService $fileService,
+        private readonly CompanyContextService $companyContext,
     ) {}
 
     public function read(Request $request)
     {
         $this->authorize('viewAny', Employee::class);
 
-        $query = EmployeeAppreciation::query()->withCount('employees');
+        $query = $this->scopeAllocationListing(EmployeeAppreciation::query());
 
         SearchFilters::apply($query, $request);
 
@@ -54,8 +57,11 @@ class EmployeeAppreciationController extends Controller
     public function show(EmployeeAppreciation $appreciation)
     {
         $this->authorize('viewAny', Employee::class);
+        $this->assertAllocationInScope($appreciation);
 
-        $appreciation->load(['employees', 'creator', 'updater', 'chatterMessages.user', 'attachedFile']);
+        $this->loadAllocationWithScopedEmployees($appreciation, [
+            'creator', 'updater', 'chatterMessages.user', 'attachedFile',
+        ]);
 
         return view('employees.appreciations.show', compact('appreciation'));
     }
@@ -110,6 +116,7 @@ class EmployeeAppreciationController extends Controller
     public function edit(EmployeeAppreciation $appreciation)
     {
         $this->authorize('update', Employee::class);
+        $this->assertAllocationInScope($appreciation);
 
         $appreciation->load('attachedFile');
 
@@ -119,6 +126,7 @@ class EmployeeAppreciationController extends Controller
     public function write(Request $request, EmployeeAppreciation $appreciation)
     {
         $this->authorize('update', Employee::class);
+        $this->assertAllocationInScope($appreciation);
 
         $data = $request->validate([
             'name'                     => 'nullable|string|max:255',
@@ -162,19 +170,17 @@ class EmployeeAppreciationController extends Controller
     public function syncEmployees(Request $request, EmployeeAppreciation $appreciation)
     {
         $this->authorize('update', Employee::class);
+        $this->assertAllocationInScope($appreciation);
 
-        // Rule 11: only allow employees inside the actor's active companies —
-        // otherwise an HR user in company A could attach company B's employees.
-        $activeCompanyIds = app(CompanyContextService::class)->getActiveCompanyIds();
-        $employeeRule = Rule::exists('hr_employees', 'id')->where(function ($q) use ($activeCompanyIds) {
-            empty($activeCompanyIds) ? $q->whereRaw('1 = 0') : $q->whereIn('company_id', $activeCompanyIds);
-        });
         $data = $request->validate([
             'employee_ids'   => 'nullable|array',
-            'employee_ids.*' => $employeeRule,
+            'employee_ids.*' => 'integer|exists:hr_employees,id',
         ]);
 
-        $newIds = collect($data['employee_ids'] ?? [])->map(fn ($id) => (int) $id);
+        // Silent-keep pattern (see ScopesEmployeeAllocation): scope requested
+        // IDs to the actor's active companies and preserve any out-of-scope
+        // pivot rows so a single-company actor can't strip cross-tenant rows.
+        $newIds = $this->scopeRequestedEmployeeIds($data['employee_ids'] ?? [], $appreciation->employees());
 
         DB::transaction(function () use ($appreciation, $newIds) {
             $oldIds  = $appreciation->employees()->pluck('hr_employees.id');
@@ -197,6 +203,7 @@ class EmployeeAppreciationController extends Controller
     public function replaceDocument(Request $request, EmployeeAppreciation $appreciation)
     {
         $this->authorize('update', Employee::class);
+        $this->assertAllocationInScope($appreciation);
 
         $request->validate(['file' => 'required|file|max:10240']);
 
@@ -215,6 +222,7 @@ class EmployeeAppreciationController extends Controller
     public function deleteDocument(EmployeeAppreciation $appreciation)
     {
         $this->authorize('update', Employee::class);
+        $this->assertAllocationInScope($appreciation);
 
         DB::transaction(function () use ($appreciation) {
             if ($appreciation->file_path) {
@@ -230,6 +238,7 @@ class EmployeeAppreciationController extends Controller
     public function archive(EmployeeAppreciation $appreciation)
     {
         $this->authorize('update', Employee::class);
+        $this->assertAllocationInScope($appreciation);
 
         DB::transaction(function () use ($appreciation) {
             $appreciation->update(['active' => false]);
@@ -242,6 +251,7 @@ class EmployeeAppreciationController extends Controller
     public function unarchive(EmployeeAppreciation $appreciation)
     {
         $this->authorize('update', Employee::class);
+        $this->assertAllocationInScope($appreciation);
 
         DB::transaction(function () use ($appreciation) {
             $appreciation->update(['active' => true]);
@@ -254,6 +264,7 @@ class EmployeeAppreciationController extends Controller
     public function unlink(EmployeeAppreciation $appreciation)
     {
         $this->authorize('delete', Employee::class);
+        $this->assertAllocationInScope($appreciation);
 
         DB::transaction(function () use ($appreciation) {
             if ($appreciation->file_path) {
@@ -268,6 +279,7 @@ class EmployeeAppreciationController extends Controller
     public function addComment(Request $request, EmployeeAppreciation $appreciation)
     {
         $this->authorize('update', Employee::class);
+        $this->assertAllocationInScope($appreciation);
 
         $request->validate(['body' => 'required|string|max:5000']);
         DB::transaction(fn () => $appreciation->logComment($request->body));

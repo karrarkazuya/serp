@@ -29,7 +29,8 @@ class Manager extends Model
         'created_at' => ['label' => 'Created on', 'column' => 'created_at', 'type' => 'datetime'],
     ];
 
-    protected $fillable = ['uuid', 'workflow_user_id', 'active', 'created_by', 'updated_by'];
+    // Rule 4: uuid / created_by / updated_by are observer-managed, never in $fillable.
+    protected $fillable = ['workflow_user_id', 'active'];
 
     protected $casts = ['active' => 'boolean'];
 

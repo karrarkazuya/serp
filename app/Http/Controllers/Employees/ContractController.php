@@ -30,7 +30,7 @@ class ContractController extends Controller
         $this->authorize('create', Contract::class);
 
         $activeCompanyIds = $this->companyContext->getActiveCompanyIds();
-        abort_unless(empty($activeCompanyIds) || in_array($employee->company_id, $activeCompanyIds), 403);
+        abort_unless(!empty($activeCompanyIds) && in_array($employee->company_id, $activeCompanyIds), 403);
 
         $fileRecord = null;
 
@@ -53,7 +53,7 @@ class ContractController extends Controller
         $this->authorize('update', $contract);
 
         $activeCompanyIds = $this->companyContext->getActiveCompanyIds();
-        abort_unless(empty($activeCompanyIds) || in_array($employee->company_id, $activeCompanyIds), 403);
+        abort_unless(!empty($activeCompanyIds) && in_array($employee->company_id, $activeCompanyIds), 403);
 
         // Scope every FK rule to the actor's active companies — without this, a user
         // editing a contract for an employee in company A could set department_id /
@@ -101,7 +101,7 @@ class ContractController extends Controller
         $this->authorize('update', $contract);
 
         $activeCompanyIds = $this->companyContext->getActiveCompanyIds();
-        abort_unless(empty($activeCompanyIds) || in_array($employee->company_id, $activeCompanyIds), 403);
+        abort_unless(!empty($activeCompanyIds) && in_array($employee->company_id, $activeCompanyIds), 403);
 
         DB::transaction(function () use ($employee, $contract) {
             $employee->update(['contract_id' => $contract->id, 'wage' => $contract->wage]);
@@ -116,7 +116,7 @@ class ContractController extends Controller
         $this->authorize('delete', $contract);
 
         $activeCompanyIds = $this->companyContext->getActiveCompanyIds();
-        abort_unless(empty($activeCompanyIds) || in_array($employee->company_id, $activeCompanyIds), 403);
+        abort_unless(!empty($activeCompanyIds) && in_array($employee->company_id, $activeCompanyIds), 403);
 
         DB::transaction(function () use ($employee, $contract) {
             if ($employee->contract_id === $contract->id) {
@@ -173,7 +173,7 @@ class ContractController extends Controller
         // pairs (/employees/{id}/contracts/{contract}/image) and pull contract
         // images for employees in companies they have no legitimate access to.
         $activeCompanyIds = $this->companyContext->getActiveCompanyIds();
-        abort_unless(empty($activeCompanyIds) || in_array($employee->company_id, $activeCompanyIds), 403);
+        abort_unless(!empty($activeCompanyIds) && in_array($employee->company_id, $activeCompanyIds), 403);
 
         return redirect()->route('files.serve', $contract->image);
     }

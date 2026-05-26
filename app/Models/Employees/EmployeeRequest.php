@@ -79,14 +79,18 @@ class EmployeeRequest extends Model
         ],
     ];
 
+    // Rule 4: uuid / created_by / updated_by are observer-managed, never in $fillable.
+    // State-machine fields (manager_*/hr_*/state) stay in $fillable because the
+    // service uses $locked->fill([...]) inside decide(); the FormRequest
+    // (StoreEmployeeRequestRequest) does NOT validate them so over-posting via
+    // $request->validated() is impossible.
     protected $fillable = [
-        'uuid', 'employee_id', 'company_id', 'type', 'subtype_id',
+        'employee_id', 'company_id', 'type', 'subtype_id',
         'start_at', 'end_at', 'duration_days', 'duration_hours',
         'title', 'description', 'attachment',
         'manager_status', 'manager_decision_at', 'manager_decision_by', 'manager_decision_reason',
         'hr_status', 'hr_decision_at', 'hr_decision_by', 'hr_decision_reason',
         'state',
-        'created_by', 'updated_by',
     ];
 
     protected $casts = [

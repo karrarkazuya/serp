@@ -4,17 +4,21 @@ namespace App\Policies\Accounting;
 
 use App\Models\Accounting\AccountMove;
 use App\Models\User;
+use App\Policies\Concerns\ScopesByCompany;
 
 class AccountMovePolicy
 {
+    use ScopesByCompany;
+
     public function viewAny(User $user): bool
     {
         return $user->hasPermission('accounting.read');
     }
 
-    public function view(User $user, AccountMove $_move): bool
+    public function view(User $user, AccountMove $move): bool
     {
-        return $user->hasPermission('accounting.read');
+        return $user->hasPermission('accounting.read')
+            && $this->withinActiveCompany($move);
     }
 
     public function create(User $user): bool
@@ -24,6 +28,9 @@ class AccountMovePolicy
 
     public function update(User $user, AccountMove $move): bool
     {
+        if (!$this->withinActiveCompany($move)) {
+            return false;
+        }
         // Only drafts can be edited; posted/cancelled need stronger gate.
         if (!$move->isDraft()) {
             return $user->hasPermission('accounting.post');
@@ -33,6 +40,9 @@ class AccountMovePolicy
 
     public function delete(User $user, AccountMove $move): bool
     {
+        if (!$this->withinActiveCompany($move)) {
+            return false;
+        }
         if ($move->move_type !== 'entry' && !$move->isCancelled()) {
             return false;
         }
@@ -44,9 +54,10 @@ class AccountMovePolicy
         return $user->hasPermission('accounting.unlink');
     }
 
-    public function post(User $user, AccountMove $_move): bool
+    public function post(User $user, AccountMove $move): bool
     {
-        return $user->hasPermission('accounting.post');
+        return $user->hasPermission('accounting.post')
+            && $this->withinActiveCompany($move);
     }
 
     /**
@@ -61,7 +72,7 @@ class AccountMovePolicy
      */
     public function cancel(User $user, AccountMove $move): bool
     {
-        if (!$user->hasPermission('accounting.post')) {
+        if (!$user->hasPermission('accounting.post') || !$this->withinActiveCompany($move)) {
             return false;
         }
         if (!$move->isPosted()) {
@@ -74,9 +85,10 @@ class AccountMovePolicy
         return $user->hasPermission('accounting.lock');
     }
 
-    public function comment(User $user, AccountMove $_move): bool
+    public function comment(User $user, AccountMove $move): bool
     {
-        return $user->hasPermission('accounting.write');
+        return $user->hasPermission('accounting.write')
+            && $this->withinActiveCompany($move);
     }
 
     public function export(User $user): bool

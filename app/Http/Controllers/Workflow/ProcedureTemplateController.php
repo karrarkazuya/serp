@@ -11,11 +11,13 @@ use App\Models\Employees\Department;
 use App\Models\Workflow\Group;
 use App\Models\Workflow\ProcedureStep;
 use App\Models\Workflow\ProcedureTemplate;
+use App\Services\Company\CompanyContextService;
 use App\Services\Workflow\FlowchartService;
 use App\Services\Workflow\WorkflowConfigService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\Rule;
 
 class ProcedureTemplateController extends Controller
 {
@@ -173,6 +175,8 @@ class ProcedureTemplateController extends Controller
     public function write(Request $request, ProcedureTemplate $procedureTemplate)
     {
         $this->authorize('update', $procedureTemplate);
+
+        $deptRule = $this->companyScopedDepartmentRule();
         $data = $request->validate([
             'name'                 => 'required|string|max:255',
             'description'          => 'nullable|string|max:5000',
@@ -180,7 +184,7 @@ class ProcedureTemplateController extends Controller
             'creator_see_tasks'    => 'boolean',
             'enabled'              => 'boolean',
             'departments'          => 'nullable|array',
-            'departments.*'        => 'exists:hr_departments,id',
+            'departments.*'        => $deptRule,
         ]);
         $deptIds = $data['departments'] ?? [];
         unset($data['departments']);
@@ -201,10 +205,12 @@ class ProcedureTemplateController extends Controller
     public function storeStep(Request $request, ProcedureTemplate $procedureTemplate)
     {
         $this->authorize('update', $procedureTemplate);
+
+        $deptRule = $this->companyScopedDepartmentRule();
         $data = $request->validate([
             'name'                  => 'required|string|max:255',
             'description'           => 'nullable|string|max:5000',
-            'default_department_id' => 'nullable|exists:hr_departments,id',
+            'default_department_id' => ['nullable', $deptRule],
             'is_approve_only'       => 'boolean',
             'has_procedures'        => 'boolean',
             'procedures_required'   => 'boolean',
@@ -265,10 +271,11 @@ class ProcedureTemplateController extends Controller
         $this->authorize('update', $procedureTemplate);
         abort_if($step->procedure_template_id !== $procedureTemplate->id, 404);
 
+        $deptRule = $this->companyScopedDepartmentRule();
         $data = $request->validate([
             'name'                  => 'required|string|max:255',
             'description'           => 'nullable|string|max:5000',
-            'default_department_id' => 'nullable|exists:hr_departments,id',
+            'default_department_id' => ['nullable', $deptRule],
             'is_approve_only'          => 'boolean',
             'has_procedures'           => 'boolean',
             'procedures_required'      => 'boolean',
@@ -390,5 +397,21 @@ class ProcedureTemplateController extends Controller
         DB::transaction(fn () => $procedureTemplate->logComment($request->body));
 
         return back()->with('success', 'Comment added.');
+    }
+
+    /**
+     * Rule 11: hr_departments has company_id, so any department FK in this
+     * controller must be scoped to the actor's active companies. Without this
+     * a workflow admin in company A could attach company B's departments
+     * to a global template (which then routes B's tickets through it).
+     */
+    private function companyScopedDepartmentRule()
+    {
+        $activeCompanyIds = app(CompanyContextService::class)->getActiveCompanyIds();
+        return Rule::exists('hr_departments', 'id')->where(function ($q) use ($activeCompanyIds) {
+            empty($activeCompanyIds)
+                ? $q->whereRaw('1 = 0')
+                : $q->whereIn('company_id', $activeCompanyIds);
+        });
     }
 }

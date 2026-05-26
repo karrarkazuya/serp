@@ -16,7 +16,8 @@ class Challenge extends Model
 
     protected $table = 'hr_challenges';
 
-    protected $fillable = ['uuid', 'name', 'description', 'active', 'created_by', 'updated_by'];
+    // Rule 4: uuid / created_by / updated_by are observer-managed, never in $fillable.
+    protected $fillable = ['name', 'description', 'active'];
 
     protected $casts = ['active' => 'boolean'];
 

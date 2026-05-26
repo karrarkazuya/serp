@@ -51,8 +51,9 @@ class PlannedScheduleController extends Controller
     private function assertWithinActiveCompanies(Employee $employee): void
     {
         $activeCompanyIds = $this->companyContext->getActiveCompanyIds();
+        // Fail-closed multi-tenant gate (see EmployeeController::read).
         abort_unless(
-            empty($activeCompanyIds) || in_array($employee->company_id, $activeCompanyIds, true),
+            !empty($activeCompanyIds) && in_array($employee->company_id, $activeCompanyIds, true),
             403,
         );
     }

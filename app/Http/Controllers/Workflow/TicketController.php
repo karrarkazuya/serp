@@ -67,6 +67,11 @@ class TicketController extends Controller
     {
         $this->authorize('viewAny', Ticket::class);
 
+        // View mode toggle (list / kanban) — referenced below in group-by
+        // branch and passed to the blade. Without this, hitting the index
+        // with ?group_by=... crashes with "Undefined variable $view".
+        $view = $request->query('view', 'list');
+
         $activeCompanyIds = $this->companyContext->getActiveCompanyIds();
         $query = Ticket::query()
             ->with(['template', 'assignedDepartment', 'assignedUser'])

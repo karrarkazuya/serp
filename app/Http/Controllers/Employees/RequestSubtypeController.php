@@ -23,7 +23,13 @@ class RequestSubtypeController extends Controller
 
         $activeCompanyIds = $this->companyContext->getActiveCompanyIds();
         $query = RequestSubtype::query()->with('company');
-        if (!empty($activeCompanyIds)) $query->forCompanies($activeCompanyIds);
+        // Fail-closed multi-tenant gate (see EmployeeController::read). Note:
+        // subtypes with company_id = null are global and stay visible via
+        // forCompanies() — empty active list means the actor is in no
+        // companies, so they see nothing (including the globals).
+        empty($activeCompanyIds)
+            ? $query->whereRaw('1 = 0')
+            : $query->forCompanies($activeCompanyIds);
 
         SearchFilters::apply($query, $request);
         if ($request->query('filter') === 'archived')      $query->where('active', false);
@@ -134,6 +140,13 @@ class RequestSubtypeController extends Controller
     {
         if ($subtype->company_id === null) return; // global
         $activeCompanyIds = $this->companyContext->getActiveCompanyIds();
-        abort_unless(empty($activeCompanyIds) || in_array($subtype->company_id, $activeCompanyIds, true), 403);
+        // Subtypes with company_id = null are global config; otherwise must be
+        // in the actor's active companies. Fail-closed if active list is empty.
+        abort_unless(
+            $subtype->company_id === null
+                ? !empty($activeCompanyIds)
+                : (!empty($activeCompanyIds) && in_array($subtype->company_id, $activeCompanyIds, true)),
+            403
+        );
     }
 }

@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Employees;
 
 use App\Http\Controllers\Controller;
+use App\Http\Controllers\Employees\Concerns\ScopesEmployeeAllocation;
 use App\Models\Employees\Employee;
 use App\Models\Employees\EmployeeSanction;
 use App\Services\Company\CompanyContextService;
@@ -15,6 +16,8 @@ use Illuminate\Support\Facades\DB;
 
 class EmployeeSanctionController extends Controller
 {
+    use ScopesEmployeeAllocation;
+
     public function __construct(
         private readonly FileService $fileService,
         private readonly CompanyContextService $companyContext,
@@ -24,7 +27,7 @@ class EmployeeSanctionController extends Controller
     {
         $this->authorize('viewAny', Employee::class);
 
-        $query = EmployeeSanction::query()->withCount('employees');
+        $query = $this->scopeAllocationListing(EmployeeSanction::query());
 
         SearchFilters::apply($query, $request);
 
@@ -54,8 +57,11 @@ class EmployeeSanctionController extends Controller
     public function show(EmployeeSanction $sanction)
     {
         $this->authorize('viewAny', Employee::class);
+        $this->assertAllocationInScope($sanction);
 
-        $sanction->load(['employees', 'creator', 'updater', 'chatterMessages.user', 'attachedFile']);
+        $this->loadAllocationWithScopedEmployees($sanction, [
+            'creator', 'updater', 'chatterMessages.user', 'attachedFile',
+        ]);
 
         return view('employees.sanctions.show', compact('sanction'));
     }
@@ -108,6 +114,7 @@ class EmployeeSanctionController extends Controller
     public function edit(EmployeeSanction $sanction)
     {
         $this->authorize('update', Employee::class);
+        $this->assertAllocationInScope($sanction);
 
         $sanction->load('attachedFile');
 
@@ -117,6 +124,7 @@ class EmployeeSanctionController extends Controller
     public function write(Request $request, EmployeeSanction $sanction)
     {
         $this->authorize('update', Employee::class);
+        $this->assertAllocationInScope($sanction);
 
         $data = $request->validate([
             'name'                     => 'nullable|string|max:255',
@@ -158,30 +166,17 @@ class EmployeeSanctionController extends Controller
     public function syncEmployees(Request $request, EmployeeSanction $sanction)
     {
         $this->authorize('update', Employee::class);
+        $this->assertAllocationInScope($sanction);
 
         $data = $request->validate([
             'employee_ids'   => 'nullable|array',
             'employee_ids.*' => 'integer|exists:hr_employees,id',
         ]);
 
-        $requestedIds     = collect($data['employee_ids'] ?? [])->map(fn ($id) => (int) $id)->unique();
-        $activeCompanyIds = $this->companyContext->getActiveCompanyIds();
-
-        // Filter requested IDs down to employees in the actor's active companies and
-        // preserve any pivot rows pointing at out-of-scope employees, so a user in
-        // company A can't (a) attach a company-B employee to this sanction and can't
-        // (b) silently strip company-B employees who were attached by someone with
-        // broader access. Sanctions are disciplinary records; cross-tenant tampering
-        // here would create false audit history.
-        $scopedRequested = empty($activeCompanyIds)
-            ? $requestedIds
-            : Employee::whereIn('id', $requestedIds)->whereIn('company_id', $activeCompanyIds)->pluck('id');
-
-        $outOfScopeKept = empty($activeCompanyIds)
-            ? collect()
-            : $sanction->employees()->whereNotIn('company_id', $activeCompanyIds)->pluck('hr_employees.id');
-
-        $newIds = $scopedRequested->merge($outOfScopeKept)->unique()->values();
+        // Silent-keep pattern (see ScopesEmployeeAllocation). Sanctions are
+        // disciplinary records — cross-tenant tampering here would create false
+        // audit history, so preserve out-of-scope pivot rows untouched.
+        $newIds = $this->scopeRequestedEmployeeIds($data['employee_ids'] ?? [], $sanction->employees());
 
         DB::transaction(function () use ($sanction, $newIds) {
             $oldIds  = $sanction->employees()->pluck('hr_employees.id');
@@ -204,6 +199,7 @@ class EmployeeSanctionController extends Controller
     public function replaceDocument(Request $request, EmployeeSanction $sanction)
     {
         $this->authorize('update', Employee::class);
+        $this->assertAllocationInScope($sanction);
 
         $request->validate(['file' => 'required|file|max:10240']);
 
@@ -222,6 +218,7 @@ class EmployeeSanctionController extends Controller
     public function deleteDocument(EmployeeSanction $sanction)
     {
         $this->authorize('update', Employee::class);
+        $this->assertAllocationInScope($sanction);
 
         DB::transaction(function () use ($sanction) {
             if ($sanction->file_path) {
@@ -237,6 +234,7 @@ class EmployeeSanctionController extends Controller
     public function archive(EmployeeSanction $sanction)
     {
         $this->authorize('update', Employee::class);
+        $this->assertAllocationInScope($sanction);
 
         DB::transaction(function () use ($sanction) {
             $sanction->update(['active' => false]);
@@ -249,6 +247,7 @@ class EmployeeSanctionController extends Controller
     public function unarchive(EmployeeSanction $sanction)
     {
         $this->authorize('update', Employee::class);
+        $this->assertAllocationInScope($sanction);
 
         DB::transaction(function () use ($sanction) {
             $sanction->update(['active' => true]);
@@ -261,6 +260,7 @@ class EmployeeSanctionController extends Controller
     public function unlink(EmployeeSanction $sanction)
     {
         $this->authorize('delete', Employee::class);
+        $this->assertAllocationInScope($sanction);
 
         DB::transaction(function () use ($sanction) {
             if ($sanction->file_path) {
@@ -275,6 +275,7 @@ class EmployeeSanctionController extends Controller
     public function addComment(Request $request, EmployeeSanction $sanction)
     {
         $this->authorize('update', Employee::class);
+        $this->assertAllocationInScope($sanction);
 
         $request->validate(['body' => 'required|string|max:5000']);
         DB::transaction(fn () => $sanction->logComment($request->body));

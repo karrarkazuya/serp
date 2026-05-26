@@ -38,7 +38,13 @@ class EmployeeRequestController extends Controller
 
         $activeCompanyIds = $this->companyContext->getActiveCompanyIds();
         $query = EmployeeRequest::query()->with(['employee:id,name,avatar,company_id', 'subtype:id,name,type', 'company:id,name']);
-        if (!empty($activeCompanyIds)) $query->forCompanies($activeCompanyIds);
+        // Fail-closed multi-tenant gate (see EmployeeController::read). The
+        // submitter's "my-requests" view goes through myIndex() separately and
+        // doesn't depend on this list, so empty active list correctly returns
+        // nothing here even for users with self-request permission.
+        empty($activeCompanyIds)
+            ? $query->whereRaw('1 = 0')
+            : $query->forCompanies($activeCompanyIds);
 
         SearchFilters::apply($query, $request);
         switch ($request->query('filter')) {

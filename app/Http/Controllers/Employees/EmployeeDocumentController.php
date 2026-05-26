@@ -7,6 +7,7 @@ use App\Models\Employees\Employee;
 use App\Models\Employees\EmployeeDocument;
 use App\Services\Company\CompanyContextService;
 use App\Services\FileService;
+use App\Helpers\GroupsQuery;
 use App\Helpers\SearchFilters;
 use App\Helpers\SortsTable;
 use Illuminate\Http\Request;
@@ -29,9 +30,10 @@ class EmployeeDocumentController extends Controller
 
         $query = EmployeeDocument::query()->with(['employee.company']);
 
-        if (!empty($activeCompanyIds)) {
-            $query->whereHas('employee', fn ($q) => $q->whereIn('company_id', $activeCompanyIds));
-        }
+        // Fail-closed multi-tenant gate (see EmployeeController::read).
+        empty($activeCompanyIds)
+            ? $query->whereRaw('1 = 0')
+            : $query->whereHas('employee', fn ($q) => $q->whereIn('company_id', $activeCompanyIds));
 
         SearchFilters::apply($query, $request);
 
@@ -41,6 +43,16 @@ class EmployeeDocumentController extends Controller
             // no filter
         } else {
             $query->active();
+        }
+
+        $groupBy = $request->query('group_by');
+        if ($groupBy) {
+            $fields = SearchFilters::fieldsFor(EmployeeDocument::class);
+            if (isset($fields[$groupBy])) {
+                $records = (clone $query)->with(['employee.company'])->orderBy('name')->get();
+                $groups  = GroupsQuery::apply($records, $fields[$groupBy]);
+                return view('employees.documents.index', compact('groups'));
+            }
         }
 
         SortsTable::apply($query, $request);
@@ -56,7 +68,7 @@ class EmployeeDocumentController extends Controller
 
         $activeCompanyIds = $this->companyContext->getActiveCompanyIds();
         abort_unless(
-            empty($activeCompanyIds) || in_array($document->employee?->company_id, $activeCompanyIds),
+            !empty($activeCompanyIds) && in_array($document->employee?->company_id, $activeCompanyIds),
             403
         );
 
@@ -136,7 +148,7 @@ class EmployeeDocumentController extends Controller
 
         $activeCompanyIds = $this->companyContext->getActiveCompanyIds();
         abort_unless(
-            empty($activeCompanyIds) || in_array($document->employee?->company_id, $activeCompanyIds),
+            !empty($activeCompanyIds) && in_array($document->employee?->company_id, $activeCompanyIds),
             403
         );
 
@@ -151,7 +163,7 @@ class EmployeeDocumentController extends Controller
 
         $activeCompanyIds = $this->companyContext->getActiveCompanyIds();
         abort_unless(
-            empty($activeCompanyIds) || in_array($document->employee?->company_id, $activeCompanyIds),
+            !empty($activeCompanyIds) && in_array($document->employee?->company_id, $activeCompanyIds),
             403
         );
 
@@ -189,7 +201,7 @@ class EmployeeDocumentController extends Controller
 
         $activeCompanyIds = $this->companyContext->getActiveCompanyIds();
         abort_unless(
-            empty($activeCompanyIds) || in_array($document->employee?->company_id, $activeCompanyIds),
+            !empty($activeCompanyIds) && in_array($document->employee?->company_id, $activeCompanyIds),
             403
         );
 
@@ -204,7 +216,7 @@ class EmployeeDocumentController extends Controller
 
         $activeCompanyIds = $this->companyContext->getActiveCompanyIds();
         abort_unless(
-            empty($activeCompanyIds) || in_array($document->employee?->company_id, $activeCompanyIds),
+            !empty($activeCompanyIds) && in_array($document->employee?->company_id, $activeCompanyIds),
             403
         );
 
@@ -219,7 +231,7 @@ class EmployeeDocumentController extends Controller
 
         $activeCompanyIds = $this->companyContext->getActiveCompanyIds();
         abort_unless(
-            empty($activeCompanyIds) || in_array($document->employee?->company_id, $activeCompanyIds),
+            !empty($activeCompanyIds) && in_array($document->employee?->company_id, $activeCompanyIds),
             403
         );
 
@@ -240,7 +252,7 @@ class EmployeeDocumentController extends Controller
         $this->authorize('update', $employee);
 
         $activeCompanyIds = $this->companyContext->getActiveCompanyIds();
-        abort_unless(empty($activeCompanyIds) || in_array($employee->company_id, $activeCompanyIds), 403);
+        abort_unless(!empty($activeCompanyIds) && in_array($employee->company_id, $activeCompanyIds), 403);
 
         $data = $request->validate([
             'name'                    => 'required|string|max:255',
@@ -277,7 +289,7 @@ class EmployeeDocumentController extends Controller
         $this->authorize('update', $employee);
 
         $activeCompanyIds = $this->companyContext->getActiveCompanyIds();
-        abort_unless(empty($activeCompanyIds) || in_array($employee->company_id, $activeCompanyIds), 403);
+        abort_unless(!empty($activeCompanyIds) && in_array($employee->company_id, $activeCompanyIds), 403);
         abort_unless($document->employee_id === $employee->id, 403);
 
         DB::transaction(function () use ($document) {
@@ -318,6 +330,6 @@ class EmployeeDocumentController extends Controller
         abort_unless($document->employee_id === $employee->id, 403);
 
         $activeCompanyIds = $this->companyContext->getActiveCompanyIds();
-        abort_unless(empty($activeCompanyIds) || in_array($employee->company_id, $activeCompanyIds), 403);
+        abort_unless(!empty($activeCompanyIds) && in_array($employee->company_id, $activeCompanyIds), 403);
     }
 }

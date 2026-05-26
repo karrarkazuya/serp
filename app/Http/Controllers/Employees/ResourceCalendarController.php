@@ -25,9 +25,10 @@ class ResourceCalendarController extends Controller
         $activeCompanyIds = $this->companyContext->getActiveCompanyIds();
         $query = ResourceCalendar::query()->with('company');
 
-        if (!empty($activeCompanyIds)) {
-            $query->forCompanies($activeCompanyIds);
-        }
+        // Fail-closed multi-tenant gate (see EmployeeController::read).
+        empty($activeCompanyIds)
+            ? $query->whereRaw('1 = 0')
+            : $query->forCompanies($activeCompanyIds);
 
         SearchFilters::apply($query, $request);
 
@@ -61,7 +62,7 @@ class ResourceCalendarController extends Controller
         $this->authorize('viewAny', \App\Models\Employees\Employee::class);
 
         $activeCompanyIds = $this->companyContext->getActiveCompanyIds();
-        abort_unless(empty($activeCompanyIds) || in_array($schedule->company_id, $activeCompanyIds), 403);
+        abort_unless(!empty($activeCompanyIds) && in_array($schedule->company_id, $activeCompanyIds), 403);
 
         $schedule->load(['company', 'attendances', 'employees.job', 'employees.department']);
 
@@ -131,7 +132,7 @@ class ResourceCalendarController extends Controller
         $this->authorize('update', \App\Models\Employees\Employee::class);
 
         $activeCompanyIds = $this->companyContext->getActiveCompanyIds();
-        abort_unless(empty($activeCompanyIds) || in_array($schedule->company_id, $activeCompanyIds), 403);
+        abort_unless(!empty($activeCompanyIds) && in_array($schedule->company_id, $activeCompanyIds), 403);
 
         $schedule->load(['attendances', 'employees.job']);
 
@@ -143,7 +144,7 @@ class ResourceCalendarController extends Controller
         $this->authorize('update', \App\Models\Employees\Employee::class);
 
         $activeCompanyIds = $this->companyContext->getActiveCompanyIds();
-        abort_unless(empty($activeCompanyIds) || in_array($schedule->company_id, $activeCompanyIds), 403);
+        abort_unless(!empty($activeCompanyIds) && in_array($schedule->company_id, $activeCompanyIds), 403);
 
         $companyRule = Rule::exists('companies', 'id')->whereIn('id', $activeCompanyIds);
 
@@ -196,7 +197,7 @@ class ResourceCalendarController extends Controller
     {
         $this->authorize('update', \App\Models\Employees\Employee::class);
         $activeCompanyIds = $this->companyContext->getActiveCompanyIds();
-        abort_unless(empty($activeCompanyIds) || in_array($schedule->company_id, $activeCompanyIds), 403);
+        abort_unless(!empty($activeCompanyIds) && in_array($schedule->company_id, $activeCompanyIds), 403);
 
         DB::transaction(fn () => $schedule->update(['active' => false]));
 
@@ -207,7 +208,7 @@ class ResourceCalendarController extends Controller
     {
         $this->authorize('update', \App\Models\Employees\Employee::class);
         $activeCompanyIds = $this->companyContext->getActiveCompanyIds();
-        abort_unless(empty($activeCompanyIds) || in_array($schedule->company_id, $activeCompanyIds), 403);
+        abort_unless(!empty($activeCompanyIds) && in_array($schedule->company_id, $activeCompanyIds), 403);
 
         DB::transaction(fn () => $schedule->update(['active' => true]));
 
@@ -218,7 +219,7 @@ class ResourceCalendarController extends Controller
     {
         $this->authorize('delete', \App\Models\Employees\Employee::class);
         $activeCompanyIds = $this->companyContext->getActiveCompanyIds();
-        abort_unless(empty($activeCompanyIds) || in_array($schedule->company_id, $activeCompanyIds), 403);
+        abort_unless(!empty($activeCompanyIds) && in_array($schedule->company_id, $activeCompanyIds), 403);
 
         DB::transaction(fn () => $schedule->delete());
 
@@ -229,7 +230,7 @@ class ResourceCalendarController extends Controller
     {
         $this->authorize('update', \App\Models\Employees\Employee::class);
         $activeCompanyIds = $this->companyContext->getActiveCompanyIds();
-        abort_unless(empty($activeCompanyIds) || in_array($schedule->company_id, $activeCompanyIds), 403);
+        abort_unless(!empty($activeCompanyIds) && in_array($schedule->company_id, $activeCompanyIds), 403);
 
         $request->validate(['body' => 'required|string|max:5000']);
         DB::transaction(fn () => $schedule->logComment($request->body));

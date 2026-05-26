@@ -27,6 +27,24 @@ Register every new model with `AuditableObserver` in `AppServiceProvider`.
 
 ---
 
+## Route Organization
+
+Module routes live in `routes/modules/<module>.php` and are `require`d from inside the `Route::middleware('auth')->group()` block in `routes/web.php`. Never paste module routes directly into `routes/web.php`.
+
+Current modules: `chat`, `contacts`, `employees`, `workflow`, `accounting`, `inventory`, `settings`. `routes/web.php` only holds shared/global routes (auth, profile, dashboard, files, export, notifications, chatter API, relation-dropdown lookup, company switcher).
+
+**When adding a new module:**
+
+1. Create `routes/modules/<name>.php`. Open with the controller `use` imports + `use Illuminate\Support\Facades\Route;` — no fully-qualified namespaces inline in route definitions.
+2. Wrap the routes in a single `Route::prefix('<name>')->name('<name>.')->group(function () { ... });` so the prefix and name prefix attach automatically.
+3. Add `require __DIR__.'/modules/<name>.php';` to the "Feature modules" block in `routes/web.php` (keep alphabetical where possible; ordering only matters if one module's routes reference another's bindings).
+4. Every route still needs explicit `->middleware('permission:...')` per Rule 6. `auth` is inherited from the outer group in `web.php` — do NOT add it again per route.
+5. Run `php artisan route:list --json | jq length` (or the equivalent) before and after to confirm the route count is the new total (no silent drops).
+
+Reference: [routes/modules/contacts.php](routes/modules/contacts.php) is the smallest complete example; [routes/modules/employees.php](routes/modules/employees.php) is the most complex (nested sub-prefixes, `{employee}`-scoped helpers, sub-routes ordered before `/{employee}` to avoid binding conflicts).
+
+---
+
 ## The 12 Non-Negotiable Rules
 
 Violating any of these is a bug, not a style issue.
@@ -519,11 +537,11 @@ When building a new module, follow `docs/implement_new_module.md` using Contacts
 - [ ] Model: fillable, casts, relationships, `scopeActive`, `scopeForCompanies` (if company-scoped), **`use SoftDeletes`**
 - [ ] Register model with `AuditableObserver` in `AppServiceProvider`
 - [ ] Permissions seeded in `PermissionSeeder` and assigned in `RoleSeeder`
-- [ ] Policy: `viewAny`, `view`, `create`, `update`, `delete`, `comment`, **`export`**
+- [ ] Policy: `viewAny`, `view`, `create`, `update`, `delete`, `comment`, **`export`**. For company-scoped models, `use App\Policies\Concerns\ScopesByCompany;` and gate model-bound abilities with `&& $this->withinActiveCompany($model)` — this makes `@can` checks fail-closed for cross-tenant records without relying on the controller. Reference: [EmployeePolicy.php](app/Policies/Employees/EmployeePolicy.php).
 - [ ] Form requests: authorize + validate. **Every FK to a company-scoped table** uses `Rule::exists(...)->whereIn('company_id', $activeCompanyIds)` (Rule 11), not bare `'exists:table,id'`. Image fields use explicit `mimetypes:image/jpeg,image/png,image/gif,image/webp|mimes:jpg,jpeg,png,gif,webp` — never bare `'image'` (Rule 10).
 - [ ] Service: create, update, archive, unarchive — business logic + chatter, no transactions
 - [ ] Controller: follows naming above, wraps in `DB::transaction`, applies company gate
-- [ ] Routes: permission middleware on every route, fixed sub-routes before `/{model}` to avoid binding conflicts
+- [ ] Routes: create `routes/modules/<name>.php`, add `require __DIR__.'/modules/<name>.php';` to `routes/web.php` (see "Route Organization" above). Permission middleware on every route, fixed sub-routes before `/{model}` to avoid binding conflicts
 - [ ] Views: `<x-list :selectable="true">` + `<x-search>` on index, `<x-chatter>` on show, Odoo form style, `<x-relation-dropdown>` for relations
 - [ ] Navigation: update `resources/views/components/navbar.blade.php`
 - [ ] Register target tables in `config/relation_dropdowns.php` for any relation dropdown

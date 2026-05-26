@@ -451,6 +451,12 @@ class AccountingService
      */
     public function resetMoveToDraft(AccountMove $move): AccountMove
     {
+        // Lock the move row so two concurrent resets (or one racing with a
+        // cancel/post) see a serialized view — otherwise both could pass the
+        // isDraft() check, both delete the same reconcile rows, both write
+        // chatter logs and double-fire the state transition.
+        $move = AccountMove::whereKey($move->id)->lockForUpdate()->first() ?? $move;
+
         if ($move->isDraft()) {
             return $move;
         }
@@ -482,6 +488,11 @@ class AccountingService
 
     public function cancelMove(AccountMove $move): AccountMove
     {
+        // Lock the move row (see resetMoveToDraft for the same rationale —
+        // concurrent cancels/resets would otherwise both delete reconciles
+        // and run the state-update sequence non-atomically).
+        $move = AccountMove::whereKey($move->id)->lockForUpdate()->first() ?? $move;
+
         if ($move->isCancelled()) {
             return $move;
         }
@@ -518,6 +529,13 @@ class AccountingService
 
     public function registerDocumentPayment(AccountMove $move, array $data = []): AccountPayment
     {
+        // Row-lock the move so two concurrent payment registrations on the
+        // same invoice can't both read residual=X, both create $X payment
+        // moves, and both reconcile up to $X — which would over-reconcile
+        // the invoice (negative residual). Caller wraps in DB::transaction
+        // already; the lock holds until that commits.
+        $move = AccountMove::whereKey($move->id)->lockForUpdate()->first() ?? $move;
+
         if (!$move->isPosted()) {
             throw new RuntimeException('Only posted documents can be paid.');
         }
@@ -532,7 +550,8 @@ class AccountingService
         // lines, one per payment-term schedule line. Payments consume them
         // oldest-first (by date_maturity) — matching Odoo's default
         // reconciliation policy. We sum residuals across all installments to
-        // decide if the doc is fully paid.
+        // decide if the doc is fully paid. Recomputed AFTER the lock so the
+        // residual we use to size the payment is the freshest view.
         $counterpartLines = $this->documentCounterpartLines($move);
         $residual         = round($counterpartLines->sum(fn (AccountMoveLine $l) => $this->getLineResidual($l)), self::SCALE);
 

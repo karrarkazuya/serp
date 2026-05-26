@@ -104,6 +104,7 @@
     <x-list :paginator="$attendances"
             :selectable="true"
             :total-count="$attendances->total()"
+            :can-export="auth()->user()->can('export', \App\Models\Employees\Attendance::class)"
             :empty-text="__('employees.no_attendances')">
         <x-slot:columns>
             <x-sortable-th column="date" :label="__('employees.attendance_date')" class="px-4 py-2" :default="true" />

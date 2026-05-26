@@ -28,9 +28,10 @@ class JobController extends Controller
         $activeCompanyIds = $this->companyContext->getActiveCompanyIds();
         $query = Job::query()->with(['company', 'department'])->withCount('employees');
 
-        if (!empty($activeCompanyIds)) {
-            $query->forCompanies($activeCompanyIds);
-        }
+        // Fail-closed multi-tenant gate (see EmployeeController::read).
+        empty($activeCompanyIds)
+            ? $query->whereRaw('1 = 0')
+            : $query->forCompanies($activeCompanyIds);
 
         SearchFilters::apply($query, $request);
 
@@ -64,7 +65,7 @@ class JobController extends Controller
         $this->authorize('view', $job);
 
         $activeCompanyIds = $this->companyContext->getActiveCompanyIds();
-        abort_unless(empty($activeCompanyIds) || in_array($job->company_id, $activeCompanyIds), 403);
+        abort_unless(!empty($activeCompanyIds) && in_array($job->company_id, $activeCompanyIds), 403);
 
         $job->load(['company', 'department', 'employees.department']);
 
@@ -93,7 +94,7 @@ class JobController extends Controller
         $this->authorize('update', $job);
 
         $activeCompanyIds = $this->companyContext->getActiveCompanyIds();
-        abort_unless(empty($activeCompanyIds) || in_array($job->company_id, $activeCompanyIds), 403);
+        abort_unless(!empty($activeCompanyIds) && in_array($job->company_id, $activeCompanyIds), 403);
 
         return view('employees.jobs.edit', compact('job'));
     }
@@ -103,7 +104,7 @@ class JobController extends Controller
         $this->authorize('update', $job);
 
         $activeCompanyIds = $this->companyContext->getActiveCompanyIds();
-        abort_unless(empty($activeCompanyIds) || in_array($job->company_id, $activeCompanyIds), 403);
+        abort_unless(!empty($activeCompanyIds) && in_array($job->company_id, $activeCompanyIds), 403);
 
         DB::transaction(fn () => $this->jobService->update($job, $request->validated()));
 
@@ -114,7 +115,7 @@ class JobController extends Controller
     {
         $this->authorize('update', $job);
         $activeCompanyIds = $this->companyContext->getActiveCompanyIds();
-        abort_unless(empty($activeCompanyIds) || in_array($job->company_id, $activeCompanyIds), 403);
+        abort_unless(!empty($activeCompanyIds) && in_array($job->company_id, $activeCompanyIds), 403);
 
         DB::transaction(fn () => $this->jobService->archive($job));
 
@@ -125,7 +126,7 @@ class JobController extends Controller
     {
         $this->authorize('update', $job);
         $activeCompanyIds = $this->companyContext->getActiveCompanyIds();
-        abort_unless(empty($activeCompanyIds) || in_array($job->company_id, $activeCompanyIds), 403);
+        abort_unless(!empty($activeCompanyIds) && in_array($job->company_id, $activeCompanyIds), 403);
 
         DB::transaction(fn () => $this->jobService->unarchive($job));
 
@@ -136,7 +137,7 @@ class JobController extends Controller
     {
         $this->authorize('delete', $job);
         $activeCompanyIds = $this->companyContext->getActiveCompanyIds();
-        abort_unless(empty($activeCompanyIds) || in_array($job->company_id, $activeCompanyIds), 403);
+        abort_unless(!empty($activeCompanyIds) && in_array($job->company_id, $activeCompanyIds), 403);
 
         DB::transaction(fn () => $this->jobService->delete($job));
 
@@ -147,7 +148,7 @@ class JobController extends Controller
     {
         $this->authorize('comment', $job);
         $activeCompanyIds = $this->companyContext->getActiveCompanyIds();
-        abort_unless(empty($activeCompanyIds) || in_array($job->company_id, $activeCompanyIds), 403);
+        abort_unless(!empty($activeCompanyIds) && in_array($job->company_id, $activeCompanyIds), 403);
 
         $request->validate(['body' => 'required|string|max:5000']);
         DB::transaction(fn () => $job->logComment($request->body));

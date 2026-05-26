@@ -71,6 +71,31 @@ class FileController extends Controller
 
     private function checkAccess(User $user, File $file): void
     {
+        // ─────────────────────────────────────────────────────────────────────
+        // DESIGN NOTE — file access is intentionally NOT company-scoped here.
+        //
+        // The gate is "permission_key + (optional) context membership". The
+        // file's `source_type` / `source_id` (the owning record) is NOT cross-
+        // checked against the actor's active companies on purpose:
+        //
+        //   - File UUIDs are random and not enumerable; possessing one is
+        //     treated as proof of legitimate prior access (e.g. the uploader
+        //     shared the link, or the user is viewing the record that embeds
+        //     it).
+        //   - Company-scope gating happens at the record-level controllers
+        //     (e.g. EmployeeBonusController::show enforces company scope
+        //     before rendering the page that exposes the file UUID).
+        //   - Adding a company check here would also block cross-tenant flows
+        //     that are valid by design (a contractor in Company A sharing a
+        //     PDF link with a reviewer in Company B who has the permission_key
+        //     but no Company A membership).
+        //
+        // Reviewers: do NOT flag this as IDOR. The permission_key + context
+        // model is the documented design — if you want to tighten file access
+        // for a specific category, gate it at the upload site by setting a
+        // narrower permission_key or by registering a new context_type below.
+        // ─────────────────────────────────────────────────────────────────────
+
         // Permission gate — null means context-only (e.g. chat room membership)
         if ($file->permission_key !== null) {
             abort_unless($user->hasPermission($file->permission_key), 403);

@@ -38,9 +38,12 @@ class EmployeeController extends Controller
         $activeCompanyIds = $this->companyContext->getActiveCompanyIds();
         $query = Employee::query()->with(['company', 'department', 'job', 'manager', 'categories']);
 
-        if (!empty($activeCompanyIds)) {
-            $query->forCompanies($activeCompanyIds);
-        }
+        // Fail-closed multi-tenant gate: empty active list = no companies = no
+        // results (matches Accounting/Inventory). A user with no allowed
+        // companies must see nothing, not everything.
+        empty($activeCompanyIds)
+            ? $query->whereRaw('1 = 0')
+            : $query->forCompanies($activeCompanyIds);
 
         SearchFilters::apply($query, $request);
 
@@ -101,7 +104,7 @@ class EmployeeController extends Controller
         $this->authorize('view', $employee);
 
         $activeCompanyIds = $this->companyContext->getActiveCompanyIds();
-        abort_unless(empty($activeCompanyIds) || in_array($employee->company_id, $activeCompanyIds), 403);
+        abort_unless(!empty($activeCompanyIds) && in_array($employee->company_id, $activeCompanyIds), 403);
 
         $employee->load([
             'company', 'department', 'job', 'manager', 'coach',
@@ -221,7 +224,7 @@ class EmployeeController extends Controller
         $this->authorize('update', $employee);
 
         $activeCompanyIds = $this->companyContext->getActiveCompanyIds();
-        abort_unless(empty($activeCompanyIds) || in_array($employee->company_id, $activeCompanyIds), 403);
+        abort_unless(!empty($activeCompanyIds) && in_array($employee->company_id, $activeCompanyIds), 403);
 
         $employee->load(['categories', 'skills.skill', 'skills.skillType', 'skills.skillLevel', 'documents.attachedFile', 'emergencyContacts', 'dependents', 'bankAccounts', 'resourceCalendar.attendances']);
 
@@ -247,7 +250,7 @@ class EmployeeController extends Controller
         $this->authorize('update', $employee);
 
         $activeCompanyIds = $this->companyContext->getActiveCompanyIds();
-        abort_unless(empty($activeCompanyIds) || in_array($employee->company_id, $activeCompanyIds), 403);
+        abort_unless(!empty($activeCompanyIds) && in_array($employee->company_id, $activeCompanyIds), 403);
 
         $data        = $request->validated();
         $categoryIds = $data['categories'] ?? [];
@@ -349,7 +352,7 @@ class EmployeeController extends Controller
     {
         $this->authorize('update', $employee);
         $activeCompanyIds = $this->companyContext->getActiveCompanyIds();
-        abort_unless(empty($activeCompanyIds) || in_array($employee->company_id, $activeCompanyIds), 403);
+        abort_unless(!empty($activeCompanyIds) && in_array($employee->company_id, $activeCompanyIds), 403);
 
         DB::transaction(fn () => $this->employeeService->archive($employee));
 
@@ -360,7 +363,7 @@ class EmployeeController extends Controller
     {
         $this->authorize('update', $employee);
         $activeCompanyIds = $this->companyContext->getActiveCompanyIds();
-        abort_unless(empty($activeCompanyIds) || in_array($employee->company_id, $activeCompanyIds), 403);
+        abort_unless(!empty($activeCompanyIds) && in_array($employee->company_id, $activeCompanyIds), 403);
 
         DB::transaction(fn () => $this->employeeService->unarchive($employee));
 
@@ -371,7 +374,7 @@ class EmployeeController extends Controller
     {
         $this->authorize('delete', $employee);
         $activeCompanyIds = $this->companyContext->getActiveCompanyIds();
-        abort_unless(empty($activeCompanyIds) || in_array($employee->company_id, $activeCompanyIds), 403);
+        abort_unless(!empty($activeCompanyIds) && in_array($employee->company_id, $activeCompanyIds), 403);
 
         DB::transaction(fn () => $this->employeeService->delete($employee));
 
@@ -385,7 +388,7 @@ class EmployeeController extends Controller
         abort_unless($employee->avatar, 404);
 
         $activeCompanyIds = $this->companyContext->getActiveCompanyIds();
-        abort_unless(empty($activeCompanyIds) || in_array($employee->company_id, $activeCompanyIds), 403);
+        abort_unless(!empty($activeCompanyIds) && in_array($employee->company_id, $activeCompanyIds), 403);
 
         return redirect()->route('files.serve', $employee->avatar);
     }
@@ -394,7 +397,7 @@ class EmployeeController extends Controller
     {
         $this->authorize('comment', $employee);
         $activeCompanyIds = $this->companyContext->getActiveCompanyIds();
-        abort_unless(empty($activeCompanyIds) || in_array($employee->company_id, $activeCompanyIds), 403);
+        abort_unless(!empty($activeCompanyIds) && in_array($employee->company_id, $activeCompanyIds), 403);
 
         $request->validate(['body' => 'required|string|max:5000']);
         DB::transaction(fn () => $employee->logComment($request->body));

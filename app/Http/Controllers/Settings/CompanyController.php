@@ -158,17 +158,43 @@ class CompanyController extends Controller
             ->with('success', 'Company deleted.');
     }
 
-    /** Manage which users are allowed to access this company */
+    /**
+     * Manage which users are allowed to access this company.
+     *
+     * Defense-in-depth gating:
+     *   1. `companies.write` (route middleware) authorizes editing this company.
+     *   2. `users.read` is required as a second permission — without it the
+     *      actor has no formal authority to see the user list at all, and
+     *      arbitrary `users[]` IDs would be an enumeration vector.
+     *   3. Added/removed users are logged into the company's chatter so the
+     *      change is auditable. Sync would otherwise be silent.
+     */
     public function syncUsers(Request $request, Company $company)
     {
         $this->authorize('update', $company);
+        abort_unless($request->user()->hasPermission('users.read'), 403);
 
-        $request->validate([
+        $data = $request->validate([
             'users'   => 'nullable|array',
-            'users.*' => 'exists:users,id',
+            'users.*' => 'integer|exists:users,id',
         ]);
 
-        DB::transaction(fn () => $company->users()->sync($request->users ?? []));
+        $newIds = collect($data['users'] ?? [])->map(fn ($id) => (int) $id)->unique()->values();
+
+        DB::transaction(function () use ($company, $newIds) {
+            $oldIds  = $company->users()->pluck('users.id');
+            $added   = \App\Models\User::whereIn('id', $newIds->diff($oldIds))->pluck('name');
+            $removed = \App\Models\User::whereIn('id', $oldIds->diff($newIds))->pluck('name');
+
+            $company->users()->sync($newIds->all());
+
+            if ($added->isNotEmpty()) {
+                $company->logSystemMessage('User access granted: ' . $added->join(', ') . '.');
+            }
+            if ($removed->isNotEmpty()) {
+                $company->logSystemMessage('User access revoked: ' . $removed->join(', ') . '.');
+            }
+        });
 
         return back()->with('success', 'Users updated.');
     }

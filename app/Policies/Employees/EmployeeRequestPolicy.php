@@ -58,13 +58,14 @@ class EmployeeRequestPolicy
 
     /**
      * The request's company must be in the actor's currently-active company
-     * scope. Empty active list is treated as "see all" (matches the rest of
-     * the app's company-context behavior).
+     * scope. Fail-closed: empty active list = no companies = no HR access.
+     * The submitter/manager paths in view() / approveAsManager() remain open
+     * since they don't rely on this method.
      */
     private function isWithinActiveCompanies(EmployeeRequest $request): bool
     {
         $activeIds = app(CompanyContextService::class)->getActiveCompanyIds();
-        return empty($activeIds) || in_array((int) $request->company_id, $activeIds, true);
+        return !empty($activeIds) && in_array((int) $request->company_id, $activeIds, true);
     }
 
     public function comment(User $user, EmployeeRequest $request): bool

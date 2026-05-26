@@ -16,7 +16,8 @@ class Goal extends Model
 
     protected $table = 'hr_goals';
 
-    protected $fillable = ['uuid', 'name', 'description', 'active', 'created_by', 'updated_by'];
+    // Rule 4: uuid / created_by / updated_by are observer-managed, never in $fillable.
+    protected $fillable = ['name', 'description', 'active'];
 
     protected $casts = ['active' => 'boolean'];
 

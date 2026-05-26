@@ -10,9 +10,11 @@ use App\Http\Requests\Workflow\StoreTicketTemplateRequest;
 use App\Models\Employees\Department;
 use App\Models\Workflow\Group;
 use App\Models\Workflow\TicketTemplate;
+use App\Services\Company\CompanyContextService;
 use App\Services\Workflow\WorkflowConfigService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\Rule;
 
 class TicketTemplateController extends Controller
 {
@@ -87,15 +89,27 @@ class TicketTemplateController extends Controller
     public function write(Request $request, TicketTemplate $ticketTemplate)
     {
         $this->authorize('update', $ticketTemplate);
+
+        // Rule 11: hr_departments has company_id, so dept FKs must be scoped
+        // to the actor's active companies. Templates are global config records;
+        // without this, a workflow admin in company A could attach company B's
+        // departments and silently route B's tickets through this template.
+        $activeCompanyIds = app(CompanyContextService::class)->getActiveCompanyIds();
+        $deptRule = Rule::exists('hr_departments', 'id')->where(function ($q) use ($activeCompanyIds) {
+            empty($activeCompanyIds)
+                ? $q->whereRaw('1 = 0')
+                : $q->whereIn('company_id', $activeCompanyIds);
+        });
+
         $data = $request->validate([
             'name'                  => 'required|string|max:255',
             'description'           => 'nullable|string|max:5000',
             'default_group_id'      => 'nullable|exists:workflow_groups,id,deleted_at,NULL',
-            'default_department_id' => 'nullable|exists:hr_departments,id',
+            'default_department_id' => ['nullable', $deptRule],
             'resolve_max_duration'  => 'nullable|integer|min:1',
             'enabled'               => 'boolean',
             'departments'           => 'nullable|array',
-            'departments.*'         => 'exists:hr_departments,id',
+            'departments.*'         => $deptRule,
             'inputs'                => 'nullable|array',
             'inputs.*.id'           => 'nullable|integer',
             'inputs.*.name'         => 'required_with:inputs.*|string|max:255',

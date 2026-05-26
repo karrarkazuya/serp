@@ -29,9 +29,10 @@ class AttendanceController extends Controller
 
         $query = Attendance::query()->with(['employee:id,name,avatar', 'company:id,name', 'resourceCalendar:id,name']);
 
-        if (!empty($activeCompanyIds)) {
-            $query->forCompanies($activeCompanyIds);
-        }
+        // Fail-closed multi-tenant gate (see EmployeeController::read).
+        empty($activeCompanyIds)
+            ? $query->whereRaw('1 = 0')
+            : $query->forCompanies($activeCompanyIds);
 
         SearchFilters::apply($query, $request);
 
@@ -72,7 +73,7 @@ class AttendanceController extends Controller
         $this->authorize('view', $attendance);
 
         $activeCompanyIds = $this->companyContext->getActiveCompanyIds();
-        abort_unless(empty($activeCompanyIds) || in_array($attendance->company_id, $activeCompanyIds), 403);
+        abort_unless(!empty($activeCompanyIds) && in_array($attendance->company_id, $activeCompanyIds), 403);
 
         $attendance->load(['employee.department', 'employee.job', 'company', 'resourceCalendar.attendances',
             'request:id,type,subtype_id,start_at,end_at,state', 'request.subtype:id,name,type']);
@@ -107,7 +108,7 @@ class AttendanceController extends Controller
         $this->authorize('update', $attendance);
 
         $activeCompanyIds = $this->companyContext->getActiveCompanyIds();
-        abort_unless(empty($activeCompanyIds) || in_array($attendance->company_id, $activeCompanyIds), 403);
+        abort_unless(!empty($activeCompanyIds) && in_array($attendance->company_id, $activeCompanyIds), 403);
 
         $attendance->load(['employee', 'company', 'resourceCalendar']);
 
@@ -117,7 +118,7 @@ class AttendanceController extends Controller
     public function write(UpdateAttendanceRequest $request, Attendance $attendance)
     {
         $activeCompanyIds = $this->companyContext->getActiveCompanyIds();
-        abort_unless(empty($activeCompanyIds) || in_array($attendance->company_id, $activeCompanyIds), 403);
+        abort_unless(!empty($activeCompanyIds) && in_array($attendance->company_id, $activeCompanyIds), 403);
 
         DB::transaction(fn () => $this->attendanceService->update($attendance, $request->validated()));
 
@@ -132,7 +133,7 @@ class AttendanceController extends Controller
         $this->authorize('comment', $attendance);
 
         $activeCompanyIds = $this->companyContext->getActiveCompanyIds();
-        abort_unless(empty($activeCompanyIds) || in_array($attendance->company_id, $activeCompanyIds), 403);
+        abort_unless(!empty($activeCompanyIds) && in_array($attendance->company_id, $activeCompanyIds), 403);
 
         $request->validate(['body' => 'required|string|max:5000']);
         DB::transaction(fn () => $attendance->logComment($request->body));

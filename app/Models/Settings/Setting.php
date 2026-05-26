@@ -12,7 +12,8 @@ class Setting extends Model
 {
     use SoftDeletes;
 
-    protected $fillable = ['uuid', 'key', 'value', 'group', 'type', 'label', 'description', 'created_by', 'updated_by'];
+    // Rule 4: uuid / created_by / updated_by are observer-managed, never in $fillable.
+    protected $fillable = ['key', 'value', 'group', 'type', 'label', 'description'];
 
     public function creator(): BelongsTo
     {

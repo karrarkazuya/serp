@@ -26,9 +26,10 @@ class EmployeeCertificateController extends Controller
 
         $query = EmployeeCertificate::query()->with(['employee.company']);
 
-        if (!empty($activeCompanyIds)) {
-            $query->whereHas('employee', fn ($q) => $q->whereIn('company_id', $activeCompanyIds));
-        }
+        // Fail-closed multi-tenant gate (see EmployeeController::read).
+        empty($activeCompanyIds)
+            ? $query->whereRaw('1 = 0')
+            : $query->whereHas('employee', fn ($q) => $q->whereIn('company_id', $activeCompanyIds));
 
         SearchFilters::apply($query, $request);
 
@@ -63,7 +64,7 @@ class EmployeeCertificateController extends Controller
 
         $activeCompanyIds = $this->companyContext->getActiveCompanyIds();
         abort_unless(
-            empty($activeCompanyIds) || in_array($certificate->employee?->company_id, $activeCompanyIds),
+            !empty($activeCompanyIds) && in_array($certificate->employee?->company_id, $activeCompanyIds),
             403
         );
 
@@ -108,7 +109,7 @@ class EmployeeCertificateController extends Controller
         ]);
 
         $employee = Employee::findOrFail($data['employee_id']);
-        abort_unless(empty($activeCompanyIds) || in_array($employee->company_id, $activeCompanyIds), 403);
+        abort_unless(!empty($activeCompanyIds) && in_array($employee->company_id, $activeCompanyIds), 403);
 
         $certificate = DB::transaction(function () use ($data) {
             $certificate = EmployeeCertificate::create($data);
@@ -125,7 +126,7 @@ class EmployeeCertificateController extends Controller
 
         $activeCompanyIds = $this->companyContext->getActiveCompanyIds();
         abort_unless(
-            empty($activeCompanyIds) || in_array($certificate->employee?->company_id, $activeCompanyIds),
+            !empty($activeCompanyIds) && in_array($certificate->employee?->company_id, $activeCompanyIds),
             403
         );
 
@@ -140,7 +141,7 @@ class EmployeeCertificateController extends Controller
 
         $activeCompanyIds = $this->companyContext->getActiveCompanyIds();
         abort_unless(
-            empty($activeCompanyIds) || in_array($certificate->employee?->company_id, $activeCompanyIds),
+            !empty($activeCompanyIds) && in_array($certificate->employee?->company_id, $activeCompanyIds),
             403
         );
 
@@ -173,7 +174,7 @@ class EmployeeCertificateController extends Controller
 
         $activeCompanyIds = $this->companyContext->getActiveCompanyIds();
         abort_unless(
-            empty($activeCompanyIds) || in_array($certificate->employee?->company_id, $activeCompanyIds),
+            !empty($activeCompanyIds) && in_array($certificate->employee?->company_id, $activeCompanyIds),
             403
         );
 
@@ -191,7 +192,7 @@ class EmployeeCertificateController extends Controller
 
         $activeCompanyIds = $this->companyContext->getActiveCompanyIds();
         abort_unless(
-            empty($activeCompanyIds) || in_array($certificate->employee?->company_id, $activeCompanyIds),
+            !empty($activeCompanyIds) && in_array($certificate->employee?->company_id, $activeCompanyIds),
             403
         );
 
@@ -209,7 +210,7 @@ class EmployeeCertificateController extends Controller
 
         $activeCompanyIds = $this->companyContext->getActiveCompanyIds();
         abort_unless(
-            empty($activeCompanyIds) || in_array($certificate->employee?->company_id, $activeCompanyIds),
+            !empty($activeCompanyIds) && in_array($certificate->employee?->company_id, $activeCompanyIds),
             403
         );
 
@@ -224,7 +225,7 @@ class EmployeeCertificateController extends Controller
 
         $activeCompanyIds = $this->companyContext->getActiveCompanyIds();
         abort_unless(
-            empty($activeCompanyIds) || in_array($certificate->employee?->company_id, $activeCompanyIds),
+            !empty($activeCompanyIds) && in_array($certificate->employee?->company_id, $activeCompanyIds),
             403
         );
 

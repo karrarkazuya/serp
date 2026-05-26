@@ -565,6 +565,8 @@ return [
     'request_insufficient_timeoff_balance' => 'رصيد ساعات الاستئذان غير كافٍ للموافقة على الطلب.',
     'request_already_decided'     => 'تم البت في هذا الطلب ولا يمكن تعديله.',
     'request_created_log'         => 'تم تقديم الطلب.',
+    'request_field_title'         => 'العنوان',
+    'request_field_attachment'    => 'المرفق',
     'request_action_approve'      => 'موافقة',
     'request_action_reject'       => 'رفض',
     'request_reject_reason_placeholder' => 'سبب الرفض (مطلوب عند الرفض)',

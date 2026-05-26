@@ -3,9 +3,11 @@
 namespace App\Http\Controllers\Employees;
 
 use App\Http\Controllers\Controller;
+use App\Http\Controllers\Employees\Concerns\ScopesEmployeeAllocation;
 use App\Models\Employees\Employee;
 use App\Models\Employees\EmployeePosition;
 use App\Services\Company\CompanyContextService;
+use App\Helpers\GroupsQuery;
 use App\Helpers\SearchFilters;
 use App\Helpers\SortsTable;
 use Illuminate\Http\Request;
@@ -13,6 +15,8 @@ use Illuminate\Support\Facades\DB;
 
 class EmployeePositionController extends Controller
 {
+    use ScopesEmployeeAllocation;
+
     public function __construct(
         private readonly CompanyContextService $companyContext,
     ) {}
@@ -21,7 +25,7 @@ class EmployeePositionController extends Controller
     {
         $this->authorize('viewAny', Employee::class);
 
-        $query = EmployeePosition::query()->withCount('employees');
+        $query = $this->scopeAllocationListing(EmployeePosition::query());
 
         SearchFilters::apply($query, $request);
 
@@ -31,6 +35,16 @@ class EmployeePositionController extends Controller
             // no filter
         } else {
             $query->active();
+        }
+
+        $groupBy = $request->query('group_by');
+        if ($groupBy) {
+            $fields = SearchFilters::fieldsFor(EmployeePosition::class);
+            if (isset($fields[$groupBy])) {
+                $records = (clone $query)->orderBy('organizational_structure')->get();
+                $groups  = GroupsQuery::apply($records, $fields[$groupBy]);
+                return view('employees.positions.index', compact('groups'));
+            }
         }
 
         SortsTable::apply($query, $request);
@@ -43,8 +57,21 @@ class EmployeePositionController extends Controller
     public function show(EmployeePosition $position)
     {
         $this->authorize('viewAny', Employee::class);
+        $this->assertAllocationInScope($position);
 
-        $position->load(['employees.company', 'creator', 'updater', 'chatterMessages.user']);
+        $activeCompanyIds = $this->companyContext->getActiveCompanyIds();
+        // Scope the `employees` eager-load by active companies so out-of-tenant
+        // employees aren't disclosed in the view. `employees.company` keeps the
+        // nested company relation for the few in-scope employees shown.
+        $position->load([
+            'employees' => function ($q) use ($activeCompanyIds) {
+                empty($activeCompanyIds)
+                    ? $q->whereRaw('1 = 0')
+                    : $q->whereIn('hr_employees.company_id', $activeCompanyIds);
+            },
+            'employees.company',
+            'creator', 'updater', 'chatterMessages.user',
+        ]);
 
         return view('employees.positions.show', compact('position'));
     }
@@ -80,6 +107,7 @@ class EmployeePositionController extends Controller
     public function edit(EmployeePosition $position)
     {
         $this->authorize('update', Employee::class);
+        $this->assertAllocationInScope($position);
 
         return view('employees.positions.edit', compact('position'));
     }
@@ -87,6 +115,7 @@ class EmployeePositionController extends Controller
     public function write(Request $request, EmployeePosition $position)
     {
         $this->authorize('update', Employee::class);
+        $this->assertAllocationInScope($position);
 
         $data = $request->validate([
             'organizational_structure' => 'nullable|string|max:255',
@@ -110,6 +139,7 @@ class EmployeePositionController extends Controller
     public function archive(EmployeePosition $position)
     {
         $this->authorize('update', Employee::class);
+        $this->assertAllocationInScope($position);
 
         DB::transaction(function () use ($position) {
             $position->update(['active' => false]);
@@ -122,6 +152,7 @@ class EmployeePositionController extends Controller
     public function unarchive(EmployeePosition $position)
     {
         $this->authorize('update', Employee::class);
+        $this->assertAllocationInScope($position);
 
         DB::transaction(function () use ($position) {
             $position->update(['active' => true]);
@@ -134,6 +165,7 @@ class EmployeePositionController extends Controller
     public function unlink(EmployeePosition $position)
     {
         $this->authorize('delete', Employee::class);
+        $this->assertAllocationInScope($position);
 
         DB::transaction(fn () => $position->delete());
 
@@ -143,19 +175,18 @@ class EmployeePositionController extends Controller
     public function syncEmployees(Request $request, EmployeePosition $position)
     {
         $this->authorize('update', Employee::class);
+        $this->assertAllocationInScope($position);
 
         $data = $request->validate([
             'employee_ids'   => 'nullable|array',
-            'employee_ids.*' => 'exists:hr_employees,id',
+            'employee_ids.*' => 'integer|exists:hr_employees,id',
         ]);
 
-        $newIds = collect($data['employee_ids'] ?? [])->map(fn ($id) => (int) $id);
-
-        $activeCompanyIds = $this->companyContext->getActiveCompanyIds();
-        if (!empty($activeCompanyIds) && $newIds->isNotEmpty()) {
-            $valid = Employee::whereIn('id', $newIds)->whereIn('company_id', $activeCompanyIds)->pluck('id');
-            abort_unless($valid->count() === $newIds->count(), 403);
-        }
+        // Silent-keep pattern (see ScopesEmployeeAllocation). Previously this
+        // method used `abort_unless($validCount === $requestedCount)`, which
+        // didn't protect cross-tenant pivot rows attached by a wider-access
+        // user from being silently stripped by a single-company submission.
+        $newIds = $this->scopeRequestedEmployeeIds($data['employee_ids'] ?? [], $position->employees());
 
         DB::transaction(function () use ($position, $newIds) {
             $oldIds   = $position->employees()->pluck('hr_employees.id');
@@ -178,6 +209,7 @@ class EmployeePositionController extends Controller
     public function addComment(Request $request, EmployeePosition $position)
     {
         $this->authorize('update', Employee::class);
+        $this->assertAllocationInScope($position);
 
         $request->validate(['body' => 'required|string|max:5000']);
 

@@ -42,7 +42,8 @@ class Role extends Model
         'updated_at' => ['label' => 'Updated on', 'column' => 'updated_at', 'type' => 'datetime'],
     ];
 
-    protected $fillable = ['uuid', 'name', 'key', 'description', 'active', 'created_by', 'updated_by'];
+    // Rule 4: uuid / created_by / updated_by are observer-managed, never in $fillable.
+    protected $fillable = ['name', 'key', 'description', 'active'];
 
     protected $casts = [
         'active' => 'boolean',

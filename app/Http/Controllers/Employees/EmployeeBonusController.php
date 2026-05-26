@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Employees;
 
 use App\Http\Controllers\Controller;
+use App\Http\Controllers\Employees\Concerns\ScopesEmployeeAllocation;
 use App\Models\Employees\Employee;
 use App\Models\Employees\EmployeeBonus;
 use App\Services\Company\CompanyContextService;
@@ -15,6 +16,8 @@ use Illuminate\Support\Facades\DB;
 
 class EmployeeBonusController extends Controller
 {
+    use ScopesEmployeeAllocation;
+
     public function __construct(
         private readonly FileService $fileService,
         private readonly CompanyContextService $companyContext,
@@ -24,7 +27,7 @@ class EmployeeBonusController extends Controller
     {
         $this->authorize('viewAny', Employee::class);
 
-        $query = EmployeeBonus::query()->withCount('employees');
+        $query = $this->scopeAllocationListing(EmployeeBonus::query());
 
         SearchFilters::apply($query, $request);
 
@@ -54,8 +57,11 @@ class EmployeeBonusController extends Controller
     public function show(EmployeeBonus $bonus)
     {
         $this->authorize('viewAny', Employee::class);
+        $this->assertAllocationInScope($bonus);
 
-        $bonus->load(['employees', 'creator', 'updater', 'chatterMessages.user', 'attachedFile']);
+        $this->loadAllocationWithScopedEmployees($bonus, [
+            'creator', 'updater', 'chatterMessages.user', 'attachedFile',
+        ]);
 
         return view('employees.bonuses.show', compact('bonus'));
     }
@@ -110,6 +116,7 @@ class EmployeeBonusController extends Controller
     public function edit(EmployeeBonus $bonus)
     {
         $this->authorize('update', Employee::class);
+        $this->assertAllocationInScope($bonus);
 
         $bonus->load('attachedFile');
 
@@ -119,6 +126,7 @@ class EmployeeBonusController extends Controller
     public function write(Request $request, EmployeeBonus $bonus)
     {
         $this->authorize('update', Employee::class);
+        $this->assertAllocationInScope($bonus);
 
         $data = $request->validate([
             'name'                     => 'nullable|string|max:255',
@@ -162,29 +170,17 @@ class EmployeeBonusController extends Controller
     public function syncEmployees(Request $request, EmployeeBonus $bonus)
     {
         $this->authorize('update', Employee::class);
+        $this->assertAllocationInScope($bonus);
 
         $data = $request->validate([
             'employee_ids'   => 'nullable|array',
             'employee_ids.*' => 'integer|exists:hr_employees,id',
         ]);
 
-        $requestedIds     = collect($data['employee_ids'] ?? [])->map(fn ($id) => (int) $id)->unique();
-        $activeCompanyIds = $this->companyContext->getActiveCompanyIds();
-
-        // Filter requested IDs down to employees in the actor's active companies and
-        // preserve any existing pivot rows pointing at out-of-scope employees, so a
-        // user in company A can't (a) add a company-B employee to this bonus and can't
-        // (b) silently strip company-B employees who were attached by someone with
-        // broader access.
-        $scopedRequested = empty($activeCompanyIds)
-            ? $requestedIds
-            : Employee::whereIn('id', $requestedIds)->whereIn('company_id', $activeCompanyIds)->pluck('id');
-
-        $outOfScopeKept = empty($activeCompanyIds)
-            ? collect()
-            : $bonus->employees()->whereNotIn('company_id', $activeCompanyIds)->pluck('hr_employees.id');
-
-        $newIds = $scopedRequested->merge($outOfScopeKept)->unique()->values();
+        // Silent-keep pattern (see ScopesEmployeeAllocation): scope requested
+        // IDs to the actor's active companies and preserve any out-of-scope
+        // pivot rows so a single-company actor can't strip cross-tenant rows.
+        $newIds = $this->scopeRequestedEmployeeIds($data['employee_ids'] ?? [], $bonus->employees());
 
         DB::transaction(function () use ($bonus, $newIds) {
             $oldIds  = $bonus->employees()->pluck('hr_employees.id');
@@ -207,6 +203,7 @@ class EmployeeBonusController extends Controller
     public function replaceDocument(Request $request, EmployeeBonus $bonus)
     {
         $this->authorize('update', Employee::class);
+        $this->assertAllocationInScope($bonus);
 
         $request->validate(['file' => 'required|file|max:10240']);
 
@@ -225,6 +222,7 @@ class EmployeeBonusController extends Controller
     public function deleteDocument(EmployeeBonus $bonus)
     {
         $this->authorize('update', Employee::class);
+        $this->assertAllocationInScope($bonus);
 
         DB::transaction(function () use ($bonus) {
             if ($bonus->file_path) {
@@ -240,6 +238,7 @@ class EmployeeBonusController extends Controller
     public function archive(EmployeeBonus $bonus)
     {
         $this->authorize('update', Employee::class);
+        $this->assertAllocationInScope($bonus);
 
         DB::transaction(function () use ($bonus) {
             $bonus->update(['active' => false]);
@@ -252,6 +251,7 @@ class EmployeeBonusController extends Controller
     public function unarchive(EmployeeBonus $bonus)
     {
         $this->authorize('update', Employee::class);
+        $this->assertAllocationInScope($bonus);
 
         DB::transaction(function () use ($bonus) {
             $bonus->update(['active' => true]);
@@ -264,6 +264,7 @@ class EmployeeBonusController extends Controller
     public function unlink(EmployeeBonus $bonus)
     {
         $this->authorize('delete', Employee::class);
+        $this->assertAllocationInScope($bonus);
 
         DB::transaction(function () use ($bonus) {
             if ($bonus->file_path) {
@@ -278,6 +279,7 @@ class EmployeeBonusController extends Controller
     public function addComment(Request $request, EmployeeBonus $bonus)
     {
         $this->authorize('update', Employee::class);
+        $this->assertAllocationInScope($bonus);
 
         $request->validate(['body' => 'required|string|max:5000']);
         DB::transaction(fn () => $bonus->logComment($request->body));

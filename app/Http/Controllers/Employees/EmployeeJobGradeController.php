@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Employees;
 
 use App\Http\Controllers\Controller;
+use App\Http\Controllers\Employees\Concerns\ScopesEmployeeAllocation;
 use App\Models\Employees\Employee;
 use App\Models\Employees\EmployeeJobGrade;
 use App\Services\Company\CompanyContextService;
@@ -11,15 +12,20 @@ use App\Helpers\SearchFilters;
 use App\Helpers\SortsTable;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Validation\Rule;
 
 class EmployeeJobGradeController extends Controller
 {
+    use ScopesEmployeeAllocation;
+
+    public function __construct(
+        private readonly CompanyContextService $companyContext,
+    ) {}
+
     public function read(Request $request)
     {
         $this->authorize('viewAny', Employee::class);
 
-        $query = EmployeeJobGrade::query()->withCount('employees');
+        $query = $this->scopeAllocationListing(EmployeeJobGrade::query());
 
         SearchFilters::apply($query, $request);
 
@@ -49,8 +55,11 @@ class EmployeeJobGradeController extends Controller
     public function show(EmployeeJobGrade $jobGrade)
     {
         $this->authorize('viewAny', Employee::class);
+        $this->assertAllocationInScope($jobGrade);
 
-        $jobGrade->load(['employees', 'creator', 'updater', 'chatterMessages.user']);
+        $this->loadAllocationWithScopedEmployees($jobGrade, [
+            'creator', 'updater', 'chatterMessages.user',
+        ]);
 
         return view('employees.job-grades.show', compact('jobGrade'));
     }
@@ -86,6 +95,7 @@ class EmployeeJobGradeController extends Controller
     public function edit(EmployeeJobGrade $jobGrade)
     {
         $this->authorize('update', Employee::class);
+        $this->assertAllocationInScope($jobGrade);
 
         return view('employees.job-grades.edit', compact('jobGrade'));
     }
@@ -93,6 +103,7 @@ class EmployeeJobGradeController extends Controller
     public function write(Request $request, EmployeeJobGrade $jobGrade)
     {
         $this->authorize('update', Employee::class);
+        $this->assertAllocationInScope($jobGrade);
 
         $data = $request->validate([
             'organizational_structure' => 'nullable|string|max:255',
@@ -116,18 +127,17 @@ class EmployeeJobGradeController extends Controller
     public function syncEmployees(Request $request, EmployeeJobGrade $jobGrade)
     {
         $this->authorize('update', Employee::class);
+        $this->assertAllocationInScope($jobGrade);
 
-        // Rule 11: only employees in the actor's active companies.
-        $activeCompanyIds = app(CompanyContextService::class)->getActiveCompanyIds();
-        $employeeRule = Rule::exists('hr_employees', 'id')->where(function ($q) use ($activeCompanyIds) {
-            empty($activeCompanyIds) ? $q->whereRaw('1 = 0') : $q->whereIn('company_id', $activeCompanyIds);
-        });
         $data = $request->validate([
             'employee_ids'   => 'nullable|array',
-            'employee_ids.*' => $employeeRule,
+            'employee_ids.*' => 'integer|exists:hr_employees,id',
         ]);
 
-        $newIds = collect($data['employee_ids'] ?? [])->map(fn ($id) => (int) $id);
+        // Silent-keep pattern (see ScopesEmployeeAllocation): scope requested
+        // IDs to the actor's active companies and preserve any out-of-scope
+        // pivot rows so a single-company actor can't strip cross-tenant rows.
+        $newIds = $this->scopeRequestedEmployeeIds($data['employee_ids'] ?? [], $jobGrade->employees());
 
         DB::transaction(function () use ($jobGrade, $newIds) {
             $oldIds  = $jobGrade->employees()->pluck('hr_employees.id');
@@ -150,6 +160,7 @@ class EmployeeJobGradeController extends Controller
     public function archive(EmployeeJobGrade $jobGrade)
     {
         $this->authorize('update', Employee::class);
+        $this->assertAllocationInScope($jobGrade);
 
         DB::transaction(function () use ($jobGrade) {
             $jobGrade->update(['active' => false]);
@@ -162,6 +173,7 @@ class EmployeeJobGradeController extends Controller
     public function unarchive(EmployeeJobGrade $jobGrade)
     {
         $this->authorize('update', Employee::class);
+        $this->assertAllocationInScope($jobGrade);
 
         DB::transaction(function () use ($jobGrade) {
             $jobGrade->update(['active' => true]);
@@ -174,6 +186,7 @@ class EmployeeJobGradeController extends Controller
     public function unlink(EmployeeJobGrade $jobGrade)
     {
         $this->authorize('delete', Employee::class);
+        $this->assertAllocationInScope($jobGrade);
 
         DB::transaction(fn () => $jobGrade->delete());
 
@@ -183,6 +196,7 @@ class EmployeeJobGradeController extends Controller
     public function addComment(Request $request, EmployeeJobGrade $jobGrade)
     {
         $this->authorize('update', Employee::class);
+        $this->assertAllocationInScope($jobGrade);
 
         $request->validate(['body' => 'required|string|max:5000']);
         DB::transaction(fn () => $jobGrade->logComment($request->body));

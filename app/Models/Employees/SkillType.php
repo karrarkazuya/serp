@@ -17,7 +17,8 @@ class SkillType extends Model
 
     protected $table = 'hr_skill_types';
 
-    protected $fillable = ['uuid', 'name', 'active', 'created_by', 'updated_by'];
+    // Rule 4: uuid / created_by / updated_by are observer-managed, never in $fillable.
+    protected $fillable = ['name', 'active'];
 
     protected $casts = ['active' => 'boolean'];
 

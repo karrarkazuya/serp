@@ -565,6 +565,8 @@ return [
     'request_insufficient_timeoff_balance' => 'Insufficient time-off-hours balance to approve this request.',
     'request_already_decided'     => 'This request has already been decided and cannot be modified.',
     'request_created_log'         => 'Request submitted.',
+    'request_field_title'         => 'Title',
+    'request_field_attachment'    => 'Attachment',
     'request_action_approve'      => 'Approve',
     'request_action_reject'       => 'Reject',
     'request_reject_reason_placeholder' => 'Reason for rejection (required when rejecting)',

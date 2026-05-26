@@ -25,9 +25,10 @@ class WorkLocationController extends Controller
         $activeCompanyIds = $this->companyContext->getActiveCompanyIds();
         $query = WorkLocation::query()->with('company');
 
-        if (!empty($activeCompanyIds)) {
-            $query->forCompanies($activeCompanyIds);
-        }
+        // Fail-closed multi-tenant gate (see EmployeeController::read).
+        empty($activeCompanyIds)
+            ? $query->whereRaw('1 = 0')
+            : $query->forCompanies($activeCompanyIds);
 
         SearchFilters::apply($query, $request);
 
@@ -61,7 +62,7 @@ class WorkLocationController extends Controller
         $this->authorize('view', $location);
 
         $activeCompanyIds = $this->companyContext->getActiveCompanyIds();
-        abort_unless(empty($activeCompanyIds) || in_array($location->company_id, $activeCompanyIds), 403);
+        abort_unless(!empty($activeCompanyIds) && in_array($location->company_id, $activeCompanyIds), 403);
 
         $location->load(['company', 'employees.job']);
 
@@ -104,7 +105,7 @@ class WorkLocationController extends Controller
         $this->authorize('update', $location);
 
         $activeCompanyIds = $this->companyContext->getActiveCompanyIds();
-        abort_unless(empty($activeCompanyIds) || in_array($location->company_id, $activeCompanyIds), 403);
+        abort_unless(!empty($activeCompanyIds) && in_array($location->company_id, $activeCompanyIds), 403);
 
         return view('employees.work-locations.edit', compact('location'));
     }
@@ -114,7 +115,7 @@ class WorkLocationController extends Controller
         $this->authorize('update', $location);
 
         $activeCompanyIds = $this->companyContext->getActiveCompanyIds();
-        abort_unless(empty($activeCompanyIds) || in_array($location->company_id, $activeCompanyIds), 403);
+        abort_unless(!empty($activeCompanyIds) && in_array($location->company_id, $activeCompanyIds), 403);
 
         $companyRule = Rule::exists('companies', 'id')->whereIn('id', $activeCompanyIds);
 
@@ -136,7 +137,7 @@ class WorkLocationController extends Controller
     {
         $this->authorize('update', $location);
         $activeCompanyIds = $this->companyContext->getActiveCompanyIds();
-        abort_unless(empty($activeCompanyIds) || in_array($location->company_id, $activeCompanyIds), 403);
+        abort_unless(!empty($activeCompanyIds) && in_array($location->company_id, $activeCompanyIds), 403);
 
         DB::transaction(fn () => $location->update(['active' => false]));
 
@@ -147,7 +148,7 @@ class WorkLocationController extends Controller
     {
         $this->authorize('update', $location);
         $activeCompanyIds = $this->companyContext->getActiveCompanyIds();
-        abort_unless(empty($activeCompanyIds) || in_array($location->company_id, $activeCompanyIds), 403);
+        abort_unless(!empty($activeCompanyIds) && in_array($location->company_id, $activeCompanyIds), 403);
 
         DB::transaction(fn () => $location->update(['active' => true]));
 
@@ -158,7 +159,7 @@ class WorkLocationController extends Controller
     {
         $this->authorize('delete', $location);
         $activeCompanyIds = $this->companyContext->getActiveCompanyIds();
-        abort_unless(empty($activeCompanyIds) || in_array($location->company_id, $activeCompanyIds), 403);
+        abort_unless(!empty($activeCompanyIds) && in_array($location->company_id, $activeCompanyIds), 403);
 
         DB::transaction(fn () => $location->delete());
 
@@ -169,7 +170,7 @@ class WorkLocationController extends Controller
     {
         $this->authorize('comment', $location);
         $activeCompanyIds = $this->companyContext->getActiveCompanyIds();
-        abort_unless(empty($activeCompanyIds) || in_array($location->company_id, $activeCompanyIds), 403);
+        abort_unless(!empty($activeCompanyIds) && in_array($location->company_id, $activeCompanyIds), 403);
 
         $request->validate(['body' => 'required|string|max:5000']);
         DB::transaction(fn () => $location->logComment($request->body));

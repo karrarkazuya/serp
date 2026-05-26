@@ -2,6 +2,13 @@
 
 namespace App\Support\Chatter;
 
+use App\Models\Employees\EmployeeAppreciation;
+use App\Models\Employees\EmployeeBonus;
+use App\Models\Employees\EmployeeJobGrade;
+use App\Models\Employees\EmployeePosition;
+use App\Models\Employees\EmployeeReward;
+use App\Models\Employees\EmployeeSanction;
+use App\Models\Settings\Company;
 use App\Models\Workflow\Procedure;
 use App\Models\Workflow\Ticket;
 use App\Services\Company\CompanyContextService;
@@ -202,6 +209,21 @@ class AllowedTypes
     ];
 
     /**
+     * Employee-allocation classes (Bonus / Appreciation / Sanction / Reward /
+     * JobGrade / Position). These records have no `company_id` column — they
+     * link to per-company employees via a pivot, so multi-tenant scope is
+     * "actor and allocation share at least one employee in active companies".
+     */
+    private const ALLOCATION_TYPES = [
+        EmployeeBonus::class,
+        EmployeeAppreciation::class,
+        EmployeeSanction::class,
+        EmployeeReward::class,
+        EmployeeJobGrade::class,
+        EmployeePosition::class,
+    ];
+
+    /**
      * Resolve a chatter target record and enforce viewer-level + company-scope
      * authorization for the calling action. Throws via `abort()` on any failure.
      *
@@ -225,6 +247,37 @@ class AllowedTypes
 
         if ($viewerScoped !== null) {
             \Illuminate\Support\Facades\Gate::forUser($request->user())->authorize($ability, $viewerScoped);
+        }
+
+        // M1: chatter on the Company record itself must respect tenant scope.
+        // Settings\Company is excluded from COMPANY_SCOPED (the record IS the
+        // company) but anyone with companies.write could otherwise post to
+        // company-B's chatter from company-A.
+        if ($modelType === Company::class) {
+            $company = Company::find($modelId);
+            abort_if($company === null, 404);
+            $activeCompanyIds = $companyContext->getActiveCompanyIds();
+            abort_unless(
+                !empty($activeCompanyIds) && in_array($company->id, $activeCompanyIds, true),
+                403
+            );
+            return;
+        }
+
+        // M3: allocation records have no company_id; gate by "actor shares
+        // at least one employee in this allocation within the active scope".
+        if (in_array($modelType, self::ALLOCATION_TYPES, true)) {
+            $allocation = $modelType::find($modelId);
+            abort_if($allocation === null, 404);
+            $activeCompanyIds = $companyContext->getActiveCompanyIds();
+            abort_unless(
+                !empty($activeCompanyIds)
+                    && $allocation->employees()
+                        ->whereIn('hr_employees.company_id', $activeCompanyIds)
+                        ->exists(),
+                403
+            );
+            return;
         }
 
         if (!in_array($modelType, self::COMPANY_SCOPED, true)) {

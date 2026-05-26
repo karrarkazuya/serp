@@ -67,6 +67,12 @@ class PickingService
      */
     public function checkAvailability(Picking $picking): Picking
     {
+        // Lock the picking row first so concurrent checkAvailability calls
+        // (or one racing with validate/cancel) see a serialized view of the
+        // reservation state — otherwise both could release+re-reserve the
+        // same quants and end up double-counting reserved_quantity.
+        $picking = Picking::whereKey($picking->id)->lockForUpdate()->first() ?? $picking;
+
         if ($picking->isDone() || $picking->isCancelled()) return $picking;
 
         // Auto-confirm from draft — Odoo's "Check Availability" on a draft picking confirms first
@@ -176,6 +182,13 @@ class PickingService
 
     public function validate(Picking $picking, array $doneQties = [], bool $createBackorder = true): array
     {
+        // Row-lock the picking inside the surrounding DB::transaction so two
+        // concurrent validate() calls can't both pass canValidate(), both run
+        // the quant updates, and double-decrement stock. The per-quant
+        // lockForUpdate inside updateQuant() only serializes one quant at a
+        // time — without the parent lock, the whole loop runs twice.
+        $picking = Picking::whereKey($picking->id)->lockForUpdate()->first() ?? $picking;
+
         if (!$picking->canValidate()) {
             throw new \RuntimeException('Transfer cannot be validated in its current state.');
         }
@@ -302,6 +315,10 @@ class PickingService
 
     public function cancel(Picking $picking): Picking
     {
+        // Lock the picking row so a racing validate() can't decrement stock
+        // after we've released reservations and decided to cancel.
+        $picking = Picking::whereKey($picking->id)->lockForUpdate()->first() ?? $picking;
+
         if ($picking->isDone()) {
             throw new \RuntimeException('Done transfers cannot be cancelled.');
         }

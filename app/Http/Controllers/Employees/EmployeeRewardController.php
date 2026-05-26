@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Employees;
 
 use App\Http\Controllers\Controller;
+use App\Http\Controllers\Employees\Concerns\ScopesEmployeeAllocation;
 use App\Models\Employees\Employee;
 use App\Models\Employees\EmployeeReward;
 use App\Services\Company\CompanyContextService;
@@ -12,19 +13,21 @@ use App\Helpers\SearchFilters;
 use App\Helpers\SortsTable;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Validation\Rule;
 
 class EmployeeRewardController extends Controller
 {
+    use ScopesEmployeeAllocation;
+
     public function __construct(
         private readonly FileService $fileService,
+        private readonly CompanyContextService $companyContext,
     ) {}
 
     public function read(Request $request)
     {
         $this->authorize('viewAny', Employee::class);
 
-        $query = EmployeeReward::query()->withCount('employees');
+        $query = $this->scopeAllocationListing(EmployeeReward::query());
 
         SearchFilters::apply($query, $request);
 
@@ -54,8 +57,11 @@ class EmployeeRewardController extends Controller
     public function show(EmployeeReward $reward)
     {
         $this->authorize('viewAny', Employee::class);
+        $this->assertAllocationInScope($reward);
 
-        $reward->load(['employees', 'creator', 'updater', 'chatterMessages.user', 'attachedFile']);
+        $this->loadAllocationWithScopedEmployees($reward, [
+            'creator', 'updater', 'chatterMessages.user', 'attachedFile',
+        ]);
 
         return view('employees.rewards.show', compact('reward'));
     }
@@ -110,6 +116,7 @@ class EmployeeRewardController extends Controller
     public function edit(EmployeeReward $reward)
     {
         $this->authorize('update', Employee::class);
+        $this->assertAllocationInScope($reward);
 
         $reward->load('attachedFile');
 
@@ -119,6 +126,7 @@ class EmployeeRewardController extends Controller
     public function write(Request $request, EmployeeReward $reward)
     {
         $this->authorize('update', Employee::class);
+        $this->assertAllocationInScope($reward);
 
         $data = $request->validate([
             'name'                     => 'nullable|string|max:255',
@@ -162,18 +170,17 @@ class EmployeeRewardController extends Controller
     public function syncEmployees(Request $request, EmployeeReward $reward)
     {
         $this->authorize('update', Employee::class);
+        $this->assertAllocationInScope($reward);
 
-        // Rule 11: only employees in the actor's active companies.
-        $activeCompanyIds = app(CompanyContextService::class)->getActiveCompanyIds();
-        $employeeRule = Rule::exists('hr_employees', 'id')->where(function ($q) use ($activeCompanyIds) {
-            empty($activeCompanyIds) ? $q->whereRaw('1 = 0') : $q->whereIn('company_id', $activeCompanyIds);
-        });
         $data = $request->validate([
             'employee_ids'   => 'nullable|array',
-            'employee_ids.*' => $employeeRule,
+            'employee_ids.*' => 'integer|exists:hr_employees,id',
         ]);
 
-        $newIds = collect($data['employee_ids'] ?? [])->map(fn ($id) => (int) $id);
+        // Silent-keep pattern (see ScopesEmployeeAllocation): scope requested
+        // IDs to the actor's active companies and preserve any out-of-scope
+        // pivot rows so a single-company actor can't strip cross-tenant rows.
+        $newIds = $this->scopeRequestedEmployeeIds($data['employee_ids'] ?? [], $reward->employees());
 
         DB::transaction(function () use ($reward, $newIds) {
             $oldIds  = $reward->employees()->pluck('hr_employees.id');
@@ -196,6 +203,7 @@ class EmployeeRewardController extends Controller
     public function replaceDocument(Request $request, EmployeeReward $reward)
     {
         $this->authorize('update', Employee::class);
+        $this->assertAllocationInScope($reward);
 
         $request->validate(['file' => 'required|file|max:10240']);
 
@@ -214,6 +222,7 @@ class EmployeeRewardController extends Controller
     public function deleteDocument(EmployeeReward $reward)
     {
         $this->authorize('update', Employee::class);
+        $this->assertAllocationInScope($reward);
 
         DB::transaction(function () use ($reward) {
             if ($reward->file_path) {
@@ -229,6 +238,7 @@ class EmployeeRewardController extends Controller
     public function archive(EmployeeReward $reward)
     {
         $this->authorize('update', Employee::class);
+        $this->assertAllocationInScope($reward);
 
         DB::transaction(function () use ($reward) {
             $reward->update(['active' => false]);
@@ -241,6 +251,7 @@ class EmployeeRewardController extends Controller
     public function unarchive(EmployeeReward $reward)
     {
         $this->authorize('update', Employee::class);
+        $this->assertAllocationInScope($reward);
 
         DB::transaction(function () use ($reward) {
             $reward->update(['active' => true]);
@@ -253,6 +264,7 @@ class EmployeeRewardController extends Controller
     public function unlink(EmployeeReward $reward)
     {
         $this->authorize('delete', Employee::class);
+        $this->assertAllocationInScope($reward);
 
         DB::transaction(function () use ($reward) {
             if ($reward->file_path) {
@@ -267,6 +279,7 @@ class EmployeeRewardController extends Controller
     public function addComment(Request $request, EmployeeReward $reward)
     {
         $this->authorize('update', Employee::class);
+        $this->assertAllocationInScope($reward);
 
         $request->validate(['body' => 'required|string|max:5000']);
         DB::transaction(fn () => $reward->logComment($request->body));

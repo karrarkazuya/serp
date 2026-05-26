@@ -58,7 +58,12 @@ class BalanceService
                         $config = $configsByCompany->get($employee->company_id);
                         if (!$config) continue;
 
-                        $balance = $this->getOrCreate($employee);
+                        // Lock the balance row so an HR approval racing with
+                        // this tick (vanishingly rare since the cron runs at
+                        // 00:05 on the 1st, but possible) can't read+modify
+                        // the same row in parallel and lose the deduction or
+                        // the credit.
+                        $balance = $this->getForUpdate($employee);
 
                         // Determine how many months to credit (catch-up).
                         // Signed diff so a future-dated last_credited_month

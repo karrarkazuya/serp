@@ -29,9 +29,10 @@ class DepartmentController extends Controller
         $activeCompanyIds = $this->companyContext->getActiveCompanyIds();
         $query = Department::query()->with(['company', 'manager', 'parent']);
 
-        if (!empty($activeCompanyIds)) {
-            $query->forCompanies($activeCompanyIds);
-        }
+        // Fail-closed multi-tenant gate (see EmployeeController::read).
+        empty($activeCompanyIds)
+            ? $query->whereRaw('1 = 0')
+            : $query->forCompanies($activeCompanyIds);
 
         SearchFilters::apply($query, $request);
 
@@ -81,7 +82,7 @@ class DepartmentController extends Controller
         $this->authorize('view', $department);
 
         $activeCompanyIds = $this->companyContext->getActiveCompanyIds();
-        abort_unless(empty($activeCompanyIds) || in_array($department->company_id, $activeCompanyIds), 403);
+        abort_unless(!empty($activeCompanyIds) && in_array($department->company_id, $activeCompanyIds), 403);
 
         $department->load(['company', 'manager', 'parent', 'children.manager', 'employees.job', 'creator', 'updater']);
 
@@ -110,7 +111,7 @@ class DepartmentController extends Controller
         $this->authorize('update', $department);
 
         $activeCompanyIds = $this->companyContext->getActiveCompanyIds();
-        abort_unless(empty($activeCompanyIds) || in_array($department->company_id, $activeCompanyIds), 403);
+        abort_unless(!empty($activeCompanyIds) && in_array($department->company_id, $activeCompanyIds), 403);
 
         return view('employees.departments.edit', compact('department'));
     }
@@ -120,7 +121,7 @@ class DepartmentController extends Controller
         $this->authorize('update', $department);
 
         $activeCompanyIds = $this->companyContext->getActiveCompanyIds();
-        abort_unless(empty($activeCompanyIds) || in_array($department->company_id, $activeCompanyIds), 403);
+        abort_unless(!empty($activeCompanyIds) && in_array($department->company_id, $activeCompanyIds), 403);
 
         DB::transaction(fn () => $this->deptService->update($department, $request->validated()));
 
@@ -131,7 +132,7 @@ class DepartmentController extends Controller
     {
         $this->authorize('update', $department);
         $activeCompanyIds = $this->companyContext->getActiveCompanyIds();
-        abort_unless(empty($activeCompanyIds) || in_array($department->company_id, $activeCompanyIds), 403);
+        abort_unless(!empty($activeCompanyIds) && in_array($department->company_id, $activeCompanyIds), 403);
 
         DB::transaction(fn () => $this->deptService->archive($department));
 
@@ -142,7 +143,7 @@ class DepartmentController extends Controller
     {
         $this->authorize('update', $department);
         $activeCompanyIds = $this->companyContext->getActiveCompanyIds();
-        abort_unless(empty($activeCompanyIds) || in_array($department->company_id, $activeCompanyIds), 403);
+        abort_unless(!empty($activeCompanyIds) && in_array($department->company_id, $activeCompanyIds), 403);
 
         DB::transaction(fn () => $this->deptService->unarchive($department));
 
@@ -153,7 +154,7 @@ class DepartmentController extends Controller
     {
         $this->authorize('delete', $department);
         $activeCompanyIds = $this->companyContext->getActiveCompanyIds();
-        abort_unless(empty($activeCompanyIds) || in_array($department->company_id, $activeCompanyIds), 403);
+        abort_unless(!empty($activeCompanyIds) && in_array($department->company_id, $activeCompanyIds), 403);
 
         DB::transaction(fn () => $this->deptService->delete($department));
 
@@ -164,7 +165,7 @@ class DepartmentController extends Controller
     {
         $this->authorize('comment', $department);
         $activeCompanyIds = $this->companyContext->getActiveCompanyIds();
-        abort_unless(empty($activeCompanyIds) || in_array($department->company_id, $activeCompanyIds), 403);
+        abort_unless(!empty($activeCompanyIds) && in_array($department->company_id, $activeCompanyIds), 403);
 
         $request->validate(['body' => 'required|string|max:5000']);
         DB::transaction(fn () => $department->logComment($request->body));

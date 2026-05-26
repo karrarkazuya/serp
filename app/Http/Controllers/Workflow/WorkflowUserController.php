@@ -8,9 +8,11 @@ use App\Helpers\SearchFilters;
 use App\Helpers\SortsTable;
 use App\Models\User;
 use App\Models\Workflow\WorkflowUser;
+use App\Services\Company\CompanyContextService;
 use App\Services\Workflow\WorkflowConfigService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\Rule;
 
 class WorkflowUserController extends Controller
 {
@@ -70,12 +72,22 @@ class WorkflowUserController extends Controller
     {
         $this->authorize('create', WorkflowUser::class);
 
+        // Rule 11: scope department FKs to the actor's active companies —
+        // hr_departments has company_id and without this a workflow admin in
+        // company A could assign company B's departments to the user.
+        $activeCompanyIds = app(CompanyContextService::class)->getActiveCompanyIds();
+        $deptRule = Rule::exists('hr_departments', 'id')->where(function ($q) use ($activeCompanyIds) {
+            empty($activeCompanyIds)
+                ? $q->whereRaw('1 = 0')
+                : $q->whereIn('company_id', $activeCompanyIds);
+        });
+
         $data = $request->validate([
-            'default_department_id' => 'required|exists:hr_departments,id',
+            'default_department_id' => ['required', $deptRule],
             'groups'                => 'nullable|array',
             'groups.*'              => 'exists:workflow_groups,id,deleted_at,NULL',
             'departments'           => 'nullable|array',
-            'departments.*'         => 'exists:hr_departments,id',
+            'departments.*'         => $deptRule,
         ]);
 
         $data['active'] = $request->boolean('active');
