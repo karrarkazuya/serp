@@ -23,11 +23,8 @@ class AccountingTaxGroupController extends Controller
 
         $activeCompanyIds = $this->companyContext->getActiveCompanyIds();
 
-        $query = AccountingTaxGroup::query()->with('company');
-
-        empty($activeCompanyIds)
-            ? $query->whereRaw('1 = 0')
-            : $query->forCompanies($activeCompanyIds);
+        // forCompanies() is fail-closed (see AccountingTaxGroup::scopeForCompanies).
+        $query = AccountingTaxGroup::query()->with('company')->forCompanies($activeCompanyIds);
 
         SearchFilters::apply($query, $request);
 
@@ -57,7 +54,7 @@ class AccountingTaxGroupController extends Controller
         $taxGroup->load(['company', 'creator', 'updater']);
 
         $allIds = AccountingTaxGroup::query()
-            ->when(!empty($activeCompanyIds), fn ($q) => $q->forCompanies($activeCompanyIds))
+            ->forCompanies($activeCompanyIds)
             ->orderBy('sequence')
             ->pluck('id');
         $currentIndex = $allIds->search($taxGroup->id);

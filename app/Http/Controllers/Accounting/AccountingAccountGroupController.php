@@ -23,11 +23,8 @@ class AccountingAccountGroupController extends Controller
 
         $activeCompanyIds = $this->companyContext->getActiveCompanyIds();
 
-        $query = AccountingAccountGroup::query()->with(['company', 'parent']);
-
-        empty($activeCompanyIds)
-            ? $query->whereRaw('1 = 0')
-            : $query->forCompanies($activeCompanyIds);
+        // forCompanies() is fail-closed (see AccountingAccountGroup::scopeForCompanies).
+        $query = AccountingAccountGroup::query()->with(['company', 'parent'])->forCompanies($activeCompanyIds);
 
         SearchFilters::apply($query, $request);
 
@@ -57,7 +54,7 @@ class AccountingAccountGroupController extends Controller
         $accountGroup->load(['company', 'parent', 'children', 'creator', 'updater']);
 
         $allIds = AccountingAccountGroup::query()
-            ->when(!empty($activeCompanyIds), fn ($q) => $q->forCompanies($activeCompanyIds))
+            ->forCompanies($activeCompanyIds)
             ->orderBy('name')
             ->pluck('id');
         $currentIndex = $allIds->search($accountGroup->id);

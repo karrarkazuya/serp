@@ -25,6 +25,8 @@ Route::prefix('contacts')->name('contacts.')->group(function () {
         Route::delete('/{tag}', [TagController::class, 'unlink'])->middleware('permission:contacts.unlink')->name('delete');
     });
 
+    Route::delete('/bulk', [ContactController::class, 'bulkUnlink'])->middleware('permission:contacts.unlink')->name('bulk-delete');
+
     Route::get('/{contact}', [ContactController::class, 'show'])->middleware('permission:contacts.read')->name('show');
     Route::get('/{contact}/edit', [ContactController::class, 'edit'])->middleware('permission:contacts.write')->name('edit');
     Route::put('/{contact}', [ContactController::class, 'write'])->middleware('permission:contacts.write')->name('update');

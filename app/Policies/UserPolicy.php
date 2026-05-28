@@ -30,8 +30,11 @@ class UserPolicy
         return $user->hasPermission('users.write');
     }
 
-    public function delete(User $user, User $model): bool
+    public function delete(User $user, ?User $model = null): bool
     {
+        if ($model === null) {
+            return $user->hasPermission('users.unlink');
+        }
         return $user->hasPermission('users.unlink') && $user->id !== $model->id;
     }
 

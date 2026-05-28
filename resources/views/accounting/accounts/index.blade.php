@@ -31,12 +31,12 @@
             <div class="flex items-center rounded overflow-hidden border border-gray-300">
                 <a href="{{ $listUrl }}"
                    class="w-8 h-8 inline-flex items-center justify-center {{ $view === 'list' ? 'bg-purple-100 text-purple-700' : 'bg-white text-gray-500 hover:bg-gray-50' }}"
-                   title="List view">
+                   title="{{ __('accounting.title_list_view') }}">
                     <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20"><path d="M4 5h12v2H4V5zm0 4h12v2H4V9zm0 4h12v2H4v-2z"/></svg>
                 </a>
                 <a href="{{ $treeUrl }}"
                    class="w-8 h-8 inline-flex items-center justify-center border-l border-gray-300 {{ $view === 'tree' ? 'bg-purple-100 text-purple-700' : 'bg-white text-gray-500 hover:bg-gray-50' }}"
-                   title="Tree view">
+                   title="{{ __('accounting.title_tree_view') }}">
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h6m-6 6h3m0 0v6m0-6h7m0 0v6m0-6h3"/></svg>
                 </a>
             </div>

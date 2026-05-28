@@ -25,11 +25,10 @@ class CurrencyRateController extends Controller
 
         $activeCompanyIds = $this->companyContext->getActiveCompanyIds();
 
-        $query = CurrencyRate::query()->with('company');
-
-        empty($activeCompanyIds)
-            ? $query->whereRaw('1 = 0')
-            : $query->forCompanies($activeCompanyIds);
+        // forCompanies() is fail-closed: an empty $activeCompanyIds array
+        // returns no rows (whereIn([]) compiles to "WHERE 0 = 1"). See
+        // CurrencyRate::scopeForCompanies.
+        $query = CurrencyRate::query()->with('company')->forCompanies($activeCompanyIds);
 
         SearchFilters::apply($query, $request);
 

@@ -481,10 +481,24 @@ class PickingService
         if ($line->lot_id) return $line->lot;
 
         if ($line->lot_name) {
-            return Lot::firstOrCreate(
-                ['company_id' => $line->company_id, 'product_id' => $line->product_id, 'name' => $line->lot_name],
-                ['active' => true, 'created_by' => auth()->id(), 'updated_by' => auth()->id()]
-            );
+            // The (company_id, product_id, name) unique index guarantees no
+            // duplicate rows even if two concurrent validate() calls race
+            // here. firstOrCreate would throw QueryException on the loser
+            // — catch it and re-read so a perfectly valid concurrent
+            // receipt doesn't user-visibly fail.
+            try {
+                return Lot::firstOrCreate(
+                    ['company_id' => $line->company_id, 'product_id' => $line->product_id, 'name' => $line->lot_name],
+                    ['active' => true]
+                );
+            } catch (\Illuminate\Database\QueryException $e) {
+                $existing = Lot::where('company_id', $line->company_id)
+                    ->where('product_id', $line->product_id)
+                    ->where('name', $line->lot_name)
+                    ->first();
+                if ($existing) return $existing;
+                throw $e;
+            }
         }
 
         return null;

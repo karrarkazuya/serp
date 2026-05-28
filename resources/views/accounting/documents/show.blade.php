@@ -55,7 +55,7 @@
                     @if(!empty($config['routes']['credit']))
                     <form method="POST" action="{{ route($config['routes']['credit'], $document) }}">
                         @csrf
-                        <button class="px-3 py-1.5 text-sm font-medium text-gray-700 bg-gray-200 hover:bg-gray-300 rounded">Credit Note</button>
+                        <button class="px-3 py-1.5 text-sm font-medium text-gray-700 bg-gray-200 hover:bg-gray-300 rounded">{{ __('accounting.btn_credit_note') }}</button>
                     </form>
                     @endif
                     <form method="POST" action="{{ route($config['routes']['reset'], $document) }}">
@@ -77,7 +77,7 @@
                     @csrf @method('DELETE')
                     <button type="button" x-show="!confirming" @click="confirming = true" class="px-3 py-1.5 text-sm text-red-700 border border-red-200 rounded hover:bg-red-50">{{ __('accounting.btn_delete') }}</button>
                     <div x-show="confirming" style="display:none" class="flex items-center gap-1.5">
-                        <span class="text-xs text-red-600">Delete this {{ strtolower($config['singular']) }}?</span>
+                        <span class="text-xs text-red-600">{{ __('accounting.confirm_delete_this', ['type' => strtolower($config['singular'])]) }}</span>
                         <button type="submit" class="px-2 py-1 text-xs font-medium text-white bg-red-600 rounded">{{ __('accounting.btn_yes') }}</button>
                         <button type="button" @click="confirming = false" class="px-2 py-1 text-xs text-gray-500">{{ __('accounting.btn_cancel') }}</button>
                     </div>
@@ -153,7 +153,7 @@
         @if($document->isPosted() && $installments->count() > 1)
         <div class="mx-4 mt-4 rounded-xl border border-gray-200 bg-white shadow-sm overflow-hidden">
             <div class="px-5 py-2.5 border-b border-gray-100 flex items-center justify-between bg-gray-50">
-                <p class="text-xs font-semibold text-gray-600 uppercase">Installment Schedule</p>
+                <p class="text-xs font-semibold text-gray-600 uppercase">{{ __('accounting.installment_schedule') }}</p>
                 <span class="text-xs text-gray-500">{{ $installments->count() }} installments · {{ $document->paymentTerm?->name }}</span>
             </div>
             <table class="w-full text-sm">
@@ -162,8 +162,8 @@
                         <th class="px-5 py-2 text-left w-12">#</th>
                         <th class="px-3 py-2 text-left">{{ __('accounting.col_due_date') }}</th>
                         <th class="px-3 py-2 text-right">{{ __('accounting.field_amount') }}</th>
-                        <th class="px-3 py-2 text-right">Paid</th>
-                        <th class="px-3 py-2 text-right">Residual</th>
+                        <th class="px-3 py-2 text-right">{{ __('accounting.col_paid') }}</th>
+                        <th class="px-3 py-2 text-right">{{ __('accounting.col_residual') }}</th>
                         <th class="px-3 py-2 text-left w-28">{{ __('accounting.col_state') }}</th>
                     </tr>
                 </thead>
@@ -172,16 +172,16 @@
                     @php
                         if ($inst['residual'] < 0.005) {
                             $instColor = 'bg-green-100 text-green-700';
-                            $instLabel = 'Paid';
+                            $instLabel = __('accounting.status_paid');
                         } elseif ($inst['matched'] > 0.005) {
                             $instColor = 'bg-blue-100 text-blue-700';
-                            $instLabel = 'Partial';
+                            $instLabel = __('accounting.status_partial');
                         } elseif ($inst['date_maturity'] && $inst['date_maturity']->isPast()) {
                             $instColor = 'bg-red-100 text-red-700';
-                            $instLabel = 'Overdue';
+                            $instLabel = __('accounting.status_overdue');
                         } else {
                             $instColor = 'bg-orange-100 text-orange-700';
-                            $instLabel = 'Open';
+                            $instLabel = __('accounting.inst_label_open');
                         }
                     @endphp
                     <tr>
@@ -223,12 +223,12 @@
 
         <div class="bg-white mx-4 mt-4 rounded-xl border border-gray-200 shadow-sm overflow-hidden relative" x-data="{ tab: 'lines' }">
             @if($document->isPaid())
-            <div class="absolute -right-16 top-12 w-64 rotate-45 bg-green-600 py-2 text-center text-xl font-bold text-white shadow">PAID</div>
+            <div class="absolute -right-16 top-12 w-64 rotate-45 bg-green-600 py-2 text-center text-xl font-bold text-white shadow">{{ strtoupper(__('accounting.status_paid')) }}</div>
             @endif
             <div class="p-6">
                 <div class="flex items-start justify-between gap-6 mb-1">
                     <div class="flex-1 min-w-0">
-                        <p class="text-sm text-gray-500">{{ match($config['move_type']) { 'out_invoice' => 'Customer Invoice', 'in_invoice' => 'Vendor Bill', 'out_refund' => 'Customer Credit Note', 'in_refund' => 'Vendor Refund', default => $config['singular'] } }}</p>
+                        <p class="text-sm text-gray-500">{{ match($config['move_type']) { 'out_invoice' => __('accounting.doc_type_customer_invoice'), 'in_invoice' => __('accounting.doc_type_vendor_bill'), 'out_refund' => __('accounting.doc_type_customer_credit'), 'in_refund' => __('accounting.doc_type_vendor_refund'), default => $config['singular'] } }}</p>
                         <h1 class="mt-2 text-4xl font-bold {{ ($document->name && $document->name !== '/') ? 'text-gray-900' : 'text-gray-400' }}">{{ ($document->name && $document->name !== '/') ? $document->name : __('accounting.status_draft') }}</h1>
                     </div>
                     @php
@@ -258,8 +258,8 @@
                         @foreach([
                             [$config['partner_label'], $document->partner?->name],
                             [__('accounting.col_reference'), $document->ref],
-                            ['Source Document', $document->invoice_origin],
-                            ['Payment Status', $document->payment_state_label],
+                            [__('accounting.source_document'), $document->invoice_origin],
+                            [__('accounting.payment_status'), $document->payment_state_label],
                         ] as [$label, $value])
                         <div class="flex items-center gap-4 py-2 border-b border-gray-100">
                             <span class="w-40 shrink-0 text-sm text-gray-500">{{ $label }}</span>
@@ -267,7 +267,7 @@
                         </div>
                         @endforeach
                         <div class="flex items-center gap-4 py-2 border-b border-gray-100">
-                            <span class="w-40 shrink-0 text-sm text-gray-500">Amount Due</span>
+                            <span class="w-40 shrink-0 text-sm text-gray-500">{{ __('accounting.amount_due') }}</span>
                             <span class="flex-1 text-sm text-gray-800"><x-money :amount="(float) ($residual ?? 0)" :currency="$document->currency" /></span>
                         </div>
                         @if($document->reversedMove)
@@ -281,7 +281,7 @@
                             };
                         @endphp
                         <div class="flex items-center gap-4 py-2 border-b border-gray-100">
-                            <span class="w-40 shrink-0 text-sm text-gray-500">Reversed From</span>
+                            <span class="w-40 shrink-0 text-sm text-gray-500">{{ __('accounting.reversed_from') }}</span>
                             <a href="{{ route($origRoute, $document->reversedMove) }}" class="flex-1 text-sm text-purple-600 hover:underline">{{ $document->reversedMove->display_name }}</a>
                         </div>
                         @endif
@@ -331,7 +331,7 @@
                         </button>
                         <button type="button" @click="tab = 'other'" class="px-6 py-3 text-sm font-semibold border border-t-0 rounded-b bg-white"
                                 :class="tab === 'other' ? 'text-gray-900 border-gray-300' : 'text-[#71639e] border-transparent'">
-                            Other Info
+                            {{ __('accounting.tab_other_info') }}
                         </button>
                     </div>
                 </div>
@@ -340,7 +340,7 @@
                     <table class="w-full text-sm">
                         <thead class="bg-gray-50">
                             <tr class="text-sm font-semibold text-gray-700">
-                                <th class="px-6 py-3 text-left">Description</th>
+                                <th class="px-6 py-3 text-left">{{ __('accounting.col_description') }}</th>
                                 <th class="px-4 py-3 text-left">{{ __('accounting.col_account') }}</th>
                                 <th class="px-4 py-3 text-left">{{ __('accounting.taxes') }}</th>
                                 <th class="px-6 py-3 text-right">{{ __('accounting.col_amount') }}</th>
@@ -370,7 +370,7 @@
                         </tbody>
                         <tfoot class="bg-gray-100 font-semibold">
                             <tr>
-                                <td colspan="3" class="px-6 py-2 text-right text-gray-700">Untaxed Amount:</td>
+                                <td colspan="3" class="px-6 py-2 text-right text-gray-700">{{ __('accounting.untaxed_amount') }}:</td>
                                 <td class="px-6 py-2 text-right tabular-nums text-gray-900"><x-money :amount="$untaxed" :currency="$document->currency" /></td>
                             </tr>
                             @foreach($taxLines->groupBy('tax_line_id') as $taxId => $group)
@@ -410,7 +410,7 @@
                         </tbody>
                         <tfoot class="bg-gray-50 font-semibold text-sm">
                             <tr>
-                                <td colspan="2" class="px-3 py-2 text-right text-gray-700">Journal Totals</td>
+                                <td colspan="2" class="px-3 py-2 text-right text-gray-700">{{ __('accounting.journal_totals') }}</td>
                                 <td class="px-3 py-2 text-right tabular-nums"><x-money :amount="(float) $balance['debit']" :currency="$document->currency" /></td>
                                 <td class="px-3 py-2 text-right tabular-nums"><x-money :amount="(float) $balance['credit']" :currency="$document->currency" /></td>
                             </tr>

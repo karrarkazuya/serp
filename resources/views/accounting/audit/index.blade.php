@@ -25,10 +25,10 @@
             <div>
                 <label class="block text-xs font-semibold text-gray-500 mb-1">{{ __('accounting.col_event') }}</label>
                 <select name="message_type" class="text-sm border border-gray-300 rounded px-2 py-1.5 focus:outline-none focus:ring-0 focus:border-purple-500">
-                    <option value="">All</option>
-                    <option value="system" @selected(request('message_type') === 'system')>System</option>
-                    <option value="log" @selected(request('message_type') === 'log')>Log</option>
-                    <option value="comment" @selected(request('message_type') === 'comment')>Comment</option>
+                    <option value="">{{ __('common.all') }}</option>
+                    <option value="system" @selected(request('message_type') === 'system')>{{ __('accounting.audit_type_system') }}</option>
+                    <option value="log" @selected(request('message_type') === 'log')>{{ __('accounting.audit_type_log') }}</option>
+                    <option value="comment" @selected(request('message_type') === 'comment')>{{ __('accounting.audit_type_comment') }}</option>
                 </select>
             </div>
             <div>
@@ -42,7 +42,7 @@
                        class="text-sm border border-gray-300 rounded px-2 py-1.5 focus:outline-none focus:ring-0 focus:border-purple-500">
             </div>
             <div class="flex-1 min-w-50">
-                <label class="block text-xs font-semibold text-gray-500 mb-1">Search</label>
+                <label class="block text-xs font-semibold text-gray-500 mb-1">{{ __('common.search') }}</label>
                 <input type="text" name="search" value="{{ request('search') }}" placeholder="{{ __('accounting.ph_search_model') }}"
                        class="w-full text-sm border border-gray-300 rounded px-2 py-1.5 focus:outline-none focus:ring-0 focus:border-purple-500">
             </div>

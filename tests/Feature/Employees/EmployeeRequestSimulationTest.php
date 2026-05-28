@@ -581,6 +581,11 @@ class EmployeeRequestSimulationTest extends TestCase
             'resource_calendar_id' => $this->calendar->id, 'user_id' => $this->hrUser->id,
             'employment_status' => 'active', 'hire_date' => '2024-01-01', 'active' => true,
         ]);
+        // Seed a balance for the HR employee so the form-layer balance check
+        // doesn't block the submission for a reason unrelated to this test.
+        $this->balanceSvc->getOrCreate($hrEmployee)
+            ->update(['leave_days_balance' => 20, 'time_off_hours_balance' => 16]);
+
         $writePerm = \App\Models\Security\Permission::where('key', 'attendance.requests.write')->first();
         $this->hrUser->roles->first()->permissions()->attach($writePerm->id);
 

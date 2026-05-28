@@ -28,11 +28,12 @@ class AccountController extends Controller
         $activeCompanyIds = $this->companyContext->getActiveCompanyIds();
         $view = $request->query('view', 'list');
 
+        // forCompanies() is fail-closed (see Account::scopeForCompanies).
+
         // ── Tree view: no pagination, full hierarchy ──
         if ($view === 'tree') {
             $records = Account::query()
-                ->when(empty($activeCompanyIds), fn ($q) => $q->whereRaw('1 = 0'))
-                ->when(!empty($activeCompanyIds), fn ($q) => $q->forCompanies($activeCompanyIds))
+                ->forCompanies($activeCompanyIds)
                 ->when($request->query('filter') !== 'all', function ($q) use ($request) {
                     $request->query('filter') === 'archived' ? $q->inactive() : $q->active();
                 })
@@ -47,11 +48,7 @@ class AccountController extends Controller
         }
 
         // ── List view (default) ──
-        $query = Account::query()->with(['company', 'parent']);
-
-        empty($activeCompanyIds)
-            ? $query->whereRaw('1 = 0')
-            : $query->forCompanies($activeCompanyIds);
+        $query = Account::query()->with(['company', 'parent'])->forCompanies($activeCompanyIds);
 
         SearchFilters::apply($query, $request);
 
@@ -140,7 +137,7 @@ class AccountController extends Controller
         $balance = $this->accounting->getAccountBalance($account);
 
         $allIds = Account::active()
-            ->when(!empty($activeCompanyIds), fn ($q) => $q->forCompanies($activeCompanyIds))
+            ->forCompanies($activeCompanyIds)
             ->orderBy('code')
             ->pluck('id');
         $currentIndex = $allIds->search($account->id);

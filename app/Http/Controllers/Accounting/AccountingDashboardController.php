@@ -21,53 +21,48 @@ class AccountingDashboardController extends Controller
         abort_unless($this->user()->hasPermission('accounting.read'), 403);
 
         $activeCompanyIds = $this->companyContext->getActiveCompanyIds();
+        // Laravel's whereIn(...) compiles to "WHERE 0 = 1" when the array is
+        // empty — i.e., fail-closed by default — so a user with no active
+        // companies gets zero counts on every metric below.
 
         $accountsCount = Account::query()
-            ->when(empty($activeCompanyIds), fn ($q) => $q->whereRaw('1 = 0'))
-            ->when(!empty($activeCompanyIds), fn ($q) => $q->whereIn('company_id', $activeCompanyIds))
+            ->whereIn('company_id', $activeCompanyIds)
             ->where('active', true)
             ->count();
 
         $journals = AccountJournal::query()
-            ->when(empty($activeCompanyIds), fn ($q) => $q->whereRaw('1 = 0'))
-            ->when(!empty($activeCompanyIds), fn ($q) => $q->whereIn('company_id', $activeCompanyIds))
+            ->whereIn('company_id', $activeCompanyIds)
             ->where('active', true)
             ->orderBy('type')
             ->orderBy('code')
             ->get();
 
         $draftCount = AccountMove::query()
-            ->when(empty($activeCompanyIds), fn ($q) => $q->whereRaw('1 = 0'))
-            ->when(!empty($activeCompanyIds), fn ($q) => $q->whereIn('company_id', $activeCompanyIds))
+            ->whereIn('company_id', $activeCompanyIds)
             ->where('state', 'draft')
             ->count();
 
         $invoiceCount = AccountMove::query()
-            ->when(empty($activeCompanyIds), fn ($q) => $q->whereRaw('1 = 0'))
-            ->when(!empty($activeCompanyIds), fn ($q) => $q->whereIn('company_id', $activeCompanyIds))
+            ->whereIn('company_id', $activeCompanyIds)
             ->where('move_type', 'out_invoice')
             ->count();
 
         $billCount = AccountMove::query()
-            ->when(empty($activeCompanyIds), fn ($q) => $q->whereRaw('1 = 0'))
-            ->when(!empty($activeCompanyIds), fn ($q) => $q->whereIn('company_id', $activeCompanyIds))
+            ->whereIn('company_id', $activeCompanyIds)
             ->where('move_type', 'in_invoice')
             ->count();
 
         $postedCount = AccountMove::query()
-            ->when(empty($activeCompanyIds), fn ($q) => $q->whereRaw('1 = 0'))
-            ->when(!empty($activeCompanyIds), fn ($q) => $q->whereIn('company_id', $activeCompanyIds))
+            ->whereIn('company_id', $activeCompanyIds)
             ->where('state', 'posted')
             ->count();
 
         $journalItemsCount = AccountMoveLine::query()
-            ->when(empty($activeCompanyIds), fn ($q) => $q->whereRaw('1 = 0'))
-            ->when(!empty($activeCompanyIds), fn ($q) => $q->whereIn('company_id', $activeCompanyIds))
+            ->whereIn('company_id', $activeCompanyIds)
             ->count();
 
         $recentMoves = AccountMove::query()
-            ->when(empty($activeCompanyIds), fn ($q) => $q->whereRaw('1 = 0'))
-            ->when(!empty($activeCompanyIds), fn ($q) => $q->whereIn('company_id', $activeCompanyIds))
+            ->whereIn('company_id', $activeCompanyIds)
             ->with(['journal', 'partner'])
             ->orderByDesc('date')
             ->orderByDesc('id')

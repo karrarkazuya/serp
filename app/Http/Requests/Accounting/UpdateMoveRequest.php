@@ -52,7 +52,8 @@ class UpdateMoveRequest extends FormRequest
             'company_id'  => ['required', $companyRule],
             'journal_id'  => ['required', $journalRule],
             'partner_id'  => ['nullable', $partnerInCompany],
-            'date'        => ['required', 'date'],
+            // See StoreDocumentRequest for the rationale on bounding move dates.
+            'date'        => ['required', 'date', 'after_or_equal:-20 years', 'before_or_equal:+1 year'],
             'ref'         => ['nullable', 'string', 'max:128'],
             'move_type'   => ['nullable', 'string', Rule::in(['entry'])],
             'currency'    => ['nullable', 'string', 'max:10'],

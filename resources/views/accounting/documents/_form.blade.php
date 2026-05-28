@@ -292,7 +292,7 @@ window._docFormData = {
             </button>
             <button type="button" @click="tab = 'other'" class="px-6 py-3 text-sm font-semibold border border-t-0 rounded-b bg-white"
                     :class="tab === 'other' ? 'text-gray-900 border-gray-300' : 'text-[#71639e] border-transparent'">
-                Other Info
+                {{ __('accounting.tab_other_info') }}
             </button>
         </div>
 
@@ -300,13 +300,13 @@ window._docFormData = {
             <table class="w-full text-sm">
                 <thead class="bg-gray-200">
                     <tr class="text-sm font-semibold text-gray-700">
-                        <th class="px-4 py-3 text-left w-[30%]">Product</th>
+                        <th class="px-4 py-3 text-left w-[30%]">{{ __('accounting.col_product') }}</th>
                         <th class="px-4 py-3 text-left">{{ __('accounting.col_account') }}</th>
-                        <th class="px-4 py-3 text-left">Analytic</th>
-                        <th class="px-4 py-3 text-right w-28">Quantity</th>
-                        <th class="px-4 py-3 text-left w-24">UoM</th>
-                        <th class="px-4 py-3 text-right w-28">Price</th>
-                        <th class="px-4 py-3 text-right w-20">Disc %</th>
+                        <th class="px-4 py-3 text-left">{{ __('accounting.col_analytic') }}</th>
+                        <th class="px-4 py-3 text-right w-28">{{ __('accounting.col_quantity') }}</th>
+                        <th class="px-4 py-3 text-left w-24">{{ __('accounting.col_uom') }}</th>
+                        <th class="px-4 py-3 text-right w-28">{{ __('accounting.col_price') }}</th>
+                        <th class="px-4 py-3 text-right w-20">{{ __('accounting.col_disc') }}</th>
                         <th class="px-4 py-3 text-left w-28">{{ __('accounting.taxes') }}</th>
                         <th class="px-4 py-3 text-right w-36">{{ __('accounting.col_amount') }}</th>
                     </tr>
@@ -367,7 +367,7 @@ window._docFormData = {
                                    @input.debounce.300ms="uomSearch(i, line.uom_label)"
                                    @focus="line.uom_open = true"
                                    @blur="setTimeout(() => line.uom_open = false, 150)"
-                                   placeholder="UoM"
+                                   placeholder="{{ __('accounting.ph_uom') }}"
                                    autocomplete="off"
                                    class="w-full text-sm text-gray-700 bg-white border-0 border-b border-dotted border-gray-300 focus:border-purple-500 focus:outline-none focus:ring-0 px-0 py-1">
                             <div x-show="line.uom_open && line.uom_results.length > 0"
@@ -418,7 +418,7 @@ window._docFormData = {
                         <td class="px-4 py-2 text-right font-semibold tabular-nums text-gray-700">
                             <div class="flex items-center justify-end gap-3">
                                 <span><span x-text="f(lineNet(i))"></span> <span x-text="currency || ''"></span></span>
-                                <button type="button" @click="removeLine(i)" class="text-gray-400 hover:text-red-500" title="Remove line">
+                                <button type="button" @click="removeLine(i)" class="text-gray-400 hover:text-red-500" title="{{ __('accounting.title_remove_line') }}">
                                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6M9 7V4h6v3m-9 0h12"/></svg>
                                 </button>
                             </div>
@@ -429,9 +429,9 @@ window._docFormData = {
                         <td colspan="9" class="px-8 py-3">
                             <div class="flex items-center gap-5 text-sm font-semibold text-[#71639e]">
                                 <button type="button" @click="addLine()" class="hover:text-[#5c3d55]">{{ __('accounting.btn_add_line') }}</button>
-                                <button type="button" @click="addLine()" class="hover:text-[#5c3d55]">Add a section</button>
-                                <button type="button" @click="addLine()" class="hover:text-[#5c3d55]">Add a note</button>
-                                <button type="button" class="hover:text-[#5c3d55]">Catalog</button>
+                                <button type="button" @click="addLine()" class="hover:text-[#5c3d55]">{{ __('accounting.btn_add_section') }}</button>
+                                <button type="button" @click="addLine()" class="hover:text-[#5c3d55]">{{ __('accounting.btn_add_note') }}</button>
+                                <button type="button" class="hover:text-[#5c3d55]">{{ __('accounting.btn_catalog') }}</button>
                             </div>
                         </td>
                     </tr>
@@ -441,12 +441,12 @@ window._docFormData = {
             <div class="min-h-64 border-t border-gray-200 px-8 py-8">
                 <div class="ms-auto w-full max-w-sm border-t border-gray-200 pt-2 text-sm">
                     <div class="flex items-center justify-between py-1">
-                        <span class="font-semibold text-gray-600">Untaxed Amount:</span>
+                        <span class="font-semibold text-gray-600">{{ __('accounting.untaxed_amount') }}:</span>
                         <span class="tabular-nums text-gray-700"><span x-text="f(subtotal)"></span> <span x-text="currency || ''"></span></span>
                     </div>
                     <div class="flex items-center justify-between py-1 text-xs text-gray-400">
-                        <span>Taxes:</span>
-                        <span class="tabular-nums">Computed on save</span>
+                        <span>{{ __('accounting.taxes_label') }}:</span>
+                        <span class="tabular-nums">{{ __('accounting.computed_on_save') }}</span>
                     </div>
                     <div class="flex items-center justify-between py-1 text-lg font-bold border-t border-gray-200 mt-1">
                         <span class="text-gray-700">{{ __('accounting.total') }}:</span>
@@ -527,13 +527,13 @@ window._docFormData = {
                         />
                     </div>
                     <div class="flex items-center gap-4">
-                        <label class="w-40 shrink-0 text-sm font-semibold text-gray-700">Source Document</label>
+                        <label class="w-40 shrink-0 text-sm font-semibold text-gray-700">{{ __('accounting.source_document') }}</label>
                         <input type="text" name="invoice_origin" value="{{ $val('invoice_origin') }}" maxlength="128"
                                class="flex-1 text-sm text-gray-800 bg-transparent border-0 border-b border-dotted border-gray-300 focus:border-purple-500 focus:outline-none focus:ring-0 px-0 py-1"
                                placeholder="e.g. PO/2026/00001">
                     </div>
                     <div>
-                        <label class="block text-xs font-semibold text-gray-500 uppercase mb-1">Terms and Conditions</label>
+                        <label class="block text-xs font-semibold text-gray-500 uppercase mb-1">{{ __('accounting.terms_and_conditions') }}</label>
                         <textarea name="narration" rows="5" class="w-full text-sm border border-gray-200 rounded px-3 py-2 focus:outline-none focus:ring-1 focus:ring-purple-500" placeholder="Terms and Conditions">{{ $val('narration') }}</textarea>
                     </div>
                 </div>

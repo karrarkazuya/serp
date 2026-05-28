@@ -282,14 +282,14 @@ class EmployeeRequestService
             $sysDow = ($cursor->dayOfWeek + 1) % 7;
             $blocks = $calendar->attendances->where('day_of_week', $sysDow)->values()->all();
 
-            // Slice of the request on THIS day.
+            // Slice of the request on THIS day. Both $dayStart and $dayEnd are
+            // clipped to the cursor's calendar day (via the conditionals
+            // above), so they're always within the same 24h window. No
+            // cross-day arithmetic is needed for $reqEndH.
             $dayStart = $start->greaterThan($cursor) ? $start->copy() : $cursor->copy();
             $dayEnd   = $end->lessThan($cursor->copy()->endOfDay()) ? $end->copy() : $cursor->copy()->endOfDay();
             $reqStartH = $dayStart->hour + $dayStart->minute / 60;
             $reqEndH   = $dayEnd->hour   + $dayEnd->minute   / 60;
-            if ($dayEnd->isSameDay($dayStart) === false) {
-                $reqEndH += 24 * $dayStart->diffInDays($dayEnd);
-            }
 
             $isDayOff = empty($blocks);
 

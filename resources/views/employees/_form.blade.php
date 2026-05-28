@@ -341,7 +341,7 @@
                         <label class="w-44 shrink-0 text-sm text-gray-500">{{ __('employees.gender') }}</label>
                         <select name="gender" class="flex-1 text-sm text-gray-800 bg-transparent border-0 focus:outline-none px-0 py-0">
                             <option value="">—</option>
-                            @foreach(['male' => 'Male', 'female' => 'Female', 'other' => 'Other'] as $k => $v)
+                            @foreach(['male' => __('employees.male'), 'female' => __('employees.female'), 'other' => __('employees.other_gender')] as $k => $v)
                                 <option value="{{ $k }}" {{ $val('gender') === $k ? 'selected' : '' }}>{{ $v }}</option>
                             @endforeach
                         </select>
@@ -363,7 +363,7 @@
                         <label class="w-44 shrink-0 text-sm text-gray-500">{{ __('employees.certificate_level') }}</label>
                         <select name="certificate_level" class="flex-1 text-sm text-gray-800 bg-transparent border-0 focus:outline-none px-0 py-0">
                             <option value="">—</option>
-                            @foreach(['none' => 'None', 'graduate' => 'Graduate', 'bachelor' => 'Bachelor', 'master' => 'Master', 'doctor' => 'Doctor', 'other' => 'Other'] as $k => $v)
+                            @foreach(['none' => __('employees.cert_none'), 'graduate' => __('employees.cert_graduate'), 'bachelor' => __('employees.cert_bachelor'), 'master' => __('employees.cert_master'), 'doctor' => __('employees.cert_doctor'), 'other' => __('employees.other_gender')] as $k => $v)
                                 <option value="{{ $k }}" {{ $val('certificate_level') === $k ? 'selected' : '' }}>{{ $v }}</option>
                             @endforeach
                         </select>
@@ -500,21 +500,21 @@
                 <div class="grid gap-3 mb-2 py-2 border-b border-gray-100 items-center" style="grid-template-columns: 1fr 1fr 1fr auto;">
                     <select :name="`skills[${i}][skill_type_id]`" x-model="row.type_id" @change="onTypeChange(row)"
                             class="text-sm text-gray-800 bg-white border border-gray-200 rounded px-2 py-1 focus:outline-none focus:border-purple-400">
-                        <option value="">— Type —</option>
+                        <option value="">{{ __('employees.skill_type_ph') }}</option>
                         <template x-for="t in types" :key="t.id">
                             <option :value="String(t.id)" x-text="t.name" :selected="row.type_id == t.id"></option>
                         </template>
                     </select>
                     <select :name="`skills[${i}][skill_id]`" x-model="row.skill_id"
                             class="text-sm text-gray-800 bg-white border border-gray-200 rounded px-2 py-1 focus:outline-none focus:border-purple-400">
-                        <option value="">— Skill —</option>
+                        <option value="">{{ __('employees.skill_ph') }}</option>
                         <template x-for="s in typeSkills(row.type_id)" :key="s.id">
                             <option :value="String(s.id)" x-text="s.name" :selected="row.skill_id == s.id"></option>
                         </template>
                     </select>
                     <select :name="`skills[${i}][skill_level_id]`" x-model="row.level_id"
                             class="text-sm text-gray-800 bg-white border border-gray-200 rounded px-2 py-1 focus:outline-none focus:border-purple-400">
-                        <option value="">— Level —</option>
+                        <option value="">{{ __('employees.skill_level_ph') }}</option>
                         <template x-for="l in typeLevels(row.type_id)" :key="l.id">
                             <option :value="String(l.id)" x-text="l.name + ' (' + l.progress + '%)'"></option>
                         </template>

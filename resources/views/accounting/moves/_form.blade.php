@@ -108,10 +108,10 @@
             const action = e.submitter?.value || 'save';
             e.preventDefault();
             if (action === 'post') {
-                this.validationError = 'Cannot post: the entry is not balanced. Difference is ' + this.f(Math.abs(this.difference)) + '.';
+                this.validationError = '{{ __('accounting.validation_not_balanced_hard', ['diff' => '__DIFF__']) }}'.replace('__DIFF__', this.f(Math.abs(this.difference)));
                 this.validationIsHard = true;
             } else {
-                this.validationError = 'Entry is not balanced (difference: ' + this.f(Math.abs(this.difference)) + '). Save as draft anyway?';
+                this.validationError = '{{ __('accounting.validation_not_balanced_soft', ['diff' => '__DIFF__']) }}'.replace('__DIFF__', this.f(Math.abs(this.difference)));
                 this.validationIsHard = false;
                 this.pendingAction = action;
             }
@@ -141,7 +141,7 @@
                 <template x-if="!validationIsHard">
                     <button type="button" @click="saveAnyway()"
                             class="px-3 py-1.5 text-xs font-semibold text-white bg-amber-600 hover:bg-amber-700 rounded">
-                        Save Anyway
+                        {{ __('accounting.btn_save_anyway') }}
                     </button>
                 </template>
                 <button type="button" @click="validationError = null" class="text-gray-400 hover:text-gray-500">
@@ -210,7 +210,7 @@
             <button type="button" @click="tab = 'other'"
                     class="px-5 py-3 text-sm font-semibold border-b-2 -mb-px bg-white transition-colors"
                     :class="tab === 'other' ? 'border-[#71639e] text-[#71639e]' : 'border-transparent text-gray-500 hover:text-gray-700'">
-                Other Info
+                {{ __('accounting.tab_other_info') }}
             </button>
         </div>
 

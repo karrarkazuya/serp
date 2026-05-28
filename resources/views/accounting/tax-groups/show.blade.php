@@ -49,8 +49,8 @@
                 [__('accounting.col_name'),     $taxGroup->name],
                 [__('accounting.field_sequence'), $taxGroup->sequence],
                 [__('accounting.col_company'),  $taxGroup->company?->name ?? '—'],
-                ['Created by',                  $taxGroup->creator?->name ?? '—'],
-                ['Updated by',                  $taxGroup->updater?->name ?? '—'],
+                [__('common.created_by'),       $taxGroup->creator?->name ?? '—'],
+                [__('common.updated_by'),       $taxGroup->updater?->name ?? '—'],
             ] as [$label, $value])
             <div class="flex items-start gap-4 py-2 border-b border-gray-100">
                 <span class="w-36 shrink-0 text-sm font-medium text-gray-500">{{ $label }}</span>

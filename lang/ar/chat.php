@@ -17,4 +17,13 @@ return [
     'search_people'    => 'ابحث عن أشخاص…',
     'search_users'     => 'ابحث عن مستخدمين…',
     'what_group_about' => 'عمَّ تتحدث هذه المجموعة؟',
+    'btn_create_group' => 'إنشاء مجموعة',
+    'btn_cancel'       => 'إلغاء',
+    'tab_direct'       => 'مباشر',
+    'tab_groups'            => 'المجموعات',
+    'badge_group'           => 'مجموعة',
+    'no_groups_yet'         => 'لا توجد مجموعات بعد. أنشئ واحدة بـ +',
+    'start_of_group'        => 'هذه بداية مجموعة #:name.',
+    'start_of_dm'           => 'هذه بداية محادثتك مع :name.',
+    'be_first_to_say'       => 'كن أول من يقول شيئاً!',
 ];

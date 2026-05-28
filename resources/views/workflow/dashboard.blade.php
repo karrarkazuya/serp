@@ -293,7 +293,7 @@
     new Chart(document.getElementById('status-chart'), {
         type: 'doughnut',
         data: {
-            labels: ['Pending', 'Completed', 'Closed', 'Rejected'],
+            labels: ['{{ __('workflow.state_pending') }}', '{{ __('workflow.state_completed') }}', '{{ __('workflow.state_closed') }}', '{{ __('workflow.state_rejected') }}'],
             datasets: [{
                 data: @json($chartStatus),
                 backgroundColor: ['#3B82F6', '#22C55E', '#9CA3AF', '#F87171'],

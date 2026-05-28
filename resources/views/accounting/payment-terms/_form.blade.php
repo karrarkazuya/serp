@@ -78,9 +78,9 @@
                         <td class="px-3 py-1.5">
                             <select :name="`lines[${i}][value_type]`" x-model="line.value_type"
                                     class="w-full border border-gray-300 rounded px-2 py-1 text-sm focus:outline-none focus:ring-1 focus:ring-purple-400">
-                                <option value="percent">Percent</option>
-                                <option value="fixed">Fixed</option>
-                                <option value="balance">Balance</option>
+                                <option value="percent">{{ __('accounting.term_type_percent') }}</option>
+                                <option value="fixed">{{ __('accounting.term_type_fixed') }}</option>
+                                <option value="balance">{{ __('accounting.term_type_balance') }}</option>
                             </select>
                         </td>
                         <td class="px-3 py-1.5">

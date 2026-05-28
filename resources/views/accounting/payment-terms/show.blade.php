@@ -64,8 +64,8 @@
             @foreach([
                 [__('accounting.field_company'),    $paymentTerm->company?->name ?? '—'],
                 [__('accounting.field_notes'),      $paymentTerm->note ?: '—'],
-                ['Created by',                      $paymentTerm->creator?->name ?? '—'],
-                ['Updated by',                      $paymentTerm->updater?->name ?? '—'],
+                [__('common.created_by'),           $paymentTerm->creator?->name ?? '—'],
+                [__('common.updated_by'),           $paymentTerm->updater?->name ?? '—'],
             ] as [$label, $value])
             <div class="flex items-start gap-4 py-2 border-b border-gray-100">
                 <span class="w-36 shrink-0 text-sm font-medium text-gray-500">{{ $label }}</span>

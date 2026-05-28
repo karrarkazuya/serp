@@ -55,38 +55,6 @@ class EmployeeService
         $employee->delete();
     }
 
-    public function updateStatus(Employee $employee, string $status, array $extra = []): Employee
-    {
-        $data = array_merge(['employment_status' => $status], $extra);
-        $changes = $this->detectChanges($employee, $data);
-        $employee->update($data);
-
-        if (!empty($changes)) {
-            $this->chatterService->logUpdated($employee, $changes, 'Employee');
-        }
-
-        return $employee->fresh();
-    }
-
-    public function syncSkills(Employee $employee, array $skills): void
-    {
-        $incoming = collect($skills)->pluck('skill_id')->toArray();
-
-        $employee->skills()->whereNotIn('skill_id', $incoming)->delete();
-
-        // Upsert remaining
-        foreach ($skills as $skillData) {
-            $employee->skills()->updateOrCreate(
-                ['skill_id' => $skillData['skill_id']],
-                [
-                    'skill_type_id'       => $skillData['skill_type_id'],
-                    'skill_level_id'      => $skillData['skill_level_id'] ?? null,
-                    'years_of_experience' => $skillData['years_of_experience'] ?? null,
-                ]
-            );
-        }
-    }
-
     private function detectChanges(Employee $employee, array $data): array
     {
         $changes = [];

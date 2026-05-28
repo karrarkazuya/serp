@@ -125,7 +125,7 @@
                     <div class="sm:col-span-2">
                         <div class="text-sm text-gray-600 bg-purple-50/40 border border-purple-100 rounded p-3 flex flex-col gap-1">
                             <div><span class="font-semibold">{{ __('employees.request_from') }} → {{ __('employees.request_to') }}:</span> <span x-text="periodText()"></span></div>
-                            <div><span class="font-semibold">Duration:</span> <span x-text="duration()"></span></div>
+                            <div><span class="font-semibold">{{ __('employees.request_duration') }}:</span> <span x-text="duration()"></span></div>
                         </div>
                         {{-- Leave-only: warn if the range crosses day-off days per the
                              schedule. Submission still succeeds — the user can ignore. --}}
@@ -139,16 +139,16 @@
                     </div>
 
                     <div class="sm:col-span-2">
-                        <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1">Title <span class="text-red-500" x-show="currentSubtype?.requires_title">*</span></label>
+                        <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1">{{ __('employees.request_field_title') }} <span class="text-red-500" x-show="currentSubtype?.requires_title">*</span></label>
                         <input type="text" name="title" value="{{ old('title') }}"
                                class="w-full border-b border-gray-300 focus:border-purple-500 focus:outline-none py-1.5 text-sm bg-transparent">
                     </div>
                     <div class="sm:col-span-2">
-                        <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1">Description <span class="text-red-500" x-show="currentSubtype?.requires_description">*</span></label>
+                        <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1">{{ __('common.description') }} <span class="text-red-500" x-show="currentSubtype?.requires_description">*</span></label>
                         <textarea name="description" rows="3" class="w-full border border-gray-200 focus:border-purple-500 focus:outline-none p-2 text-sm rounded">{{ old('description') }}</textarea>
                     </div>
                     <div class="sm:col-span-2">
-                        <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1">Attachment <span class="text-red-500" x-show="currentSubtype?.requires_attachment">*</span></label>
+                        <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1">{{ __('employees.request_field_attachment') }} <span class="text-red-500" x-show="currentSubtype?.requires_attachment">*</span></label>
                         <input type="file" name="attachment" class="text-sm">
                     </div>
                 </div>

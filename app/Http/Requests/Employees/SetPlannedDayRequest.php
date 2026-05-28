@@ -27,7 +27,11 @@ class SetPlannedDayRequest extends FormRequest
         });
 
         return [
-            'planned_date'         => ['required', 'date', 'after_or_equal:today'],
+            // Planned schedules are a rolling 30-day buffer — anything beyond
+            // ~3 months is the cron's job to spawn, not the user's. Cap at
+            // +1 year so a typo / paste accident can't write a year-9999 row
+            // that escapes the cron's 30-day prune window forever.
+            'planned_date'         => ['required', 'date', 'after_or_equal:today', 'before_or_equal:+1 year'],
             'resource_calendar_id' => ['required', $scheduleRule],
         ];
     }

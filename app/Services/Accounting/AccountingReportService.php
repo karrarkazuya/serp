@@ -23,7 +23,7 @@ class AccountingReportService
         private readonly CompanyContextService $companyContext,
     ) {}
 
-    public function activeCompanyIds(): array
+    private function activeCompanyIds(): array
     {
         return $this->companyContext->getActiveCompanyIds();
     }
@@ -77,7 +77,7 @@ class AccountingReportService
 
     // ── Core query builders ──────────────────────────────────────────────────
 
-    public function baseLineQuery(array $companyIds): Builder
+    private function baseLineQuery(array $companyIds): Builder
     {
         $query = AccountMoveLine::query()
             ->where('account_move_lines.state', 'posted');
@@ -148,7 +148,7 @@ class AccountingReportService
     /**
      * P&L / BALANCE SHEET helper: aggregate per account filtered by account_type set.
      */
-    public function sumByAccountType(array $types, ?string $dateFrom, ?string $dateTo, ?int $journalId = null): Collection
+    private function sumByAccountType(array $types, ?string $dateFrom, ?string $dateTo, ?int $journalId = null): Collection
     {
         $companyIds = $this->activeCompanyIds();
 

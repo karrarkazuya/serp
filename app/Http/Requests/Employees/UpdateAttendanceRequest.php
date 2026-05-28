@@ -49,9 +49,11 @@ class UpdateAttendanceRequest extends FormRequest
         return [
             'employee_id'     => ['sometimes', 'required', $employeeRule],
             'company_id'      => ['nullable', $companyRule],
-            'attendance_date' => ['sometimes', 'required', 'date', $uniqueRule],
-            'check_in'        => 'nullable|date',
-            'check_out'       => 'nullable|date|after:check_in',
+            // See StoreAttendanceRequest for the rationale.
+            'attendance_date' => ['sometimes', 'required', 'date', 'after_or_equal:-5 years', 'before_or_equal:today', $uniqueRule],
+            // See StoreAttendanceRequest for the rationale.
+            'check_in'        => 'nullable|date|after_or_equal:-5 years|before_or_equal:+1 day',
+            'check_out'       => 'nullable|date|after:check_in|after_or_equal:-5 years|before_or_equal:+1 day',
             'notes'           => 'nullable|string|max:5000',
         ];
     }

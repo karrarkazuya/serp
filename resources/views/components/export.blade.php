@@ -70,6 +70,14 @@
             this.toExport = [...this.toExport];
         },
 
+        addAllFields() {
+            this.availableFields.forEach(f => this.addField(f));
+        },
+
+        removeAllFields() {
+            this.toExport = [];
+        },
+
         doExport() {
             if (this.toExport.length === 0) return;
             this.$refs.exportForm.submit();
@@ -83,7 +91,7 @@
         @csrf
         <input type="hidden" name="model" value="{{ $modelKey }}">
         <input type="hidden" name="format" :value="format">
-        <input type="hidden" name="import_compatible" value="0">
+        <input type="hidden" name="import_compatible" :value="importCompatible ? '1' : '0'">
         <input type="hidden" name="select_all" :value="selectAllPages ? '1' : '0'">
         <input type="hidden" name="query_string" :value="queryString">
         <template x-for="id in (mode === 'selected' && !selectAllPages ? ids : [])">
@@ -130,6 +138,11 @@
                         <span class="font-medium">CSV</span>
                     </label>
                 </div>
+                <label class="flex items-center gap-1.5 cursor-pointer text-sm border-s border-gray-200 ps-4">
+                    <input type="checkbox" x-model="importCompatible"
+                           class="rounded border-gray-300 text-purple-600 focus:ring-purple-500">
+                    <span class="text-gray-600">Import-compatible headers</span>
+                </label>
             </div>
 
             {{-- Body: two-column field picker --}}
@@ -138,7 +151,14 @@
                 {{-- Left — Available fields --}}
                 <div class="flex flex-col min-h-0">
                     <div class="px-4 py-2.5 border-b border-gray-100 shrink-0">
-                        <p class="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">Available fields</p>
+                        <div class="flex items-center justify-between mb-2">
+                            <p class="text-xs font-semibold text-gray-500 uppercase tracking-wide">Available fields</p>
+                            <button type="button" @click="addAllFields()"
+                                    x-show="availableFields.length > 0"
+                                    class="text-xs text-gray-400 hover:text-[#714B67] transition-colors">
+                                Add all
+                            </button>
+                        </div>
                         <div class="relative">
                             <span class="absolute inset-y-0 left-0 flex items-center pl-2.5 text-gray-400">
                                 <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -177,8 +197,11 @@
                             <p class="text-xs font-semibold text-gray-500 uppercase tracking-wide">Fields to export</p>
                             <div class="flex items-center gap-2">
                                 <span class="text-xs text-gray-400" x-text="`${toExport.length} selected`"></span>
-                                <span class="text-xs text-gray-300">Template:</span>
-                                <span class="text-xs text-gray-400 italic">—</span>
+                                <button type="button" @click="removeAllFields()"
+                                        x-show="toExport.length > 0"
+                                        class="text-xs text-gray-400 hover:text-red-500 transition-colors">
+                                    Clear all
+                                </button>
                             </div>
                         </div>
                     </div>

@@ -563,6 +563,11 @@ return [
     'request_attachment_required' => 'An attachment is required for this request type.',
     'request_insufficient_leave_balance' => 'Insufficient leave-days balance to approve this request.',
     'request_insufficient_timeoff_balance' => 'Insufficient time-off-hours balance to approve this request.',
+    'request_leave_max_days'      => 'A single leave request cannot exceed 365 days.',
+    'request_hours_max'           => 'A single time-off or overtime request cannot exceed 48 hours.',
+    'request_no_balance_configured' => 'No leave balance is configured for your account. Contact HR.',
+    'request_exceeds_leave_balance' => 'Requested :requested days exceeds your available leave balance (:available remaining after pending requests).',
+    'request_exceeds_timeoff_balance' => 'Requested :requested hours exceeds your available time-off balance (:available remaining after pending requests).',
     'request_already_decided'     => 'This request has already been decided and cannot be modified.',
     'request_created_log'         => 'Request submitted.',
     'request_field_title'         => 'Title',
@@ -625,4 +630,5 @@ return [
     'leave_requests_soon'      => 'Leave requests — coming soon.',
     'comment_added'            => 'Comment added.',
     'hours_unit'               => 'h',
+    'request_duration'         => 'Duration',
 ];

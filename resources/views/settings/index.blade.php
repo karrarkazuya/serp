@@ -47,7 +47,7 @@
                 {{-- Left: section label --}}
                 <div class="w-72 shrink-0 px-6 py-6 bg-gray-50/60 border-r border-gray-100">
                     <h2 class="text-sm font-semibold text-gray-800">{{ __('settings.company_info') }}</h2>
-                    <p class="text-xs text-gray-500 mt-1.5 leading-relaxed">Primary details used across documents and system outputs.</p>
+                    <p class="text-xs text-gray-500 mt-1.5 leading-relaxed">{{ __('settings.company_info_desc') }}</p>
                 </div>
                 {{-- Right: fields --}}
                 <div class="flex-1 px-8 py-6">

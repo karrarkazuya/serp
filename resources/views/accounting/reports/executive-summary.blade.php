@@ -49,7 +49,7 @@
             </svg>
             <div>
                 <p class="text-sm font-semibold text-red-800">{{ $overdue_count }} overdue document{{ $overdue_count !== 1 ? 's' : '' }}</p>
-                <p class="text-xs text-red-600">Invoices or bills past their due date with outstanding balances.</p>
+                <p class="text-xs text-red-600">{{ __('accounting.overdue_docs_hint') }}</p>
             </div>
             <div class="ms-auto flex gap-2">
                 <a href="{{ route('accounting.reports.aged-receivable') }}" class="text-xs text-red-700 underline">{{ __('accounting.report_aged_receivable') }}</a>

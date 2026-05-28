@@ -25,11 +25,8 @@ class AccountTaxController extends Controller
 
         $activeCompanyIds = $this->companyContext->getActiveCompanyIds();
 
-        $query = AccountTax::query()->with(['account', 'company']);
-
-        empty($activeCompanyIds)
-            ? $query->whereRaw('1 = 0')
-            : $query->forCompanies($activeCompanyIds);
+        // forCompanies() is fail-closed (see AccountTax::scopeForCompanies).
+        $query = AccountTax::query()->with(['account', 'company'])->forCompanies($activeCompanyIds);
 
         SearchFilters::apply($query, $request);
 
@@ -74,7 +71,7 @@ class AccountTaxController extends Controller
         $tax->load(['account', 'company', 'creator', 'updater']);
 
         $allIds = AccountTax::query()
-            ->when(!empty($activeCompanyIds), fn ($q) => $q->forCompanies($activeCompanyIds))
+            ->forCompanies($activeCompanyIds)
             ->orderBy('name')
             ->pluck('id');
         $currentIndex = $allIds->search($tax->id);

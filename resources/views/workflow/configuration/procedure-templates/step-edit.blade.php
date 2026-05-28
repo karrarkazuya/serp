@@ -247,7 +247,7 @@
                                             <th class="pb-2 text-left text-xs font-semibold text-gray-400 uppercase tracking-wide pr-3 w-32">{{ __('workflow.field_type_col') }}</th>
                                             <th class="pb-2 text-center text-xs font-semibold text-gray-400 uppercase tracking-wide pr-3 w-20">{{ __('workflow.field_required_col') }}</th>
                                             <th class="pb-2 text-left text-xs font-semibold text-gray-400 uppercase tracking-wide pr-3">{{ __('workflow.field_options_col') }} <span class="normal-case font-normal text-gray-300">{{ __('workflow.field_options_hint') }}</span></th>
-                                            <th class="pb-2 text-left text-xs font-semibold text-gray-400 uppercase tracking-wide pr-3" x-show="otherSteps.length > 0">Also visible in</th>
+                                            <th class="pb-2 text-left text-xs font-semibold text-gray-400 uppercase tracking-wide pr-3" x-show="otherSteps.length > 0">{{ __('workflow.also_visible_in') }}</th>
                                             <th class="w-8"></th>
                                         </tr>
                                     </thead>

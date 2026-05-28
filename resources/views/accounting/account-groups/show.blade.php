@@ -51,8 +51,8 @@
                 [__('accounting.field_code_end'),    $accountGroup->code_prefix_end ?: '—'],
                 [__('accounting.col_parent'),        $accountGroup->parent?->name ?? '—'],
                 [__('accounting.field_company'),     $accountGroup->company?->name ?? '—'],
-                ['Created by',                       $accountGroup->creator?->name ?? '—'],
-                ['Updated by',                       $accountGroup->updater?->name ?? '—'],
+                [__('common.created_by'),            $accountGroup->creator?->name ?? '—'],
+                [__('common.updated_by'),            $accountGroup->updater?->name ?? '—'],
             ] as [$label, $value])
             <div class="flex items-start gap-4 py-2 border-b border-gray-100">
                 <span class="w-36 shrink-0 text-sm font-medium text-gray-500">{{ $label }}</span>

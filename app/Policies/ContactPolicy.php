@@ -32,8 +32,11 @@ class ContactPolicy
             && $this->withinActiveCompany($contact);
     }
 
-    public function delete(User $user, Contact $contact): bool
+    public function delete(User $user, ?Contact $contact = null): bool
     {
+        if ($contact === null) {
+            return $user->hasPermission('contacts.unlink');
+        }
         return $user->hasPermission('contacts.unlink')
             && $this->withinActiveCompany($contact);
     }

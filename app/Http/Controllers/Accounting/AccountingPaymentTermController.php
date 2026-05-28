@@ -24,11 +24,8 @@ class AccountingPaymentTermController extends Controller
 
         $activeCompanyIds = $this->companyContext->getActiveCompanyIds();
 
-        $query = AccountingPaymentTerm::query()->with('company')->withCount('lines');
-
-        empty($activeCompanyIds)
-            ? $query->whereRaw('1 = 0')
-            : $query->forCompanies($activeCompanyIds);
+        // forCompanies() is fail-closed (see AccountingPaymentTerm::scopeForCompanies).
+        $query = AccountingPaymentTerm::query()->with('company')->withCount('lines')->forCompanies($activeCompanyIds);
 
         SearchFilters::apply($query, $request);
 
@@ -66,7 +63,7 @@ class AccountingPaymentTermController extends Controller
         $paymentTerm->load(['company', 'lines', 'creator', 'updater']);
 
         $allIds = AccountingPaymentTerm::query()
-            ->when(!empty($activeCompanyIds), fn ($q) => $q->forCompanies($activeCompanyIds))
+            ->forCompanies($activeCompanyIds)
             ->orderBy('name')
             ->pluck('id');
         $currentIndex = $allIds->search($paymentTerm->id);

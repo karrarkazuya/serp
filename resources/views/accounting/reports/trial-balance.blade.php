@@ -22,7 +22,7 @@
                     <tr>
                         <th class="px-4 py-2.5 text-left text-xs font-semibold text-gray-600 uppercase">{{ __('accounting.col_code') }}</th>
                         <th class="px-4 py-2.5 text-left text-xs font-semibold text-gray-600 uppercase">{{ __('accounting.col_account') }}</th>
-                        <th class="px-4 py-2.5 text-left text-xs font-semibold text-gray-600 uppercase">Type</th>
+                        <th class="px-4 py-2.5 text-left text-xs font-semibold text-gray-600 uppercase">{{ __('accounting.col_type') }}</th>
                         <th class="px-4 py-2.5 text-right text-xs font-semibold text-gray-600 uppercase">{{ __('accounting.col_debit') }}</th>
                         <th class="px-4 py-2.5 text-right text-xs font-semibold text-gray-600 uppercase">{{ __('accounting.col_credit') }}</th>
                         <th class="px-4 py-2.5 text-right text-xs font-semibold text-gray-600 uppercase">{{ __('accounting.col_balance') }}</th>

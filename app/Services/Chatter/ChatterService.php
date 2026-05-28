@@ -44,13 +44,4 @@ class ChatterService
     {
         return $this->log($model, "{$label} restored.", 'system');
     }
-
-    public function getMessages(object $model): \Illuminate\Database\Eloquent\Collection
-    {
-        return ChatterMessage::where('model_type', get_class($model))
-            ->where('model_id', $model->getKey())
-            ->with('user')
-            ->orderBy('created_at', 'desc')
-            ->get();
-    }
 }

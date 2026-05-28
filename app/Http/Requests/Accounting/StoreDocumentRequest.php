@@ -46,9 +46,13 @@ class StoreDocumentRequest extends FormRequest
             // the commercial date that appears on the customer-facing PDF and
             // anchors the payment-term due-date computation. They commonly
             // differ (e.g. invoice dated Jan 15, posted Feb 1 in Jan's close).
-            'date'             => ['required', 'date'],
-            'invoice_date'     => ['nullable', 'date'],
-            'invoice_date_due' => ['nullable', 'date'],
+            // Bound document dates. 20 years past covers historical imports;
+            // 1 year future covers post-dated docs and timezone wiggle. Year
+            // 9999 entries are almost always mistakes (or attacks) and skew
+            // period reports, FX rate lookups, and aging buckets.
+            'date'             => ['required', 'date', 'after_or_equal:-20 years', 'before_or_equal:+1 year'],
+            'invoice_date'     => ['nullable', 'date', 'after_or_equal:-20 years', 'before_or_equal:+1 year'],
+            'invoice_date_due' => ['nullable', 'date', 'before_or_equal:+20 years'],
             'payment_term_id' => ['nullable', Rule::exists('accounting_payment_terms', 'id')->where('company_id', $companyId)->where('active', true)],
             'incoterm_id' => ['nullable', Rule::exists('accounting_incoterms', 'id')],
             'invoice_origin' => ['nullable', 'string', 'max:128'],

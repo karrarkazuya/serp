@@ -49,7 +49,7 @@ class WarehouseService
         $warehouse->delete();
     }
 
-    public function setupWarehouseLocationsAndTypes(Warehouse $warehouse): void
+    private function setupWarehouseLocationsAndTypes(Warehouse $warehouse): void
     {
         $short     = strtoupper($warehouse->short_name);
         $companyId = $warehouse->company_id;

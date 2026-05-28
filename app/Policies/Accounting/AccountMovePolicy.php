@@ -38,8 +38,11 @@ class AccountMovePolicy
         return $user->hasPermission('accounting.write');
     }
 
-    public function delete(User $user, AccountMove $move): bool
+    public function delete(User $user, ?AccountMove $move = null): bool
     {
+        if ($move === null) {
+            return $user->hasPermission('accounting.unlink');
+        }
         if (!$this->withinActiveCompany($move)) {
             return false;
         }

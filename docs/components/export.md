@@ -60,6 +60,30 @@ When `:selectable="true"` and `:total-count="..."` are set, the list:
 2. Renders a checkbox `<th>` as the first header column (select/deselect all on page).
 3. Shows a purple selection action bar above the table when `selected.length > 0`.
 4. Provides "Actions → Export / Export All" that dispatches `export:open`.
+5. Provides "Actions → Delete" (when `:bulk-delete-url` is set) with an inline red confirm bar.
+
+### Bulk delete
+
+Pass `:bulk-delete-url="route('module.bulk-delete')"` to enable the Delete action. The component submits a hidden `DELETE` form to that URL with:
+
+| Field | Value |
+|---|---|
+| `select_all` | `1` if "Select all N" was used, otherwise `0` |
+| `query_string` | URL-encoded current query string (used when `select_all=1`) |
+| `ids[]` | Selected IDs (used when `select_all=0`) |
+
+The controller receives those fields and must iterate through the IDs, attempting to delete each one through its normal unlink logic (authorization + business rule checks). Items that cannot be deleted should be skipped and reported in a flash message.
+
+```blade
+<x-list :paginator="$records"
+        :selectable="true"
+        :total-count="$records->total()"
+        :can-export="auth()->user()->can('export', Model::class)"
+        :can-delete="auth()->user()->can('delete', Model::class)"
+        :bulk-delete-url="route('module.bulk-delete')">
+```
+
+The Actions dropdown renders when at least one of `:can-export` or `:can-delete` is true. `:can-delete` gates the Delete menu item; `:bulk-delete-url` is the POST target — both must be provided for the Delete action to appear. The route still carries its own `permission:module.unlink` middleware as a second layer.
 
 **Row checkbox — required in parent view:**
 ```blade

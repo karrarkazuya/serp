@@ -67,7 +67,7 @@
     <x-list :paginator="$requests"
             :selectable="true"
             :total-count="$requests->total()"
-            :can-export="auth()->user()->can('export', \App\Models\Employees\EmployeeRequest::class)"
+            :model="\App\Models\Employees\EmployeeRequest::class"
             empty-text="{{ __('employees.no_requests') }}">
         <x-slot:columns>
             <th class="text-start px-4 py-2 text-xs font-semibold text-gray-500 uppercase">{{ __('employees.employee_name') }}</th>

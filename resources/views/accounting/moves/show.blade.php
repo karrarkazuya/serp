@@ -136,12 +136,12 @@
 
                 @if($move->reversedMove)
                 <div class="mb-6 px-3 py-2 bg-purple-50 border border-purple-200 rounded text-sm text-purple-700">
-                    Reverses <a href="{{ route('accounting.moves.show', $move->reversedMove) }}" class="font-semibold underline">{{ $move->reversedMove->display_name }}</a>
+                    {{ __('accounting.reverses') }} <a href="{{ route('accounting.moves.show', $move->reversedMove) }}" class="font-semibold underline">{{ $move->reversedMove->display_name }}</a>
                 </div>
                 @endif
                 @if($move->reversal->isNotEmpty())
                 <div class="mb-6 px-3 py-2 bg-amber-50 border border-amber-200 rounded text-sm text-amber-700">
-                    Reversed by
+                    {{ __('accounting.reversed_by') }}
                     @foreach($move->reversal as $rev)
                     <a href="{{ route('accounting.moves.show', $rev) }}" class="font-semibold underline">{{ $rev->display_name }}</a>{{ !$loop->last ? ', ' : '' }}
                     @endforeach
@@ -160,7 +160,7 @@
                     <button type="button" @click="tab = 'other'"
                             class="px-5 py-3 text-sm font-semibold border-b-2 -mb-px bg-white transition-colors"
                             :class="tab === 'other' ? 'border-[#71639e] text-[#71639e]' : 'border-transparent text-gray-500 hover:text-gray-700'">
-                        Other Info
+                        {{ __('accounting.tab_other_info') }}
                     </button>
                 </div>
 

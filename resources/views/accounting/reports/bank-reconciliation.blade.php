@@ -19,7 +19,7 @@
         @if(empty($filters['journal_id']))
         <div class="bg-white rounded-xl border border-gray-200 shadow-sm p-12 text-center">
             <svg class="w-12 h-12 mx-auto mb-3 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M3 10h18M3 6h18M3 14h18M3 18h18"/></svg>
-            <p class="text-sm text-gray-500 mb-3">Select a bank or cash journal to view its transactions.</p>
+            <p class="text-sm text-gray-500 mb-3">{{ __('accounting.select_bank_journal') }}</p>
             @if($bankJournals->isNotEmpty())
             <div class="flex flex-wrap gap-2 justify-center mt-3 max-w-2xl mx-auto">
                 @foreach($bankJournals as $j)
@@ -37,7 +37,7 @@
                 <thead class="bg-gray-50 sticky top-0 z-10">
                     <tr>
                         <th class="px-4 py-2.5 text-left text-xs font-semibold text-gray-600 uppercase">{{ __('accounting.col_date') }}</th>
-                        <th class="px-4 py-2.5 text-left text-xs font-semibold text-gray-600 uppercase">Entry</th>
+                        <th class="px-4 py-2.5 text-left text-xs font-semibold text-gray-600 uppercase">{{ __('accounting.col_entry') }}</th>
                         <th class="px-4 py-2.5 text-left text-xs font-semibold text-gray-600 uppercase">{{ __('accounting.col_partner') }}</th>
                         <th class="px-4 py-2.5 text-left text-xs font-semibold text-gray-600 uppercase">{{ __('accounting.col_label') }}</th>
                         <th class="px-4 py-2.5 text-right text-xs font-semibold text-gray-600 uppercase">{{ __('accounting.col_debit') }}</th>

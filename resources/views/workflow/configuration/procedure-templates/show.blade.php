@@ -126,7 +126,7 @@
             <div x-show="tab === 'flowchart'" class="flex-1 min-h-0">
                 <iframe src="{{ $flowchartUrl }}"
                     class="w-full h-full border-0"
-                    title="Procedure Flowchart">
+                    title="{{ __('workflow.flowchart_tab') }}">
                 </iframe>
             </div>
 

@@ -627,7 +627,7 @@
 
                         {{-- Documents --}}
                         @php
-                            $docLabels = ['contract' => 'Contract', 'id_card' => 'ID Card', 'passport' => 'Passport', 'certificate' => 'Certificate', 'resume' => 'Resume', 'medical' => 'Medical', 'other' => 'Other'];
+                            $docLabels = ['contract' => __('employees.doc_contract'), 'id_card' => __('employees.doc_id_card'), 'passport' => __('employees.doc_passport'), 'certificate' => __('employees.doc_certificate'), 'resume' => __('employees.doc_resume'), 'medical' => __('employees.doc_medical'), 'other' => __('employees.doc_other')];
                             $docIcons  = ['contract' => '📄', 'id_card' => '🪪', 'passport' => '🛂', 'certificate' => '🎓', 'resume' => '📋', 'medical' => '🏥', 'other' => '📁'];
                             $imgExts   = ['jpg','jpeg','png','gif','webp','svg'];
                         @endphp

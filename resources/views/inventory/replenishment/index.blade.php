@@ -56,7 +56,7 @@
                     @if($rule->needsReplenishment())
                     <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-700">{{ __('inventory.to_replenish') }}</span>
                     @else
-                    <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-700">OK</span>
+                    <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-700">{{ __('inventory.status_ok') }}</span>
                     @endif
                 </td>
                 <td class="px-3 py-2">
@@ -114,7 +114,7 @@
                 @if($rule->needsReplenishment())
                 <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-700">{{ __('inventory.to_replenish') }}</span>
                 @else
-                <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-700">OK</span>
+                <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-700">{{ __('inventory.status_ok') }}</span>
                 @endif
             </td>
             <td class="px-3 py-2">

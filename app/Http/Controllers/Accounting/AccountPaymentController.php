@@ -25,11 +25,10 @@ class AccountPaymentController extends Controller
         $this->authorize('viewAny', AccountPayment::class);
 
         $activeCompanyIds = $this->companyContext->getActiveCompanyIds();
-        $query = AccountPayment::query()->with(['journal', 'partner', 'pairedDocument']);
-
-        empty($activeCompanyIds)
-            ? $query->whereRaw('1 = 0')
-            : $query->whereIn('company_id', $activeCompanyIds);
+        // forCompanies() is fail-closed (see AccountPayment::scopeForCompanies).
+        $query = AccountPayment::query()
+            ->with(['journal', 'partner', 'pairedDocument'])
+            ->forCompanies($activeCompanyIds);
 
         SearchFilters::apply($query, $request);
 

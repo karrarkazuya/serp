@@ -563,6 +563,11 @@ return [
     'request_attachment_required' => 'المرفق مطلوب لهذا النوع.',
     'request_insufficient_leave_balance' => 'رصيد الإجازات غير كافٍ للموافقة على الطلب.',
     'request_insufficient_timeoff_balance' => 'رصيد ساعات الاستئذان غير كافٍ للموافقة على الطلب.',
+    'request_leave_max_days'      => 'لا يمكن أن يتجاوز طلب الإجازة الواحد 365 يومًا.',
+    'request_hours_max'           => 'لا يمكن أن يتجاوز طلب الاستئذان أو الوقت الإضافي 48 ساعة.',
+    'request_no_balance_configured' => 'لا يوجد رصيد إجازات مُهيَّأ لحسابك. تواصل مع الموارد البشرية.',
+    'request_exceeds_leave_balance' => 'الأيام المطلوبة (:requested) تتجاوز رصيد الإجازات المتاح (:available متبقٍ بعد الطلبات المعلقة).',
+    'request_exceeds_timeoff_balance' => 'الساعات المطلوبة (:requested) تتجاوز رصيد الاستئذان المتاح (:available متبقٍ بعد الطلبات المعلقة).',
     'request_already_decided'     => 'تم البت في هذا الطلب ولا يمكن تعديله.',
     'request_created_log'         => 'تم تقديم الطلب.',
     'request_field_title'         => 'العنوان',
@@ -625,4 +630,5 @@ return [
     'leave_requests_soon'      => 'طلبات الإجازة — قريباً.',
     'comment_added'            => 'تمت إضافة التعليق.',
     'hours_unit'               => 'س',
+    'request_duration'         => 'المدة',
 ];

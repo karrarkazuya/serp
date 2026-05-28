@@ -71,6 +71,7 @@ return [
 
     // Extra UI strings
     'company_info'       => 'Company Information',
+    'company_info_desc'  => 'Primary details used across documents and system outputs.',
     'contact_details'    => 'Contact Details',
     'contact_info'       => 'Contact Information',
     'internal_notes'     => 'Internal Notes',
@@ -153,4 +154,6 @@ return [
     'queue_empty'           => 'No jobs in the queue.',
     'queue_no_failures'     => 'No failed jobs.',
     'queue_jobs_unit'       => 'jobs',
+    'debug_on'              => 'ON',
+    'debug_off'             => 'OFF',
 ];

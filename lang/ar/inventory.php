@@ -278,4 +278,5 @@ return [
     'action_pull'              => 'سحب',
     'action_push'              => 'دفع',
     'action_pull_push'         => 'سحب ودفع',
+    'status_ok'                => 'مكتمل',
 ];

@@ -109,9 +109,4 @@ class CompanyContextService
         return $companies->count() . ' Companies';
     }
 
-    /** Clears the selection on logout. */
-    public function clear(): void
-    {
-        session()->forget(self::SESSION_KEY);
-    }
 }

@@ -153,9 +153,7 @@ class Contact extends Model
 
     public function scopeForCompanies(Builder $query, array $companyIds): Builder
     {
-        if (empty($companyIds)) {
-            return $query;
-        }
+        // Fail-closed: empty list = no access. See Account::scopeForCompanies.
         return $query->whereIn('company_id', $companyIds);
     }
 

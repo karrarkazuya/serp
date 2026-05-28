@@ -300,13 +300,11 @@ class AccountDocumentController extends Controller
         $this->authorize('viewAny', AccountMove::class);
 
         $activeCompanyIds = $this->companyContext->getActiveCompanyIds();
+        // forCompanies() is fail-closed (see AccountMove::scopeForCompanies).
         $query = AccountMove::query()
             ->with(['journal', 'partner'])
-            ->where('move_type', $moveType);
-
-        empty($activeCompanyIds)
-            ? $query->whereRaw('1 = 0')
-            : $query->forCompanies($activeCompanyIds);
+            ->where('move_type', $moveType)
+            ->forCompanies($activeCompanyIds);
 
         SearchFilters::apply($query, $request);
 

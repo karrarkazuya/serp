@@ -183,7 +183,7 @@
     </x-list>
 
     @else
-    <x-list :paginator="$tickets" :empty-text="__('workflow.no_tickets_found')" :selectable="true" :total-count="$tickets->total()" :can-export="auth()->user()->can('export', \App\Models\Workflow\Ticket::class)">
+    <x-list :paginator="$tickets" :empty-text="__('workflow.no_tickets_found')" :selectable="true" :total-count="$tickets->total()" :model="\App\Models\Workflow\Ticket::class">
         <x-slot:columns>
             <x-sortable-th column="id"         label="ID"                              class="px-4 py-2" />
             <x-sortable-th column="name"       :label="__('common.name')"               class="px-3 py-2" :default="true" />

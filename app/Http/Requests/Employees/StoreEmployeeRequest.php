@@ -81,30 +81,41 @@ class StoreEmployeeRequest extends FormRequest
             'passport_id'       => 'nullable|string|max:100',
             'ssnid'             => 'nullable|string|max:100',
             'gender'            => 'nullable|in:male,female,other',
-            'birthday'          => 'nullable|date|before:today',
+            // Date bounds rationale (applied across all employee date fields):
+            //   - Birthdays bounded to a human lifespan (today → -120 years).
+            //     `before:today` already prevented "future birthday"; the
+            //     `after` bound stops year-9999 / 1800-01-01 mistakes.
+            //   - Employment milestones (hire/first_contract/probation) bounded
+            //     ±20 years past, +5 years future (covers planned hires + late
+            //     historical imports). Year-9999 here breaks tenure reports.
+            //   - End/departure dates allow a wider future window (+50 years)
+            //     for fixed-term contracts pointing to a retirement date.
+            //   - Visa/work-permit expiry bounded -5 years (just-expired) to
+            //     +50 years (long-term residency permits).
+            'birthday'          => 'nullable|date|after:-120 years|before:today',
             'place_of_birth'    => 'nullable|string|max:100',
             'country_of_birth'  => 'nullable|string|max:100',
             'marital_status'    => 'nullable|in:single,married,cohabitant,widower,divorced',
             'spouse_name'       => 'nullable|string|max:255',
-            'spouse_birthdate'  => 'nullable|date',
-            'children'          => 'nullable|integer|min:0',
+            'spouse_birthdate'  => 'nullable|date|after:-120 years|before:today',
+            'children'          => 'nullable|integer|min:0|max:50',
             'certificate_level' => 'nullable|in:none,graduate,bachelor,master,doctor,other',
             'study_field'       => 'nullable|string|max:255',
             'study_school'      => 'nullable|string|max:255',
             'visa_no'           => 'nullable|string|max:100',
             'work_permit_no'    => 'nullable|string|max:100',
-            'visa_expire'       => 'nullable|date',
-            'work_permit_expiration_date' => 'nullable|date',
+            'visa_expire'       => 'nullable|date|after_or_equal:-5 years|before_or_equal:+50 years',
+            'work_permit_expiration_date' => 'nullable|date|after_or_equal:-5 years|before_or_equal:+50 years',
 
             'employment_status' => 'nullable|in:draft,active,probation,suspended,resigned,terminated',
-            'hire_date'         => 'nullable|date',
-            'first_contract_date' => 'nullable|date',
-            'end_date'          => 'nullable|date',
-            'departure_date'    => 'nullable|date',
+            'hire_date'         => 'nullable|date|after_or_equal:-20 years|before_or_equal:+5 years',
+            'first_contract_date' => 'nullable|date|after_or_equal:-20 years|before_or_equal:+5 years',
+            'end_date'          => 'nullable|date|after_or_equal:-20 years|before_or_equal:+50 years',
+            'departure_date'    => 'nullable|date|after_or_equal:-20 years|before_or_equal:+5 years',
             'departure_reason_id' => 'nullable|exists:hr_departure_reasons,id',
             'departure_description' => 'nullable|string',
-            'probation_start_date' => 'nullable|date',
-            'probation_end_date'   => 'nullable|date|after_or_equal:probation_start_date',
+            'probation_start_date' => 'nullable|date|after_or_equal:-20 years|before_or_equal:+5 years',
+            'probation_end_date'   => 'nullable|date|after_or_equal:probation_start_date|before_or_equal:+5 years',
 
             'wage'              => 'nullable|numeric|min:0',
             'payment_method'    => 'nullable|in:cash,bank_transfer,cheque',

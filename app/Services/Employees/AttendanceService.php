@@ -86,7 +86,11 @@ class AttendanceService
         // non-day-off, the record is an absence.
         $bothPunched = $attendance->check_in && $attendance->check_out;
 
-        if ($bothPunched) {
+        if ($bothPunched && $attendance->check_out->greaterThanOrEqualTo($attendance->check_in)) {
+            // Carbon's diffInMinutes() is absolute by default — without the
+            // explicit order guard above, a swapped/typo'd check_out before
+            // check_in would credit the (positive) interval as legitimate
+            // worked hours. Treat reversed punches as missing / absence.
             $worked = $attendance->check_in->diffInMinutes($attendance->check_out) / 60;
             $attendance->worked_hours = round(max(0, $worked), 2);
             $attendance->is_absence   = false;

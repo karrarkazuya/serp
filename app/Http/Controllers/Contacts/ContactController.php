@@ -12,8 +12,10 @@ use App\Services\FileService;
 use App\Helpers\GroupsQuery;
 use App\Helpers\SearchFilters;
 use App\Helpers\SortsTable;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Gate;
 
 class ContactController extends Controller
 {
@@ -246,6 +248,29 @@ class ContactController extends Controller
         DB::transaction(fn () => $this->contactService->delete($contact));
 
         return redirect()->route('contacts.index')->with('success', 'Contact deleted.');
+    }
+
+    public function bulkUnlink(Request $request): RedirectResponse
+    {
+        $this->authorize('delete', Contact::class);
+
+        $activeCompanyIds = $this->companyContext->getActiveCompanyIds();
+        $selectAll = $request->boolean('select_all');
+        $ids = $request->input('ids', []);
+
+        DB::transaction(function () use ($selectAll, $ids, $activeCompanyIds) {
+            $query = Contact::whereIn('company_id', $activeCompanyIds);
+            if (!$selectAll) {
+                $query->whereIn('id', $ids);
+            }
+            foreach ($query->get() as $contact) {
+                if (Gate::allows('delete', $contact)) {
+                    $this->contactService->delete($contact);
+                }
+            }
+        });
+
+        return redirect()->route('contacts.index')->with('success', 'Selected contacts deleted.');
     }
 
     public function addComment(Request $request, Contact $contact)

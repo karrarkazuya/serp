@@ -78,6 +78,8 @@ The component handles: outer wrapper, breadcrumb div, RTL pagination arrows, `ms
 
 Every index/list view must use `<x-list>` for the table and `<x-search>` for filters. Never hand-build a table or custom search form. Use `@foreach` inside `<x-list>`, not `@forelse` — the empty state is handled by the component.
 
+Every selectable list **must** pass `:model="ModelClass::class"` so the component auto-derives `canExport` and `canDelete` from the model's Gate policy. Never pass `:can-export` or `:can-delete` manually unless you are explicitly overriding the auto-derived value for a non-standard reason.
+
 ### 2. Chatter-enabled models — include `<x-chatter>` on show page
 
 Any model using the `HasChatter` trait must have `<x-chatter>` on its show page. See `docs/components/chatter.md`.
@@ -185,18 +187,25 @@ class MyModel extends Model
 
 When adding a new table, always add `$table->softDeletes()` in the migration and `use SoftDeletes;` in the model. This is non-negotiable — missing it is a data-loss bug.
 
-### 9. Export — `<x-export>` + `<x-list :selectable>` + `config/exportable.php`
+### 9. Export / Bulk Actions — `<x-export>` + `<x-list :selectable :model>` + `config/exportable.php`
 
-Every list view that supports export must use the three-piece export system. Never hand-roll export logic in controllers or build custom download endpoints.
+Every list view that supports bulk actions (export, bulk delete) must use the component system. Never hand-roll export logic, bulk-delete endpoints, or custom action bars.
+
+#### How bulk action permissions work
+
+`<x-list>` accepts a `:model="ModelClass::class"` prop. The component calls `Gate::allows('export', $model)` and `Gate::allows('delete', $model)` automatically to derive `$canExport` and `$canDelete`. The Actions dropdown and bulk-delete confirm bar appear only for users who have the relevant permission — no per-view `@can` checks needed.
+
+**Adding a new bulk action in the future** only requires updating `TableList.php` + `list.blade.php` — no view changes across the codebase.
 
 #### Pieces
 
 | Piece | Role |
 |---|---|
-| `<x-list :selectable="true" :total-count="$paginator->total()">` | Adds checkbox column, selection action bar, and "Actions → Export" dispatch |
+| `<x-list :selectable="true" :model="Model::class" :total-count="$paginator->total()">` | Checkbox column, selection action bar, "Actions" dropdown (Export / Delete), auto-derived from policy |
 | `<x-export :fields="..." :export-url="route('export')" model-key="...">` | Alpine modal: field picker, format toggle, hidden POST form |
 | `config/exportable.php` | Server-side whitelist — defines allowed columns and permission key per model |
 | `POST /export` (`ExportController`) | Generic endpoint: validates model key, checks permission, builds query, returns file download |
+| Controller `bulkUnlink` method + `:bulk-delete-url` | Per-module opt-in for bulk delete; "Yes, delete" button is disabled until this is wired |
 
 #### Adding export to a list view
 
@@ -215,7 +224,7 @@ Every list view that supports export must use the three-piece export system. Nev
 ],
 ```
 
-**2. Add `export` policy method:**
+**2. Add `export` policy method** (no model instance needed — list-level check):
 ```php
 public function export(User $user): bool
 {
@@ -240,7 +249,9 @@ public function export(User $user): bool
 
 <x-list :paginator="$records"
         :selectable="true"
-        :total-count="$records->total()">
+        :model="\App\Models\Contacts\Contact::class"
+        :total-count="$records->total()"
+        :bulk-delete-url="route('contacts.bulk-delete')">
     <x-slot:columns>
         {{-- your <th> columns here --}}
     </x-slot:columns>
@@ -260,11 +271,63 @@ public function export(User $user): bool
 ```
 
 Key rules:
+- Always pass `:model="ModelClass::class"` — never pass `:can-export` or `:can-delete` manually.
 - Checkbox `<td>` must come first in every row, with `@click.stop` to prevent row-click firing.
 - Checkbox must have class `list-checkbox` (used by the select-all logic in the component).
 - `x-model="selected"` works because the checkbox is a descendant of the `x-data` wrapper rendered by `<x-list :selectable>`.
 - Never expose unlisted columns: the ExportController validates every field key against `config/exportable.php`.
 - `company_scoped: true` means the controller applies `whereIn('company_id', $activeCompanyIds)` automatically.
+- `:bulk-delete-url` is optional — omitting it shows the Delete action (if policy allows) but disables the "Yes, delete" button with a tooltip. This lets the UI communicate the intent while the controller is being wired.
+
+#### Adding bulk delete to a module
+
+**1. Policy `delete` method must accept a nullable model** (list-level check uses `null`):
+```php
+public function delete(User $user, ?Contact $contact = null): bool
+{
+    if ($contact === null) {
+        return $user->hasPermission('contacts.unlink'); // list-level: permission only
+    }
+    return $user->hasPermission('contacts.unlink') && $this->withinActiveCompany($contact);
+}
+```
+
+**2. Add a `bulkUnlink` controller method:**
+```php
+public function bulkUnlink(Request $request): RedirectResponse
+{
+    $activeCompanyIds = $this->companyContext->getActiveCompanyIds();
+    $selectAll = $request->boolean('select_all');
+    $ids = $request->input('ids', []);
+
+    DB::transaction(function () use ($selectAll, $ids, $activeCompanyIds) {
+        $query = Contact::whereIn('company_id', $activeCompanyIds);
+        if (!$selectAll) {
+            $query->whereIn('id', $ids);
+        }
+        foreach ($query->get() as $contact) {
+            if (Gate::allows('delete', $contact)) {
+                $this->contactService->delete($contact);
+            }
+            // items that fail the gate are silently skipped (UI warns "some may be skipped")
+        }
+    });
+
+    return redirect()->route('contacts.index')->with('success', 'Selected records deleted.');
+}
+```
+
+**3. Add the route** (named so `:bulk-delete-url` can reference it):
+```php
+Route::delete('/bulk', [ContactController::class, 'bulkUnlink'])
+    ->middleware('permission:contacts.unlink')
+    ->name('bulk-delete');
+```
+
+**4. Pass the URL to `<x-list>`:**
+```blade
+<x-list ... :bulk-delete-url="route('contacts.bulk-delete')">
+```
 
 **Never bypass `ExportService::safeValue()` / `setValueExplicit(..., TYPE_STRING)`.** Every cell goes through `safeValue()` which prefixes leading `=`/`+`/`-`/`@`/`\t`/`\r` with a single quote, and XLSX cells use `setValueExplicit` so PhpSpreadsheet's default value binder doesn't re-parse `=...` as a formula (CWE-1236, formula injection). Direct `setValue()` or raw `fputcsv` arrays let any user-controllable exported field (contact name, employee name, ticket description, account label) execute as a formula in Excel / LibreOffice / Google Sheets when a manager opens the file. If a future column genuinely needs to render a formula, build it server-side via a dedicated path — never from user input.
 
@@ -542,11 +605,12 @@ When building a new module, follow `docs/implement_new_module.md` using Contacts
 - [ ] Service: create, update, archive, unarchive — business logic + chatter, no transactions
 - [ ] Controller: follows naming above, wraps in `DB::transaction`, applies company gate
 - [ ] Routes: create `routes/modules/<name>.php`, add `require __DIR__.'/modules/<name>.php';` to `routes/web.php` (see "Route Organization" above). Permission middleware on every route, fixed sub-routes before `/{model}` to avoid binding conflicts
-- [ ] Views: `<x-list :selectable="true">` + `<x-search>` on index, `<x-chatter>` on show, Odoo form style, `<x-relation-dropdown>` for relations
+- [ ] Views: `<x-list :selectable="true" :model="Model::class">` + `<x-search>` on index, `<x-chatter>` on show, Odoo form style, `<x-relation-dropdown>` for relations
 - [ ] Navigation: update `resources/views/components/navbar.blade.php`
 - [ ] Register target tables in `config/relation_dropdowns.php` for any relation dropdown
 - [ ] make sure you added $sortable, $searchable, $chatterTracked, $fillable and make sure they are linked and used
-- [ ] Export: add entry to `config/exportable.php`, seed `module.export` permission, add `export()` to policy, add `<x-export>` + row checkboxes to index view
+- [ ] Export: add entry to `config/exportable.php`, seed `module.export` permission, add `export()` to policy (nullable model param), add `<x-export>` + row checkboxes to index view
+- [ ] Bulk delete (opt-in): make policy `delete()` accept `?Model $model = null`, add `bulkUnlink` controller method, add bulk-delete route, pass `:bulk-delete-url` to `<x-list>`
 - [ ] Group By: add `GroupsQuery` import + group-by detection block to `read()` (before `SortsTable::apply()`), add `@if(isset($groups))` / `@else` branching in the index view with `<x-list :grouped="true">` and `<tbody x-data>` blocks
 
 ---
@@ -713,3 +777,5 @@ Never use `confirm()`, `alert()`, or `prompt()`. These block the thread, cannot 
 - Do not bypass `ExportService::safeValue()` / `setValueExplicit(..., TYPE_STRING)` — raw `setValue` or `fputcsv` re-opens CSV/XLSX formula injection
 - Do not add a new file-serve helper that only checks the parent-child relation (`$doc->employee_id === $employee->id`) without also gating by the actor's active companies — that's the EmployeeDocument IDOR pattern
 - Do not render column identifiers as user-facing labels (`first_name`, `created_at`, `company_id`) — always use a written-out human label or `__('...')` translation (Rule 12)
+- Do not pass `:can-export` or `:can-delete` manually on `<x-list>` — always pass `:model="ModelClass::class"` and let the component auto-derive permissions from the Gate policy. Manual overrides are only for non-standard edge cases
+- Do not write a new bulk action as a one-off per-view feature — add it to `TableList.php` + `list.blade.php` so all lists gain it automatically via the `:model` auto-derive path

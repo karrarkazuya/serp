@@ -97,7 +97,7 @@
             <input type="checkbox" name="include_base_amount" value="1"
                    @checked((bool) old('include_base_amount', $tax?->include_base_amount ?? false))
                    class="rounded border-gray-300 text-purple-600 focus:ring-purple-500">
-            <span class="text-sm text-gray-600">Tax is included in the price (extract from gross)</span>
+            <span class="text-sm text-gray-600">{{ __('accounting.tax_included_in_price') }}</span>
         </label>
     </div>
 </div>

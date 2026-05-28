@@ -39,7 +39,7 @@
                             <td class="px-5 py-2 text-right tabular-nums text-gray-800 w-40"><x-money :amount="(float) abs($row->net)" /></td>
                         </tr>
                         @empty
-                        <tr><td colspan="3" class="px-5 py-6 text-sm text-gray-400 text-center">No accounts.</td></tr>
+                        <tr><td colspan="3" class="px-5 py-6 text-sm text-gray-400 text-center">{{ __('accounting.no_accounts_found') }}</td></tr>
                         @endforelse
                         @if($loop->last && $section['extra'] != 0)
                         <tr class="italic bg-gray-50/50">

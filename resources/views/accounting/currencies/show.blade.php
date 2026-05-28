@@ -46,8 +46,8 @@
                 [__('accounting.col_effective_date'),  $currencyRate->date->format('Y-m-d')],
                 [__('accounting.col_company'),         $currencyRate->company?->name ?? '—'],
                 [__('accounting.col_status'),          $currencyRate->active ? __('accounting.status_active') : __('accounting.status_archived')],
-                ['Created by',     $currencyRate->creator?->name ?? '—'],
-                ['Last updated by',$currencyRate->updater?->name ?? '—'],
+                [__('common.created_by'),       $currencyRate->creator?->name ?? '—'],
+                [__('common.last_updated_by'),  $currencyRate->updater?->name ?? '—'],
             ] as [$label, $value])
             <div class="flex items-start gap-4 py-2 border-b border-gray-100">
                 <span class="w-36 shrink-0 text-sm font-medium text-gray-500">{{ $label }}</span>

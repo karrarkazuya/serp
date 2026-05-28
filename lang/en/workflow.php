@@ -375,5 +375,6 @@ return [
     'no_popup_details'              => 'No additional details available.',
     'failed_to_save_step'           => 'Failed to save step.',
     'network_error_retry'           => 'Network error. Please try again.',
+    'also_visible_in'               => 'Also visible in',
 
 ];

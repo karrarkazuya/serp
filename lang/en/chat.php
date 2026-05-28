@@ -17,4 +17,13 @@ return [
     'search_people'    => 'Search people…',
     'search_users'     => 'Search users…',
     'what_group_about' => 'What is this group about?',
+    'btn_create_group' => 'Create Group',
+    'btn_cancel'       => 'Cancel',
+    'tab_direct'       => 'Direct',
+    'tab_groups'            => 'Groups',
+    'badge_group'           => 'group',
+    'no_groups_yet'         => 'No groups yet. Create one with +',
+    'start_of_group'        => 'This is the start of the #:name group.',
+    'start_of_dm'           => 'This is the beginning of your conversation with :name.',
+    'be_first_to_say'       => 'Be the first to say something!',
 ];

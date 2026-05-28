@@ -30,7 +30,7 @@
         </div>
 
         {{-- Documents management (separate from main form to allow file-based add form) --}}
-        @php $docTypes = ['contract' => 'Contract', 'id_card' => 'ID Card', 'passport' => 'Passport', 'certificate' => 'Certificate', 'resume' => 'Resume', 'medical' => 'Medical', 'other' => 'Other']; @endphp
+        @php $docTypes = ['contract' => __('employees.doc_contract'), 'id_card' => __('employees.doc_id_card'), 'passport' => __('employees.doc_passport'), 'certificate' => __('employees.doc_certificate'), 'resume' => __('employees.doc_resume'), 'medical' => __('employees.doc_medical'), 'other' => __('employees.doc_other')]; @endphp
         <div id="documents-section" class="bg-white mx-4 mt-4 rounded-xl border border-gray-200 shadow-sm p-6">
             <div class="flex items-center justify-between mb-4">
                 <h3 class="text-sm font-semibold text-gray-700">{{ __('employees.documents_tab') }}</h3>

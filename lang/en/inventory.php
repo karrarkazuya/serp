@@ -282,5 +282,6 @@ return [
     'show_zero'        => 'Show zero',
     'click_to_upload'  => 'Click to upload',
     'no_results'       => 'No results',
+    'status_ok'        => 'OK',
 
 ];

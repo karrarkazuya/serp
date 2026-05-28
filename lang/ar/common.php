@@ -26,6 +26,7 @@ return [
     'updated_at'      => 'تاريخ التحديث',
     'created_by'      => 'أنشئ بواسطة',
     'updated_by'      => 'حُدِّث بواسطة',
+    'last_updated_by' => 'آخر تحديث بواسطة',
     'no_records'      => 'لا توجد سجلات.',
     'actions'         => 'إجراءات',
     'default'         => 'افتراضي',

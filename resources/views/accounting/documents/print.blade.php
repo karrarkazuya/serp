@@ -36,7 +36,7 @@
         $lineAmount = fn($line) => in_array($config['move_type'], ['out_invoice', 'in_refund'], true) ? (float) $line->credit : (float) $line->debit;
         $taxLines   = $document->lines->filter(fn($l) => $l->tax_line_id);
         $untaxed    = $documentLines->sum(fn($l) => $lineAmount($l));
-        $typeLabel  = match($config['move_type']) { 'out_invoice' => 'Customer Invoice', 'in_invoice' => 'Vendor Bill', 'out_refund' => 'Customer Credit Note', 'in_refund' => 'Vendor Refund', default => $config['singular'] };
+        $typeLabel  = match($config['move_type']) { 'out_invoice' => __('accounting.doc_type_customer_invoice'), 'in_invoice' => __('accounting.doc_type_vendor_bill'), 'out_refund' => __('accounting.doc_type_customer_credit'), 'in_refund' => __('accounting.doc_type_vendor_refund'), default => $config['singular'] };
     @endphp
     <main class="page">
         <section class="top">
@@ -47,7 +47,7 @@
             <div style="text-align:right">
                 <span class="badge">{{ $document->state_label }}</span>
                 @if($document->isPaid())
-                    <span class="badge paid">PAID</span>
+                    <span class="badge paid">{{ strtoupper(__('accounting.status_paid')) }}</span>
                 @endif
             </div>
         </section>
@@ -59,7 +59,7 @@
                 <div class="row"><span class="label">{{ $config['control_account_label'] }}</span><span class="value">{{ $controlLine?->account?->display_name ?: '—' }}</span></div>
             </div>
             <div>
-                <div class="row"><span class="label">{{ $config['singular'] }} Date</span><span class="value">{{ optional($document->date)->format('Y-m-d') }}</span></div>
+                <div class="row"><span class="label">{{ $config['singular'] }} {{ __('accounting.col_date') }}</span><span class="value">{{ optional($document->date)->format('Y-m-d') }}</span></div>
                 <div class="row"><span class="label">{{ __('accounting.field_journal') }}</span><span class="value">{{ $document->journal?->name ?: '—' }}</span></div>
                 <div class="row"><span class="label">{{ __('accounting.field_currency') }}</span><span class="value">{{ $document->currency ?: '—' }}</span></div>
             </div>
@@ -68,7 +68,7 @@
         <table>
             <thead>
                 <tr>
-                    <th>Description</th>
+                    <th>{{ __('accounting.col_description') }}</th>
                     <th>{{ __('accounting.col_account') }}</th>
                     <th class="num">{{ __('accounting.col_amount') }}</th>
                 </tr>
@@ -85,7 +85,7 @@
         </table>
 
         <section class="totals">
-            <div class="total-row"><strong>Untaxed Amount:</strong><span><x-money :amount="(float) $untaxed" :currency="$document->currency" /></span></div>
+            <div class="total-row"><strong>{{ __('accounting.untaxed_amount') }}:</strong><span><x-money :amount="(float) $untaxed" :currency="$document->currency" /></span></div>
             @foreach($taxLines->groupBy('tax_line_id') as $group)
             @php $tl = $group->first(); @endphp
             <div class="total-row"><span>{{ $tl->name }}:</span><span><x-money :amount="(float) $group->sum(fn($l) => $lineAmount($l))" :currency="$document->currency" /></span></div>

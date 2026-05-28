@@ -45,9 +45,16 @@ class StoreAttendanceRequest extends FormRequest
         return [
             'employee_id'     => ['required', $employeeRule],
             'company_id'      => ['nullable', $companyRule],
-            'attendance_date' => ['required', 'date', $uniqueRule],
-            'check_in'        => 'nullable|date',
-            'check_out'       => 'nullable|date|after:check_in',
+            // Attendance is a record of what HAPPENED — future dates make no
+            // sense. Bound to today (in the actor's timezone) and 5 years past
+            // to allow historical backfill but block year-9999 / 1900-01-01
+            // mistakes that skew period summaries.
+            'attendance_date' => ['required', 'date', 'after_or_equal:-5 years', 'before_or_equal:today', $uniqueRule],
+            // Bounded to ±5 years (same window as attendance_date) so a typo
+            // doesn't store a year-9999 punch that breaks worked_hours math
+            // (Carbon would compute a quarter-billion-hour interval).
+            'check_in'        => 'nullable|date|after_or_equal:-5 years|before_or_equal:+1 day',
+            'check_out'       => 'nullable|date|after:check_in|after_or_equal:-5 years|before_or_equal:+1 day',
             'notes'           => 'nullable|string|max:5000',
         ];
     }

@@ -22,9 +22,9 @@
             @forelse($byUse as $use => $group)
             @php
                 $useLabel = match($use) {
-                    'sale'     => 'Output VAT (Sales)',
-                    'purchase' => 'Input VAT (Purchases)',
-                    default    => 'Other',
+                    'sale'     => __('accounting.tax_report_output_vat'),
+                    'purchase' => __('accounting.tax_report_input_vat'),
+                    default    => __('accounting.tax_report_other'),
                 };
                 $useColor = $use === 'sale' ? 'green' : ($use === 'purchase' ? 'blue' : 'gray');
             @endphp

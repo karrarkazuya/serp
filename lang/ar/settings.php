@@ -71,6 +71,7 @@ return [
 
     // Extra UI strings
     'company_info'       => 'معلومات الشركة',
+    'company_info_desc'  => 'البيانات الأساسية المستخدمة في المستندات والمخرجات.',
     'contact_details'    => 'بيانات التواصل',
     'contact_info'       => 'معلومات التواصل',
     'internal_notes'     => 'ملاحظات داخلية',
@@ -148,4 +149,6 @@ return [
     'queue_empty'                  => 'لا توجد مهام في الطابور.',
     'queue_no_failures'            => 'لا توجد مهام فاشلة.',
     'queue_jobs_unit'              => 'مهمة',
+    'debug_on'                     => 'مفعّل',
+    'debug_off'                    => 'معطّل',
 ];

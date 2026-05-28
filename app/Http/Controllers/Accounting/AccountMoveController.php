@@ -27,11 +27,11 @@ class AccountMoveController extends Controller
         $this->authorize('viewAny', AccountMove::class);
 
         $activeCompanyIds = $this->companyContext->getActiveCompanyIds();
-        $query = AccountMove::query()->with(['journal', 'partner'])->where('move_type', 'entry');
-
-        empty($activeCompanyIds)
-            ? $query->whereRaw('1 = 0')
-            : $query->forCompanies($activeCompanyIds);
+        // forCompanies() is fail-closed (see AccountMove::scopeForCompanies).
+        $query = AccountMove::query()
+            ->with(['journal', 'partner'])
+            ->where('move_type', 'entry')
+            ->forCompanies($activeCompanyIds);
 
         SearchFilters::apply($query, $request);
 
@@ -84,7 +84,7 @@ class AccountMoveController extends Controller
 
         $allIds = AccountMove::query()
             ->where('move_type', 'entry')
-            ->when(!empty($activeCompanyIds), fn ($q) => $q->forCompanies($activeCompanyIds))
+            ->forCompanies($activeCompanyIds)
             ->orderByDesc('date')
             ->orderByDesc('id')
             ->pluck('id');

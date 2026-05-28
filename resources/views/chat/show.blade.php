@@ -20,7 +20,7 @@
                  @click.outside="open = false">
 
                 <div class="px-6 py-4 border-b border-gray-100 flex items-center justify-between">
-                    <h2 class="text-lg font-bold text-gray-900">Create Group</h2>
+                    <h2 class="text-lg font-bold text-gray-900">{{ __('chat.create_group') }}</h2>
                     <button @click="open = false" class="w-7 h-7 flex items-center justify-center text-gray-400 hover:text-gray-600 rounded-lg hover:bg-gray-100 transition-colors">
                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
@@ -32,16 +32,16 @@
                     @csrf
                     <div class="px-6 py-4 space-y-4">
                         <div class="flex items-start gap-4 py-2 border-b border-gray-100">
-                            <label class="w-28 shrink-0 text-sm text-gray-500 pt-1">Name *</label>
+                            <label class="w-28 shrink-0 text-sm text-gray-500 pt-1">{{ __('chat.group_name') }} *</label>
                             <input type="text" name="name" required maxlength="100"
                                    placeholder="e.g. Design Team"
                                    class="flex-1 text-sm text-gray-800 placeholder-gray-400 bg-transparent border-0 focus:outline-none focus:ring-0 py-0.5"
                                    value="{{ old('name') }}">
                         </div>
                         <div class="flex items-start gap-4 py-2 border-b border-gray-100">
-                            <label class="w-28 shrink-0 text-sm text-gray-500 pt-1">Description</label>
+                            <label class="w-28 shrink-0 text-sm text-gray-500 pt-1">{{ __('chat.group_description') }}</label>
                             <input type="text" name="description" maxlength="255"
-                                   placeholder="What is this group about?"
+                                   placeholder="{{ __('chat.what_group_about') }}"
                                    class="flex-1 text-sm text-gray-800 placeholder-gray-400 bg-transparent border-0 focus:outline-none focus:ring-0 py-0.5"
                                    value="{{ old('description') }}">
                         </div>
@@ -58,11 +58,11 @@
                     <div class="px-6 py-4 border-t border-gray-100 flex items-center gap-3">
                         <button type="submit"
                                 class="px-5 py-2 bg-[#714B67] hover:bg-[#5c3d55] text-white text-sm font-semibold rounded-lg transition-colors">
-                            Create Group
+                            {{ __('chat.btn_create_group') }}
                         </button>
                         <button type="button" @click="open = false"
                                 class="px-5 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 text-sm font-semibold rounded-lg transition-colors">
-                            Cancel
+                            {{ __('chat.btn_cancel') }}
                         </button>
                     </div>
                 </form>
@@ -85,8 +85,8 @@
         <div class="px-4 py-4 border-b border-white/10 shrink-0">
             <div class="flex items-center justify-between mb-3">
                 <div>
-                    <div class="text-xs font-semibold text-white/40 uppercase tracking-widest mb-0.5">Workspace</div>
-                    <div class="text-white font-bold text-sm">Chat</div>
+                    <div class="text-xs font-semibold text-white/40 uppercase tracking-widest mb-0.5">{{ __('chat.workspace') }}</div>
+                    <div class="text-white font-bold text-sm">{{ __('chat.chat') }}</div>
                 </div>
                 <button @click="tab === 'groups' ? $dispatch('open-group-modal') : (newDm = !newDm)"
                         class="w-6 h-6 rounded flex items-center justify-center text-white/40 hover:text-white hover:bg-white/10 transition-colors"
@@ -102,7 +102,7 @@
                 <button @click="tab = 'direct'"
                         class="flex-1 text-xs font-semibold py-1 rounded-md transition-colors flex items-center justify-center gap-1"
                         :class="tab === 'direct' ? 'bg-white/20 text-white' : 'text-white/45 hover:text-white/70'">
-                    Direct
+                    {{ __('chat.tab_direct') }}
                     @if($totalDmUnread > 0)
                     <span class="inline-flex items-center justify-center w-4 h-4 rounded-full bg-red-500 text-white text-[10px] font-bold leading-none">
                         {{ $totalDmUnread > 9 ? '9+' : $totalDmUnread }}
@@ -112,7 +112,7 @@
                 <button @click="tab = 'groups'"
                         class="flex-1 text-xs font-semibold py-1 rounded-md transition-colors flex items-center justify-center gap-1"
                         :class="tab === 'groups' ? 'bg-white/20 text-white' : 'text-white/45 hover:text-white/70'">
-                    Groups
+                    {{ __('chat.tab_groups') }}
                     @if($totalGroupUnread > 0)
                     <span class="inline-flex items-center justify-center w-4 h-4 rounded-full bg-red-500 text-white text-[10px] font-bold leading-none">
                         {{ $totalGroupUnread > 9 ? '9+' : $totalGroupUnread }}
@@ -125,7 +125,7 @@
         {{-- New DM: user picker --}}
         <div x-show="newDm" x-transition style="display:none"
              class="px-3 py-3 border-b border-white/10 shrink-0">
-            <input type="text" x-model="dmSearch" placeholder="Search people…"
+            <input type="text" x-model="dmSearch" placeholder="{{ __('chat.search_people') }}"
                    class="w-full text-xs bg-white/10 border border-white/20 text-white placeholder-white/30 rounded-lg px-3 py-1.5 focus:outline-none focus:ring-1 focus:ring-white/40 mb-2">
             <div class="max-h-40 overflow-y-auto space-y-0.5">
                 @foreach($users as $u)
@@ -150,7 +150,7 @@
         {{-- ── Direct tab ── --}}
         <div x-show="tab === 'direct'" class="flex-1 overflow-y-auto py-2" style="display:none">
             <div class="px-3 mb-1">
-                <span class="text-[10px] font-bold text-white/30 uppercase tracking-widest">Direct Messages</span>
+                <span class="text-[10px] font-bold text-white/30 uppercase tracking-widest">{{ __('chat.direct_messages') }}</span>
             </div>
             @forelse($dms as $r)
             @php
@@ -169,7 +169,7 @@
                     <div class="flex items-center gap-1.5">
                         <span class="text-sm font-semibold truncate {{ $unread > 0 ? 'text-white' : '' }}">{{ $displayName }}</span>
                         @if($r->isGroup())
-                        <span class="text-[10px] text-white/30 shrink-0">group</span>
+                        <span class="text-[10px] text-white/30 shrink-0">{{ __('chat.badge_group') }}</span>
                         @endif
                     </div>
                     @if($r->lastMessage)
@@ -192,7 +192,7 @@
         {{-- ── Groups tab ── --}}
         <div x-show="tab === 'groups'" class="flex-1 overflow-y-auto py-2" style="display:none">
             <div class="px-3 mb-1">
-                <span class="text-[10px] font-bold text-white/30 uppercase tracking-widest">Groups</span>
+                <span class="text-[10px] font-bold text-white/30 uppercase tracking-widest">{{ __('chat.groups') }}</span>
             </div>
             @forelse($channels as $r)
             @php $chUnread = $unreadCounts[$r->id] ?? 0; @endphp
@@ -219,7 +219,7 @@
                 @endif
             </a>
             @empty
-            <div class="px-4 py-6 text-center text-white/30 text-xs">No groups yet.<br>Create one with +</div>
+            <div class="px-4 py-6 text-center text-white/30 text-xs">{{ __('chat.no_groups_yet') }}</div>
             @endforelse
         </div>
     </div>
@@ -287,12 +287,12 @@
                     </div>
                     @if($room->isChannel())
                     <div class="text-lg font-bold text-gray-800 mb-1"># {{ $room->name }}</div>
-                    <div class="text-sm text-gray-400">This is the start of the <span class="font-semibold text-gray-600">#{{ $room->name }}</span> group.</div>
+                    <div class="text-sm text-gray-400">{{ __('chat.start_of_group', ['name' => $room->name]) }}</div>
                     @else
                     <div class="text-lg font-bold text-gray-800 mb-1">{{ $roomDisplayName }}</div>
-                    <div class="text-sm text-gray-400">This is the beginning of your conversation with <span class="font-semibold text-gray-600">{{ $roomDisplayName }}</span>.</div>
+                    <div class="text-sm text-gray-400">{{ __('chat.start_of_dm', ['name' => $roomDisplayName]) }}</div>
                     @endif
-                    <div class="text-xs text-gray-300 mt-1">Be the first to say something!</div>
+                    <div class="text-xs text-gray-300 mt-1">{{ __('chat.be_first_to_say') }}</div>
                 </div>
                 @else
 
@@ -425,7 +425,7 @@
                                        accept=".jpg,.jpeg,.png,.gif,.webp,.pdf,.doc,.docx,.xls,.xlsx,.txt,.csv" class="hidden">
                             </div>
                             <div class="flex items-center gap-2">
-                                <span class="text-xs text-gray-300">Enter to send</span>
+                                <span class="text-xs text-gray-300">{{ __('chat.enter_to_send') }}</span>
                                 <button type="submit"
                                         class="w-8 h-8 rounded-lg bg-[#714B67] hover:bg-[#5c3d55] text-white flex items-center justify-center transition-colors shadow-sm">
                                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -474,7 +474,7 @@
                     <div class="flex-1 min-w-0">
                         <div class="text-sm font-semibold text-gray-800 truncate">{{ $member->name }}</div>
                         @if($room->created_by_user_id === $member->id)
-                        <div class="text-[10px] text-[#714B67]/70 font-medium">Owner</div>
+                        <div class="text-[10px] text-[#714B67]/70 font-medium">{{ __('chat.owner') }}</div>
                         @endif
                     </div>
                     @if($auth->id === $member->id || $auth->id === $room->created_by_user_id)
@@ -496,9 +496,9 @@
 
             {{-- Add member (inline search — panel space is limited) --}}
             <div class="shrink-0 px-3 py-3 border-t border-gray-100 bg-white">
-                <div class="text-xs font-bold text-gray-500 uppercase tracking-wide mb-2">Add Member</div>
+                <div class="text-xs font-bold text-gray-500 uppercase tracking-wide mb-2">{{ __('chat.add_member') }}</div>
                 <div class="relative">
-                    <input type="text" x-model="addSearch" placeholder="Search users…" autocomplete="off"
+                    <input type="text" x-model="addSearch" placeholder="{{ __('chat.search_users') }}" autocomplete="off"
                            class="w-full text-xs border border-gray-200 rounded-lg px-2.5 py-1.5 focus:outline-none focus:ring-1 focus:ring-[#714B67]/30 bg-white">
                     <div x-show="addSearch.length > 0"
                          class="absolute bottom-full left-0 right-0 mb-1 bg-white border border-gray-200 rounded-lg shadow-lg max-h-40 overflow-y-auto z-20">
@@ -532,8 +532,8 @@
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"/>
             </svg>
         </div>
-        <h2 class="text-xl font-bold text-gray-800 mb-2">Welcome to Chat</h2>
-        <p class="text-sm text-gray-400">Select a group or start a direct message.</p>
+        <h2 class="text-xl font-bold text-gray-800 mb-2">{{ __('chat.welcome_title') }}</h2>
+        <p class="text-sm text-gray-400">{{ __('chat.welcome_subtitle') }}</p>
     </div>
     @endif
 

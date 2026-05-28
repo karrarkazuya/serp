@@ -104,9 +104,16 @@ class RequestSubtype extends Model
 
     public function scopeForCompanies(Builder $query, array $companyIds): Builder
     {
-        if (empty($companyIds)) return $query;
+        // Fail-closed: an empty active-companies list returns ONLY the global
+        // (company_id = null) subtypes — never per-company ones. With a
+        // non-empty list, both globals and the actor's-company subtypes are
+        // returned. Previously fail-open ("empty = all rows") leaked every
+        // tenant's subtypes to users with no allowed companies.
         return $query->where(function ($q) use ($companyIds) {
-            $q->whereNull('company_id')->orWhereIn('company_id', $companyIds);
+            $q->whereNull('company_id');
+            if (!empty($companyIds)) {
+                $q->orWhereIn('company_id', $companyIds);
+            }
         });
     }
 

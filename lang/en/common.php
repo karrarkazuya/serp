@@ -26,6 +26,7 @@ return [
     'updated_at'      => 'Updated on',
     'created_by'      => 'Created by',
     'updated_by'      => 'Updated by',
+    'last_updated_by' => 'Last updated by',
     'no_records'      => 'No records found.',
     'actions'         => 'Actions',
     'default'         => 'Default',

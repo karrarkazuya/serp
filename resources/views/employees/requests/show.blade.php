@@ -43,8 +43,8 @@
                     [__('employees.request_to'),            $r->end_at?->format($r->type === 'leave' ? 'M d, Y' : 'M d, Y H:i')],
                     [__('employees.request_duration_days'),  $r->type === 'leave' ? number_format((float) $r->duration_days, 2) : null],
                     [__('employees.request_duration_hours'), $r->type !== 'leave' ? number_format((float) $r->duration_hours, 2) : null],
-                    ['Title',       $r->title],
-                    ['Description', $r->description],
+                    [__('employees.request_field_title'), $r->title],
+                    [__('common.description'),            $r->description],
                 ] as [$label, $value])
                 @if($value !== null && $value !== '')
                 <div class="flex items-center gap-4 py-1.5 border-b border-gray-100">
@@ -56,7 +56,7 @@
 
                 @if($r->attachment)
                 <div class="flex items-center gap-4 py-1.5 border-b border-gray-100 sm:col-span-2">
-                    <span class="w-44 shrink-0 text-sm text-gray-500">Attachment</span>
+                    <span class="w-44 shrink-0 text-sm text-gray-500">{{ __('employees.request_field_attachment') }}</span>
                     <a href="{{ route('files.serve', $r->attachment) }}" class="text-sm text-purple-700 hover:underline">Open</a>
                 </div>
                 @endif

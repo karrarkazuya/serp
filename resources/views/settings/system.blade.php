@@ -87,9 +87,9 @@
                         <dt class="text-sm text-gray-500">{{ __('settings.debug_mode') }}</dt>
                         <dd>
                             @if($appDebug)
-                                <span class="text-xs font-semibold px-2 py-0.5 rounded-full bg-red-100 text-red-700">ON</span>
+                                <span class="text-xs font-semibold px-2 py-0.5 rounded-full bg-red-100 text-red-700">{{ __('settings.debug_on') }}</span>
                             @else
-                                <span class="text-xs font-semibold px-2 py-0.5 rounded-full bg-green-100 text-green-700">OFF</span>
+                                <span class="text-xs font-semibold px-2 py-0.5 rounded-full bg-green-100 text-green-700">{{ __('settings.debug_off') }}</span>
                             @endif
                         </dd>
                     </div>

@@ -50,11 +50,11 @@
                 <thead>
                     <tr class="border-b border-gray-100 bg-gray-50/50">
                         <th class="px-4 py-1.5 text-left text-xs font-medium text-gray-500">{{ __('accounting.bills') }}</th>
-                        <th class="px-4 py-1.5 text-left text-xs font-medium text-gray-500">Vendor</th>
-                        <th class="px-4 py-1.5 text-left text-xs font-medium text-gray-500">Bill Date</th>
+                        <th class="px-4 py-1.5 text-left text-xs font-medium text-gray-500">{{ __('accounting.col_vendor') }}</th>
+                        <th class="px-4 py-1.5 text-left text-xs font-medium text-gray-500">{{ __('accounting.col_bill_date') }}</th>
                         <th class="px-4 py-1.5 text-left text-xs font-medium text-gray-500">{{ __('accounting.col_due_date') }}</th>
                         <th class="px-4 py-1.5 text-right text-xs font-medium text-gray-500">{{ __('accounting.days_overdue') }}</th>
-                        <th class="px-4 py-1.5 text-right text-xs font-medium text-gray-500">Residual</th>
+                        <th class="px-4 py-1.5 text-right text-xs font-medium text-gray-500">{{ __('accounting.col_residual') }}</th>
                     </tr>
                 </thead>
                 <tbody class="divide-y divide-gray-50">
@@ -80,10 +80,10 @@
         @endforeach
 
         @if($rows->isEmpty())
-        <div class="bg-white rounded-xl border border-gray-200 shadow-sm p-12 text-center text-sm text-gray-400">No overdue payables as of {{ $filters['as_of'] ?? '' }}.</div>
+        <div class="bg-white rounded-xl border border-gray-200 shadow-sm p-12 text-center text-sm text-gray-400">{{ __('accounting.no_overdue_payables', ['date' => $filters['as_of'] ?? '']) }}</div>
         @else
         <div class="bg-white rounded-xl border-2 border-red-200 shadow-sm p-4 flex justify-between items-center">
-            <span class="text-sm font-bold text-gray-800">Total Outstanding</span>
+            <span class="text-sm font-bold text-gray-800">{{ __('accounting.total_outstanding') }}</span>
             <span class="text-lg font-bold tabular-nums text-red-600"><x-money :amount="(float) $rows->sum('residual')" /></span>
         </div>
         @endif

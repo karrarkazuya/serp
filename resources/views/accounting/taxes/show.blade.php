@@ -66,11 +66,11 @@
                 [__('accounting.col_rate_amount'),   $tax->amount_type === 'percent' ? number_format((float)$tax->amount, 2).'%' : number_format((float)$tax->amount, 2)],
                 [__('accounting.col_applies_to'),    $typeTaxUse[$tax->type_tax_use] ?? $tax->type_tax_use],
                 [__('accounting.col_tax_account'),   $tax->account?->display_name ?? '—'],
-                ['Price Inclusive',                  $tax->include_base_amount ? 'Yes (tax included in price)' : 'No (tax added on top)'],
-                ['Description',                      $tax->description ?: '—'],
+                [__('accounting.price_inclusive'),   $tax->include_base_amount ? __('accounting.tax_yes_included') : __('accounting.tax_no_added_on_top')],
+                [__('common.description'),           $tax->description ?: '—'],
                 [__('accounting.col_company'),       $tax->company?->name ?? '—'],
-                ['Created by',                       $tax->creator?->name ?? '—'],
-                ['Last updated by',                  $tax->updater?->name ?? '—'],
+                [__('common.created_by'),            $tax->creator?->name ?? '—'],
+                [__('common.last_updated_by'),       $tax->updater?->name ?? '—'],
             ] as [$label, $value])
             <div class="flex items-start gap-4 py-2 border-b border-gray-100">
                 <span class="w-36 shrink-0 text-sm font-medium text-gray-500">{{ $label }}</span>

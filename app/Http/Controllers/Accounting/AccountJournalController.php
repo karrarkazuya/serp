@@ -26,11 +26,8 @@ class AccountJournalController extends Controller
         $this->authorize('viewAny', AccountJournal::class);
 
         $activeCompanyIds = $this->companyContext->getActiveCompanyIds();
-        $query = AccountJournal::query()->with(['company', 'defaultAccount']);
-
-        empty($activeCompanyIds)
-            ? $query->whereRaw('1 = 0')
-            : $query->forCompanies($activeCompanyIds);
+        // forCompanies() is fail-closed (see AccountJournal::scopeForCompanies).
+        $query = AccountJournal::query()->with(['company', 'defaultAccount'])->forCompanies($activeCompanyIds);
 
         SearchFilters::apply($query, $request);
 
@@ -79,7 +76,7 @@ class AccountJournalController extends Controller
             ->get();
 
         $allIds = AccountJournal::active()
-            ->when(!empty($activeCompanyIds), fn ($q) => $q->forCompanies($activeCompanyIds))
+            ->forCompanies($activeCompanyIds)
             ->orderBy('code')
             ->pluck('id');
         $currentIndex = $allIds->search($journal->id);

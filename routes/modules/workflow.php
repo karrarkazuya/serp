@@ -68,14 +68,15 @@ Route::prefix('workflow')->name('workflow.')->group(function () {
         Route::post('/', [ProcedureController::class, 'store'])->middleware('permission:workflow.procedures.create')->name('store');
         Route::get('/{procedure}', [ProcedureController::class, 'show'])->middleware('permission:workflow.procedures.read')->name('show');
         Route::delete('/{procedure}', [ProcedureController::class, 'unlink'])->middleware('permission:workflow.procedures.unlink')->name('delete');
-        Route::patch('/{procedure}/close', [ProcedureController::class, 'close'])->middleware('permission:workflow.procedures.write')->name('close');
         Route::patch('/{procedure}/archive', [ProcedureController::class, 'archive'])->middleware('permission:workflow.procedures.write')->name('archive');
         Route::patch('/{procedure}/unarchive', [ProcedureController::class, 'unarchive'])->middleware('permission:workflow.procedures.write')->name('unarchive');
         Route::post('/{procedure}/comment', [ProcedureController::class, 'addComment'])->middleware('permission:workflow.procedures.write')->name('comment');
         Route::patch('/{procedure}/tickets/{ticket}/inputs', [ProcedureController::class, 'saveTicketInputs'])->middleware('permission:workflow.procedures.write')->name('tickets.inputs');
-        Route::patch('/{procedure}/tickets/{ticket}/complete', [ProcedureController::class, 'completeTicket'])->middleware('permission:workflow.procedures.write')->name('tickets.complete');
-        Route::patch('/{procedure}/tickets/{ticket}/reject', [ProcedureController::class, 'rejectTicket'])->middleware('permission:workflow.procedures.write')->name('tickets.reject');
-        Route::patch('/{procedure}/tickets/{ticket}/skip', [ProcedureController::class, 'skipTicket'])->middleware('permission:workflow.procedures.write')->name('tickets.skip');
+        // Note: procedure close + ticket complete/reject/skip routes removed —
+        // they were 403 stubs and the real entry point is via the ticket page
+        // (TicketController). State transitions on procedures fire
+        // automatically from ticket transitions; no manual procedure-side
+        // endpoint is needed.
         Route::post('/{procedure}/tickets/{ticket}/path', [ProcedureController::class, 'choosePath'])->middleware('permission:workflow.procedures.write')->name('tickets.path');
     });
 

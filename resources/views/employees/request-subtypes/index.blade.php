@@ -64,7 +64,7 @@
     <x-list :paginator="$subtypes"
             :selectable="true"
             :total-count="$subtypes->total()"
-            :can-export="auth()->user()->can('export', \App\Models\Employees\RequestSubtype::class)"
+            :model="\App\Models\Employees\RequestSubtype::class"
             empty-text="{{ __('employees.no_subtypes') }}">
         <x-slot:columns>
             <x-sortable-th column="name"    :label="__('employees.subtype_name')"        class="px-4 py-2" :default="true" />

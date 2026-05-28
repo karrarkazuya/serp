@@ -137,11 +137,6 @@ class ProcedureController extends Controller
         return redirect()->route('workflow.procedures.show', $procedure)->with('success', 'Procedure started.');
     }
 
-    public function close()
-    {
-        abort(403, 'Procedure state is managed automatically by ticket transitions.');
-    }
-
     public function archive(Procedure $procedure)
     {
         $this->authorize('update', $procedure);
@@ -184,22 +179,9 @@ class ProcedureController extends Controller
         return back()->with('success', 'Comment added.');
     }
 
-    // Ticket state transitions for procedure tickets
-
-    public function completeTicket(Procedure $procedure, Ticket $ticket)
-    {
-        abort(403, 'Manage tickets from the ticket page.');
-    }
-
-    public function rejectTicket(Procedure $procedure, Ticket $ticket)
-    {
-        abort(403, 'Manage tickets from the ticket page.');
-    }
-
-    public function skipTicket(Procedure $procedure, Ticket $ticket)
-    {
-        abort(403, 'Manage tickets from the ticket page.');
-    }
+    // Ticket state transitions live on the ticket page (TicketController).
+    // The procedure side has no endpoints for complete/reject/skip — those
+    // were 403 stubs and were removed.
 
     public function saveTicketInputs(Request $request, Procedure $procedure, Ticket $ticket)
     {
@@ -226,12 +208,39 @@ class ProcedureController extends Controller
                     continue;
                 }
 
+                if ($recordInput->type === 'multiselect') {
+                    // Selections persist via the workflow_record_input_multiselect
+                    // pivot — value_char is unused. Validate each posted option
+                    // belongs to the input's template before syncing so a malicious
+                    // POST can't attach options from a different input.
+                    $optionIds = collect((array) $raw)
+                        ->map(fn ($v) => (int) $v)
+                        ->filter(fn ($v) => $v > 0)
+                        ->unique()
+                        ->values();
+
+                    $valid = WorkflowTemplateInputOption::where('template_input_id', $recordInput->template_input_id)
+                        ->whereIn('id', $optionIds)
+                        ->pluck('id');
+
+                    $recordInput->selectedOptions()->sync($valid->all());
+                    continue;
+                }
+
+                // 'file' and 'label' don't accept values through this endpoint
+                // (files have a dedicated upload route, labels are read-only).
+                if (in_array($recordInput->type, ['file', 'label'], true)) {
+                    continue;
+                }
+
                 $valueData = match ($recordInput->type) {
                     'int'      => ['value_int'      => $raw !== null && $raw !== '' ? (int) $raw : null],
+                    'float'    => ['value_float'    => $raw !== null && $raw !== '' ? (float) $raw : null],
                     'date'     => ['value_date'     => $raw ?: null],
                     'datetime' => ['value_datetime' => $raw ?: null],
                     'boolean'  => ['value_boolean'  => (bool) $raw],
-                    default    => ['value_char'     => $raw ?: null],
+                    'textarea' => ['value_text'     => $raw ?: null],
+                    default    => ['value_char'     => $raw ?: null], // char
                 };
 
                 $recordInput->update($valueData);

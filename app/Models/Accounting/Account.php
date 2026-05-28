@@ -137,9 +137,9 @@ class Account extends Model
 
     public function scopeForCompanies(Builder $query, array $companyIds): Builder
     {
-        if (empty($companyIds)) {
-            return $query;
-        }
+        // Fail-closed: empty list = no access (Laravel's whereIn([]) compiles
+        // to "WHERE 0 = 1"). Callers must pass the actor's authoritative scope;
+        // "no scope" means "no rows", never "all rows". See CLAUDE.md Rule 5.
         return $query->whereIn('company_id', $companyIds);
     }
 

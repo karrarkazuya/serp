@@ -65,7 +65,7 @@
                 </div>
                 <div>
                     <p class="text-xs font-semibold text-gray-400 uppercase tracking-wide">{{ __('employees.doc_type') }}</p>
-                    @php $typeLabels = ['contract'=>'Contract','id_card'=>'ID Card','passport'=>'Passport','certificate'=>'Certificate','resume'=>'Resume','medical'=>'Medical','other'=>'Other']; @endphp
+                    @php $typeLabels = ['contract'=>__('employees.doc_contract'),'id_card'=>__('employees.doc_id_card'),'passport'=>__('employees.doc_passport'),'certificate'=>__('employees.doc_certificate'),'resume'=>__('employees.doc_resume'),'medical'=>__('employees.doc_medical'),'other'=>__('employees.doc_other')]; @endphp
                     <span class="inline-block px-2 py-0.5 rounded text-xs font-semibold bg-gray-100 text-gray-600 uppercase mt-0.5">
                         {{ $typeLabels[$document->document_type] ?? $document->document_type }}
                     </span>

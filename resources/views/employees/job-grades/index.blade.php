@@ -123,7 +123,7 @@
     </x-list>
 
     @else
-    <x-list :paginator="$records" :selectable="true" :total-count="$records->total()" :empty-text="__('employees.no_job_grades')" :can-export="auth()->user()->can('export', \App\Models\Employees\Employee::class)">
+    <x-list :paginator="$records" :selectable="true" :total-count="$records->total()" :empty-text="__('employees.no_job_grades')" :model="\App\Models\Employees\Employee::class">
         <x-slot:columns>
             <th class="px-4 py-2 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">{{ __('employees.organizational_structure') }}</th>
             <th class="px-3 py-2 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">{{ __('employees.doc_employee') }}</th>

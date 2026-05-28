@@ -22,14 +22,10 @@ class AccountMoveLineController extends Controller
 
         $activeCompanyIds = $this->companyContext->getActiveCompanyIds();
 
+        // forCompanies() is fail-closed (see AccountMoveLine::scopeForCompanies).
         $query = AccountMoveLine::query()
-            ->with(['move', 'journal', 'account', 'partner', 'company']);
-
-        if (empty($activeCompanyIds)) {
-            $query->whereRaw('1 = 0');
-        } else {
-            $query->forCompanies($activeCompanyIds);
-        }
+            ->with(['move', 'journal', 'account', 'partner', 'company'])
+            ->forCompanies($activeCompanyIds);
 
         SearchFilters::apply($query, $request);
 

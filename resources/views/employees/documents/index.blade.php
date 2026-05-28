@@ -94,7 +94,7 @@
                     @endif
                 </td>
                 <td class="px-3 py-2.5">
-                    @php $typeLabels = ['contract'=>'Contract','id_card'=>'ID Card','passport'=>'Passport','certificate'=>'Certificate','resume'=>'Resume','medical'=>'Medical','other'=>'Other']; @endphp
+                    @php $typeLabels = ['contract'=>__('employees.doc_contract'),'id_card'=>__('employees.doc_id_card'),'passport'=>__('employees.doc_passport'),'certificate'=>__('employees.doc_certificate'),'resume'=>__('employees.doc_resume'),'medical'=>__('employees.doc_medical'),'other'=>__('employees.doc_other')]; @endphp
                     <span class="inline-block px-1.5 py-0.5 rounded text-[10px] font-semibold bg-gray-100 text-gray-600 uppercase">
                         {{ $typeLabels[$doc->document_type] ?? $doc->document_type }}
                     </span>

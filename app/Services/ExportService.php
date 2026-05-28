@@ -107,7 +107,7 @@ class ExportService
 
     private function value(mixed $record, array $col): mixed
     {
-        $val = is_array($record) ? ($record[$col['key']] ?? null) : ($record->{$col['key']} ?? null);
+        $val = is_array($record) ? ($record[$col['column']] ?? null) : ($record->{$col['column']} ?? null);
 
         if ($val === null) return '';
 

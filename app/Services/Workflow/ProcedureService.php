@@ -88,23 +88,6 @@ class ProcedureService
         }
     }
 
-    public function skipTicket(Ticket $ticket): void
-    {
-        $ticket->update(['state' => 'skipped']);
-        $this->chatterService->log($ticket->procedure, "Ticket '{$ticket->name}' skipped.", 'system');
-
-        if ($ticket->ignore_state) return;
-
-        $hasNext    = $ticket->nextTickets()->exists();
-        $hasPending = $ticket->procedure->tickets()->where('id', '!=', $ticket->id)->where('state', 'pending')->where('ignore_state', false)->exists();
-
-        if (!$hasNext && !$hasPending) {
-            $this->checkProcedureCompletion($ticket->procedure);
-        } else {
-            $this->unlockNextTickets($ticket);
-        }
-    }
-
     public function choosePath(Ticket $ticket, TicketPath $path): void
     {
         $ticket->update(['path_chosen_id' => $path->id]);
@@ -322,6 +305,15 @@ class ProcedureService
 
         $target = Ticket::find($targetId);
         if (!$target) return;
+
+        // Defense-in-depth: the only caller (TicketController::close) already
+        // validates that targetId is in startTicket's predecessor chain. But
+        // the service should not trust that — if someone wires a new caller
+        // without the chain-walk check, this would otherwise let a malicious
+        // POST reactivate a ticket in a different procedure entirely.
+        if ($target->procedure_id !== $startTicket->procedure_id) {
+            return;
+        }
 
         // Reject any remaining active next tickets of the target (cursor's siblings)
         foreach ($target->nextTickets as $nt) {

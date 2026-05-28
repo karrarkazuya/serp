@@ -21,7 +21,7 @@
                 <thead class="bg-gray-50 sticky top-0 z-10">
                     <tr>
                         <th class="px-4 py-2.5 text-left text-xs font-semibold text-gray-600 uppercase">{{ __('accounting.col_date') }}</th>
-                        <th class="px-4 py-2.5 text-left text-xs font-semibold text-gray-600 uppercase">Entry</th>
+                        <th class="px-4 py-2.5 text-left text-xs font-semibold text-gray-600 uppercase">{{ __('accounting.col_entry') }}</th>
                         <th class="px-4 py-2.5 text-left text-xs font-semibold text-gray-600 uppercase">{{ __('accounting.col_journal') }}</th>
                         <th class="px-4 py-2.5 text-left text-xs font-semibold text-gray-600 uppercase">{{ __('accounting.col_account') }}</th>
                         <th class="px-4 py-2.5 text-left text-xs font-semibold text-gray-600 uppercase">{{ __('accounting.col_partner') }}</th>

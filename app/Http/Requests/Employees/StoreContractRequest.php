@@ -43,10 +43,14 @@ class StoreContractRequest extends FormRequest
                     $q->orWhereIn('company_id', $activeCompanyIds);
                 }
             })],
-            'date_start'          => 'nullable|date',
-            'date_end'            => 'nullable|date|after_or_equal:date_start',
-            'trial_date_start'    => 'nullable|date',
-            'trial_date_end'      => 'nullable|date|after_or_equal:trial_date_start',
+            // Contract dates bounded ±20 years past to +50 years future —
+            // covers historical contract imports and long fixed-term contracts
+            // that point to retirement. Year-9999 entries break tenure /
+            // expiry-notification queries.
+            'date_start'          => 'nullable|date|after_or_equal:-20 years|before_or_equal:+50 years',
+            'date_end'            => 'nullable|date|after_or_equal:date_start|before_or_equal:+50 years',
+            'trial_date_start'    => 'nullable|date|after_or_equal:-20 years|before_or_equal:+5 years',
+            'trial_date_end'      => 'nullable|date|after_or_equal:trial_date_start|before_or_equal:+5 years',
             'state'               => 'nullable|in:draft,open,close,cancelled',
             'contract_type'       => 'nullable|in:full_time,part_time,temporary,internship,contractor',
             'wage'                => 'nullable|numeric|min:0',

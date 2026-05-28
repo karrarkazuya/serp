@@ -63,7 +63,7 @@
             @endforeach
         </tr>
         @empty
-        <tr><td colspan="{{ count($columns) }}" style="text-align:center; color:#9ca3af; padding:18px;">No data.</td></tr>
+        <tr><td colspan="{{ count($columns) }}" style="text-align:center; color:#9ca3af; padding:18px;">{{ __('accounting.no_data') }}</td></tr>
         @endforelse
 
         @if(!empty($totals))
@@ -81,6 +81,6 @@
     </tbody>
 </table>
 
-<div class="footer">Printed {{ $printed_at }} — {{ $title }}</div>
+<div class="footer">{{ __('accounting.printed_at', ['date' => $printed_at, 'title' => $title]) }}</div>
 </body>
 </html>

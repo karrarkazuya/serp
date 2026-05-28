@@ -242,7 +242,7 @@
             <iframe x-ref="flowchartFrame"
                     src="{{ $flowchartEditUrl }}"
                     class="flex-1 border-0 min-h-0"
-                    title="Procedure Flowchart">
+                    title="{{ __('workflow.flowchart_tab') }}">
             </iframe>
 
             {{-- ── Delete confirm overlay ── --}}
@@ -285,7 +285,7 @@
             <iframe x-ref="stepEditFrame"
                     :src="stepEditUrl || 'about:blank'"
                     class="flex-1 border-0 min-h-0"
-                    title="Edit Step">
+                    title="{{ __('workflow.edit_step_title') }}">
             </iframe>
         </div>
     </div>

@@ -78,21 +78,19 @@
                          payments, and reconciliation function.  --}}
                     <div class="mt-8 pt-6 border-t border-gray-200">
                         <h4 class="text-sm font-bold text-gray-800 uppercase tracking-wide mb-1">
-                            Multi-Currency
+                            {{ __('accounting.multi_currency') }}
                         </h4>
                         <p class="text-xs text-gray-500 mb-4">
-                            Currencies this company can invoice / bill / pay in, and the GL accounts that record FX gain or loss when cross-currency reconciliation leaves a residual.
+                            {{ __('accounting.mc_currencies_desc') }}
                         </p>
 
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                             <div class="md:col-span-2">
                                 <label class="block text-sm font-semibold text-gray-700 mb-1">
-                                    Allowed Currencies
+                                    {{ __('accounting.allowed_currencies') }}
                                 </label>
                                 <p class="text-xs text-gray-400 mb-2">
-                                    The base currency
-                                    <code class="px-1 py-0.5 bg-gray-100 rounded">{{ $company->currency ?: 'IQD' }}</code>
-                                    is always allowed. Selecting an empty list means "any active currency".
+                                    {{ __('accounting.mc_base_always_allowed', ['currency' => $company->currency ?: 'IQD']) }}
                                 </p>
                                 @php $selectedIds = $company->allowedCurrencies->pluck('id')->all(); @endphp
                                 <div class="grid grid-cols-2 md:grid-cols-4 gap-2 max-h-48 overflow-y-auto border border-gray-200 rounded p-3">
@@ -113,31 +111,31 @@
 
                             <div>
                                 <label class="block text-sm font-semibold text-gray-700 mb-1">
-                                    FX Gain Account
+                                    {{ __('accounting.fx_gain_account') }}
                                 </label>
                                 <select name="income_currency_exchange_account_id"
                                         @disabled(!auth()->user()->hasPermission('accounting.lock'))
                                         class="w-full text-sm border border-gray-300 rounded px-3 py-2 focus:border-purple-500 focus:outline-none focus:ring-0 disabled:bg-gray-50">
-                                    <option value="">— Not configured —</option>
+                                    <option value="">{{ __('accounting.not_configured') }}</option>
                                     @foreach(\App\Models\Accounting\Account::where('company_id', $company->id)->where('active', true)->where('account_type', 'like', 'income%')->orderBy('code')->get() as $acc)
                                     <option value="{{ $acc->id }}" @selected($company->income_currency_exchange_account_id == $acc->id)>{{ $acc->display_name }}</option>
                                     @endforeach
                                 </select>
-                                <p class="mt-1 text-xs text-gray-400">Posts when a foreign-currency payment closes a residual at a more favorable rate than the invoice.</p>
+                                <p class="mt-1 text-xs text-gray-400">{{ __('accounting.fx_gain_hint') }}</p>
                             </div>
                             <div>
                                 <label class="block text-sm font-semibold text-gray-700 mb-1">
-                                    FX Loss Account
+                                    {{ __('accounting.fx_loss_account') }}
                                 </label>
                                 <select name="expense_currency_exchange_account_id"
                                         @disabled(!auth()->user()->hasPermission('accounting.lock'))
                                         class="w-full text-sm border border-gray-300 rounded px-3 py-2 focus:border-purple-500 focus:outline-none focus:ring-0 disabled:bg-gray-50">
-                                    <option value="">— Not configured —</option>
+                                    <option value="">{{ __('accounting.not_configured') }}</option>
                                     @foreach(\App\Models\Accounting\Account::where('company_id', $company->id)->where('active', true)->where('account_type', 'like', 'expense%')->orderBy('code')->get() as $acc)
                                     <option value="{{ $acc->id }}" @selected($company->expense_currency_exchange_account_id == $acc->id)>{{ $acc->display_name }}</option>
                                     @endforeach
                                 </select>
-                                <p class="mt-1 text-xs text-gray-400">Posts when a foreign-currency payment closes a residual at a worse rate than the invoice.</p>
+                                <p class="mt-1 text-xs text-gray-400">{{ __('accounting.fx_loss_hint') }}</p>
                             </div>
                         </div>
                     </div>
