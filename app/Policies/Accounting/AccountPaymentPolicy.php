@@ -4,17 +4,21 @@ namespace App\Policies\Accounting;
 
 use App\Models\Accounting\AccountPayment;
 use App\Models\User;
+use App\Policies\Concerns\ScopesByCompany;
 
 class AccountPaymentPolicy
 {
+    use ScopesByCompany;
+
     public function viewAny(User $user): bool
     {
         return $user->hasPermission('accounting.read');
     }
 
-    public function view(User $user, AccountPayment $_payment): bool
+    public function view(User $user, AccountPayment $payment): bool
     {
-        return $user->hasPermission('accounting.read');
+        return $user->hasPermission('accounting.read')
+            && $this->withinActiveCompany($payment);
     }
 
     public function create(User $user): bool
@@ -22,9 +26,10 @@ class AccountPaymentPolicy
         return $user->hasPermission('accounting.create');
     }
 
-    public function update(User $user, AccountPayment $_payment): bool
+    public function update(User $user, AccountPayment $payment): bool
     {
-        return $user->hasPermission('accounting.write');
+        return $user->hasPermission('accounting.write')
+            && $this->withinActiveCompany($payment);
     }
 
     /**
@@ -34,18 +39,21 @@ class AccountPaymentPolicy
      * require accounting.post — not accounting.write — to preserve the
      * permission separation that gates direct AccountMove posting.
      */
-    public function post(User $user, AccountPayment $_payment): bool
+    public function post(User $user, AccountPayment $payment): bool
     {
-        return $user->hasPermission('accounting.post');
+        return $user->hasPermission('accounting.post')
+            && $this->withinActiveCompany($payment);
     }
 
-    public function delete(User $user, AccountPayment $_payment): bool
+    public function delete(User $user, AccountPayment $payment): bool
     {
-        return $user->hasPermission('accounting.unlink');
+        return $user->hasPermission('accounting.unlink')
+            && $this->withinActiveCompany($payment);
     }
 
-    public function comment(User $user, AccountPayment $_payment): bool
+    public function comment(User $user, AccountPayment $payment): bool
     {
-        return $user->hasPermission('accounting.write');
+        return $user->hasPermission('accounting.write')
+            && $this->withinActiveCompany($payment);
     }
 }

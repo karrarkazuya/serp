@@ -28,7 +28,7 @@ class ScrapService
         $data['state'] = 'draft';
 
         $scrap = ScrapOrder::create($data);
-        $this->chatterService->logCreated($scrap, 'Scrap Order');
+        $this->chatterService->logCreated($scrap, __('inventory.chatter_label_scrap'));
         return $scrap;
     }
 
@@ -36,12 +36,22 @@ class ScrapService
     {
         if ($scrap->isDone()) return $scrap;
 
-        $scrap->load('product');
+        $scrap->load(['product.uom', 'uom']);
         $productName = $scrap->product?->name ?? '';
-        $qty         = (float) $scrap->scrap_qty;
+        $qtyInScrapUom = (float) $scrap->scrap_qty;
 
         // Only storable products affect physical stock
         if ($scrap->product?->isStorable()) {
+            // Quants are in product reference UoM; the scrap form lets the
+            // user pick any UoM in the same category (validated upstream by
+            // StoreScrapOrderRequest::uomMatchingProductCategoryRule). Convert
+            // before comparing against on-hand or writing the delta — without
+            // this, scrapping 1 kg of a g-tracked product would only burn 1 g
+            // of stock and silently leave 999 g still on hand.
+            $qtyInProductUom = ($scrap->uom && $scrap->product->uom)
+                ? $scrap->uom->convertQty($qtyInScrapUom, $scrap->product->uom)
+                : $qtyInScrapUom;
+
             // Odoo: cannot scrap more than available on hand — block if insufficient stock
             $onHand = Quant::where('company_id', $scrap->company_id)
                 ->where('product_id', $scrap->product_id)
@@ -50,16 +60,23 @@ class ScrapService
                 ->lockForUpdate()
                 ->sum('quantity');
 
-            if ($qty > (float) $onHand + 0.0001) {
-                throw new \RuntimeException(
-                    "Insufficient stock for \"{$productName}\". " .
-                    "Available: " . number_format($onHand, 4) . ", requested: " . number_format($qty, 4) . "."
-                );
+            if ($qtyInProductUom > (float) $onHand + 0.0001) {
+                $productUomName = $scrap->product->uom?->name ?? '';
+                throw new \RuntimeException(__('inventory.err_scrap_insufficient', [
+                    'product'  => $productName,
+                    'on_hand'  => number_format($onHand, 4) . ($productUomName ? ' ' . $productUomName : ''),
+                    'requested'=> number_format($qtyInProductUom, 4) . ($productUomName ? ' ' . $productUomName : ''),
+                ]));
             }
 
-            $this->updateQuant($scrap->company_id, $scrap->product_id, $scrap->location_id,       $scrap->lot_id, -$qty);
-            $this->updateQuant($scrap->company_id, $scrap->product_id, $scrap->scrap_location_id, $scrap->lot_id,  $qty);
+            $this->updateQuant($scrap->company_id, $scrap->product_id, $scrap->location_id,       $scrap->lot_id, -$qtyInProductUom);
+            $this->updateQuant($scrap->company_id, $scrap->product_id, $scrap->scrap_location_id, $scrap->lot_id,  $qtyInProductUom);
         }
+
+        // The trace Move below is for traceability — keep its qty in scrap UoM
+        // so the user sees the unit they entered. Re-binding $qty makes the
+        // intent explicit for the move row that follows.
+        $qty = $qtyInScrapUom;
 
         // Create stock move for traceability regardless of product type
         $move = Move::create([
@@ -68,7 +85,7 @@ class ScrapService
             'uom_id'           => $scrap->uom_id,
             'location_src_id'  => $scrap->location_id,
             'location_dest_id' => $scrap->scrap_location_id,
-            'name'             => 'Scrap: ' . $productName,
+            'name'             => __('inventory.line_scrap_of', ['product' => $productName]),
             'product_qty'      => $qty,
             'qty_done'         => $qty,
             'state'            => 'done',
@@ -84,16 +101,16 @@ class ScrapService
             'updated_by' => auth()->id(),
         ]);
 
-        $this->chatterService->log($scrap, 'Scrap order validated.', 'log');
+        $this->chatterService->log($scrap, __('inventory.chatter_scrap_validated'), 'log');
         return $scrap->fresh();
     }
 
     public function delete(ScrapOrder $scrap): void
     {
         if ($scrap->isDone()) {
-            throw new \RuntimeException('Done scrap orders cannot be deleted.');
+            throw new \RuntimeException(__('inventory.err_scrap_done_no_delete'));
         }
-        $this->chatterService->log($scrap, 'Scrap order deleted.', 'system');
+        $this->chatterService->log($scrap, __('inventory.chatter_scrap_deleted'), 'system');
         $scrap->delete();
     }
 

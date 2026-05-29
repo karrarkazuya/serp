@@ -124,7 +124,7 @@ class AccountingPaymentTermController extends Controller
             return $term;
         });
 
-        return redirect()->route('accounting.payment-terms.show', $term)->with('success', 'Payment term created.');
+        return redirect()->route('accounting.payment-terms.show', $term)->with('success', __('accounting.created'));
     }
 
     public function edit(AccountingPaymentTerm $paymentTerm)
@@ -173,7 +173,7 @@ class AccountingPaymentTermController extends Controller
             }
         });
 
-        return redirect()->route('accounting.payment-terms.show', $paymentTerm)->with('success', 'Payment term updated.');
+        return redirect()->route('accounting.payment-terms.show', $paymentTerm)->with('success', __('accounting.updated'));
     }
 
     public function archive(Request $request, AccountingPaymentTerm $paymentTerm)
@@ -184,7 +184,7 @@ class AccountingPaymentTermController extends Controller
 
         DB::transaction(fn () => $paymentTerm->update(['active' => false]));
 
-        return redirect()->route('accounting.payment-terms.show', $paymentTerm)->with('success', 'Payment term archived.');
+        return redirect()->route('accounting.payment-terms.show', $paymentTerm)->with('success', __('accounting.archived'));
     }
 
     public function unarchive(Request $request, AccountingPaymentTerm $paymentTerm)
@@ -195,7 +195,7 @@ class AccountingPaymentTermController extends Controller
 
         DB::transaction(fn () => $paymentTerm->update(['active' => true]));
 
-        return redirect()->route('accounting.payment-terms.show', $paymentTerm)->with('success', 'Payment term restored.');
+        return redirect()->route('accounting.payment-terms.show', $paymentTerm)->with('success', __('accounting.restored'));
     }
 
     public function unlink(Request $request, AccountingPaymentTerm $paymentTerm)
@@ -206,7 +206,7 @@ class AccountingPaymentTermController extends Controller
 
         DB::transaction(fn () => $paymentTerm->delete());
 
-        return redirect()->route('accounting.payment-terms.index')->with('success', 'Payment term deleted.');
+        return redirect()->route('accounting.payment-terms.index')->with('success', __('accounting.deleted'));
     }
 
     public function addComment(Request $request, AccountingPaymentTerm $paymentTerm)
@@ -218,7 +218,7 @@ class AccountingPaymentTermController extends Controller
         $request->validate(['body' => 'required|string|max:5000']);
         DB::transaction(fn () => $paymentTerm->logComment($request->body));
 
-        return back()->with('success', 'Comment added.');
+        return back()->with('success', __('accounting.comment_added'));
     }
 
     /**
@@ -249,30 +249,30 @@ class AccountingPaymentTermController extends Controller
             } elseif ($type === 'percent') {
                 if ($value <= 0 || $value > 100) {
                     throw \Illuminate\Validation\ValidationException::withMessages([
-                        "lines.{$i}.value" => 'Percent value must be between 0 and 100.',
+                        "lines.{$i}.value" => __('accounting.pt_percent_range'),
                     ]);
                 }
                 $percentSum += $value;
             } elseif ($type === 'fixed' && $value <= 0) {
                 throw \Illuminate\Validation\ValidationException::withMessages([
-                    "lines.{$i}.value" => 'Fixed value must be greater than 0.',
+                    "lines.{$i}.value" => __('accounting.pt_fixed_positive'),
                 ]);
             }
         }
 
         if ($balanceCount === 0) {
             throw \Illuminate\Validation\ValidationException::withMessages([
-                'lines' => 'A payment term must include exactly one "balance" line so the residual is always covered.',
+                'lines' => __('accounting.pt_balance_required'),
             ]);
         }
         if ($balanceCount > 1) {
             throw \Illuminate\Validation\ValidationException::withMessages([
-                'lines' => 'Only one "balance" line is allowed per payment term.',
+                'lines' => __('accounting.pt_balance_one_only'),
             ]);
         }
         if (round($percentSum, 4) > 100.0) {
             throw \Illuminate\Validation\ValidationException::withMessages([
-                'lines' => sprintf('Percent lines total %.2f%%; they must not exceed 100%%.', $percentSum),
+                'lines' => __('accounting.pt_percent_over_100', ['pct' => number_format($percentSum, 2)]),
             ]);
         }
     }

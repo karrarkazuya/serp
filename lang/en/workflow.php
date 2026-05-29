@@ -376,5 +376,6 @@ return [
     'failed_to_save_step'           => 'Failed to save step.',
     'network_error_retry'           => 'Network error. Please try again.',
     'also_visible_in'               => 'Also visible in',
+    'from_ticket'                   => 'From ticket',
 
 ];

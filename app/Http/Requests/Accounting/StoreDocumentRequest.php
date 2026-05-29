@@ -98,4 +98,43 @@ class StoreDocumentRequest extends FormRequest
 
         $this->merge(['items' => $items]);
     }
+
+    /**
+     * Cross-field checks that the per-field rules can't express on their own:
+     * - `invoice_date_due` must be on or after `invoice_date` (and falls back
+     *   to `date` when `invoice_date` is missing). Otherwise the invoice
+     *   posts as already-overdue from day 1, which silently corrupts aging
+     *   buckets and the partner ledger.
+     * - `currency` must be one of the company's configured allowedCurrencies
+     *   (when the company has restricted the list). Empty list = no restriction,
+     *   matching the model's documented "all active currencies" behaviour.
+     */
+    public function withValidator($validator): void
+    {
+        $validator->after(function ($validator) {
+            $anchor = $this->input('invoice_date') ?: $this->input('date');
+            $due    = $this->input('invoice_date_due');
+            if ($anchor && $due && strtotime($due) < strtotime($anchor)) {
+                $validator->errors()->add(
+                    'invoice_date_due',
+                    __('accounting.val_due_before_invoice')
+                );
+            }
+
+            $currency  = $this->input('currency');
+            $companyId = $this->input('company_id');
+            if ($currency && $companyId) {
+                $company = \App\Models\Settings\Company::find($companyId);
+                if ($company) {
+                    $allowed = $company->allowedCurrencies()->pluck('code')->all();
+                    if (!empty($allowed) && !in_array($currency, $allowed, true)) {
+                        $validator->errors()->add(
+                            'currency',
+                            __('accounting.val_currency_not_allowed')
+                        );
+                    }
+                }
+            }
+        });
+    }
 }

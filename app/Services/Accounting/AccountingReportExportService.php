@@ -2,6 +2,7 @@
 
 namespace App\Services\Accounting;
 
+use App\Services\Company\CompanyContextService;
 use App\Services\ExportService;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Support\Collection;
@@ -17,6 +18,7 @@ class AccountingReportExportService
 {
     public function __construct(
         private readonly ExportService $exporter,
+        private readonly CompanyContextService $companyContext,
     ) {}
 
     /**
@@ -62,7 +64,14 @@ class AccountingReportExportService
             'columns'  => $columns,
             'records'  => $records,
             'totals'   => $totals,
-            'company'  => optional(auth()->user())->company?->name,
+            // Header shows the report's company scope — the names of every
+            // active company the actor is reporting against (the PDF can span
+            // multiple companies when the actor has more than one active).
+            // The previous lookup (auth()->user()->company?->name) was dead
+            // code: User has no `company` relation (only `defaultCompany` and
+            // `companies`), so the property always resolved to null and the
+            // PDF header silently dropped the company line.
+            'company'  => $this->companyContext->getActiveCompanies()->pluck('name')->join(', ') ?: null,
             'printed_at' => now()->format('Y-m-d H:i'),
         ])->setPaper('a4', 'landscape');
 

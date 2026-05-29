@@ -202,4 +202,16 @@ class AccountTax extends Model
             : number_format($rate, 2);
         return "{$this->name} ({$formatted})";
     }
+
+    public function getAmountTypeLabelAttribute(): string
+    {
+        $key = 'accounting.amount_type_' . $this->amount_type;
+        return trans()->has($key) ? __($key) : (self::AMOUNT_TYPES[$this->amount_type] ?? $this->amount_type);
+    }
+
+    public function getTypeTaxUseLabelAttribute(): string
+    {
+        $key = 'accounting.tax_use_short_' . $this->type_tax_use;
+        return trans()->has($key) ? __($key) : (self::TYPE_TAX_USE[$this->type_tax_use] ?? $this->type_tax_use);
+    }
 }

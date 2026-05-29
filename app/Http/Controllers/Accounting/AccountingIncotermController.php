@@ -74,7 +74,7 @@ class AccountingIncotermController extends Controller
 
         $incoterm = DB::transaction(fn () => AccountingIncoterm::create($data));
 
-        return redirect()->route('accounting.incoterms.show', $incoterm)->with('success', 'Incoterm created.');
+        return redirect()->route('accounting.incoterms.show', $incoterm)->with('success', __('accounting.created'));
     }
 
     public function edit(AccountingIncoterm $incoterm)
@@ -95,7 +95,7 @@ class AccountingIncotermController extends Controller
 
         DB::transaction(fn () => $incoterm->update($data));
 
-        return redirect()->route('accounting.incoterms.show', $incoterm)->with('success', 'Incoterm updated.');
+        return redirect()->route('accounting.incoterms.show', $incoterm)->with('success', __('accounting.updated'));
     }
 
     public function unlink(Request $request, AccountingIncoterm $incoterm)
@@ -104,7 +104,7 @@ class AccountingIncotermController extends Controller
 
         DB::transaction(fn () => $incoterm->delete());
 
-        return redirect()->route('accounting.incoterms.index')->with('success', 'Incoterm deleted.');
+        return redirect()->route('accounting.incoterms.index')->with('success', __('accounting.deleted'));
     }
 
     public function addComment(Request $request, AccountingIncoterm $incoterm)
@@ -114,6 +114,6 @@ class AccountingIncotermController extends Controller
         $request->validate(['body' => 'required|string|max:5000']);
         DB::transaction(fn () => $incoterm->logComment($request->body));
 
-        return back()->with('success', 'Comment added.');
+        return back()->with('success', __('accounting.comment_added'));
     }
 }

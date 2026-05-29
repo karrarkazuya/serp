@@ -233,7 +233,7 @@ class PickingController extends Controller
 
         $picking = DB::transaction(fn () => $this->pickingService->create($data, $movesData));
 
-        return redirect()->route('inventory.transfers.show', $picking)->with('success', 'Transfer created.');
+        return redirect()->route('inventory.transfers.show', $picking)->with('success', __('inventory.created'));
     }
 
     public function edit(Picking $picking)
@@ -303,7 +303,7 @@ class PickingController extends Controller
             }
         });
 
-        return redirect()->route('inventory.transfers.show', $picking)->with('success', 'Transfer updated.');
+        return redirect()->route('inventory.transfers.show', $picking)->with('success', __('inventory.updated'));
     }
 
     public function confirm(Request $_request, Picking $picking)
@@ -312,7 +312,7 @@ class PickingController extends Controller
         $activeCompanyIds = $this->companyContext->getActiveCompanyIds();
         abort_unless(in_array($picking->company_id, $activeCompanyIds), 403);
         DB::transaction(fn () => $this->pickingService->confirm($picking));
-        return back()->with('success', 'Transfer confirmed.');
+        return back()->with('success', __('inventory.transfer_confirmed_flash'));
     }
 
     public function checkAvailability(Request $_request, Picking $picking)
@@ -321,7 +321,7 @@ class PickingController extends Controller
         $activeCompanyIds = $this->companyContext->getActiveCompanyIds();
         abort_unless(in_array($picking->company_id, $activeCompanyIds), 403);
         DB::transaction(fn () => $this->pickingService->checkAvailability($picking));
-        return back()->with('success', 'Availability checked.');
+        return back()->with('success', __('inventory.transfer_availability_done'));
     }
 
     public function validate(Request $request, Picking $picking)
@@ -347,11 +347,11 @@ class PickingController extends Controller
 
         if ($result['backorder']) {
             return redirect()->route('inventory.transfers.show', $result['backorder'])
-                ->with('success', 'Transfer validated. A backorder was created for the remaining quantities.');
+                ->with('success', __('inventory.transfer_validated_with_backorder'));
         }
 
         return redirect()->route('inventory.transfers.show', $result['picking'])
-            ->with('success', 'Transfer validated successfully.');
+            ->with('success', __('inventory.transfer_validated_flash'));
     }
 
     public function cancel(Request $_request, Picking $picking)
@@ -366,7 +366,7 @@ class PickingController extends Controller
             return back()->with('error', $e->getMessage());
         }
 
-        return back()->with('success', 'Transfer cancelled.');
+        return back()->with('success', __('inventory.transfer_cancelled_flash'));
     }
 
     public function returnPicking(Request $request, Picking $picking)
@@ -387,7 +387,7 @@ class PickingController extends Controller
             return back()->with('error', $e->getMessage());
         }
 
-        return redirect()->route('inventory.transfers.show', $returnPicking)->with('success', 'Return transfer created.');
+        return redirect()->route('inventory.transfers.show', $returnPicking)->with('success', __('inventory.transfer_return_created'));
     }
 
     public function unlink(Request $_request, Picking $picking)
@@ -402,7 +402,7 @@ class PickingController extends Controller
             $picking->moves()->delete();
             $picking->delete();
         });
-        return redirect()->route('inventory.transfers.index')->with('success', 'Transfer deleted.');
+        return redirect()->route('inventory.transfers.index')->with('success', __('inventory.deleted'));
     }
 
     public function addComment(Request $request, Picking $picking)
@@ -412,6 +412,6 @@ class PickingController extends Controller
         abort_unless(in_array($picking->company_id, $activeCompanyIds), 403);
         $request->validate(['body' => 'required|string|max:5000']);
         DB::transaction(fn () => $picking->logComment($request->body));
-        return back()->with('success', 'Comment added.');
+        return back()->with('success', __('inventory.comment_added'));
     }
 }

@@ -313,7 +313,7 @@
                      style="display:none">
                     <div class="max-h-56 overflow-y-auto py-1">
                         <div x-show="loading" class="px-4 py-2 text-sm text-gray-400">
-                            Loading...
+                            {{ __('common.loading') }}
                         </div>
 
                         <div x-show="!loading && error"
@@ -334,7 +334,7 @@
                         </template>
 
                         <div x-show="!loading && options.length === 0" class="px-4 py-2 text-sm text-gray-400">
-                            No records found
+                            {{ __('common.no_records_found') }}
                         </div>
                     </div>
 
@@ -342,7 +342,7 @@
                     <button type="button"
                        @click="openSearchMore()"
                        class="block w-full text-left px-4 py-2 text-sm font-semibold text-[#714B67] hover:bg-gray-50 border-t border-gray-100">
-                        Search More...
+                        {{ __('common.search_more') }}
                     </button>
                     @endif
                 </div>
@@ -424,7 +424,7 @@
                             </thead>
                             <tbody>
                                 <tr x-show="modalLoading">
-                                    <td colspan="{{ $colorField ? 3 : 2 }}" class="px-6 py-10 text-center text-sm text-gray-400">Loading...</td>
+                                    <td colspan="{{ $colorField ? 3 : 2 }}" class="px-6 py-10 text-center text-sm text-gray-400">{{ __('common.loading') }}</td>
                                 </tr>
                                 <tr x-show="!modalLoading && modalError">
                                     <td colspan="{{ $colorField ? 3 : 2 }}" class="px-6 py-6 text-center">
@@ -458,7 +458,7 @@
                                     </tr>
                                 </template>
                                 <tr x-show="!modalLoading && modalOptions.length === 0">
-                                    <td colspan="{{ $colorField ? 3 : 2 }}" class="px-6 py-10 text-center text-sm text-gray-400">No records found</td>
+                                    <td colspan="{{ $colorField ? 3 : 2 }}" class="px-6 py-10 text-center text-sm text-gray-400">{{ __('common.no_records_found') }}</td>
                                 </tr>
                             </tbody>
                         </table>
@@ -468,15 +468,15 @@
                         <button type="button"
                                 @click="selectAndClose()"
                                 class="px-4 py-2 bg-[#714B67]/50 text-white text-sm font-semibold rounded hover:bg-[#714B67]"
-                                x-text="multiple ? (pendingIds.length ? `Add (${pendingIds.length})` : 'Add') : 'Select'">
+                                x-text="multiple ? (pendingIds.length ? `{{ __('common.add') }} (${pendingIds.length})` : '{{ __('common.add') }}') : '{{ __('common.select') }}'">
                         </button>
                         @if($canCreate && $createUrl)
                         <a href="{{ $createUrl }}" class="px-4 py-2 bg-[#714B67] text-white text-sm font-semibold rounded hover:bg-[#5c3d55]">
-                            New
+                            {{ __('common.new') }}
                         </a>
                         @endif
                         <button type="button" @click="closeModal()" class="px-4 py-2 bg-gray-200 text-gray-700 text-sm font-semibold rounded hover:bg-gray-300">
-                            Close
+                            {{ __('common.close') }}
                         </button>
                     </div>
                 </div>

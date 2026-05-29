@@ -40,7 +40,7 @@
         <select name="amount_type" required
                 class="w-full border border-gray-300 rounded px-3 py-1.5 text-sm focus:outline-none focus:ring-1 focus:ring-purple-400 bg-white">
             @foreach($amountTypes as $key => $label)
-            <option value="{{ $key }}" @selected($val('amount_type', 'percent') === $key)>{{ $label }}</option>
+            <option value="{{ $key }}" @selected($val('amount_type', 'percent') === $key)>{{ trans()->has('accounting.amount_type_' . $key) ? __('accounting.amount_type_' . $key) : $label }}</option>
             @endforeach
         </select>
         @error('amount_type')<p class="text-xs text-red-500 mt-1">{{ $message }}</p>@enderror
@@ -62,7 +62,7 @@
         <select name="type_tax_use" required
                 class="w-full border border-gray-300 rounded px-3 py-1.5 text-sm focus:outline-none focus:ring-1 focus:ring-purple-400 bg-white">
             @foreach($typeTaxUse as $key => $label)
-            <option value="{{ $key }}" @selected($val('type_tax_use', 'sale') === $key)>{{ $label }}</option>
+            <option value="{{ $key }}" @selected($val('type_tax_use', 'sale') === $key)>{{ trans()->has('accounting.tax_use_short_' . $key) ? __('accounting.tax_use_short_' . $key) : $label }}</option>
             @endforeach
         </select>
         @error('type_tax_use')<p class="text-xs text-red-500 mt-1">{{ $message }}</p>@enderror

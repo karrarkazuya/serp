@@ -149,7 +149,8 @@
     </x-list>
 
     @else
-    <x-list :paginator="$users" :empty-text="__('settings.no_users')" :selectable="true" :total-count="$users->total()" :model="\App\Models\User::class">
+    <x-list :paginator="$users" :empty-text="__('settings.no_users')" :selectable="true" :total-count="$users->total()" :model="\App\Models\User::class"
+            :bulk-delete-url="route('settings.users.bulk-delete')">
         <x-slot:columns>
             <x-sortable-th column="name" :label="__('common.name')" class="px-6" :default="true" />
             <x-sortable-th column="email" :label="__('common.email')" />

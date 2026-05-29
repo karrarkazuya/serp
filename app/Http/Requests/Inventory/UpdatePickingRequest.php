@@ -40,7 +40,7 @@ class UpdatePickingRequest extends FormRequest
             // but the FK rule must still company-scope to block cross-tenant id injection.
             'moves.*.id'          => ['nullable', 'integer', $moveRule],
             'moves.*.product_id'  => ['required_with:moves', $productRule],
-            'moves.*.uom_id'      => ['required_with:moves', 'exists:inventory_uoms,id'],
+            'moves.*.uom_id'      => ['required_with:moves', 'exists:inventory_uoms,id', $this->uomMatchingProductCategoryRule()],
             'moves.*.product_qty' => ['required_with:moves', 'numeric', 'min:0.0001'],
             'moves.*.qty_done'    => ['nullable', 'numeric', 'min:0'],
             'moves.*.sequence'    => ['nullable', 'integer'],

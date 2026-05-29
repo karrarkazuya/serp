@@ -13,7 +13,7 @@ class ProductService
     public function create(array $data): Product
     {
         $product = Product::create($data);
-        $this->chatterService->logCreated($product, 'Product');
+        $this->chatterService->logCreated($product, __('inventory.chatter_label_product'));
         return $product;
     }
 
@@ -22,7 +22,7 @@ class ProductService
         $changes = $this->detectChanges($product, $data);
         $product->update($data);
         if (!empty($changes)) {
-            $this->chatterService->logUpdated($product, $changes, 'Product');
+            $this->chatterService->logUpdated($product, $changes, __('inventory.chatter_label_product'));
         }
         return $product->fresh();
     }
@@ -30,20 +30,20 @@ class ProductService
     public function archive(Product $product): Product
     {
         $product->update(['active' => false]);
-        $this->chatterService->logArchived($product, 'Product');
+        $this->chatterService->logArchived($product, __('inventory.chatter_label_product'));
         return $product;
     }
 
     public function unarchive(Product $product): Product
     {
         $product->update(['active' => true]);
-        $this->chatterService->logUnarchived($product, 'Product');
+        $this->chatterService->logUnarchived($product, __('inventory.chatter_label_product'));
         return $product;
     }
 
     public function delete(Product $product): void
     {
-        $this->chatterService->log($product, 'Product deleted.', 'system');
+        $this->chatterService->log($product, __('inventory.chatter_product_deleted'), 'system');
         $product->delete();
     }
 

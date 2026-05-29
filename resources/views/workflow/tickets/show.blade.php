@@ -56,7 +56,7 @@
             <div x-data="{ open: false }" class="relative" @click.outside="open=false">
                 <button @click="open=!open" class="px-3 py-1.5 text-sm text-red-700 border border-red-300 rounded hover:bg-red-50">{{ __('workflow.return') }}</button>
                 <div x-show="open" x-transition style="display:none"
-                     class="absolute right-0 top-full mt-1.5 w-80 bg-white rounded-xl shadow-xl border border-gray-200 z-30 p-4">
+                     class="absolute end-0 top-full mt-1.5 w-80 bg-white rounded-xl shadow-xl border border-gray-200 z-30 p-4">
                     <form method="POST" action="{{ route('workflow.tickets.close', $ticket) }}">
                         @csrf @method('PATCH')
                         @if($previousChain->count() > 1)
@@ -112,7 +112,7 @@
                     {{ __('workflow.sharing_on') }}
                 </button>
                 <div x-show="open" x-transition style="display:none"
-                     class="absolute right-0 top-full mt-1.5 w-80 bg-white rounded-xl shadow-xl border border-gray-100 z-30 p-3">
+                     class="absolute end-0 top-full mt-1.5 w-80 bg-white rounded-xl shadow-xl border border-gray-100 z-30 p-3">
                     <p class="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">{{ __('workflow.share_link') }}</p>
                     <div class="flex items-center gap-2 mb-3">
                         <input type="text" readonly value="{{ $ticket->sharedLink->shareUrl() }}"

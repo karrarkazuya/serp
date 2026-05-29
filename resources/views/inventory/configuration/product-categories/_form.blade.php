@@ -21,18 +21,27 @@
 
 <div class="flex items-center gap-4 py-2 border-b border-gray-100">
     <label class="w-40 shrink-0 text-sm text-gray-500">{{ __('inventory.removal_strategy') }}</label>
+    {{-- `closest_location` removed: the picker has no warehouse-coordinate
+         model so it silently behaved as FIFO. Legacy values still display
+         via the model accessor; this dropdown lists only what runs. --}}
     <select name="removal_strategy" class="flex-1 text-sm text-gray-800 bg-transparent border-0 focus:outline-none focus:ring-0 px-0 py-0.5">
-        @foreach(['fifo' => 'First In First Out (FIFO)', 'lifo' => 'Last In First Out (LIFO)', 'fefo' => 'First Expiry First Out (FEFO)', 'closest_location' => 'Closest Location'] as $k => $v)
+        @foreach(['fifo' => __('inventory.removal_fifo'), 'lifo' => __('inventory.removal_lifo'), 'fefo' => __('inventory.removal_fefo')] as $k => $v)
         <option value="{{ $k }}" {{ $val('removal_strategy', 'fifo') === $k ? 'selected' : '' }}>{{ $v }}</option>
         @endforeach
     </select>
 </div>
 
 <div class="flex items-center gap-4 py-2 border-b border-gray-100">
-    <label class="w-40 shrink-0 text-sm text-gray-500">{{ __('inventory.costing_method') }}</label>
+    <label class="w-40 shrink-0 text-sm text-gray-500">
+        {{ __('inventory.costing_method') }}
+        <span class="ml-1 text-[10px] font-medium text-amber-600 uppercase tracking-wide">{{ __('inventory.stored_only') }}</span>
+    </label>
     <select name="costing_method" class="flex-1 text-sm text-gray-800 bg-transparent border-0 focus:outline-none focus:ring-0 px-0 py-0.5">
-        @foreach(['standard_price' => 'Standard Price', 'average_cost' => 'Average Cost (AVCO)', 'fifo' => 'First In First Out (FIFO)'] as $k => $v)
+        @foreach(['standard_price' => __('inventory.costing_standard'), 'average_cost' => __('inventory.costing_avco'), 'fifo' => __('inventory.removal_fifo')] as $k => $v)
         <option value="{{ $k }}" {{ $val('costing_method', 'standard_price') === $k ? 'selected' : '' }}>{{ $v }}</option>
         @endforeach
     </select>
 </div>
+<p class="text-xs text-amber-600 mt-1 mb-2 ms-44">
+    {{ __('inventory.costing_method_not_consumed') }}
+</p>

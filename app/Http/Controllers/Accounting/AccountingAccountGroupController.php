@@ -96,11 +96,19 @@ class AccountingAccountGroupController extends Controller
         if (!empty($data['parent_id'])) {
             $parent = AccountingAccountGroup::findOrFail($data['parent_id']);
             abort_unless(in_array($parent->company_id, $activeCompanyIds), 403);
+
+            // Catch pre-existing corruption (a cyclic chain that would
+            // hang the tree builder if we extended it). Self-parenting is
+            // structurally impossible at create time because the row doesn't
+            // exist yet, so we only check the proposed parent's chain.
+            if ($this->parentChainHasCycle((int) $data['parent_id'])) {
+                return back()->withInput()->with('error', __('accounting.parent_cycle'));
+            }
         }
 
         $group = DB::transaction(fn () => AccountingAccountGroup::create($data));
 
-        return redirect()->route('accounting.account-groups.show', $group)->with('success', 'Account group created.');
+        return redirect()->route('accounting.account-groups.show', $group)->with('success', __('accounting.created'));
     }
 
     public function edit(AccountingAccountGroup $accountGroup)
@@ -128,11 +136,21 @@ class AccountingAccountGroupController extends Controller
         if (!empty($data['parent_id'])) {
             $parent = AccountingAccountGroup::findOrFail($data['parent_id']);
             abort_unless(in_array($parent->company_id, $activeCompanyIds), 403);
+
+            // Cycle guard (Rule 11): block self-parenting and walks where
+            // the proposed parent eventually points back at $accountGroup.
+            $parentId = (int) $data['parent_id'];
+            if ($parentId === $accountGroup->id
+                || $this->isGroupDescendantOf($parentId, $accountGroup->id)
+                || $this->parentChainHasCycle($parentId)
+            ) {
+                return back()->withInput()->with('error', __('accounting.parent_cycle'));
+            }
         }
 
         DB::transaction(fn () => $accountGroup->update($data));
 
-        return redirect()->route('accounting.account-groups.show', $accountGroup)->with('success', 'Account group updated.');
+        return redirect()->route('accounting.account-groups.show', $accountGroup)->with('success', __('accounting.updated'));
     }
 
     public function unlink(Request $request, AccountingAccountGroup $accountGroup)
@@ -143,7 +161,7 @@ class AccountingAccountGroupController extends Controller
 
         DB::transaction(fn () => $accountGroup->delete());
 
-        return redirect()->route('accounting.account-groups.index')->with('success', 'Account group deleted.');
+        return redirect()->route('accounting.account-groups.index')->with('success', __('accounting.deleted'));
     }
 
     public function addComment(Request $request, AccountingAccountGroup $accountGroup)
@@ -155,6 +173,37 @@ class AccountingAccountGroupController extends Controller
         $request->validate(['body' => 'required|string|max:5000']);
         DB::transaction(fn () => $accountGroup->logComment($request->body));
 
-        return back()->with('success', 'Comment added.');
+        return back()->with('success', __('accounting.comment_added'));
+    }
+
+    /**
+     * Cycle guard helpers (Rule 11). Bounded at 64 hops to terminate even on
+     * pre-existing cyclic data — account groups are organisational hierarchy,
+     * so a chart deeper than 64 levels is fictional.
+     */
+    private function isGroupDescendantOf(int $startId, int $candidateId): bool
+    {
+        $cursor = $startId;
+        for ($i = 0; $i < 64 && $cursor; $i++) {
+            if ($cursor === $candidateId) {
+                return true;
+            }
+            $cursor = (int) (AccountingAccountGroup::whereKey($cursor)->value('parent_id') ?? 0);
+        }
+        return false;
+    }
+
+    private function parentChainHasCycle(int $startId): bool
+    {
+        $seen = [];
+        $cursor = $startId;
+        for ($i = 0; $i < 64 && $cursor; $i++) {
+            if (isset($seen[$cursor])) {
+                return true;
+            }
+            $seen[$cursor] = true;
+            $cursor = (int) (AccountingAccountGroup::whereKey($cursor)->value('parent_id') ?? 0);
+        }
+        return false;
     }
 }

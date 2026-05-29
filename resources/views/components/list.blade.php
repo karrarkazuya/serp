@@ -94,18 +94,18 @@
 
         {{-- Normal selection mode --}}
         <div x-show="!deleteConfirming" class="flex items-center gap-3 w-full" style="display:none">
-            <span class="font-semibold text-purple-900" x-text="`${selectionCount} selected`"></span>
+            <span class="font-semibold text-purple-900" x-text="`${selectionCount} {{ __('common.selected') }}`"></span>
 
             <template x-if="!selectAllPages && totalCount > selected.length && totalCount > 0">
                 <button type="button"
                         @click="selectAllPages = true"
                         class="text-purple-600 hover:text-purple-800 font-medium underline-offset-2 hover:underline">
-                    Select all <span x-text="totalCount"></span>
+                    {{ __('common.select_all_n') }} <span x-text="totalCount"></span>
                 </button>
             </template>
             <template x-if="selectAllPages">
                 <span class="text-purple-700 font-medium">
-                    All <span x-text="totalCount"></span> selected
+                    {{ __('common.all') }} <span x-text="totalCount"></span> {{ __('common.selected') }}
                 </span>
             </template>
 
@@ -119,7 +119,7 @@
                         <svg class="w-4 h-4 text-gray-500" fill="currentColor" viewBox="0 0 20 20">
                             <path fill-rule="evenodd" d="M11.49 2.17c-.38-1.56-2.6-1.56-2.98 0a1.53 1.53 0 01-2.29.95c-1.37-.84-2.94.73-2.1 2.1.54.89.06 2.05-.95 2.29-1.56.38-1.56 2.6 0 2.98 1.01.24 1.49 1.4.95 2.29-.84 1.37.73 2.94 2.1 2.1.89-.54 2.05-.06 2.29.95.38 1.56 2.6 1.56 2.98 0 .24-1.01 1.4-1.49 2.29-.95 1.37.84 2.94-.73 2.1-2.1-.54-.89-.06-2.05.95-2.29 1.56-.38 1.56-2.6 0-2.98a1.53 1.53 0 01-.95-2.29c.84-1.37-.73-2.94-2.1-2.1a1.53 1.53 0 01-2.29-.95zM10 13a3 3 0 100-6 3 3 0 000 6z" clip-rule="evenodd"/>
                         </svg>
-                        Actions
+                        {{ __('common.actions') }}
                         <svg class="w-3.5 h-3.5 text-gray-400" fill="currentColor" viewBox="0 0 20 20">
                             <path fill-rule="evenodd" d="M5.23 7.21a.75.75 0 011.06.02L10 11.17l3.71-3.94a.75.75 0 111.08 1.04l-4.25 4.5a.75.75 0 01-1.08 0l-4.25-4.5a.75.75 0 01.02-1.06z" clip-rule="evenodd"/>
                         </svg>
@@ -135,7 +135,7 @@
                             <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/>
                             </svg>
-                            Export
+                            {{ __('common.export') }}
                         </button>
                         <div class="border-t border-gray-100 my-1"></div>
                         <button type="button"
@@ -144,7 +144,7 @@
                             <svg class="w-4 h-4 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/>
                             </svg>
-                            Export All
+                            {{ __('common.export_all') }}
                         </button>
                         @endif
                         @if($canDelete)
@@ -155,7 +155,7 @@
                             <svg class="w-4 h-4 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
                             </svg>
-                            Delete
+                            {{ __('common.delete') }}
                         </button>
                         @endif
                     </div>
@@ -166,7 +166,7 @@
                 <button type="button"
                         @click="clearSelection()"
                         class="w-7 h-7 flex items-center justify-center text-purple-400 hover:text-purple-700 hover:bg-purple-100 rounded transition-colors"
-                        title="Clear selection">
+                        title="{{ __('common.clear_selection') }}">
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
                     </svg>
@@ -180,20 +180,20 @@
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
             </svg>
             <span class="font-semibold text-red-800">
-                Delete <span x-text="selectionCount"></span> <span x-show="selectionCount === 1">record</span><span x-show="selectionCount !== 1">records</span>?
+                {{ __('common.delete_n_records') }} <span x-text="selectionCount"></span> <span x-show="selectionCount === 1">{{ __('common.record_singular') }}</span><span x-show="selectionCount !== 1">{{ __('common.records_plural') }}</span>?
             </span>
-            <span class="text-xs text-red-500">Items that cannot be deleted will be skipped.</span>
+            <span class="text-xs text-red-500">{{ __('common.items_skipped_on_delete') }}</span>
             <div class="ms-auto flex items-center gap-2">
                 <button type="button"
                         @click="confirmDelete()"
-                        @if(!$bulkDeleteUrl) disabled title="Bulk delete not configured for this list" @endif
+                        @if(!$bulkDeleteUrl) disabled title="{{ __('common.bulk_delete_not_configured') }}" @endif
                         class="px-3 py-1.5 bg-red-600 text-white text-sm font-semibold rounded hover:bg-red-700 disabled:opacity-40 disabled:cursor-not-allowed transition-colors">
-                    Yes, delete
+                    {{ __('common.yes_delete') }}
                 </button>
                 <button type="button"
                         @click="cancelDelete()"
                         class="px-3 py-1.5 bg-white border border-gray-300 text-gray-700 text-sm rounded hover:bg-gray-50 transition-colors">
-                    Cancel
+                    {{ __('common.cancel') }}
                 </button>
             </div>
         </div>

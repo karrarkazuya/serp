@@ -47,7 +47,7 @@
                        class="w-full text-sm border border-gray-300 rounded px-2 py-1.5 focus:outline-none focus:ring-0 focus:border-purple-500">
             </div>
             <button type="submit" class="px-3 py-1.5 text-sm font-medium text-white bg-[#71639e] hover:bg-[#5c527f] rounded">{{ __('accounting.btn_filter') }}</button>
-            <a href="{{ route('accounting.audit') }}" class="px-3 py-1.5 text-sm text-gray-600 border border-gray-300 rounded hover:bg-gray-50">Reset</a>
+            <a href="{{ route('accounting.audit') }}" class="px-3 py-1.5 text-sm text-gray-600 border border-gray-300 rounded hover:bg-gray-50">{{ __('common.reset') }}</a>
         </form>
     </div>
 

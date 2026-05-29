@@ -2,10 +2,12 @@
 
 namespace Tests\Feature\Inventory;
 
+use App\Models\Contacts\Contact;
 use App\Models\Inventory\Location;
 use App\Models\Inventory\OperationType;
 use App\Models\Inventory\Picking;
 use App\Models\Inventory\Product;
+use App\Models\Inventory\ProductSupplier;
 use App\Models\Inventory\ReorderRule;
 use App\Models\Inventory\Uom;
 use App\Models\Inventory\Warehouse;
@@ -368,6 +370,130 @@ class InventoryReorderRuleTest extends TestCase
             ->withSession(['active_company_ids' => [$this->company->id]])
             ->post(route('inventory.replenishment.replenish', $otherRule))
             ->assertForbidden();
+    }
+
+    // ── ProductSupplier wiring (Odoo parity Phase 3) ──────────────────────────
+
+    /**
+     * Without a configured vendor, the replenish receipt has nowhere to send
+     * the PO request when that pipeline lands — orphan receipts that no one
+     * has to chase. Wire it now so the partner_id is stamped as soon as the
+     * vendor is set on the product.
+     */
+    public function test_replenish_stamps_primary_supplier_partner_on_receipt(): void
+    {
+        $vendor = Contact::create([
+            'company_id'  => $this->company->id,
+            'name'        => 'ACME Supplies',
+            'is_supplier' => true,
+            'active'      => true,
+            'created_by'  => $this->admin->id,
+            'updated_by'  => $this->admin->id,
+        ]);
+        ProductSupplier::create([
+            'product_id' => $this->product->id,
+            'partner_id' => $vendor->id,
+            'min_qty'    => 1,
+            'price'      => 5.0,
+            'delay'      => 7,
+            'active'     => true,
+            'created_by' => $this->admin->id,
+            'updated_by' => $this->admin->id,
+        ]);
+
+        $rule = $this->createRule(qtyMin: 10, qtyMax: 100, qtyOnHand: 0);
+
+        $this->actingAs($this->admin)
+            ->withSession(['active_company_ids' => [$this->company->id]])
+            ->post(route('inventory.replenishment.replenish', $rule));
+
+        $picking = Picking::where('company_id', $this->company->id)
+            ->where('origin', 'Replenishment')->first();
+        $this->assertNotNull($picking);
+        $this->assertSame($vendor->id, $picking->partner_id);
+    }
+
+    public function test_replenish_uses_supplier_delay_when_rule_has_no_lead_days(): void
+    {
+        $vendor = Contact::create([
+            'company_id'  => $this->company->id,
+            'name'        => 'Slow Supplier',
+            'is_supplier' => true, 'active' => true,
+            'created_by'  => $this->admin->id, 'updated_by' => $this->admin->id,
+        ]);
+        ProductSupplier::create([
+            'product_id' => $this->product->id, 'partner_id' => $vendor->id,
+            'min_qty' => 1, 'price' => 5.0, 'delay' => 14,
+            'active' => true,
+            'created_by' => $this->admin->id, 'updated_by' => $this->admin->id,
+        ]);
+
+        // Rule has lead_days = 0 → supplier.delay should be used
+        $rule = $this->createRule(qtyMin: 0, qtyMax: 100, qtyOnHand: 0, leadDays: 0);
+
+        $this->actingAs($this->admin)
+            ->withSession(['active_company_ids' => [$this->company->id]])
+            ->post(route('inventory.replenishment.replenish', $rule));
+
+        $picking = Picking::where('origin', 'Replenishment')->first();
+        $this->assertSame(now()->addDays(14)->toDateString(), $picking->scheduled_date->toDateString());
+    }
+
+    public function test_replenish_rule_lead_days_takes_precedence_over_supplier_delay(): void
+    {
+        $vendor = Contact::create([
+            'company_id'  => $this->company->id,
+            'name'        => 'Slow Supplier',
+            'is_supplier' => true, 'active' => true,
+            'created_by'  => $this->admin->id, 'updated_by' => $this->admin->id,
+        ]);
+        ProductSupplier::create([
+            'product_id' => $this->product->id, 'partner_id' => $vendor->id,
+            'min_qty' => 1, 'price' => 5.0, 'delay' => 14,
+            'active' => true,
+            'created_by' => $this->admin->id, 'updated_by' => $this->admin->id,
+        ]);
+
+        // Rule says 3 days → wins over supplier's 14
+        $rule = $this->createRule(qtyMin: 0, qtyMax: 100, qtyOnHand: 0, leadDays: 3);
+
+        $this->actingAs($this->admin)
+            ->withSession(['active_company_ids' => [$this->company->id]])
+            ->post(route('inventory.replenishment.replenish', $rule));
+
+        $picking = Picking::where('origin', 'Replenishment')->first();
+        $this->assertSame(now()->addDays(3)->toDateString(), $picking->scheduled_date->toDateString());
+    }
+
+    public function test_primary_supplier_picks_lowest_delay_among_actives(): void
+    {
+        $slow = Contact::create([
+            'company_id' => $this->company->id, 'name' => 'Slow',
+            'is_supplier' => true, 'active' => true,
+            'created_by' => $this->admin->id, 'updated_by' => $this->admin->id,
+        ]);
+        $fast = Contact::create([
+            'company_id' => $this->company->id, 'name' => 'Fast',
+            'is_supplier' => true, 'active' => true,
+            'created_by' => $this->admin->id, 'updated_by' => $this->admin->id,
+        ]);
+        ProductSupplier::create(['product_id' => $this->product->id, 'partner_id' => $slow->id, 'min_qty' => 1, 'price' => 4.0, 'delay' => 30, 'active' => true, 'created_by' => $this->admin->id, 'updated_by' => $this->admin->id]);
+        ProductSupplier::create(['product_id' => $this->product->id, 'partner_id' => $fast->id, 'min_qty' => 1, 'price' => 5.0, 'delay' => 2,  'active' => true, 'created_by' => $this->admin->id, 'updated_by' => $this->admin->id]);
+
+        $primary = $this->product->primarySupplier();
+        $this->assertSame($fast->id, $primary->partner_id);
+    }
+
+    public function test_primary_supplier_skips_inactive_rows(): void
+    {
+        $inactive = Contact::create(['company_id' => $this->company->id, 'name' => 'Old', 'is_supplier' => true, 'active' => true, 'created_by' => $this->admin->id, 'updated_by' => $this->admin->id]);
+        $active   = Contact::create(['company_id' => $this->company->id, 'name' => 'New', 'is_supplier' => true, 'active' => true, 'created_by' => $this->admin->id, 'updated_by' => $this->admin->id]);
+        // The inactive entry has the BEST delay — but should be ignored
+        ProductSupplier::create(['product_id' => $this->product->id, 'partner_id' => $inactive->id, 'min_qty' => 1, 'price' => 4.0, 'delay' => 1,  'active' => false, 'created_by' => $this->admin->id, 'updated_by' => $this->admin->id]);
+        ProductSupplier::create(['product_id' => $this->product->id, 'partner_id' => $active->id,   'min_qty' => 1, 'price' => 5.0, 'delay' => 10, 'active' => true,  'created_by' => $this->admin->id, 'updated_by' => $this->admin->id]);
+
+        $primary = $this->product->primarySupplier();
+        $this->assertSame($active->id, $primary->partner_id);
     }
 
     // ── Helpers ───────────────────────────────────────────────────────────────

@@ -54,7 +54,7 @@
                         <div class="flex items-center gap-4 py-2 border-b border-gray-100">
                             <label class="w-40 shrink-0 text-sm text-gray-500">{{ __('inventory.action') }}</label>
                             <select name="reservation_method" class="flex-1 text-sm bg-transparent border-0 focus:outline-none px-0 py-0.5">
-                                @foreach(['at_confirm' => 'At Confirmation', 'before_scheduled' => 'Before Scheduled Date', 'manual' => 'Manually'] as $k => $v)
+                                @foreach(['at_confirm' => __('inventory.reservation_at_confirm'), 'before_scheduled' => __('inventory.reservation_before_scheduled'), 'manual' => __('inventory.reservation_manual')] as $k => $v)
                                 <option value="{{ $k }}" {{ old('reservation_method', $operationType->reservation_method) === $k ? 'selected' : '' }}>{{ $v }}</option>
                                 @endforeach
                             </select>

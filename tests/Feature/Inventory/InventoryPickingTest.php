@@ -6,6 +6,8 @@ use App\Models\Inventory\Location;
 use App\Models\Inventory\OperationType;
 use App\Models\Inventory\Picking;
 use App\Models\Inventory\Product;
+use App\Models\Inventory\ProductCategory;
+use App\Models\Inventory\PutawayRule;
 use App\Models\Inventory\Quant;
 use App\Models\Inventory\Uom;
 use App\Models\Settings\Company;
@@ -458,6 +460,338 @@ class InventoryPickingTest extends TestCase
             ->withSession(['active_company_ids' => [$this->company->id]])
             ->get(route('inventory.transfers.show', $otherPickingId))
             ->assertForbidden();
+    }
+
+    // ── UoM conversion (Odoo parity Phase 1) ──────────────────────────────────
+
+    /**
+     * Quants are stored in product reference UoM (`kg` here). When a transfer
+     * is entered in a smaller UoM (`g`, ratio 0.001), the service must convert
+     * before touching the quant — otherwise transferring 500 g of a kg-tracked
+     * product would only remove 500 kg from the source (1000× over-subtract,
+     * driving stock negative and silently triggering the insufficient-on-hand
+     * guard for legitimate movements).
+     */
+    public function test_validate_converts_smaller_uom_qty_into_product_reference_uom(): void
+    {
+        $kg = Uom::where('name', 'kg')->firstOrFail();
+        $g  = Uom::where('name', 'g')->firstOrFail();
+        $product = Product::create([
+            'name'         => 'Bulk Powder',
+            'company_id'   => $this->company->id,
+            'uom_id'       => $kg->id,
+            'uom_po_id'    => $kg->id,
+            'product_type' => 'storable',
+            'tracking'     => 'none',
+            'active'       => true,
+            'created_by'   => $this->admin->id,
+            'updated_by'   => $this->admin->id,
+        ]);
+        Quant::create([
+            'company_id'  => $this->company->id,
+            'product_id'  => $product->id,
+            'location_id' => $this->srcLocation->id,
+            'quantity'    => 10.0, // 10 kg on hand
+            'in_date'     => now(),
+            'created_by'  => $this->admin->id,
+            'updated_by'  => $this->admin->id,
+        ]);
+
+        // Transfer 500 g (= 0.5 kg)
+        $picking = $this->pickingService->create(
+            [
+                'company_id'        => $this->company->id,
+                'operation_type_id' => $this->operationType->id,
+                'location_src_id'   => $this->srcLocation->id,
+                'location_dest_id'  => $this->destLocation->id,
+                'scheduled_date'    => now()->toDateString(),
+                'active'            => true,
+            ],
+            [['product_id' => $product->id, 'uom_id' => $g->id, 'product_qty' => 500.0, 'name' => $product->name]]
+        );
+        $this->pickingService->confirm($picking);
+        $picking = $this->pickingService->validate($picking->fresh())['picking'];
+
+        $this->assertTrue($picking->isDone());
+        $srcQuant = Quant::where('product_id', $product->id)->where('location_id', $this->srcLocation->id)->first();
+        // 10 kg − 0.5 kg = 9.5 kg (NOT 10 − 500 = −490)
+        $this->assertEqualsWithDelta(9.5, (float) $srcQuant->quantity, 0.0001);
+    }
+
+    public function test_check_availability_converts_smaller_uom_for_reservation(): void
+    {
+        $kg = Uom::where('name', 'kg')->firstOrFail();
+        $g  = Uom::where('name', 'g')->firstOrFail();
+        $product = Product::create([
+            'name' => 'Bulk Powder', 'company_id' => $this->company->id,
+            'uom_id' => $kg->id, 'uom_po_id' => $kg->id,
+            'product_type' => 'storable', 'tracking' => 'none', 'active' => true,
+            'created_by' => $this->admin->id, 'updated_by' => $this->admin->id,
+        ]);
+        Quant::create([
+            'company_id'  => $this->company->id,
+            'product_id'  => $product->id,
+            'location_id' => $this->srcLocation->id,
+            'quantity'    => 2.0, // 2 kg on hand
+            'in_date'     => now(),
+            'created_by'  => $this->admin->id,
+            'updated_by'  => $this->admin->id,
+        ]);
+
+        // Reserve 1500 g (= 1.5 kg)
+        $picking = $this->pickingService->create(
+            [
+                'company_id'        => $this->company->id,
+                'operation_type_id' => $this->operationType->id,
+                'location_src_id'   => $this->srcLocation->id,
+                'location_dest_id'  => $this->destLocation->id,
+                'scheduled_date'    => now()->toDateString(),
+                'active'            => true,
+            ],
+            [['product_id' => $product->id, 'uom_id' => $g->id, 'product_qty' => 1500.0, 'name' => $product->name]]
+        );
+        $this->pickingService->confirm($picking);
+        $picking = $this->pickingService->checkAvailability($picking);
+
+        $this->assertTrue($picking->isAssigned());
+        // Quant reserved_quantity is in product UoM (kg): 1500 g → 1.5 kg
+        $quant = Quant::where('product_id', $product->id)->where('location_id', $this->srcLocation->id)->first();
+        $this->assertEqualsWithDelta(1.5, (float) $quant->reserved_quantity, 0.0001);
+        // move.reserved_qty is in move UoM (g) — should display the original 1500 g
+        $this->assertEqualsWithDelta(1500.0, (float) $picking->moves()->first()->reserved_qty, 0.0001);
+    }
+
+    public function test_cancel_releases_full_quant_reservation_after_uom_conversion(): void
+    {
+        $kg = Uom::where('name', 'kg')->firstOrFail();
+        $g  = Uom::where('name', 'g')->firstOrFail();
+        $product = Product::create([
+            'name' => 'Bulk Powder', 'company_id' => $this->company->id,
+            'uom_id' => $kg->id, 'uom_po_id' => $kg->id,
+            'product_type' => 'storable', 'tracking' => 'none', 'active' => true,
+            'created_by' => $this->admin->id, 'updated_by' => $this->admin->id,
+        ]);
+        Quant::create([
+            'company_id' => $this->company->id, 'product_id' => $product->id,
+            'location_id' => $this->srcLocation->id, 'quantity' => 5.0, 'in_date' => now(),
+            'created_by' => $this->admin->id, 'updated_by' => $this->admin->id,
+        ]);
+
+        $picking = $this->pickingService->create(
+            [
+                'company_id'        => $this->company->id,
+                'operation_type_id' => $this->operationType->id,
+                'location_src_id'   => $this->srcLocation->id,
+                'location_dest_id'  => $this->destLocation->id,
+                'scheduled_date'    => now()->toDateString(),
+                'active'            => true,
+            ],
+            [['product_id' => $product->id, 'uom_id' => $g->id, 'product_qty' => 2500.0, 'name' => $product->name]]
+        );
+        $this->pickingService->confirm($picking);
+        $this->pickingService->checkAvailability($picking);
+        $this->pickingService->cancel($picking->fresh());
+
+        $quant = Quant::where('product_id', $product->id)->where('location_id', $this->srcLocation->id)->first();
+        // Without UoM conversion in releaseMoveReservation, this would still
+        // show 2.5 − 2500 = −2497.5 kg "reserved" (or 0 floored, but with
+        // 2497.5 kg of phantom reservation leaked across the system).
+        $this->assertEqualsWithDelta(0.0, (float) $quant->reserved_quantity, 0.0001);
+    }
+
+    public function test_cross_category_uom_rejected_by_form_validation(): void
+    {
+        $kg = Uom::where('name', 'kg')->firstOrFail();
+        $cm = Uom::where('name', 'cm')->firstOrFail(); // length category, not weight
+        $product = Product::create([
+            'name' => 'Bulk Powder', 'company_id' => $this->company->id,
+            'uom_id' => $kg->id, 'uom_po_id' => $kg->id,
+            'product_type' => 'storable', 'tracking' => 'none', 'active' => true,
+            'created_by' => $this->admin->id, 'updated_by' => $this->admin->id,
+        ]);
+
+        $this->actingAs($this->admin)
+            ->withSession(['active_company_ids' => [$this->company->id]])
+            ->post(route('inventory.transfers.store'), [
+                'company_id'        => $this->company->id,
+                'operation_type_id' => $this->operationType->id,
+                'location_src_id'   => $this->srcLocation->id,
+                'location_dest_id'  => $this->destLocation->id,
+                'scheduled_date'    => now()->toDateString(),
+                'moves'             => [[
+                    'product_id'  => $product->id,
+                    'uom_id'      => $cm->id, // mismatched category
+                    'product_qty' => 1.0,
+                ]],
+            ])
+            ->assertSessionHasErrors(['moves.0.uom_id']);
+    }
+
+    public function test_uom_model_convertqty_throws_on_cross_category(): void
+    {
+        $kg = Uom::where('name', 'kg')->firstOrFail();
+        $cm = Uom::where('name', 'cm')->firstOrFail();
+        $this->expectException(\RuntimeException::class);
+        $kg->convertQty(1.0, $cm);
+    }
+
+    // ── Putaway rules (Odoo parity Phase 2) ───────────────────────────────────
+
+    /**
+     * Receiving "Bulk Powder" at the warehouse Stock should automatically
+     * redirect to its designated bin when a product-specific putaway rule
+     * matches. The picking-level dest stays at Stock so the receipt header
+     * still reads as a warehouse-level transfer; only the move row carries
+     * the refined location.
+     */
+    public function test_addmove_redirects_dest_via_product_specific_putaway_rule(): void
+    {
+        $bin = Location::create([
+            'company_id' => $this->company->id,
+            'name'       => 'Aisle A / Shelf 3',
+            'parent_id'  => $this->srcLocation->id,
+            'usage'      => 'internal',
+            'active'     => true,
+        ]);
+
+        PutawayRule::create([
+            'company_id'        => $this->company->id,
+            'location_id'       => $this->srcLocation->id,
+            'fixed_location_id' => $bin->id,
+            'product_id'        => $this->product->id,
+            'sequence'          => 10,
+            'active'            => true,
+        ]);
+
+        // Receipt: supplier → Stock (should be redirected to the bin)
+        $supplier = Location::where('usage', 'supplier')->whereNull('company_id')->firstOrFail();
+        $incoming = OperationType::where('company_id', $this->company->id)->where('code', 'incoming')->firstOrFail();
+
+        $picking = $this->pickingService->create(
+            [
+                'company_id'        => $this->company->id,
+                'operation_type_id' => $incoming->id,
+                'location_src_id'   => $supplier->id,
+                'location_dest_id'  => $this->srcLocation->id,
+                'scheduled_date'    => now()->toDateString(),
+                'active'            => true,
+            ],
+            [['product_id' => $this->product->id, 'uom_id' => $this->uom->id, 'product_qty' => 5.0, 'name' => $this->product->name]]
+        );
+
+        $move = $picking->fresh()->moves()->first();
+        $this->assertSame($bin->id, $move->location_dest_id, 'Putaway rule should have redirected the move dest to the bin');
+        $this->assertSame($this->srcLocation->id, $picking->fresh()->location_dest_id, 'Picking-level dest must stay at the warehouse-level location');
+    }
+
+    public function test_putaway_rule_prefers_product_match_over_category_match(): void
+    {
+        $cat = ProductCategory::create([
+            'company_id' => $this->company->id,
+            'name'       => 'Bulk Powders',
+            'active'     => true,
+        ]);
+        $this->product->update(['category_id' => $cat->id]);
+
+        $categoryBin = Location::create([
+            'company_id' => $this->company->id, 'name' => 'Aisle A (category bin)',
+            'parent_id' => $this->srcLocation->id, 'usage' => 'internal', 'active' => true,
+        ]);
+        $productBin = Location::create([
+            'company_id' => $this->company->id, 'name' => 'Aisle B (product bin)',
+            'parent_id' => $this->srcLocation->id, 'usage' => 'internal', 'active' => true,
+        ]);
+
+        // Category rule (less specific) — would match if no product rule
+        PutawayRule::create([
+            'company_id'          => $this->company->id,
+            'location_id'         => $this->srcLocation->id,
+            'fixed_location_id'   => $categoryBin->id,
+            'product_category_id' => $cat->id,
+            'sequence'            => 5, // even with lower sequence, product rule wins
+            'active'              => true,
+        ]);
+        // Product rule (more specific) — should win
+        PutawayRule::create([
+            'company_id'        => $this->company->id,
+            'location_id'       => $this->srcLocation->id,
+            'fixed_location_id' => $productBin->id,
+            'product_id'        => $this->product->id,
+            'sequence'          => 100,
+            'active'            => true,
+        ]);
+
+        $supplier = Location::where('usage', 'supplier')->whereNull('company_id')->firstOrFail();
+        $incoming = OperationType::where('company_id', $this->company->id)->where('code', 'incoming')->firstOrFail();
+        $picking = $this->pickingService->create(
+            [
+                'company_id'        => $this->company->id,
+                'operation_type_id' => $incoming->id,
+                'location_src_id'   => $supplier->id,
+                'location_dest_id'  => $this->srcLocation->id,
+                'scheduled_date'    => now()->toDateString(),
+                'active'            => true,
+            ],
+            [['product_id' => $this->product->id, 'uom_id' => $this->uom->id, 'product_qty' => 5.0, 'name' => $this->product->name]]
+        );
+
+        $move = $picking->fresh()->moves()->first();
+        $this->assertSame($productBin->id, $move->location_dest_id);
+    }
+
+    public function test_putaway_rule_does_not_apply_to_non_internal_destinations(): void
+    {
+        $bin = Location::create([
+            'company_id' => $this->company->id, 'name' => 'Bin A',
+            'parent_id' => $this->srcLocation->id, 'usage' => 'internal', 'active' => true,
+        ]);
+        // Rule against the customer location — should never fire because
+        // resolveFor() refuses to redirect non-internal destinations.
+        PutawayRule::create([
+            'company_id'        => $this->company->id,
+            'location_id'       => $this->destLocation->id, // customer
+            'fixed_location_id' => $bin->id,
+            'product_id'        => $this->product->id,
+            'sequence'          => 10,
+            'active'            => true,
+        ]);
+
+        $picking = $this->createPicking(qty: 5); // outgoing → customer
+        $move    = $picking->fresh()->moves()->first();
+        $this->assertSame($this->destLocation->id, $move->location_dest_id);
+    }
+
+    public function test_inactive_putaway_rule_is_ignored(): void
+    {
+        $bin = Location::create([
+            'company_id' => $this->company->id, 'name' => 'Bin A',
+            'parent_id' => $this->srcLocation->id, 'usage' => 'internal', 'active' => true,
+        ]);
+        PutawayRule::create([
+            'company_id'        => $this->company->id,
+            'location_id'       => $this->srcLocation->id,
+            'fixed_location_id' => $bin->id,
+            'product_id'        => $this->product->id,
+            'sequence'          => 10,
+            'active'            => false, // archived
+        ]);
+
+        $supplier = Location::where('usage', 'supplier')->whereNull('company_id')->firstOrFail();
+        $incoming = OperationType::where('company_id', $this->company->id)->where('code', 'incoming')->firstOrFail();
+        $picking = $this->pickingService->create(
+            [
+                'company_id'        => $this->company->id,
+                'operation_type_id' => $incoming->id,
+                'location_src_id'   => $supplier->id,
+                'location_dest_id'  => $this->srcLocation->id,
+                'scheduled_date'    => now()->toDateString(),
+                'active'            => true,
+            ],
+            [['product_id' => $this->product->id, 'uom_id' => $this->uom->id, 'product_qty' => 5.0, 'name' => $this->product->name]]
+        );
+
+        $move = $picking->fresh()->moves()->first();
+        $this->assertSame($this->srcLocation->id, $move->location_dest_id);
     }
 
     // ── Helpers ───────────────────────────────────────────────────────────────

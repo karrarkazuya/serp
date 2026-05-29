@@ -114,7 +114,7 @@
 
             {{-- Header --}}
             <div class="flex items-center px-5 py-3.5 border-b border-gray-200 shrink-0">
-                <h2 class="text-base font-semibold text-gray-800">Export Data</h2>
+                <h2 class="text-base font-semibold text-gray-800">{{ __('common.export_data') }}</h2>
                 <button type="button" @click="open = false"
                         class="ms-auto text-gray-400 hover:text-gray-700 transition-colors">
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -126,7 +126,7 @@
             {{-- Options bar --}}
             <div class="flex flex-wrap items-center gap-4 px-5 py-3 bg-gray-50 border-b border-gray-200 shrink-0">
                 <div class="flex items-center gap-1.5 text-sm">
-                    <span class="text-gray-500 font-medium me-1">Export Format:</span>
+                    <span class="text-gray-500 font-medium me-1">{{ __('common.export_format') }}</span>
                     <label class="flex items-center gap-1.5 cursor-pointer">
                         <input type="radio" x-model="format" value="xlsx"
                                class="border-gray-300 text-purple-600 focus:ring-purple-500">
@@ -141,7 +141,7 @@
                 <label class="flex items-center gap-1.5 cursor-pointer text-sm border-s border-gray-200 ps-4">
                     <input type="checkbox" x-model="importCompatible"
                            class="rounded border-gray-300 text-purple-600 focus:ring-purple-500">
-                    <span class="text-gray-600">Import-compatible headers</span>
+                    <span class="text-gray-600">{{ __('common.import_compatible_headers') }}</span>
                 </label>
             </div>
 
@@ -152,11 +152,11 @@
                 <div class="flex flex-col min-h-0">
                     <div class="px-4 py-2.5 border-b border-gray-100 shrink-0">
                         <div class="flex items-center justify-between mb-2">
-                            <p class="text-xs font-semibold text-gray-500 uppercase tracking-wide">Available fields</p>
+                            <p class="text-xs font-semibold text-gray-500 uppercase tracking-wide">{{ __('common.available_fields') }}</p>
                             <button type="button" @click="addAllFields()"
                                     x-show="availableFields.length > 0"
                                     class="text-xs text-gray-400 hover:text-[#714B67] transition-colors">
-                                Add all
+                                {{ __('common.add_all') }}
                             </button>
                         </div>
                         <div class="relative">
@@ -165,7 +165,7 @@
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-5.2-5.2m1.7-5.3a7 7 0 11-14 0 7 7 0 0114 0z"/>
                                 </svg>
                             </span>
-                            <input type="text" x-model="fieldSearch" placeholder="Search"
+                            <input type="text" x-model="fieldSearch" placeholder="{{ __('common.search') }}"
                                    class="w-full pl-7 pr-3 py-1.5 text-sm border border-gray-200 rounded focus:outline-none focus:ring-1 focus:ring-purple-400">
                         </div>
                     </div>
@@ -183,8 +183,8 @@
                         </template>
                         <template x-if="availableFields.length === 0">
                             <p class="px-4 py-4 text-sm text-gray-400 text-center">
-                                <span x-show="fieldSearch !== ''">No fields match your search.</span>
-                                <span x-show="fieldSearch === ''">All fields added.</span>
+                                <span x-show="fieldSearch !== ''">{{ __('common.no_fields_match') }}</span>
+                                <span x-show="fieldSearch === ''">{{ __('common.all_fields_added') }}</span>
                             </p>
                         </template>
                     </div>
@@ -194,20 +194,20 @@
                 <div class="flex flex-col min-h-0">
                     <div class="px-4 py-2.5 border-b border-gray-100 shrink-0">
                         <div class="flex items-center justify-between">
-                            <p class="text-xs font-semibold text-gray-500 uppercase tracking-wide">Fields to export</p>
+                            <p class="text-xs font-semibold text-gray-500 uppercase tracking-wide">{{ __('common.fields_to_export') }}</p>
                             <div class="flex items-center gap-2">
-                                <span class="text-xs text-gray-400" x-text="`${toExport.length} selected`"></span>
+                                <span class="text-xs text-gray-400" x-text="`${toExport.length} {{ __('common.selected') }}`"></span>
                                 <button type="button" @click="removeAllFields()"
                                         x-show="toExport.length > 0"
                                         class="text-xs text-gray-400 hover:text-red-500 transition-colors">
-                                    Clear all
+                                    {{ __('common.clear_all') }}
                                 </button>
                             </div>
                         </div>
                     </div>
                     <div class="overflow-y-auto flex-1 py-1">
                         <template x-if="toExport.length === 0">
-                            <p class="px-4 py-4 text-sm text-gray-400 text-center">No fields selected yet.</p>
+                            <p class="px-4 py-4 text-sm text-gray-400 text-center">{{ __('common.no_fields_selected') }}</p>
                         </template>
                         <template x-for="(field, index) in toExport" :key="field.key">
                             <div class="flex items-center gap-1 px-4 py-1.5 hover:bg-gray-50 group">
@@ -247,15 +247,15 @@
                         @click="doExport()"
                         :disabled="toExport.length === 0"
                         class="px-4 py-2 bg-[#714B67] text-white text-sm font-semibold rounded hover:bg-[#5c3d55] disabled:opacity-50 disabled:cursor-not-allowed transition-colors">
-                    Export
+                    {{ __('common.export') }}
                 </button>
                 <button type="button"
                         @click="open = false"
                         class="px-4 py-2 bg-gray-100 text-gray-700 text-sm font-semibold rounded hover:bg-gray-200 transition-colors">
-                    Close
+                    {{ __('common.close') }}
                 </button>
-                <span class="ms-auto text-xs text-gray-400" x-show="mode === 'selected'" x-text="`Exporting ${selectAllPages ? 'all' : ids.length} record${ids.length !== 1 ? 's' : ''}`"></span>
-                <span class="ms-auto text-xs text-gray-400" x-show="mode === 'all'">Exporting all records</span>
+                <span class="ms-auto text-xs text-gray-400" x-show="mode === 'selected'" x-text="`{{ __('common.export') }} ${selectAllPages ? '{{ __('common.all') }}' : ids.length} ${ids.length !== 1 ? '{{ __('common.records_plural') }}' : '{{ __('common.record_singular') }}'}`"></span>
+                <span class="ms-auto text-xs text-gray-400" x-show="mode === 'all'">{{ __('common.exporting_all') }}</span>
             </div>
         </div>
     </div>

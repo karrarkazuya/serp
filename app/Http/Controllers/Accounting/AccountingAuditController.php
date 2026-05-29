@@ -78,10 +78,10 @@ class AccountingAuditController extends Controller
         $entries = $query->paginate(50)->withQueryString();
 
         $modelLabels = [
-            AccountMove::class    => 'Journal Entry',
-            Account::class        => 'Account',
-            AccountJournal::class => 'Journal',
-            AccountTax::class     => 'Tax',
+            AccountMove::class    => __('accounting.audit_model_move'),
+            Account::class        => __('accounting.audit_model_account'),
+            AccountJournal::class => __('accounting.audit_model_journal'),
+            AccountTax::class     => __('accounting.audit_model_tax'),
         ];
 
         return view('accounting.audit.index', compact('entries', 'modelLabels', 'accountingModelTypes'));

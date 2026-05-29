@@ -76,10 +76,10 @@ class UomController extends Controller
         $data['updated_by'] = auth()->id();
         $uom = DB::transaction(function () use ($data) {
             $uom = Uom::create($data);
-            $this->chatterService->logCreated($uom, 'Unit of Measure');
+            $this->chatterService->logCreated($uom, __('inventory.chatter_label_uom'));
             return $uom;
         });
-        return redirect()->route('inventory.config.uoms.show', $uom)->with('success', 'Unit of Measure created.');
+        return redirect()->route('inventory.config.uoms.show', $uom)->with('success', __('inventory.created'));
     }
 
     public function edit(Uom $uom)
@@ -101,13 +101,13 @@ class UomController extends Controller
         ]);
         $data['updated_by'] = auth()->id();
         DB::transaction(fn () => $uom->update($data));
-        return redirect()->route('inventory.config.uoms.show', $uom)->with('success', 'Unit of Measure updated.');
+        return redirect()->route('inventory.config.uoms.show', $uom)->with('success', __('inventory.updated'));
     }
 
     public function unlink(Request $_request, Uom $uom)
     {
         abort_unless($_request->user()->hasPermission('inventory.config'), 403);
         DB::transaction(fn () => $uom->update(['active' => false, 'updated_by' => auth()->id()]));
-        return redirect()->route('inventory.config.uoms.index')->with('success', 'Unit of Measure archived.');
+        return redirect()->route('inventory.config.uoms.index')->with('success', __('inventory.archived'));
     }
 }

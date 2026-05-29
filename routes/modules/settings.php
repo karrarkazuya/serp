@@ -40,6 +40,7 @@ Route::prefix('settings')->name('settings.')->group(function () {
         Route::get('/', [UserController::class, 'read'])->middleware('permission:users.read')->name('index');
         Route::get('/create', [UserController::class, 'create'])->middleware('permission:users.create')->name('create');
         Route::post('/', [UserController::class, 'store'])->middleware('permission:users.create')->name('store');
+        Route::delete('/bulk', [UserController::class, 'bulkUnlink'])->middleware('permission:users.unlink')->name('bulk-delete');
         Route::get('/{user}', [UserController::class, 'show'])->middleware('permission:users.read')->name('show');
         Route::get('/{user}/edit', [UserController::class, 'edit'])->middleware('permission:users.write')->name('edit');
         Route::put('/{user}', [UserController::class, 'write'])->middleware('permission:users.write')->name('update');

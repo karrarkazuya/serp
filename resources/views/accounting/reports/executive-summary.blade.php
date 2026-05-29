@@ -48,7 +48,7 @@
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/>
             </svg>
             <div>
-                <p class="text-sm font-semibold text-red-800">{{ $overdue_count }} overdue document{{ $overdue_count !== 1 ? 's' : '' }}</p>
+                <p class="text-sm font-semibold text-red-800">{{ trans_choice('accounting.overdue_doc_count', $overdue_count, ['count' => $overdue_count]) }}</p>
                 <p class="text-xs text-red-600">{{ __('accounting.overdue_docs_hint') }}</p>
             </div>
             <div class="ms-auto flex gap-2">

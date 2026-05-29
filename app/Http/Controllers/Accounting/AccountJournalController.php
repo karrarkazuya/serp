@@ -108,7 +108,7 @@ class AccountJournalController extends Controller
 
         return redirect()
             ->route('accounting.journals.show', $journal)
-            ->with('success', 'Journal created.');
+            ->with('success', __('accounting.created'));
     }
 
     public function edit(AccountJournal $journal)
@@ -132,7 +132,7 @@ class AccountJournalController extends Controller
 
         return redirect()
             ->route('accounting.journals.show', $journal)
-            ->with('success', 'Journal updated.');
+            ->with('success', __('accounting.updated'));
     }
 
     public function archive(Request $_request, AccountJournal $journal)
@@ -142,7 +142,7 @@ class AccountJournalController extends Controller
         abort_unless(in_array($journal->company_id, $activeCompanyIds), 403);
 
         DB::transaction(fn () => $this->accounting->archiveJournal($journal));
-        return redirect()->route('accounting.journals.index')->with('success', 'Journal archived.');
+        return redirect()->route('accounting.journals.index')->with('success', __('accounting.archived'));
     }
 
     public function unarchive(Request $_request, AccountJournal $journal)
@@ -152,7 +152,7 @@ class AccountJournalController extends Controller
         abort_unless(in_array($journal->company_id, $activeCompanyIds), 403);
 
         DB::transaction(fn () => $this->accounting->unarchiveJournal($journal));
-        return redirect()->route('accounting.journals.show', $journal)->with('success', 'Journal restored.');
+        return redirect()->route('accounting.journals.show', $journal)->with('success', __('accounting.restored'));
     }
 
     public function unlink(Request $_request, AccountJournal $journal)
@@ -167,7 +167,7 @@ class AccountJournalController extends Controller
             return back()->with('error', $e->getMessage());
         }
 
-        return redirect()->route('accounting.journals.index')->with('success', 'Journal deleted.');
+        return redirect()->route('accounting.journals.index')->with('success', __('accounting.deleted'));
     }
 
     public function addComment(Request $request, AccountJournal $journal)
@@ -179,6 +179,6 @@ class AccountJournalController extends Controller
         $request->validate(['body' => 'required|string|max:5000']);
         DB::transaction(fn () => $journal->logComment($request->body));
 
-        return back()->with('success', 'Comment added.');
+        return back()->with('success', __('accounting.comment_added'));
     }
 }

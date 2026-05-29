@@ -76,6 +76,7 @@ Route::prefix('employees')->name('employees.')->group(function () {
         Route::put('/{subtype}',              [RequestSubtypeController::class, 'write'])    ->middleware('permission:attendance.requests.config')->name('update');
         Route::patch('/{subtype}/archive',    [RequestSubtypeController::class, 'archive'])  ->middleware('permission:attendance.requests.config')->name('archive');
         Route::patch('/{subtype}/unarchive',  [RequestSubtypeController::class, 'unarchive'])->middleware('permission:attendance.requests.config')->name('unarchive');
+        Route::delete('/bulk',                [RequestSubtypeController::class, 'bulkUnlink']) ->middleware('permission:attendance.requests.config')->name('bulk-delete');
         Route::delete('/{subtype}',           [RequestSubtypeController::class, 'unlink'])   ->middleware('permission:attendance.requests.config')->name('delete');
         Route::post('/{subtype}/comment',     [RequestSubtypeController::class, 'addComment'])->middleware('permission:attendance.requests.config')->name('comment');
     });
@@ -312,6 +313,7 @@ Route::prefix('employees')->name('employees.')->group(function () {
         Route::put('/{certificate}',           [EmployeeCertificateController::class, 'write'])->middleware('permission:employees.write')->name('update');
         Route::patch('/{certificate}/archive', [EmployeeCertificateController::class, 'archive'])->middleware('permission:employees.write')->name('archive');
         Route::patch('/{certificate}/unarchive',[EmployeeCertificateController::class, 'unarchive'])->middleware('permission:employees.write')->name('unarchive');
+        Route::delete('/bulk',                 [EmployeeCertificateController::class, 'bulkUnlink'])->middleware('permission:employees.unlink')->name('bulk-delete');
         Route::delete('/{certificate}',        [EmployeeCertificateController::class, 'unlink'])->middleware('permission:employees.unlink')->name('delete');
         Route::post('/{certificate}/comment',  [EmployeeCertificateController::class, 'addComment'])->middleware('permission:employees.write')->name('comment');
     });
@@ -327,6 +329,7 @@ Route::prefix('employees')->name('employees.')->group(function () {
         Route::put('/{bonus}',             [EmployeeBonusController::class, 'write'])->middleware('permission:employees.write')->name('update');
         Route::patch('/{bonus}/archive',   [EmployeeBonusController::class, 'archive'])->middleware('permission:employees.write')->name('archive');
         Route::patch('/{bonus}/unarchive', [EmployeeBonusController::class, 'unarchive'])->middleware('permission:employees.write')->name('unarchive');
+        Route::delete('/bulk',             [EmployeeBonusController::class, 'bulkUnlink'])->middleware('permission:employees.unlink')->name('bulk-delete');
         Route::delete('/{bonus}',          [EmployeeBonusController::class, 'unlink'])->middleware('permission:employees.unlink')->name('delete');
         Route::post('/{bonus}/comment',    [EmployeeBonusController::class, 'addComment'])->middleware('permission:employees.write')->name('comment');
         Route::post('/{bonus}/document',   [EmployeeBonusController::class, 'replaceDocument'])->middleware('permission:employees.write')->name('document.replace');
@@ -344,6 +347,7 @@ Route::prefix('employees')->name('employees.')->group(function () {
         Route::put('/{appreciation}',             [EmployeeAppreciationController::class, 'write'])->middleware('permission:employees.write')->name('update');
         Route::patch('/{appreciation}/archive',   [EmployeeAppreciationController::class, 'archive'])->middleware('permission:employees.write')->name('archive');
         Route::patch('/{appreciation}/unarchive', [EmployeeAppreciationController::class, 'unarchive'])->middleware('permission:employees.write')->name('unarchive');
+        Route::delete('/bulk',                    [EmployeeAppreciationController::class, 'bulkUnlink'])->middleware('permission:employees.unlink')->name('bulk-delete');
         Route::delete('/{appreciation}',          [EmployeeAppreciationController::class, 'unlink'])->middleware('permission:employees.unlink')->name('delete');
         Route::post('/{appreciation}/comment',    [EmployeeAppreciationController::class, 'addComment'])->middleware('permission:employees.write')->name('comment');
         Route::post('/{appreciation}/document',   [EmployeeAppreciationController::class, 'replaceDocument'])->middleware('permission:employees.write')->name('document.replace');
@@ -361,6 +365,7 @@ Route::prefix('employees')->name('employees.')->group(function () {
         Route::put('/{sanction}',            [EmployeeSanctionController::class, 'write'])->middleware('permission:employees.write')->name('update');
         Route::patch('/{sanction}/archive',  [EmployeeSanctionController::class, 'archive'])->middleware('permission:employees.write')->name('archive');
         Route::patch('/{sanction}/unarchive',[EmployeeSanctionController::class, 'unarchive'])->middleware('permission:employees.write')->name('unarchive');
+        Route::delete('/bulk',               [EmployeeSanctionController::class, 'bulkUnlink'])->middleware('permission:employees.unlink')->name('bulk-delete');
         Route::delete('/{sanction}',         [EmployeeSanctionController::class, 'unlink'])->middleware('permission:employees.unlink')->name('delete');
         Route::post('/{sanction}/comment',   [EmployeeSanctionController::class, 'addComment'])->middleware('permission:employees.write')->name('comment');
         Route::post('/{sanction}/document',  [EmployeeSanctionController::class, 'replaceDocument'])->middleware('permission:employees.write')->name('document.replace');
@@ -378,6 +383,7 @@ Route::prefix('employees')->name('employees.')->group(function () {
         Route::put('/{reward}',             [EmployeeRewardController::class, 'write'])->middleware('permission:employees.write')->name('update');
         Route::patch('/{reward}/archive',   [EmployeeRewardController::class, 'archive'])->middleware('permission:employees.write')->name('archive');
         Route::patch('/{reward}/unarchive', [EmployeeRewardController::class, 'unarchive'])->middleware('permission:employees.write')->name('unarchive');
+        Route::delete('/bulk',              [EmployeeRewardController::class, 'bulkUnlink'])->middleware('permission:employees.unlink')->name('bulk-delete');
         Route::delete('/{reward}',          [EmployeeRewardController::class, 'unlink'])->middleware('permission:employees.unlink')->name('delete');
         Route::post('/{reward}/comment',    [EmployeeRewardController::class, 'addComment'])->middleware('permission:employees.write')->name('comment');
         Route::post('/{reward}/document',   [EmployeeRewardController::class, 'replaceDocument'])->middleware('permission:employees.write')->name('document.replace');
@@ -395,11 +401,13 @@ Route::prefix('employees')->name('employees.')->group(function () {
         Route::put('/{jobGrade}',             [EmployeeJobGradeController::class, 'write'])->middleware('permission:employees.write')->name('update');
         Route::patch('/{jobGrade}/archive',   [EmployeeJobGradeController::class, 'archive'])->middleware('permission:employees.write')->name('archive');
         Route::patch('/{jobGrade}/unarchive', [EmployeeJobGradeController::class, 'unarchive'])->middleware('permission:employees.write')->name('unarchive');
+        Route::delete('/bulk',                [EmployeeJobGradeController::class, 'bulkUnlink'])->middleware('permission:employees.unlink')->name('bulk-delete');
         Route::delete('/{jobGrade}',          [EmployeeJobGradeController::class, 'unlink'])->middleware('permission:employees.unlink')->name('delete');
         Route::post('/{jobGrade}/comment',    [EmployeeJobGradeController::class, 'addComment'])->middleware('permission:employees.write')->name('comment');
     });
 
     // Employee CRUD (after all fixed sub-routes)
+    Route::delete('/bulk', [EmployeeController::class, 'bulkUnlink'])->middleware('permission:employees.unlink')->name('bulk-delete');
     Route::get('/avatar/{uuid}', [EmployeeController::class, 'serveAvatar'])->middleware('permission:employees.read')->name('avatar');
     Route::get('/{employee}', [EmployeeController::class, 'show'])->middleware('permission:employees.read')->name('show');
     Route::get('/{employee}/edit', [EmployeeController::class, 'edit'])->middleware('permission:employees.write')->name('edit');

@@ -138,7 +138,7 @@
         <a href="{{ route('chat.index') }}"
            class="flex items-center h-full px-4 text-white/85 hover:text-white hover:bg-[#5c3d55] transition-colors text-sm font-semibold shrink-0
                   {{ request()->routeIs('chat.*') ? 'bg-[#5c3d55]' : '' }}">
-            Chat
+            {{ __('nav.chat') }}
         </a>
     </div>
     @endif
@@ -149,7 +149,7 @@
         <a href="{{ route('employees.index') }}"
            class="flex items-center h-full px-3 sm:px-4 text-white/85 hover:text-white hover:bg-[#5c3d55] transition-colors text-sm font-semibold shrink-0
                   {{ request()->routeIs('employees.index', 'employees.show', 'employees.create', 'employees.edit') ? 'bg-[#5c3d55]' : '' }}">
-            Employees
+            {{ __('nav.employees') }}
         </a>
         @endcan
 
@@ -160,7 +160,7 @@
                     @click="open = !open"
                     class="hidden sm:flex items-center h-full px-4 text-white/85 hover:text-white hover:bg-[#5c3d55] transition-colors text-sm font-semibold
                            {{ request()->routeIs('employees.positions.*', 'employees.certificates.*', 'employees.bonuses.*', 'employees.appreciations.*', 'employees.sanctions.*', 'employees.rewards.*', 'employees.job-grades.*') ? 'bg-[#5c3d55]' : '' }}">
-                Allocations
+                {{ __('nav.allocations') }}
                 <svg class="ms-1 w-3.5 h-3.5 transition-transform" :class="open ? 'rotate-180' : ''" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
                 </svg>
@@ -177,11 +177,11 @@
                  style="display:none">
                 <a href="{{ route('employees.positions.index') }}"
                    class="block px-4 py-2.5 text-sm text-gray-800 hover:bg-gray-100 {{ request()->routeIs('employees.positions.*') ? 'bg-gray-100 font-semibold' : '' }}">
-                    Positions
+                    {{ __('nav.positions') }}
                 </a>
                 <a href="{{ route('employees.certificates.index') }}"
                    class="block px-4 py-2.5 text-sm text-gray-800 hover:bg-gray-100 {{ request()->routeIs('employees.certificates.*') ? 'bg-gray-100 font-semibold' : '' }}">
-                    Certificates
+                    {{ __('nav.certificates') }}
                 </a>
                 <a href="{{ route('employees.bonuses.index') }}"
                    class="block px-4 py-2.5 text-sm text-gray-800 hover:bg-gray-100 {{ request()->routeIs('employees.bonuses.*') ? 'bg-gray-100 font-semibold' : '' }}">
@@ -255,7 +255,7 @@
                     @click="open = !open"
                     class="hidden sm:flex items-center h-full px-4 text-white/85 hover:text-white hover:bg-[#5c3d55] transition-colors text-sm font-semibold
                            {{ request()->routeIs('employees.jobs.*', 'employees.departments.*', 'employees.documents.*', 'employees.work-locations.*', 'employees.schedules.*', 'employees.categories.*', 'employees.departure-reasons.*', 'employees.skill-types.*', 'employees.resume-line-types.*', 'employees.employment-types.*', 'employees.badges.*', 'employees.challenges.*', 'employees.goals.*') ? 'bg-[#5c3d55]' : '' }}">
-                Configuration
+                {{ __('nav.configuration') }}
                 <svg class="ms-1 w-3.5 h-3.5 transition-transform" :class="open ? 'rotate-180' : ''" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
                 </svg>
@@ -270,28 +270,28 @@
                  x-transition:leave-end="opacity-0 scale-95"
                  class="absolute start-0 top-full w-56 bg-white rounded-b-lg shadow-xl border border-gray-200 z-50 py-1"
                  style="display:none">
-                <div class="px-3 py-1.5 text-[10px] font-semibold text-gray-400 uppercase">Organization</div>
+                <div class="px-3 py-1.5 text-[10px] font-semibold text-gray-400 uppercase">{{ __('nav.section_organization') }}</div>
                 <a href="{{ route('employees.jobs.index') }}"
                    class="block px-4 py-2.5 text-sm text-gray-800 hover:bg-gray-100 {{ request()->routeIs('employees.jobs.*') ? 'bg-gray-100 font-semibold' : '' }}">
-                    Job Positions
+                    {{ __('nav.job_positions') }}
                 </a>
                 <a href="{{ route('employees.departments.index') }}"
                    class="block px-4 py-2.5 text-sm text-gray-800 hover:bg-gray-100 {{ request()->routeIs('employees.departments.*') ? 'bg-gray-100 font-semibold' : '' }}">
-                    Departments
+                    {{ __('nav.departments') }}
                 </a>
                 <a href="{{ route('employees.documents.index') }}"
                    class="block px-4 py-2.5 text-sm text-gray-800 hover:bg-gray-100 {{ request()->routeIs('employees.documents.*') ? 'bg-gray-100 font-semibold' : '' }}">
-                    Documents
+                    {{ __('nav.documents') }}
                 </a>
                 <div class="border-t border-gray-100 my-1"></div>
-                <div class="px-3 py-1.5 text-[10px] font-semibold text-gray-400 uppercase">Settings</div>
+                <div class="px-3 py-1.5 text-[10px] font-semibold text-gray-400 uppercase">{{ __('nav.section_settings') }}</div>
                 <a href="{{ route('employees.work-locations.index') }}"
                    class="block px-4 py-2.5 text-sm text-gray-800 hover:bg-gray-100 {{ request()->routeIs('employees.work-locations.*') ? 'bg-gray-100 font-semibold' : '' }}">
-                    Work Locations
+                    {{ __('nav.work_locations') }}
                 </a>
                 <a href="{{ route('employees.schedules.index') }}"
                    class="block px-4 py-2.5 text-sm text-gray-800 hover:bg-gray-100 {{ request()->routeIs('employees.schedules.*') ? 'bg-gray-100 font-semibold' : '' }}">
-                    Working Schedules
+                    {{ __('nav.working_schedules') }}
                 </a>
                 @if(auth()->user()->hasPermission('attendance.requests.config'))
                 <a href="{{ route('employees.request-subtypes.index') }}"
@@ -305,37 +305,37 @@
                 @endif
                 <a href="{{ route('employees.categories.index') }}"
                    class="block px-4 py-2.5 text-sm text-gray-800 hover:bg-gray-100 {{ request()->routeIs('employees.categories.*') ? 'bg-gray-100 font-semibold' : '' }}">
-                    Tags
+                    {{ __('nav.tags') }}
                 </a>
                 <a href="{{ route('employees.departure-reasons.index') }}"
                    class="block px-4 py-2.5 text-sm text-gray-800 hover:bg-gray-100 {{ request()->routeIs('employees.departure-reasons.*') ? 'bg-gray-100 font-semibold' : '' }}">
-                    Departure Reasons
+                    {{ __('nav.departure_reasons') }}
                 </a>
                 <a href="{{ route('employees.skill-types.index') }}"
                    class="block px-4 py-2.5 text-sm text-gray-800 hover:bg-gray-100 {{ request()->routeIs('employees.skill-types.*') ? 'bg-gray-100 font-semibold' : '' }}">
-                    Skill Types
+                    {{ __('nav.skill_types') }}
                 </a>
                 <a href="{{ route('employees.resume-line-types.index') }}"
                    class="block px-4 py-2.5 text-sm text-gray-800 hover:bg-gray-100 {{ request()->routeIs('employees.resume-line-types.*') ? 'bg-gray-100 font-semibold' : '' }}">
-                    Line Types
+                    {{ __('nav.line_types') }}
                 </a>
                 <a href="{{ route('employees.employment-types.index') }}"
                    class="block px-4 py-2.5 text-sm text-gray-800 hover:bg-gray-100 {{ request()->routeIs('employees.employment-types.*') ? 'bg-gray-100 font-semibold' : '' }}">
-                    Employment Types
+                    {{ __('nav.employment_types') }}
                 </a>
                 <div class="border-t border-gray-100 my-1"></div>
-                <div class="px-3 py-1.5 text-[10px] font-semibold text-gray-400 uppercase">Challenges</div>
+                <div class="px-3 py-1.5 text-[10px] font-semibold text-gray-400 uppercase">{{ __('nav.section_challenges') }}</div>
                 <a href="{{ route('employees.badges.index') }}"
                    class="block px-4 py-2.5 text-sm text-gray-800 hover:bg-gray-100 {{ request()->routeIs('employees.badges.*') ? 'bg-gray-100 font-semibold' : '' }}">
-                    Badges
+                    {{ __('nav.badges') }}
                 </a>
                 <a href="{{ route('employees.challenges.index') }}"
                    class="block px-4 py-2.5 text-sm text-gray-800 hover:bg-gray-100 {{ request()->routeIs('employees.challenges.*') ? 'bg-gray-100 font-semibold' : '' }}">
-                    Challenges
+                    {{ __('nav.challenges') }}
                 </a>
                 <a href="{{ route('employees.goals.index') }}"
                    class="block px-4 py-2.5 text-sm text-gray-800 hover:bg-gray-100 {{ request()->routeIs('employees.goals.*') ? 'bg-gray-100 font-semibold' : '' }}">
-                    Goals History
+                    {{ __('nav.goals_history') }}
                 </a>
             </div>
         </div>
@@ -555,7 +555,7 @@
                 <div class="{{ $accHead }}">{{ __('accounting.section_audit') }}</div>
                 <a href="{{ route('accounting.audit') }}"
                    class="{{ $accItem }} {{ request()->routeIs('accounting.audit') ? 'bg-gray-100 font-semibold' : '' }}">
-                    Audit Log
+                    {{ __('nav.audit_log') }}
                 </a>
             </div>
         </div>
@@ -576,42 +576,42 @@
         {{-- Overview --}}
         <a href="{{ route('inventory.dashboard') }}"
            class="{{ $invLink }} {{ request()->routeIs('inventory.dashboard') ? 'bg-[#5c3d55]' : '' }}">
-            Overview
+            {{ __('nav.overview') }}
         </a>
 
         {{-- Operations --}}
         <div x-data="{ open: false }" class="relative h-full shrink-0" @click.outside="open = false">
             <button type="button" @click="open = !open"
                     class="{{ $invBtn }} {{ request()->routeIs('inventory.receipts.*', 'inventory.deliveries.*', 'inventory.internal-transfers.*', 'inventory.transfers.*', 'inventory.scrap.*', 'inventory.replenishment.*', 'inventory.adjustments.*') ? 'bg-[#5c3d55]' : '' }}">
-                Operations {!! $caret !!}
+                {{ __('nav.operations') }} {!! $caret !!}
             </button>
             <div x-show="open" x-transition class="{{ $invDD }} w-60" style="display:none">
-                <div class="{{ $invHead }}">Transfers</div>
+                <div class="{{ $invHead }}">{{ __('nav.section_transfers') }}</div>
                 <a href="{{ route('inventory.receipts.index') }}"
                    class="{{ $invItem }} {{ request()->routeIs('inventory.receipts.*') ? 'bg-gray-100 font-semibold' : '' }}">
-                    Receipts
+                    {{ __('nav.receipts') }}
                 </a>
                 <a href="{{ route('inventory.deliveries.index') }}"
                    class="{{ $invItem }} {{ request()->routeIs('inventory.deliveries.*') ? 'bg-gray-100 font-semibold' : '' }}">
-                    Deliveries
+                    {{ __('nav.deliveries') }}
                 </a>
                 <a href="{{ route('inventory.internal-transfers.index') }}"
                    class="{{ $invItem }} {{ request()->routeIs('inventory.internal-transfers.*') ? 'bg-gray-100 font-semibold' : '' }}">
-                    Internal Transfers
+                    {{ __('nav.internal_transfers') }}
                 </a>
-                <div class="{{ $invHead }}">Adjustments</div>
+                <div class="{{ $invHead }}">{{ __('nav.section_adjustments') }}</div>
                 <a href="{{ route('inventory.adjustments.index') }}"
                    class="{{ $invItem }} {{ request()->routeIs('inventory.adjustments.*') ? 'bg-gray-100 font-semibold' : '' }}">
-                    Physical Inventory
+                    {{ __('nav.physical_inventory') }}
                 </a>
                 <a href="{{ route('inventory.scrap.index') }}"
                    class="{{ $invItem }} {{ request()->routeIs('inventory.scrap.*') ? 'bg-gray-100 font-semibold' : '' }}">
-                    Scrap
+                    {{ __('nav.scrap') }}
                 </a>
-                <div class="{{ $invHead }}">Procurement</div>
+                <div class="{{ $invHead }}">{{ __('nav.section_procurement') }}</div>
                 <a href="{{ route('inventory.replenishment.index') }}"
                    class="{{ $invItem }} {{ request()->routeIs('inventory.replenishment.*') ? 'bg-gray-100 font-semibold' : '' }}">
-                    Replenishment
+                    {{ __('nav.replenishment') }}
                 </a>
             </div>
         </div>
@@ -620,16 +620,16 @@
         <div x-data="{ open: false }" class="relative h-full shrink-0" @click.outside="open = false">
             <button type="button" @click="open = !open"
                     class="{{ $invBtn }} {{ request()->routeIs('inventory.products.*', 'inventory.lots.*') ? 'bg-[#5c3d55]' : '' }}">
-                Products {!! $caret !!}
+                {{ __('nav.products') }} {!! $caret !!}
             </button>
             <div x-show="open" x-transition class="{{ $invDD }}" style="display:none">
                 <a href="{{ route('inventory.products.index') }}"
                    class="{{ $invItem }} {{ request()->routeIs('inventory.products.*') ? 'bg-gray-100 font-semibold' : '' }}">
-                    Products
+                    {{ __('nav.products') }}
                 </a>
                 <a href="{{ route('inventory.lots.index') }}"
                    class="{{ $invItem }} {{ request()->routeIs('inventory.lots.*') ? 'bg-gray-100 font-semibold' : '' }}">
-                    Lots &amp; Serial Numbers
+                    {{ __('nav.lots_serial_numbers') }}
                 </a>
             </div>
         </div>
@@ -637,7 +637,7 @@
         {{-- Reporting --}}
         <a href="{{ route('inventory.reports.stock') }}"
            class="{{ $invLink }} {{ request()->routeIs('inventory.reports.*') ? 'bg-[#5c3d55]' : '' }}">
-            Reporting
+            {{ __('nav.reporting') }}
         </a>
 
         {{-- Configuration --}}
@@ -645,39 +645,39 @@
         <div x-data="{ open: false }" class="relative h-full shrink-0" @click.outside="open = false">
             <button type="button" @click="open = !open"
                     class="{{ $invBtn }} {{ request()->routeIs('inventory.config.*') ? 'bg-[#5c3d55]' : '' }}">
-                Configuration {!! $caret !!}
+                {{ __('nav.configuration') }} {!! $caret !!}
             </button>
             <div x-show="open" x-transition class="{{ $invDD }} w-64" style="display:none">
-                <div class="{{ $invHead }}">Warehouse Management</div>
+                <div class="{{ $invHead }}">{{ __('nav.section_warehouse_mgmt') }}</div>
                 <a href="{{ route('inventory.config.warehouses.index') }}"
                    class="{{ $invItem }} {{ request()->routeIs('inventory.config.warehouses.*') ? 'bg-gray-100 font-semibold' : '' }}">
-                    Warehouses
+                    {{ __('nav.warehouses') }}
                 </a>
                 <a href="{{ route('inventory.config.operation-types.index') }}"
                    class="{{ $invItem }} {{ request()->routeIs('inventory.config.operation-types.*') ? 'bg-gray-100 font-semibold' : '' }}">
-                    Operation Types
+                    {{ __('nav.operation_types') }}
                 </a>
                 <a href="{{ route('inventory.config.locations.index') }}"
                    class="{{ $invItem }} {{ request()->routeIs('inventory.config.locations.*') ? 'bg-gray-100 font-semibold' : '' }}">
-                    Locations
+                    {{ __('nav.locations') }}
                 </a>
                 <a href="{{ route('inventory.config.routes.index') }}"
                    class="{{ $invItem }} {{ request()->routeIs('inventory.config.routes.*') ? 'bg-gray-100 font-semibold' : '' }}">
-                    Routes
+                    {{ __('nav.routes') }}
                 </a>
                 <a href="{{ route('inventory.config.putaway-rules.index') }}"
                    class="{{ $invItem }} {{ request()->routeIs('inventory.config.putaway-rules.*') ? 'bg-gray-100 font-semibold' : '' }}">
-                    Putaway Rules
+                    {{ __('nav.putaway_rules') }}
                 </a>
-                <div class="{{ $invHead }}">Products</div>
+                <div class="{{ $invHead }}">{{ __('nav.section_products') }}</div>
                 <a href="{{ route('inventory.config.product-categories.index') }}"
                    class="{{ $invItem }} {{ request()->routeIs('inventory.config.product-categories.*') ? 'bg-gray-100 font-semibold' : '' }}">
-                    Product Categories
+                    {{ __('nav.product_categories') }}
                 </a>
-                <div class="{{ $invHead }}">Units of Measure</div>
+                <div class="{{ $invHead }}">{{ __('nav.section_uom') }}</div>
                 <a href="{{ route('inventory.config.uoms.index') }}"
                    class="{{ $invItem }} {{ request()->routeIs('inventory.config.uoms.*') ? 'bg-gray-100 font-semibold' : '' }}">
-                    Units of Measure
+                    {{ __('nav.units_of_measure') }}
                 </a>
             </div>
         </div>
@@ -760,7 +760,7 @@
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                           d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/>
                 </svg>
-                <span class="hidden md:block truncate font-medium">{{ $companyLabel ?? 'No Company' }}</span>
+                <span class="hidden md:block truncate font-medium">{{ $companyLabel ?? __('nav.no_company') }}</span>
                 <svg class="w-3.5 h-3.5 shrink-0 transition-transform" :class="open ? 'rotate-180' : ''" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
                 </svg>
@@ -949,17 +949,17 @@
                  style="display: none;">
 
                 <div class="flex items-center justify-between px-4 py-3 border-b border-gray-100 bg-gray-50">
-                    <p class="text-xs font-semibold text-gray-500 uppercase tracking-wider">Notifications</p>
+                    <p class="text-xs font-semibold text-gray-500 uppercase tracking-wider">{{ __('common.notifications') }}</p>
                     <button @click="markAllSeen()" x-show="count > 0"
                             class="text-xs text-purple-600 hover:text-purple-700 font-medium"
                             style="display:none">
-                        Mark all read
+                        {{ __('common.mark_all_read') }}
                     </button>
                 </div>
 
                 <div class="max-h-80 overflow-y-auto divide-y divide-gray-50">
                     <template x-if="notifications.length === 0">
-                        <p class="px-4 py-8 text-sm text-gray-400 text-center">No notifications</p>
+                        <p class="px-4 py-8 text-sm text-gray-400 text-center">{{ __('common.no_notifications') }}</p>
                     </template>
                     <template x-for="n in notifications" :key="n.id">
                         <div @click="markSeen(n)"

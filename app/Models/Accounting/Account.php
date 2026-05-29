@@ -153,7 +153,11 @@ class Account extends Model
 
     public function getTypeLabelAttribute(): string
     {
-        return self::TYPES[$this->account_type] ?? $this->account_type;
+        // Route through the lang file (Arabic users see "ذمم مدينة" instead
+        // of "Receivable"). TYPES stays as the English fallback for the rare
+        // future case where a new column value lands without a lang key.
+        $key = 'accounting.account_type_' . $this->account_type;
+        return trans()->has($key) ? __($key) : (self::TYPES[$this->account_type] ?? $this->account_type);
     }
 
     public function getDisplayNameAttribute(): string

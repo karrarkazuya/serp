@@ -31,7 +31,7 @@
                 <select name="account_type" required class="flex-1 text-sm text-gray-800 bg-transparent border-0 focus:outline-none focus:ring-0 px-0 py-0.5">
                     <option value="">{{ __('accounting.ph_select_type') }}</option>
                     @foreach($accountTypes as $key => $label)
-                        <option value="{{ $key }}" @selected($val('account_type') === $key)>{{ $label }}</option>
+                        <option value="{{ $key }}" @selected($val('account_type') === $key)>{{ trans()->has('accounting.account_type_' . $key) ? __('accounting.account_type_' . $key) : $label }}</option>
                     @endforeach
                 </select>
             </div>

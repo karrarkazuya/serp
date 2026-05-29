@@ -34,9 +34,12 @@ class ReorderRuleController extends Controller
         // active rule update on EVERY index load — heavy writes on a read
         // endpoint that scaled with rule count. Now opt-in via `?refresh=1`
         // (the "Refresh forecasts" button) and otherwise show the cached
-        // qty_on_hand. Per-rule updates also still happen via the picking
-        // validate / scrap validate / adjustment validate paths, so the
-        // cached number stays close to truth without page-load churn.
+        // qty_on_hand. NOTE: an earlier version of this comment claimed the
+        // picking/scrap/adjustment validate paths also updated qty_on_hand —
+        // they don't. The cached number only changes on this manual refresh.
+        // qty_forecast is set to 0 at create time and is never updated by
+        // any code path; expect it to read 0 across the board until the
+        // forecasting pipeline is wired up.
         if ($request->boolean('refresh')) {
             $onHandMap = Quant::selectRaw('company_id, product_id, location_id, SUM(quantity) as total')
                 ->whereIn('company_id', $activeCompanyIds)
@@ -99,7 +102,7 @@ class ReorderRuleController extends Controller
         $data['updated_by']   = auth()->id();
 
         DB::transaction(fn () => ReorderRule::create($data));
-        return redirect()->route('inventory.replenishment.index')->with('success', 'Reorder rule created.');
+        return redirect()->route('inventory.replenishment.index')->with('success', __('inventory.created'));
     }
 
     public function edit(Request $request, ReorderRule $reorderRule)
@@ -133,7 +136,7 @@ class ReorderRuleController extends Controller
         ]);
 
         DB::transaction(fn () => $reorderRule->update(array_merge($data, ['updated_by' => auth()->id()])));
-        return redirect()->route('inventory.replenishment.index')->with('success', 'Reorder rule updated.');
+        return redirect()->route('inventory.replenishment.index')->with('success', __('inventory.updated'));
     }
 
     public function replenish(Request $request, ReorderRule $reorderRule)
@@ -142,7 +145,7 @@ class ReorderRuleController extends Controller
         $activeCompanyIds = $this->companyContext->getActiveCompanyIds();
         abort_unless(in_array($reorderRule->company_id, $activeCompanyIds), 403);
 
-        $reorderRule->load(['product', 'location', 'warehouse']);
+        $reorderRule->load(['product.suppliers.partner', 'location', 'warehouse']);
 
         $opType = OperationType::where('company_id', $reorderRule->company_id)
             ->where('code', 'incoming')
@@ -150,22 +153,36 @@ class ReorderRuleController extends Controller
             ->first();
 
         if (!$opType) {
-            return back()->with('error', 'No receipt operation type found for this warehouse.');
+            return back()->with('error', __('inventory.no_receipt_optype'));
         }
 
         $supplierLoc = Location::where('usage', 'supplier')->whereNull('company_id')->first();
         $qty = $reorderRule->getReplenishQty();
         if ($qty <= 0) {
-            return back()->with('error', 'Stock is already at or above the maximum quantity. No replenishment needed.');
+            return back()->with('error', __('inventory.already_at_max'));
         }
+
+        // Odoo parity: pick the vendor from the product's ProductSupplier list
+        // and use its `delay` as the lead time if the rule itself has none.
+        // Without this, the replenishment picking would always land with a
+        // missing partner_id (orphan receipts → no one to chase, no PO link
+        // upstream) and the wrong scheduled_date (assumes 0 days when the
+        // rule was left at default).
+        $supplier   = $reorderRule->product->primarySupplier($reorderRule->company_id);
+        $leadDays   = (int) $reorderRule->lead_days;
+        if ($leadDays <= 0 && $supplier && $supplier->delay > 0) {
+            $leadDays = (int) $supplier->delay;
+        }
+        $scheduledDate = now()->addDays($leadDays);
 
         $pickingData = [
             'company_id'        => $reorderRule->company_id,
             'operation_type_id' => $opType->id,
+            'partner_id'        => $supplier?->partner_id,
             'location_src_id'   => $supplierLoc?->id ?? $opType->default_location_src_id,
             'location_dest_id'  => $reorderRule->location_id,
-            'scheduled_date'    => now()->addDays($reorderRule->lead_days),
-            'origin'            => 'Replenishment',
+            'scheduled_date'    => $scheduledDate,
+            'origin'            => __('inventory.origin_replenishment'),
             'active'            => true,
             'created_by'        => auth()->id(),
             'updated_by'        => auth()->id(),
@@ -177,14 +194,14 @@ class ReorderRuleController extends Controller
             'product_qty' => $qty,
             'state'       => 'draft',
             'name'        => $reorderRule->product->name,
-            'date'        => now()->addDays($reorderRule->lead_days)->toDateString(),
+            'date'        => $scheduledDate->toDateString(),
             'created_by'  => auth()->id(),
             'updated_by'  => auth()->id(),
         ]];
 
         $picking = DB::transaction(fn () => $this->pickingService->create($pickingData, $movesData));
 
-        return redirect()->route('inventory.transfers.show', $picking)->with('success', 'Replenishment order created.');
+        return redirect()->route('inventory.transfers.show', $picking)->with('success', __('inventory.replenish_created'));
     }
 
     public function unlink(Request $_request, ReorderRule $reorderRule)
@@ -193,6 +210,6 @@ class ReorderRuleController extends Controller
         $activeCompanyIds = $this->companyContext->getActiveCompanyIds();
         abort_unless(in_array($reorderRule->company_id, $activeCompanyIds), 403);
         DB::transaction(fn () => $reorderRule->delete());
-        return redirect()->route('inventory.replenishment.index')->with('success', 'Reorder rule deleted.');
+        return redirect()->route('inventory.replenishment.index')->with('success', __('inventory.deleted'));
     }
 }

@@ -67,6 +67,6 @@ class AccountingSettingsController extends Controller
             }
         });
 
-        return redirect()->route('accounting.settings')->with('success', "Settings updated for {$company->name}.");
+        return redirect()->route('accounting.settings')->with('success', __('accounting.settings_updated', ['company' => $company->name]));
     }
 }

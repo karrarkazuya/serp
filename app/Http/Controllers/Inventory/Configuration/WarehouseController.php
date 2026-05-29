@@ -86,7 +86,7 @@ class WarehouseController extends Controller
         $data['created_by'] = auth()->id();
         $data['updated_by'] = auth()->id();
         $warehouse = DB::transaction(fn () => $this->warehouseService->create($data));
-        return redirect()->route('inventory.config.warehouses.show', $warehouse)->with('success', 'Warehouse created with default locations and operation types.');
+        return redirect()->route('inventory.config.warehouses.show', $warehouse)->with('success', __('inventory.warehouse_created_with_defaults'));
     }
 
     public function edit(Warehouse $warehouse)
@@ -103,7 +103,7 @@ class WarehouseController extends Controller
         $activeCompanyIds = $this->companyContext->getActiveCompanyIds();
         abort_unless(in_array($warehouse->company_id, $activeCompanyIds), 403);
         DB::transaction(fn () => $this->warehouseService->update($warehouse, $request->validated()));
-        return redirect()->route('inventory.config.warehouses.show', $warehouse)->with('success', 'Warehouse updated.');
+        return redirect()->route('inventory.config.warehouses.show', $warehouse)->with('success', __('inventory.updated'));
     }
 
     public function archive(Request $_request, Warehouse $warehouse)
@@ -112,7 +112,7 @@ class WarehouseController extends Controller
         $activeCompanyIds = $this->companyContext->getActiveCompanyIds();
         abort_unless(in_array($warehouse->company_id, $activeCompanyIds), 403);
         DB::transaction(fn () => $this->warehouseService->archive($warehouse));
-        return redirect()->route('inventory.config.warehouses.index')->with('success', 'Warehouse archived.');
+        return redirect()->route('inventory.config.warehouses.index')->with('success', __('inventory.archived'));
     }
 
     public function unarchive(Request $_request, Warehouse $warehouse)
@@ -121,7 +121,7 @@ class WarehouseController extends Controller
         $activeCompanyIds = $this->companyContext->getActiveCompanyIds();
         abort_unless(in_array($warehouse->company_id, $activeCompanyIds), 403);
         DB::transaction(fn () => $this->warehouseService->unarchive($warehouse));
-        return redirect()->route('inventory.config.warehouses.show', $warehouse)->with('success', 'Warehouse restored.');
+        return redirect()->route('inventory.config.warehouses.show', $warehouse)->with('success', __('inventory.restored'));
     }
 
     public function unlink(Request $_request, Warehouse $warehouse)
@@ -130,7 +130,7 @@ class WarehouseController extends Controller
         $activeCompanyIds = $this->companyContext->getActiveCompanyIds();
         abort_unless(in_array($warehouse->company_id, $activeCompanyIds), 403);
         DB::transaction(fn () => $this->warehouseService->delete($warehouse));
-        return redirect()->route('inventory.config.warehouses.index')->with('success', 'Warehouse deleted.');
+        return redirect()->route('inventory.config.warehouses.index')->with('success', __('inventory.deleted'));
     }
 
     public function addComment(Request $request, Warehouse $warehouse)
@@ -140,6 +140,6 @@ class WarehouseController extends Controller
         abort_unless(in_array($warehouse->company_id, $activeCompanyIds), 403);
         $request->validate(['body' => 'required|string|max:5000']);
         DB::transaction(fn () => $warehouse->logComment($request->body));
-        return back()->with('success', 'Comment added.');
+        return back()->with('success', __('inventory.comment_added'));
     }
 }

@@ -142,7 +142,22 @@ class AccountPayment extends Model
 
     public function getStateLabelAttribute(): string
     {
-        return self::STATES[$this->state] ?? ucfirst($this->state);
+        // 'posted' renders as "In Process" for AccountPayment (Odoo parity:
+        // a payment isn't truly settled until bank reconciliation clears it),
+        // which is why the lookup uses `status_in_process` instead of
+        // `status_posted` like AccountMove does.
+        $map = ['draft' => 'status_draft', 'posted' => 'status_in_process', 'cancelled' => 'status_cancelled'];
+        $key = 'accounting.' . ($map[$this->state] ?? '');
+        return $key !== 'accounting.' && trans()->has($key)
+            ? __($key)
+            : (self::STATES[$this->state] ?? ucfirst($this->state));
+    }
+
+    public function getPaymentMethodLabelAttribute(): string
+    {
+        if (!$this->payment_method) return '';
+        $key = 'accounting.payment_method_' . $this->payment_method;
+        return trans()->has($key) ? __($key) : (self::PAYMENT_METHODS[$this->payment_method] ?? $this->payment_method);
     }
 
     public function scopeForCompanies(Builder $query, array $companyIds): Builder

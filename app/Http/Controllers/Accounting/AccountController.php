@@ -165,11 +165,25 @@ class AccountController extends Controller
 
     public function store(StoreAccountRequest $request)
     {
-        $account = DB::transaction(fn () => $this->accounting->createAccount($request->validated()));
+        $data = $request->validated();
+
+        // Hierarchy cycle guard (Rule 11): the parent_id rule only checks
+        // existence + same-company. It can't detect A → B → A loops at create
+        // time when the new account isn't in the DB yet, but it CAN catch a
+        // user pointing the new account at a parent chain that already loops
+        // (corrupted data). The same bounded walk is the actual guard at
+        // update time below; running it here keeps the two paths symmetric.
+        if (!empty($data['parent_id'])
+            && $this->parentChainHasCycle((int) $data['parent_id'])
+        ) {
+            return back()->withInput()->with('error', __('accounting.parent_cycle'));
+        }
+
+        $account = DB::transaction(fn () => $this->accounting->createAccount($data));
 
         return redirect()
             ->route('accounting.accounts.show', $account)
-            ->with('success', 'Account created.');
+            ->with('success', __('accounting.created'));
     }
 
     public function edit(Account $account)
@@ -189,11 +203,28 @@ class AccountController extends Controller
         $activeCompanyIds = $this->companyContext->getActiveCompanyIds();
         abort_unless(in_array($account->company_id, $activeCompanyIds), 403);
 
-        DB::transaction(fn () => $this->accounting->updateAccount($account, $request->validated()));
+        $data = $request->validated();
+
+        // Hierarchy cycle guard (Rule 11): block self-parenting and walks
+        // where the proposed parent eventually points back at $account.
+        // Without this, "Account A → parent = B" + "Account B → parent = A"
+        // would silently create an infinite tree-walk; buildAccountTree's
+        // recursion blows the stack and reports time out.
+        if (array_key_exists('parent_id', $data) && $data['parent_id']) {
+            $parentId = (int) $data['parent_id'];
+            if ($parentId === $account->id
+                || $this->isAccountDescendantOf($parentId, $account->id)
+                || $this->parentChainHasCycle($parentId)
+            ) {
+                return back()->withInput()->with('error', __('accounting.parent_cycle'));
+            }
+        }
+
+        DB::transaction(fn () => $this->accounting->updateAccount($account, $data));
 
         return redirect()
             ->route('accounting.accounts.show', $account)
-            ->with('success', 'Account updated.');
+            ->with('success', __('accounting.updated'));
     }
 
     public function archive(Request $_request, Account $account)
@@ -203,7 +234,7 @@ class AccountController extends Controller
         abort_unless(in_array($account->company_id, $activeCompanyIds), 403);
 
         DB::transaction(fn () => $this->accounting->archiveAccount($account));
-        return redirect()->route('accounting.accounts.index')->with('success', 'Account archived.');
+        return redirect()->route('accounting.accounts.index')->with('success', __('accounting.archived'));
     }
 
     public function unarchive(Request $_request, Account $account)
@@ -213,7 +244,7 @@ class AccountController extends Controller
         abort_unless(in_array($account->company_id, $activeCompanyIds), 403);
 
         DB::transaction(fn () => $this->accounting->unarchiveAccount($account));
-        return redirect()->route('accounting.accounts.show', $account)->with('success', 'Account restored.');
+        return redirect()->route('accounting.accounts.show', $account)->with('success', __('accounting.restored'));
     }
 
     public function unlink(Request $_request, Account $account)
@@ -228,7 +259,7 @@ class AccountController extends Controller
             return back()->with('error', $e->getMessage());
         }
 
-        return redirect()->route('accounting.accounts.index')->with('success', 'Account deleted.');
+        return redirect()->route('accounting.accounts.index')->with('success', __('accounting.deleted'));
     }
 
     public function addComment(Request $request, Account $account)
@@ -240,6 +271,47 @@ class AccountController extends Controller
         $request->validate(['body' => 'required|string|max:5000']);
         DB::transaction(fn () => $account->logComment($request->body));
 
-        return back()->with('success', 'Comment added.');
+        return back()->with('success', __('accounting.comment_added'));
+    }
+
+    /**
+     * Bounded walk: is $candidateId reachable from $startId by following
+     * parent_id 64 hops? 64 levels is well past any sane Chart of Accounts
+     * (Iraqi UAS tops out at ~5), but the cap is deliberately high so the
+     * walk also escapes pre-existing corrupted data instead of hanging.
+     *
+     * Returns true when $candidateId appears anywhere in $startId's parent
+     * chain — i.e. setting $startId as a child of $candidateId would close
+     * the loop.
+     */
+    private function isAccountDescendantOf(int $startId, int $candidateId): bool
+    {
+        $cursor = $startId;
+        for ($i = 0; $i < 64 && $cursor; $i++) {
+            if ($cursor === $candidateId) {
+                return true;
+            }
+            $cursor = (int) (Account::whereKey($cursor)->value('parent_id') ?? 0);
+        }
+        return false;
+    }
+
+    /**
+     * Detect pre-existing corruption: walking up parent_id for 64 hops
+     * should always terminate. If it doesn't, the chart is already cyclic
+     * and we should refuse to grow it further.
+     */
+    private function parentChainHasCycle(int $startId): bool
+    {
+        $seen = [];
+        $cursor = $startId;
+        for ($i = 0; $i < 64 && $cursor; $i++) {
+            if (isset($seen[$cursor])) {
+                return true;
+            }
+            $seen[$cursor] = true;
+            $cursor = (int) (Account::whereKey($cursor)->value('parent_id') ?? 0);
+        }
+        return false;
     }
 }

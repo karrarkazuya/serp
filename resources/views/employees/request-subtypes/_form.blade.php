@@ -5,7 +5,7 @@
     $val = fn ($key, $default = null) => old($key, $subtype?->{$key} ?? $default);
 @endphp
 
-<div x-data="{ type: '{{ $val('type', 'leave') }}' }" class="grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-4">
+<div x-data="{ type: @js($val('type', 'leave')) }" class="grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-4">
     <div>
         <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1">{{ __('employees.subtype_name') }} <span class="text-red-500">*</span></label>
         <input type="text" name="name" value="{{ $val('name') }}" required

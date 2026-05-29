@@ -52,15 +52,17 @@ class Product extends Model
     protected $fillable = [
         'company_id', 'category_id', 'uom_id', 'uom_po_id',
         'name', 'internal_reference', 'barcode', 'description', 'description_picking',
-        'product_type', 'tracking', 'cost', 'sale_price', 'weight', 'volume', 'image_uuid', 'active',
+        'product_type', 'tracking', 'has_expiration_date',
+        'cost', 'sale_price', 'weight', 'volume', 'image_uuid', 'active',
     ];
 
     protected $casts = [
-        'cost'       => 'decimal:4',
-        'sale_price' => 'decimal:4',
-        'weight'     => 'decimal:4',
-        'volume'     => 'decimal:4',
-        'active'     => 'boolean',
+        'cost'                => 'decimal:4',
+        'sale_price'          => 'decimal:4',
+        'weight'              => 'decimal:4',
+        'volume'              => 'decimal:4',
+        'has_expiration_date' => 'boolean',
+        'active'              => 'boolean',
     ];
 
     public function company(): BelongsTo    { return $this->belongsTo(Company::class); }
@@ -126,5 +128,39 @@ class Product extends Model
     public function getImageUrlAttribute(): ?string
     {
         return $this->image_uuid ? route('files.serve', $this->image_uuid) : null;
+    }
+
+    /**
+     * Odoo parity: the "primary" purchase vendor — used by the replenishment
+     * flow to stamp the receipt's partner_id and to derive lead time from
+     * `supplier.delay` when the reorder rule has none of its own. Picks the
+     * active supplier with the lowest `delay` (fastest fulfilment), then by
+     * lowest `min_qty` (cheapest minimum order) as a tiebreaker, then by
+     * insertion order. Returns null if no active supplier matches.
+     *
+     * `$companyId` (optional) scopes the choice to suppliers whose partner
+     * contact lives in that company — Contacts are company-scoped, and a
+     * multi-company user could have wired a cross-tenant partner via the
+     * form. Without this filter, replenishing a Company-A product whose
+     * primary supplier points at a Company-B contact would stamp the B
+     * contact onto an A picking, breaking tenant isolation downstream
+     * (audit feed, chatter, supplier lookups). Suppliers whose `partner_id`
+     * is null (free-text vendor only) are also excluded when a company is
+     * passed, because we can't verify their tenancy.
+     */
+    public function primarySupplier(?int $companyId = null): ?ProductSupplier
+    {
+        $query = $this->suppliers()
+            ->where('active', true);
+
+        if ($companyId !== null) {
+            $query->whereHas('partner', fn ($q) => $q->where('company_id', $companyId));
+        }
+
+        return $query
+            ->orderBy('delay')
+            ->orderBy('min_qty')
+            ->orderBy('id')
+            ->first();
     }
 }

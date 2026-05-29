@@ -35,6 +35,7 @@ class UpdateProductRequest extends FormRequest
             'description_picking' => ['nullable', 'string'],
             'product_type'        => ['required', Rule::in(['storable', 'consumable', 'service'])],
             'tracking'            => ['required', Rule::in(['none', 'lot', 'serial'])],
+            'has_expiration_date' => ['nullable', 'boolean'],
             'cost'                => ['nullable', 'numeric', 'min:0'],
             'sale_price'          => ['nullable', 'numeric', 'min:0'],
             'weight'              => ['nullable', 'numeric', 'min:0'],

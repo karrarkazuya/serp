@@ -40,7 +40,7 @@ class StorePickingRequest extends FormRequest
             'note'              => ['nullable', 'string', 'max:512'],
             'moves'             => ['nullable', 'array'],
             'moves.*.product_id'  => ['required_with:moves', $productRule],
-            'moves.*.uom_id'      => ['required_with:moves', 'exists:inventory_uoms,id'],
+            'moves.*.uom_id'      => ['required_with:moves', 'exists:inventory_uoms,id', $this->uomMatchingProductCategoryRule()],
             'moves.*.product_qty' => ['required_with:moves', 'numeric', 'min:0.0001'],
             'moves.*.sequence'    => ['nullable', 'integer'],
         ];

@@ -46,12 +46,12 @@
                         {{ $group->active ? __('common.active') : __('common.inactive') }}
                     </span>
                 </td>
-                <td class="px-3 py-2 text-right" onclick="event.stopPropagation()">
+                <td class="px-3 py-2 text-end" onclick="event.stopPropagation()">
                     @can('update', $group)
-                    <a href="{{ route('workflow.config.groups.edit', $group) }}" class="text-xs text-purple-600 hover:text-purple-700 mr-3">{{ __('common.edit') }}</a>
+                    <a href="{{ route('workflow.config.groups.edit', $group) }}" class="text-xs text-purple-600 hover:text-purple-700 me-3">{{ __('common.edit') }}</a>
                     @endcan
                     @can('delete', $group)
-                    <form method="POST" action="{{ route('workflow.config.groups.delete', $group) }}" class="inline" @submit.prevent="$dispatch('confirm-delete', { message: 'Are you sure you want to delete this group?', form: $el })">
+                    <form method="POST" action="{{ route('workflow.config.groups.delete', $group) }}" class="inline" @submit.prevent="$dispatch('confirm-delete', { message: @js(__('common.confirm_delete')), form: $el })">
                         @csrf @method('DELETE')
                         <button class="text-xs text-red-600 hover:text-red-700">{{ __('common.delete') }}</button>
                     </form>
@@ -83,12 +83,12 @@
                     {{ $group->active ? __('common.active') : __('common.inactive') }}
                 </span>
             </td>
-            <td class="px-3 py-2 text-right" onclick="event.stopPropagation()">
+            <td class="px-3 py-2 text-end" onclick="event.stopPropagation()">
                 @can('update', $group)
-                <a href="{{ route('workflow.config.groups.edit', $group) }}" class="text-xs text-purple-600 hover:text-purple-700 mr-3">{{ __('common.edit') }}</a>
+                <a href="{{ route('workflow.config.groups.edit', $group) }}" class="text-xs text-purple-600 hover:text-purple-700 me-3">{{ __('common.edit') }}</a>
                 @endcan
                 @can('delete', $group)
-                <form method="POST" action="{{ route('workflow.config.groups.delete', $group) }}" class="inline" @submit.prevent="$dispatch('confirm-delete', { message: 'Are you sure you want to delete this group?', form: $el })">
+                <form method="POST" action="{{ route('workflow.config.groups.delete', $group) }}" class="inline" @submit.prevent="$dispatch('confirm-delete', { message: @js(__('common.confirm_delete')), form: $el })">
                     @csrf @method('DELETE')
                     <button class="text-xs text-red-600 hover:text-red-700">{{ __('common.delete') }}</button>
                 </form>

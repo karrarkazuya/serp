@@ -73,7 +73,7 @@ class PutawayRuleController extends Controller
         $data['created_by'] = auth()->id();
         $data['updated_by'] = auth()->id();
         DB::transaction(fn () => PutawayRule::create($data));
-        return redirect()->route('inventory.config.putaway-rules.index')->with('success', 'Putaway rule created.');
+        return redirect()->route('inventory.config.putaway-rules.index')->with('success', __('inventory.created'));
     }
 
     public function edit(PutawayRule $putawayRule)
@@ -106,7 +106,7 @@ class PutawayRuleController extends Controller
         ]);
         $data['updated_by'] = auth()->id();
         DB::transaction(fn () => $putawayRule->update($data));
-        return redirect()->route('inventory.config.putaway-rules.index')->with('success', 'Putaway rule updated.');
+        return redirect()->route('inventory.config.putaway-rules.index')->with('success', __('inventory.updated'));
     }
 
     public function unlink(Request $_request, PutawayRule $putawayRule)
@@ -115,6 +115,6 @@ class PutawayRuleController extends Controller
         $activeCompanyIds = $this->companyContext->getActiveCompanyIds();
         abort_unless(in_array($putawayRule->company_id, $activeCompanyIds), 403);
         DB::transaction(fn () => $putawayRule->delete());
-        return redirect()->route('inventory.config.putaway-rules.index')->with('success', 'Putaway rule deleted.');
+        return redirect()->route('inventory.config.putaway-rules.index')->with('success', __('inventory.deleted'));
     }
 }

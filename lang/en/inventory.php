@@ -284,4 +284,130 @@ return [
     'no_results'       => 'No results',
     'status_ok'        => 'OK',
 
+    // Removal strategy options
+    'removal_fifo'          => 'First In First Out (FIFO)',
+    'removal_lifo'          => 'Last In First Out (LIFO)',
+    'removal_fefo'          => 'First Expiry First Out (FEFO)',
+    'removal_closest'       => 'Closest Location',
+
+    // Costing method options
+    'costing_standard'      => 'Standard Price',
+    'costing_avco'          => 'Average Cost (AVCO)',
+
+    // Operation type code options
+    'op_type_incoming'      => 'Receipt',
+    'op_type_outgoing'      => 'Delivery',
+    'op_type_internal'      => 'Internal Transfer',
+
+    // Reservation method options
+    'reservation_at_confirm'       => 'At Confirmation',
+    'reservation_before_scheduled' => 'Before Scheduled Date',
+    'reservation_manual'           => 'Manually',
+
+    // ── Flash messages (used by inventory controllers) ──────────────────────
+    'created'              => 'Created successfully.',
+    'updated'              => 'Updated successfully.',
+    'deleted'              => 'Deleted.',
+    'archived'             => 'Archived.',
+    'restored'             => 'Restored.',
+    'comment_added'        => 'Comment added.',
+    'replenish_created'    => 'Replenishment order created.',
+    'no_receipt_optype'    => 'No receipt operation type found for this warehouse.',
+    'already_at_max'       => 'Stock is already at or above the maximum quantity. No replenishment needed.',
+    'parent_cycle_category' => 'Selected parent would create a circular category hierarchy.',
+    'parent_cycle_location' => 'Selected parent would create a circular location hierarchy.',
+    'transfer_confirmed_flash'   => 'Transfer confirmed.',
+    'transfer_availability_done' => 'Stock availability checked.',
+    'transfer_validated_flash'   => 'Transfer validated.',
+    'transfer_cancelled_flash'   => 'Transfer cancelled.',
+    'transfer_return_created'    => 'Return order created.',
+    'transfer_backorder_created' => 'Backorder created.',
+    'transfer_validated_with_backorder' => 'Transfer validated. A backorder was created for the remaining quantities.',
+    'inv_count_started_hint' => 'Inventory count started. Update quantities below.',
+    'warehouse_created_with_defaults' => 'Warehouse created with default locations and operation types.',
+    'line_updated'           => 'Line updated.',
+    'adjustment_started'   => 'Physical inventory count started.',
+    'adjustment_validated' => 'Physical inventory validated.',
+    'scrap_validated'      => 'Scrap order validated.',
+
+    // ── Service-layer chatter labels (used as the model label argument) ─────
+    'chatter_label_warehouse'  => 'Warehouse',
+    'chatter_label_product'    => 'Product',
+    'chatter_label_transfer'   => 'Transfer',
+    'chatter_label_scrap'      => 'Scrap Order',
+    'chatter_label_adjustment' => 'Physical Inventory',
+    'chatter_label_lot'        => 'Lot',
+    'chatter_label_category'   => 'Product Category',
+    'chatter_label_location'   => 'Location',
+    'chatter_label_optype'     => 'Operation Type',
+    'chatter_label_route'      => 'Route',
+    'chatter_label_uom'        => 'Unit of Measure',
+    'chatter_label_putaway'    => 'Putaway Rule',
+    'err_category_has_children' => 'Cannot delete a category with sub-categories.',
+    'err_location_has_children' => 'Cannot delete a location with sub-locations.',
+    'err_optype_has_pickings'   => 'Cannot delete an operation type with existing transfers.',
+    'err_scrap_insufficient'    => 'Insufficient stock for ":product". Available: :on_hand, requested: :requested.',
+    'err_scrap_done_no_delete'  => 'Done scrap orders cannot be deleted.',
+    'err_adjustment_not_in_progress' => 'Only in-progress adjustments can be validated.',
+    'err_adjustment_no_virtual_loc'  => 'Inventory Adjustments virtual location not found.',
+    'err_adjustment_done_no_delete'  => 'Done adjustments cannot be deleted.',
+    'stored_only'                    => 'stored only',
+    'costing_method_not_consumed'    => 'The costing method is stored on the category but not yet wired to inventory valuation — the product cost field is still used as-is for every move.',
+    'origin_replenishment'           => 'Replenishment',
+    'origin_return_of'               => 'Return of :ref',
+    'best_before_not_consumed'       => 'Stored on the lot, but not yet read by any picking/scrap path — only Expiration Date drives FEFO sorting and the "expired" badge.',
+    'err_done_move_immutable'        => 'Move #:id is done and cannot be modified. Cancel the picking or create a return instead.',
+    'err_done_move_no_delete'        => 'Move #:id is done and cannot be deleted. Cancel the picking or create a return instead.',
+    'err_done_moveline_immutable'    => 'Move line #:id belongs to a done move and cannot be modified.',
+    'err_done_moveline_no_delete'    => 'Move line #:id belongs to a done move and cannot be deleted.',
+    'product_inert_fields_notice'    => 'Heads up: several product fields are stored but not yet consumed — internal reference, barcode, weight, volume, purchase UoM, and routes. They save with the product but no picking, scrap, or report path reads them today. The suppliers table is now read by the replenishment flow (vendor stamp + lead time), but is not consulted anywhere else.',
+    // PickingService exception messages (bubble up as flash errors)
+    'err_transfer_bad_state'         => 'Transfer cannot be validated in its current state.',
+    'err_product_needs_lot'          => 'Product ":name" requires a lot/serial number. Please fill in the detailed operations before validating.',
+    'err_lines_need_lot'             => 'All lines for product ":name" must have a lot/serial number assigned.',
+    'err_serial_one_per_line'        => 'Serial-tracked product ":name" requires exactly 1 unit per serial. Line has :qty.',
+    'err_nothing_to_validate'        => 'Nothing to validate. Please enter done quantities before validating.',
+    'err_done_no_cancel'             => 'Done transfers cannot be cancelled.',
+    'err_no_return_optype'           => 'No return operation type configured.',
+    'err_insufficient_at_source'     => 'Insufficient stock for ":product" at source location. Available: :on_hand, requested: :requested.',
+    'err_serial_already_on_hand'     => 'Serial ":name" for product ":product" is already on hand (qty :qty). Serials are unique physical units and cannot be received twice.',
+    'err_uom_category_mismatch'      => 'Unit ":from" is not in the same UoM category as ":to". Pick a unit from the product\'s UoM category.',
+    'err_uom_zero_ratio'             => 'Unit ":name" has a zero or negative ratio. Edit the unit and set a positive ratio before using it.',
+    // Service-layer chatter messages
+    'chatter_warehouse_deleted'  => 'Warehouse deleted.',
+    'chatter_product_deleted'    => 'Product deleted.',
+    'chatter_transfer_confirmed' => 'Transfer confirmed.',
+    'chatter_transfer_validated' => 'Transfer validated.',
+    'chatter_transfer_cancelled' => 'Transfer cancelled.',
+    'chatter_backorder_of'       => 'Backorder of :ref.',
+    'chatter_scrap_validated'    => 'Scrap order validated.',
+    'chatter_scrap_deleted'      => 'Scrap order deleted.',
+    'chatter_adjustment_started'    => 'Physical inventory count started.',
+    'chatter_adjustment_validated'  => 'Physical inventory validated.',
+    'chatter_adjustment_deleted'    => 'Physical inventory deleted.',
+
+    // ── Warehouse auto-install (location + operation type names) ────────────
+    // Persisted to the DB on warehouse creation. Snapshots the actor's locale
+    // at create time — re-rendered by viewers in their own locale via the
+    // Location/OperationType accessors when available.
+    'wh_loc_stock'           => 'Stock',
+    'wh_loc_input'           => 'Input',
+    'wh_loc_qc'              => 'Quality Control',
+    'wh_loc_output'          => 'Output',
+    'wh_loc_packing'         => 'Packing Zone',
+    'wh_optype_receipts'     => ':short: Receipts',
+    'wh_optype_deliveries'   => ':short: Delivery Orders',
+    'wh_optype_internal'     => ':short: Internal Transfers',
+
+    // ── Service-layer ledger labels (line names on inventory moves) ─────────
+    'line_scrap_of'             => 'Scrap: :product',
+    'line_adjustment_of'        => 'Inventory Adjustment: :product',
+
+    // ── Picking state labels (used by Picking::getStateLabelAttribute) ──────
+    'picking_state_draft'      => 'Draft',
+    'picking_state_confirmed'  => 'Confirmed',
+    'picking_state_assigned'   => 'Ready',
+    'picking_state_done'       => 'Done',
+    'picking_state_cancelled'  => 'Cancelled',
+
 ];

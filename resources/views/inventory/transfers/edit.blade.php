@@ -81,7 +81,7 @@
                         <tr x-data="{
                                 deleted: false,
                                 uomId: {{ $move->uom_id ?? ($move->product?->uom_id ?? 'null') }},
-                                uomName: '{{ addslashes($move->product?->uom?->name ?? '') }}',
+                                uomName: @js($move->product?->uom?->name ?? ''),
                                 uomInfoUrl: @js(route('inventory.products.uom-info')),
                                 onProductChanged(e) {
                                     const pid = e.detail.value;

@@ -37,9 +37,15 @@
                     @endcan
                 @elseif($move->isPosted())
                     @can('post', $move)
-                    <form method="POST" action="{{ route('accounting.moves.reset-draft', $move) }}">
+                    <form method="POST" action="{{ route('accounting.moves.reset-draft', $move) }}" x-data="{ confirming: false }">
                         @csrf @method('PATCH')
-                        <button class="px-3 py-1.5 text-sm text-amber-700 border border-amber-200 rounded hover:bg-amber-50">{{ __('accounting.btn_reset_draft') }}</button>
+                        <button type="button" x-show="!confirming" @click="confirming = true"
+                                class="px-3 py-1.5 text-sm text-amber-700 border border-amber-200 rounded hover:bg-amber-50">{{ __('accounting.btn_reset_draft') }}</button>
+                        <div x-show="confirming" style="display:none" class="flex items-center gap-1.5">
+                            <span class="text-xs text-amber-700">{{ __('accounting.warn_reset_posted') }}</span>
+                            <button type="submit" class="px-2 py-1 text-xs font-medium text-white bg-amber-600 rounded">{{ __('accounting.btn_yes') }}</button>
+                            <button type="button" @click="confirming = false" class="px-2 py-1 text-xs text-gray-500">{{ __('accounting.btn_cancel') }}</button>
+                        </div>
                     </form>
                     <form method="POST" action="{{ route('accounting.moves.reverse', $move) }}"
                           x-data="{ open: false }" class="relative">
@@ -49,7 +55,7 @@
                             {{ __('accounting.btn_reverse') }}
                         </button>
                         <div x-show="open" style="display:none"
-                             class="absolute right-0 mt-1 z-20 bg-white border border-gray-200 rounded-lg shadow-lg p-3 flex items-end gap-2">
+                             class="absolute end-0 mt-1 z-20 bg-white border border-gray-200 rounded-lg shadow-lg p-3 flex items-end gap-2">
                             <div>
                                 <label class="block text-[11px] font-semibold text-gray-500 uppercase mb-1">{{ __('accounting.field_date') }}</label>
                                 <input type="date" name="reversal_date" value="{{ now()->toDateString() }}"

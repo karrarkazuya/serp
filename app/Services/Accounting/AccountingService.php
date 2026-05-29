@@ -50,7 +50,7 @@ class AccountingService
     {
         $data['internal_type'] = $this->resolveInternalType($data['account_type'] ?? 'other');
         $account = Account::create($data);
-        $this->chatterService->logCreated($account, 'Account');
+        $this->chatterService->logCreated($account, __('accounting.chatter_label_account'));
         return $account;
     }
 
@@ -62,7 +62,7 @@ class AccountingService
         $changes = $this->detectChanges($account, $data);
         $account->update($data);
         if (!empty($changes)) {
-            $this->chatterService->logUpdated($account, $changes, 'Account');
+            $this->chatterService->logUpdated($account, $changes, __('accounting.chatter_label_account'));
         }
         return $account->fresh();
     }
@@ -70,23 +70,23 @@ class AccountingService
     public function archiveAccount(Account $account): Account
     {
         $account->update(['active' => false]);
-        $this->chatterService->logArchived($account, 'Account');
+        $this->chatterService->logArchived($account, __('accounting.chatter_label_account'));
         return $account;
     }
 
     public function unarchiveAccount(Account $account): Account
     {
         $account->update(['active' => true]);
-        $this->chatterService->logUnarchived($account, 'Account');
+        $this->chatterService->logUnarchived($account, __('accounting.chatter_label_account'));
         return $account;
     }
 
     public function deleteAccount(Account $account): void
     {
         if ($account->moveLines()->exists()) {
-            throw new RuntimeException('Cannot delete an account that has journal entries. Archive it instead.');
+            throw new RuntimeException(__('accounting.err_account_has_entries'));
         }
-        $this->chatterService->log($account, 'Account deleted.', 'system');
+        $this->chatterService->log($account, __('accounting.chatter_account_deleted'), 'system');
         $account->delete();
     }
 
@@ -104,7 +104,7 @@ class AccountingService
         $data['sequence_next_number'] = $data['sequence_next_number'] ?? 1;
         $data['sequence_padding']     = $data['sequence_padding'] ?? 4;
         $journal = AccountJournal::create($data);
-        $this->chatterService->logCreated($journal, 'Journal');
+        $this->chatterService->logCreated($journal, __('accounting.chatter_label_journal'));
         return $journal;
     }
 
@@ -113,7 +113,7 @@ class AccountingService
         $changes = $this->detectChanges($journal, $data);
         $journal->update($data);
         if (!empty($changes)) {
-            $this->chatterService->logUpdated($journal, $changes, 'Journal');
+            $this->chatterService->logUpdated($journal, $changes, __('accounting.chatter_label_journal'));
         }
         return $journal->fresh();
     }
@@ -121,23 +121,23 @@ class AccountingService
     public function archiveJournal(AccountJournal $journal): AccountJournal
     {
         $journal->update(['active' => false]);
-        $this->chatterService->logArchived($journal, 'Journal');
+        $this->chatterService->logArchived($journal, __('accounting.chatter_label_journal'));
         return $journal;
     }
 
     public function unarchiveJournal(AccountJournal $journal): AccountJournal
     {
         $journal->update(['active' => true]);
-        $this->chatterService->logUnarchived($journal, 'Journal');
+        $this->chatterService->logUnarchived($journal, __('accounting.chatter_label_journal'));
         return $journal;
     }
 
     public function deleteJournal(AccountJournal $journal): void
     {
         if ($journal->moves()->exists()) {
-            throw new RuntimeException('Cannot delete a journal that has entries. Archive it instead.');
+            throw new RuntimeException(__('accounting.err_journal_has_entries'));
         }
-        $this->chatterService->log($journal, 'Journal deleted.', 'system');
+        $this->chatterService->log($journal, __('accounting.chatter_journal_deleted'), 'system');
         $journal->delete();
     }
 
@@ -152,7 +152,7 @@ class AccountingService
         // Lock the journal row to prevent concurrent sequence collisions.
         $locked = AccountJournal::whereKey($journal->id)->lockForUpdate()->first();
         if (!$locked) {
-            throw new RuntimeException('Journal not found while reserving sequence.');
+            throw new RuntimeException(__('accounting.err_journal_locked'));
         }
 
         $year    = (int) $date->format('Y');
@@ -211,12 +211,11 @@ class AccountingService
         if (!empty($journal->currency)) {
             $requested = $data['currency'] ?? null;
             if ($requested !== null && $requested !== '' && $requested !== $journal->currency) {
-                throw new RuntimeException(sprintf(
-                    "Journal '%s' is pinned to currency %s; this entry cannot use %s.",
-                    $journal->name,
-                    $journal->currency,
-                    $requested
-                ));
+                throw new RuntimeException(__('accounting.err_journal_currency_pin', [
+                    'journal'   => $journal->name,
+                    'pinned'    => $journal->currency,
+                    'requested' => $requested,
+                ]));
             }
             $data['currency'] = $journal->currency;
         }
@@ -240,7 +239,7 @@ class AccountingService
         $move->refresh();
         $move->update(['amount_total' => $this->computeTotal($move)]);
 
-        $this->chatterService->logCreated($move, 'Journal Entry');
+        $this->chatterService->logCreated($move, __('accounting.chatter_label_entry'));
         return $move->fresh();
     }
 
@@ -267,7 +266,7 @@ class AccountingService
     public function updateMove(AccountMove $move, array $data, array $lines): AccountMove
     {
         if (!$move->isDraft()) {
-            throw new RuntimeException('Only draft entries can be edited. Reset to draft first.');
+            throw new RuntimeException(__('accounting.err_only_draft_edit'));
         }
 
         if (isset($data['journal_id']) && (int) $data['journal_id'] !== (int) $move->journal_id) {
@@ -283,7 +282,7 @@ class AccountingService
         $move->update(['amount_total' => $this->computeTotal($move)]);
 
         if (!empty($changes)) {
-            $this->chatterService->logUpdated($move, $changes, 'Journal Entry');
+            $this->chatterService->logUpdated($move, $changes, __('accounting.chatter_label_entry'));
         }
         return $move->fresh();
     }
@@ -313,13 +312,13 @@ class AccountingService
             return $move;
         }
         if ($move->isCancelled()) {
-            throw new RuntimeException('Cancelled entries cannot be posted.');
+            throw new RuntimeException(__('accounting.err_cancelled_no_post'));
         }
 
         $move->load(['journal', 'lines']);
 
         if ($move->lines->isEmpty()) {
-            throw new RuntimeException('Cannot post an entry with no lines.');
+            throw new RuntimeException(__('accounting.err_no_lines'));
         }
 
         $this->assertBalanced($move);
@@ -336,11 +335,10 @@ class AccountingService
             && $this->documentCounterpartLines($move)->isEmpty()
         ) {
             $expectedType = in_array($move->move_type, ['out_invoice', 'out_refund'], true) ? 'receivable' : 'payable';
-            throw new RuntimeException(sprintf(
-                'A %s must include at least one %s line. None found.',
-                AccountMove::MOVE_TYPES[$move->move_type] ?? $move->move_type,
-                $expectedType
-            ));
+            throw new RuntimeException(__('accounting.err_doc_needs_arap_line', [
+                'move_type' => $move->move_type_label,
+                'type'      => $expectedType,
+            ]));
         }
 
         // D9 (Odoo parity): drafts use name='/' as a placeholder; treat that
@@ -359,7 +357,7 @@ class AccountingService
 
         $move->lines()->update(['state' => 'posted']);
 
-        $this->chatterService->log($move, "Entry posted as {$name}.", 'system');
+        $this->chatterService->log($move, __('accounting.chatter_entry_posted_as', ['name' => $name]), 'system');
 
         // O5 (Odoo parity): when posting a credit note / reversal that points
         // back at an original move via `reversed_move_id`, auto-reconcile their
@@ -469,20 +467,37 @@ class AccountingService
         $this->assertDateNotLocked($move);
 
         $lineIds = $move->lines()->pluck('id');
+
+        // Identify the OTHER moves whose lines were reconciled against
+        // $move's lines, so we can notify them their match was undone (see
+        // `notifySiblingMovesOfReconcileLoss`). Must collect BEFORE deleting
+        // the reconcile rows.
+        $siblingMoveIds = $this->siblingMovesFromReconciles($lineIds);
+
         AccountPartialReconcile::where(function ($q) use ($lineIds) {
             $q->whereIn('debit_move_line_id', $lineIds)
               ->orWhereIn('credit_move_line_id', $lineIds);
         })->delete();
 
-        $move->update([
+        // O8 (Odoo parity): when resetting a previously-cancelled move, strip
+        // the `[CANCELLED] ` prefix `cancelMove` stamped on the name. Without
+        // this the resulting draft keeps the prefix permanently — re-posting
+        // it stamps the chatter "Entry posted as [CANCELLED] INV/..." and the
+        // journal listing shows a name that reads as cancelled forever.
+        $updates = [
             'state'         => 'draft',
             'payment_state' => 'not_paid',
             'posted_at'     => null,
             'posted_by'     => null,
-        ]);
+        ];
+        if ($move->name && str_starts_with($move->name, '[CANCELLED] ')) {
+            $updates['name'] = substr($move->name, strlen('[CANCELLED] '));
+        }
+        $move->update($updates);
         $move->lines()->update(['state' => 'draft']);
 
-        $this->chatterService->log($move, 'Entry reset to draft.', 'system');
+        $this->chatterService->log($move, __('accounting.chatter_entry_reset'), 'system');
+        $this->notifySiblingMovesOfReconcileLoss($siblingMoveIds, $move, 'reset');
         return $move->fresh();
     }
 
@@ -507,6 +522,14 @@ class AccountingService
         }
 
         $lineIds = $move->lines()->pluck('id');
+
+        // Collect sibling moves (the OTHER side of every reconcile) before
+        // we destroy the reconcile rows. We'll log a chatter note on each so
+        // a user looking at a payment whose linked invoice was just cancelled
+        // sees an explicit trail instead of finding their payment silently
+        // un-matched.
+        $siblingMoveIds = $this->siblingMovesFromReconciles($lineIds);
+
         AccountPartialReconcile::where(function ($q) use ($lineIds) {
             $q->whereIn('debit_move_line_id', $lineIds)
               ->orWhereIn('credit_move_line_id', $lineIds);
@@ -523,8 +546,66 @@ class AccountingService
 
         $move->update($updates);
         $move->lines()->update(['state' => 'cancelled']);
-        $this->chatterService->log($move, 'Entry cancelled.', 'system');
+        $this->chatterService->log($move, __('accounting.chatter_entry_cancelled'), 'system');
+        $this->notifySiblingMovesOfReconcileLoss($siblingMoveIds, $move, 'cancel');
         return $move->fresh();
+    }
+
+    /**
+     * Return the IDs of moves whose lines participate in any reconcile that
+     * touches $lineIds — minus the move that owns $lineIds itself. Used by
+     * cancel/reset to find the "other side" payments that are about to lose
+     * their match so we can post an explanatory chatter note on each.
+     *
+     * @return \Illuminate\Support\Collection<int, int>
+     */
+    private function siblingMovesFromReconciles(\Illuminate\Support\Collection $lineIds): \Illuminate\Support\Collection
+    {
+        if ($lineIds->isEmpty()) {
+            return collect();
+        }
+        $matchedLineIds = AccountPartialReconcile::query()
+            ->where(function ($q) use ($lineIds) {
+                $q->whereIn('debit_move_line_id', $lineIds)
+                  ->orWhereIn('credit_move_line_id', $lineIds);
+            })
+            ->get()
+            ->flatMap(fn ($r) => [$r->debit_move_line_id, $r->credit_move_line_id])
+            ->unique()
+            ->reject(fn ($id) => $lineIds->contains($id));
+
+        return AccountMoveLine::whereIn('id', $matchedLineIds)
+            ->pluck('move_id')
+            ->unique()
+            ->values();
+    }
+
+    /**
+     * Drop a chatter note on every sibling move so a user landing on the
+     * payment notices its match was undone elsewhere. Without this trail
+     * the payment looks posted-and-matched until the user opens the linked
+     * invoice and notices it's been cancelled — costly delay if the
+     * reconciliation is part of a longer chain.
+     *
+     * @param  string  $action  'cancel' or 'reset' — picks the chatter key
+     */
+    private function notifySiblingMovesOfReconcileLoss(
+        \Illuminate\Support\Collection $siblingMoveIds,
+        AccountMove $sourceMove,
+        string $action,
+    ): void {
+        if ($siblingMoveIds->isEmpty()) {
+            return;
+        }
+        $ref = $sourceMove->name && $sourceMove->name !== '/'
+            ? $sourceMove->name
+            : "#{$sourceMove->id}";
+        $key = $action === 'cancel'
+            ? 'accounting.cancel_undid_match'
+            : 'accounting.reset_undid_match';
+        foreach (AccountMove::whereIn('id', $siblingMoveIds)->get() as $sibling) {
+            $this->chatterService->log($sibling, __($key, ['ref' => $ref]), 'system');
+        }
     }
 
     public function registerDocumentPayment(AccountMove $move, array $data = []): AccountPayment
@@ -537,11 +618,11 @@ class AccountingService
         $move = AccountMove::whereKey($move->id)->lockForUpdate()->first() ?? $move;
 
         if (!$move->isPosted()) {
-            throw new RuntimeException('Only posted documents can be paid.');
+            throw new RuntimeException(__('accounting.err_only_posted_pay'));
         }
 
         if (!in_array($move->move_type, ['out_invoice', 'in_invoice', 'out_refund', 'in_refund'], true)) {
-            throw new RuntimeException('Only invoices, bills, and refunds can be paid.');
+            throw new RuntimeException(__('accounting.err_only_doctype_pay'));
         }
 
         $move->loadMissing(['lines.account', 'journal']);
@@ -556,12 +637,12 @@ class AccountingService
         $residual         = round($counterpartLines->sum(fn (AccountMoveLine $l) => $this->getLineResidual($l)), self::SCALE);
 
         if ($residual <= 0) {
-            throw new RuntimeException('This document is already fully paid.');
+            throw new RuntimeException(__('accounting.err_already_paid'));
         }
 
         $amount = round((float) ($data['amount'] ?? $residual), self::SCALE);
         if ($amount <= 0) {
-            throw new RuntimeException('Payment amount must be greater than zero.');
+            throw new RuntimeException(__('accounting.err_amount_positive'));
         }
         // Allow overpayments: reconcile only up to the outstanding residual.
         $reconcileAmount = min($amount, $residual);
@@ -572,12 +653,12 @@ class AccountingService
         $this->assertSameCompany($journal->company_id, $move->company_id, 'payment journal');
 
         if (!$journal->default_account_id) {
-            throw new RuntimeException('The selected payment journal needs a default liquidity account.');
+            throw new RuntimeException(__('accounting.err_journal_no_liquidity'));
         }
 
         $date = Carbon::parse($data['date'] ?? now()->toDateString());
         $paymentType = in_array($move->move_type, ['out_invoice', 'in_refund'], true) ? 'inbound' : 'outbound';
-        $memo = $data['memo'] ?? 'Payment for ' . ($move->name ?: "#{$move->id}");
+        $memo = $data['memo'] ?? __('accounting.ledger_payment_for', ['ref' => $move->name ?: "#{$move->id}"]);
 
         // O11 (Odoo parity): if the journal has an outstanding receipts/payments
         // account configured, route the liquidity leg through it. The payment
@@ -657,7 +738,10 @@ class AccountingService
             'state' => 'posted',
         ]);
 
-        $this->chatterService->log($move, sprintf('Payment registered: %.2f %s.', $amount, $move->currency ?: ''), 'system');
+        $this->chatterService->log($move, __('accounting.chatter_payment_registered', [
+            'amount'   => number_format($amount, 2),
+            'currency' => $move->currency ?: '',
+        ]), 'system');
 
         return $payment;
     }
@@ -667,12 +751,12 @@ class AccountingService
         $journal = AccountJournal::findOrFail($data['journal_id']);
 
         if (!$journal->default_account_id) {
-            throw new RuntimeException('The selected payment journal needs a default liquidity account.');
+            throw new RuntimeException(__('accounting.err_journal_no_liquidity'));
         }
 
         $amount = round((float) ($data['amount'] ?? 0), self::SCALE);
         if ($amount <= 0) {
-            throw new RuntimeException('Payment amount must be greater than zero.');
+            throw new RuntimeException(__('accounting.err_amount_positive'));
         }
 
         $paymentType = $data['payment_type'];
@@ -695,12 +779,12 @@ class AccountingService
 
         $lines = $paymentType === 'inbound'
             ? [
-                ['account_id' => $liquidityAccountId,    'partner_id' => $partnerId, 'name' => $memo ?: 'Payment', 'debit' => $amount, 'credit' => 0, 'sequence' => 10],
-                ['account_id' => $counterpartAccountId,  'partner_id' => $partnerId, 'name' => $memo ?: 'Payment', 'debit' => 0, 'credit' => $amount, 'sequence' => 20],
+                ['account_id' => $liquidityAccountId,    'partner_id' => $partnerId, 'name' => $memo ?: __('accounting.ledger_payment_generic'), 'debit' => $amount, 'credit' => 0, 'sequence' => 10],
+                ['account_id' => $counterpartAccountId,  'partner_id' => $partnerId, 'name' => $memo ?: __('accounting.ledger_payment_generic'), 'debit' => 0, 'credit' => $amount, 'sequence' => 20],
             ]
             : [
-                ['account_id' => $counterpartAccountId,  'partner_id' => $partnerId, 'name' => $memo ?: 'Payment', 'debit' => $amount, 'credit' => 0, 'sequence' => 10],
-                ['account_id' => $liquidityAccountId,    'partner_id' => $partnerId, 'name' => $memo ?: 'Payment', 'debit' => 0, 'credit' => $amount, 'sequence' => 20],
+                ['account_id' => $counterpartAccountId,  'partner_id' => $partnerId, 'name' => $memo ?: __('accounting.ledger_payment_generic'), 'debit' => $amount, 'credit' => 0, 'sequence' => 10],
+                ['account_id' => $liquidityAccountId,    'partner_id' => $partnerId, 'name' => $memo ?: __('accounting.ledger_payment_generic'), 'debit' => 0, 'credit' => $amount, 'sequence' => 20],
             ];
 
         $paymentMove = $this->createMove([
@@ -734,14 +818,14 @@ class AccountingService
     public function confirmPayment(AccountPayment $payment): AccountPayment
     {
         if (!$payment->isDraft()) {
-            throw new RuntimeException('Only draft payments can be confirmed.');
+            throw new RuntimeException(__('accounting.err_only_draft_payment'));
         }
 
         $this->postMove($payment->move);
 
         $payment->update(['state' => 'posted']);
 
-        $this->chatterService->log($payment, 'Payment confirmed and journal entry posted.', 'system');
+        $this->chatterService->log($payment, __('accounting.chatter_payment_confirmed'), 'system');
 
         return $payment;
     }
@@ -758,7 +842,7 @@ class AccountingService
 
         $payment->update(['state' => 'cancelled']);
 
-        $this->chatterService->log($payment, 'Payment cancelled.', 'system');
+        $this->chatterService->log($payment, __('accounting.chatter_payment_cancelled'), 'system');
 
         return $payment;
     }
@@ -769,14 +853,19 @@ class AccountingService
             return $payment;
         }
 
-        if ($payment->move && $payment->move->state === 'posted') {
-            $this->cancelMove($payment->move);
+        // `resetMoveToDraft` handles posted → draft AND cancelled → draft
+        // directly. The previous code path called `cancelMove` first, which
+        // (a) doubled the chatter log on the underlying move, (b) ran the
+        // reconcile-delete pass twice, and (c) stamped a `[CANCELLED]`
+        // prefix on the move's name that `resetMoveToDraft` now strips —
+        // but the wasted work was already a smell. One call, one transition.
+        if ($payment->move && in_array($payment->move->state, ['posted', 'cancelled'], true)) {
             $this->resetMoveToDraft($payment->move);
         }
 
         $payment->update(['state' => 'draft']);
 
-        $this->chatterService->log($payment, 'Payment reset to draft.', 'system');
+        $this->chatterService->log($payment, __('accounting.chatter_payment_reset'), 'system');
 
         return $payment;
     }
@@ -784,11 +873,11 @@ class AccountingService
     public function createCreditNote(AccountMove $move): AccountMove
     {
         if (!$move->isPosted()) {
-            throw new RuntimeException('Only posted documents can be credited.');
+            throw new RuntimeException(__('accounting.err_only_posted_credit'));
         }
 
         if (!in_array($move->move_type, ['out_invoice', 'in_invoice'], true)) {
-            throw new RuntimeException('Only invoices and bills can create credit notes.');
+            throw new RuntimeException(__('accounting.err_only_inv_bill_credit'));
         }
 
         $move->loadMissing(['lines.taxes']);
@@ -799,7 +888,7 @@ class AccountingService
             'journal_id'       => $move->journal_id,
             'partner_id'       => $move->partner_id,
             'reversed_move_id' => $move->id,
-            'ref'              => 'Credit note for ' . ($move->name ?: "#{$move->id}"),
+            'ref'              => __('accounting.ledger_credit_note_for', ['ref' => $move->name ?: "#{$move->id}"]),
             'date'             => now()->toDateString(),
             'invoice_date'     => now()->toDateString(),
             'move_type'        => $refundType,
@@ -810,7 +899,7 @@ class AccountingService
         $lines = $move->lines->map(fn (AccountMoveLine $line) => [
             'account_id'      => $line->account_id,
             'partner_id'      => $line->partner_id,
-            'name'            => 'Credit: ' . $line->name,
+            'name'            => __('accounting.ledger_credit_prefix', ['name' => $line->name]),
             'debit'           => (float) $line->credit,
             'credit'          => (float) $line->debit,
             'currency'        => $line->currency,
@@ -829,7 +918,7 @@ class AccountingService
         // post-commit hook (`reconcileWithReversed`).
         $creditNote = $this->createMove($header, $lines);
 
-        $this->chatterService->log($move, "Credit note drafted (#{$creditNote->id}). Review and post to apply.", 'system');
+        $this->chatterService->log($move, __('accounting.chatter_credit_note_drafted', ['id' => $creditNote->id]), 'system');
 
         return $creditNote;
     }
@@ -843,7 +932,7 @@ class AccountingService
     public function reverseMove(AccountMove $move, ?Carbon $reversalDate = null): AccountMove
     {
         if (!$move->isPosted()) {
-            throw new RuntimeException('Only posted entries can be reversed.');
+            throw new RuntimeException(__('accounting.err_only_posted_reverse'));
         }
 
         $date = $reversalDate ?: Carbon::today();
@@ -853,7 +942,7 @@ class AccountingService
             'journal_id'       => $move->journal_id,
             'partner_id'       => $move->partner_id,
             'reversed_move_id' => $move->id,
-            'ref'              => 'Reversal of ' . ($move->name ?: "#{$move->id}"),
+            'ref'              => __('accounting.ledger_reversal_of', ['ref' => $move->name ?: "#{$move->id}"]),
             'date'             => $date->toDateString(),
             'state'            => 'draft',
             'move_type'        => 'entry',
@@ -864,7 +953,7 @@ class AccountingService
         $reverseLines = $move->lines->map(fn (AccountMoveLine $line) => [
             'account_id'      => $line->account_id,
             'partner_id'      => $line->partner_id,
-            'name'            => 'Reversal: ' . $line->name,
+            'name'            => __('accounting.ledger_reversal_prefix', ['name' => $line->name]),
             'debit'           => (float) $line->credit,
             'credit'          => (float) $line->debit,
             'currency'        => $line->currency,
@@ -876,20 +965,20 @@ class AccountingService
         // original move's counterpart happens at post time via the post-commit
         // hook in postMove().
         $reversal = $this->createMove($reverseHeader, $reverseLines);
-        $this->chatterService->log($move, "Reversal entry drafted (#{$reversal->id}). Review and post to apply.", 'system');
+        $this->chatterService->log($move, __('accounting.chatter_reversal_drafted', ['id' => $reversal->id]), 'system');
         return $reversal;
     }
 
     public function deleteMove(AccountMove $move): void
     {
         if ($move->move_type !== 'entry' && !$move->isCancelled()) {
-            throw new RuntimeException('Invoices and bills can only be deleted after they are cancelled.');
+            throw new RuntimeException(__('accounting.err_doc_must_cancel_first'));
         }
 
         if ($move->isPosted()) {
-            throw new RuntimeException('Posted entries cannot be deleted. Reverse or cancel instead.');
+            throw new RuntimeException(__('accounting.err_no_delete_posted'));
         }
-        $this->chatterService->log($move, 'Entry deleted.', 'system');
+        $this->chatterService->log($move, __('accounting.chatter_entry_deleted'), 'system');
         $move->delete();
     }
 
@@ -1101,12 +1190,11 @@ class AccountingService
         $totalCredit = (float) $lines->sum('credit');
 
         if (round($totalDebit, self::SCALE) !== round($totalCredit, self::SCALE)) {
-            throw new RuntimeException(sprintf(
-                'Journal entry is not balanced. Debit %.2f, Credit %.2f, Difference %.2f.',
-                $totalDebit,
-                $totalCredit,
-                $totalDebit - $totalCredit
-            ));
+            throw new RuntimeException(__('accounting.err_not_balanced_base', [
+                'debit'  => number_format($totalDebit, 2),
+                'credit' => number_format($totalCredit, 2),
+                'diff'   => number_format($totalDebit - $totalCredit, 2),
+            ]));
         }
 
         // MC5 (Odoo parity): also enforce per-currency balance on
@@ -1133,14 +1221,10 @@ class AccountingService
 
             $rounding = $this->currencyRounding($currencyCode);
             if (abs(round($signedSum, max(2, $rounding))) > 0.005) {
-                throw new RuntimeException(sprintf(
-                    'Journal entry is not balanced in %s. Net %s amount_currency = %.4f (must be 0). ' .
-                    'Either the FX rate is wrong for one of the %s lines or the foreign-currency amount needs adjustment.',
-                    $currencyCode,
-                    $currencyCode,
-                    $signedSum,
-                    $currencyCode
-                ));
+                throw new RuntimeException(__('accounting.err_not_balanced_currency', [
+                    'currency' => $currencyCode,
+                    'sum'      => number_format($signedSum, 4),
+                ]));
             }
         }
     }
@@ -1200,10 +1284,9 @@ class AccountingService
         }
 
         if (!$journal->default_account_id) {
-            throw new RuntimeException(sprintf(
-                "Journal '%s' has no default liquidity account configured.",
-                $journal->name
-            ));
+            throw new RuntimeException(__('accounting.err_journal_no_default_acc', [
+                'journal' => $journal->name,
+            ]));
         }
 
         return (int) $journal->default_account_id;
@@ -1220,7 +1303,7 @@ class AccountingService
             ->first();
 
         if (!$journal) {
-            throw new RuntimeException('No active bank or cash journal is configured for this company.');
+            throw new RuntimeException(__('accounting.err_no_bank_cash_journal'));
         }
 
         return $journal;
@@ -1239,7 +1322,7 @@ class AccountingService
     {
         $lines = $this->documentCounterpartLines($move);
         if ($lines->isEmpty()) {
-            throw new RuntimeException('The document has no receivable or payable line to reconcile.');
+            throw new RuntimeException(__('accounting.err_no_arap_line'));
         }
         return $lines->sortByDesc(fn (AccountMoveLine $line) => abs($line->balance))->first();
     }
@@ -1282,11 +1365,11 @@ class AccountingService
     private function reconcileLines(AccountMoveLine $lineA, AccountMoveLine $lineB, float $amount, Carbon $date): AccountPartialReconcile
     {
         if ((int) $lineA->company_id !== (int) $lineB->company_id) {
-            throw new RuntimeException('Cannot reconcile lines from different companies.');
+            throw new RuntimeException(__('accounting.err_reconcile_diff_company'));
         }
 
         if ((int) $lineA->account_id !== (int) $lineB->account_id) {
-            throw new RuntimeException('Cannot reconcile lines from different accounts.');
+            throw new RuntimeException(__('accounting.err_reconcile_diff_account'));
         }
 
         // O3 (Odoo parity): the account itself must be flagged as reconcilable.
@@ -1295,14 +1378,13 @@ class AccountingService
         // — matching two unrelated entries there silently corrupts P&L drilldowns.
         $lineA->loadMissing('account');
         if (!$lineA->account?->reconcile) {
-            throw new RuntimeException(sprintf(
-                'Account %s is not flagged as reconcilable. Only receivable, payable, and liquidity accounts can be reconciled.',
-                $lineA->account?->display_name ?? "#{$lineA->account_id}"
-            ));
+            throw new RuntimeException(__('accounting.err_account_not_reconcile', [
+                'account' => $lineA->account?->display_name ?? "#{$lineA->account_id}",
+            ]));
         }
 
         if (abs($lineA->balance) < 0.005 || abs($lineB->balance) < 0.005 || ($lineA->balance > 0) === ($lineB->balance > 0)) {
-            throw new RuntimeException('Reconciliation requires one debit line and one credit line.');
+            throw new RuntimeException(__('accounting.err_reconcile_dr_cr'));
         }
 
         $debitLine = $lineA->balance > 0 ? $lineA : $lineB;
@@ -1444,14 +1526,12 @@ class AccountingService
             : $company->expense_currency_exchange_account_id;
 
         if (!$fxAccountId) {
-            throw new RuntimeException(sprintf(
-                "Cross-currency reconciliation left a %.2f %s residual but company '%s' has no %s account configured. " .
-                "Set the FX gain/loss accounts under Accounting > Settings.",
-                $drift,
-                $baseCurrency,
-                $company->name,
-                $isGain ? 'income (gain)' : 'expense (loss)'
-            ));
+            throw new RuntimeException(__('accounting.err_fx_no_account', [
+                'drift'    => number_format($drift, 2),
+                'currency' => $baseCurrency,
+                'company'  => $company->name,
+                'side'     => $isGain ? __('accounting.err_fx_side_income') : __('accounting.err_fx_side_expense'),
+            ]));
         }
 
         // The openSide has leftover base residual. If it's on the debit side,
@@ -1459,12 +1539,12 @@ class AccountingService
         // on the credit side, mirror it.
         $adjustmentLines = $openIsDebit
             ? [
-                ['account_id' => $fxAccountId,          'partner_id' => $openSide->partner_id, 'name' => 'FX adjustment', 'debit' => $drift, 'credit' => 0, 'sequence' => 10],
-                ['account_id' => $openSide->account_id, 'partner_id' => $openSide->partner_id, 'name' => 'FX adjustment', 'debit' => 0, 'credit' => $drift, 'sequence' => 20],
+                ['account_id' => $fxAccountId,          'partner_id' => $openSide->partner_id, 'name' => __('accounting.ledger_fx_adjustment'), 'debit' => $drift, 'credit' => 0, 'sequence' => 10],
+                ['account_id' => $openSide->account_id, 'partner_id' => $openSide->partner_id, 'name' => __('accounting.ledger_fx_adjustment'), 'debit' => 0, 'credit' => $drift, 'sequence' => 20],
             ]
             : [
-                ['account_id' => $openSide->account_id, 'partner_id' => $openSide->partner_id, 'name' => 'FX adjustment', 'debit' => $drift, 'credit' => 0, 'sequence' => 10],
-                ['account_id' => $fxAccountId,          'partner_id' => $openSide->partner_id, 'name' => 'FX adjustment', 'debit' => 0, 'credit' => $drift, 'sequence' => 20],
+                ['account_id' => $openSide->account_id, 'partner_id' => $openSide->partner_id, 'name' => __('accounting.ledger_fx_adjustment'), 'debit' => $drift, 'credit' => 0, 'sequence' => 10],
+                ['account_id' => $fxAccountId,          'partner_id' => $openSide->partner_id, 'name' => __('accounting.ledger_fx_adjustment'), 'debit' => 0, 'credit' => $drift, 'sequence' => 20],
             ];
 
         $adjustmentMove = $this->createMove([
@@ -1473,7 +1553,7 @@ class AccountingService
             'partner_id' => $openSide->partner_id,
             'date'       => $date->toDateString(),
             'move_type'  => 'entry',
-            'ref'        => 'FX adjustment on ' . ($openSide->move?->name ?: "#{$openSide->move_id}"),
+            'ref'        => __('accounting.ledger_fx_adjustment_on', ['ref' => $openSide->move?->name ?: "#{$openSide->move_id}"]),
         ], $adjustmentLines);
 
         $adjustmentMove = $this->postMove($adjustmentMove);
@@ -1551,16 +1631,16 @@ class AccountingService
 
         foreach ($move->lines as $line) {
             if ((float) $line->debit < 0 || (float) $line->credit < 0) {
-                throw new RuntimeException("Line '{$line->name}' has a negative debit or credit.");
+                throw new RuntimeException(__('accounting.err_line_negative_amount', ['name' => $line->name]));
             }
             if ((float) $line->debit > 0 && (float) $line->credit > 0) {
-                throw new RuntimeException("Line '{$line->name}' cannot have both debit and credit.");
+                throw new RuntimeException(__('accounting.err_line_both_dr_cr', ['name' => $line->name]));
             }
             if ((float) $line->debit === 0.0 && (float) $line->credit === 0.0) {
-                throw new RuntimeException("Line '{$line->name}' has no amount.");
+                throw new RuntimeException(__('accounting.err_line_no_amount', ['name' => $line->name]));
             }
             if ($line->account && (int) $line->account->company_id !== (int) $move->company_id) {
-                throw new RuntimeException("Line '{$line->name}' uses an account from a different company than the entry.");
+                throw new RuntimeException(__('accounting.err_line_wrong_company', ['name' => $line->name]));
             }
 
             // O2 (Odoo parity): receivable / payable lines REQUIRE a partner_id.
@@ -1571,12 +1651,11 @@ class AccountingService
                 && in_array($line->account->internal_type, ['receivable', 'payable'], true)
                 && !$line->partner_id
             ) {
-                throw new RuntimeException(sprintf(
-                    "Line '%s' posts to a %s account (%s) and requires a partner.",
-                    $line->name,
-                    $line->account->internal_type,
-                    $line->account->display_name ?? $line->account->code
-                ));
+                throw new RuntimeException(__('accounting.err_line_arap_partner', [
+                    'name'    => $line->name,
+                    'type'    => $line->account->internal_type,
+                    'account' => $line->account->display_name ?? $line->account->code,
+                ]));
             }
 
             // MC6 (Odoo parity): if the account is pinned to a single currency
@@ -1587,13 +1666,12 @@ class AccountingService
                 && $line->currency
                 && $line->account->currency !== $line->currency
             ) {
-                throw new RuntimeException(sprintf(
-                    "Line '%s' uses %s but its account (%s) is pinned to %s.",
-                    $line->name,
-                    $line->currency,
-                    $line->account->display_name ?? $line->account->code,
-                    $line->account->currency
-                ));
+                throw new RuntimeException(__('accounting.err_line_currency_pin', [
+                    'name'     => $line->name,
+                    'currency' => $line->currency,
+                    'account'  => $line->account->display_name ?? $line->account->code,
+                    'pinned'   => $line->account->currency,
+                ]));
             }
         }
     }
@@ -1601,7 +1679,7 @@ class AccountingService
     private function assertSameCompany(int $a, int $b, string $label): void
     {
         if ($a !== $b) {
-            throw new RuntimeException("Selected {$label} belongs to a different company.");
+            throw new RuntimeException(__('accounting.err_fk_diff_company', ['label' => $label]));
         }
     }
 
@@ -1642,7 +1720,7 @@ class AccountingService
         $moveType = $data['move_type'] ?? 'entry';
         $supported = ['out_invoice', 'in_invoice', 'out_refund', 'in_refund'];
         if (!in_array($moveType, $supported, true)) {
-            throw new RuntimeException('Unsupported accounting document type.');
+            throw new RuntimeException(__('accounting.err_unsupported_doctype'));
         }
 
         $partnerId        = $data['partner_id'] ?? null;
@@ -1651,7 +1729,7 @@ class AccountingService
         $currency         = $data['currency'] ?? null;
 
         if (!$controlAccountId) {
-            throw new RuntimeException('A receivable or payable account is required.');
+            throw new RuntimeException(__('accounting.err_control_account_req'));
         }
 
         // Debit/credit direction per type:
@@ -1770,7 +1848,7 @@ class AccountingService
         }
 
         if ($subtotal <= 0) {
-            throw new RuntimeException('Invoice total must be greater than zero.');
+            throw new RuntimeException(__('accounting.err_invoice_total_zero'));
         }
 
         $totalTaxes = 0.0;
@@ -1795,10 +1873,10 @@ class AccountingService
         $grandTotal = round($subtotal + $totalTaxes, self::SCALE);
 
         $controlLabels = [
-            'out_invoice' => 'Customer balance',
-            'in_invoice'  => 'Vendor balance',
-            'out_refund'  => 'Customer credit',
-            'in_refund'   => 'Vendor refund',
+            'out_invoice' => __('accounting.ledger_control_customer_bal'),
+            'in_invoice'  => __('accounting.ledger_control_vendor_bal'),
+            'out_refund'  => __('accounting.ledger_control_customer_cr'),
+            'in_refund'   => __('accounting.ledger_control_vendor_rf'),
         ];
 
         // D1 (Odoo parity): when a payment term has multiple installment lines
@@ -2006,9 +2084,20 @@ class AccountingService
             $new = (string) ($data[$field] ?? '');
             if ($old === $new) continue;
 
+            // chatterTracked entries on AccountPayment / AccountTax also
+            // support array-shaped definitions like `['label' => 'Journal',
+            // 'table' => '...']`. Pull the human label out before localising.
+            $labelText = is_array($label) ? ($label['label'] ?? $field) : $label;
+            $key = 'accounting.field_label_' . $labelText;
+
             $changes[] = [
                 'field' => $field,
-                'label' => $label,
+                // Translate at write time. The label persists in the
+                // chatter message metadata in the actor's locale at the
+                // moment of the change — matches the rest of the chatter
+                // (system / log / comment messages all snapshot their
+                // locale on write).
+                'label' => trans()->has($key) ? __($key) : $labelText,
                 'from'  => $this->resolveChangeValue($field, $model->{$field}),
                 'to'    => $this->resolveChangeValue($field, $data[$field]),
             ];
@@ -2027,10 +2116,19 @@ class AccountingService
             'default_account_id',
             'suspense_account_id'  => Account::find($value)?->display_name ?? "#{$value}",
             'partner_id'           => \App\Models\Contacts\Contact::find($value)?->name ?? "#{$value}",
-            'account_type'         => Account::TYPES[$value] ?? (string) $value,
-            'type'                 => AccountJournal::TYPES[$value] ?? (string) $value,
-            'state'                => AccountMove::STATES[$value] ?? (string) $value,
-            'reconcile'            => $value ? 'Yes' : 'No',
+            'account_type'         => trans()->has('accounting.account_type_' . $value)
+                                        ? __('accounting.account_type_' . $value)
+                                        : (Account::TYPES[$value] ?? (string) $value),
+            'type'                 => trans()->has('accounting.journal_type_' . $value)
+                                        ? __('accounting.journal_type_' . $value)
+                                        : (AccountJournal::TYPES[$value] ?? (string) $value),
+            // Use the translation key when available — chatter renders in the
+            // actor's locale at write time, so this is the right hook. Fall
+            // back to the raw column value if the state landed without a key.
+            'state'                => trans()->has('accounting.status_' . $value)
+                                        ? __('accounting.status_' . $value)
+                                        : (string) $value,
+            'reconcile'            => $value ? __('common.yes') : __('common.no'),
             default                => (string) $value,
         };
     }
@@ -2050,11 +2148,10 @@ class AccountingService
 
         if ($company->accounting_fiscal_year_lock_date) {
             if ($date->lte(Carbon::parse($company->accounting_fiscal_year_lock_date))) {
-                throw new RuntimeException(sprintf(
-                    'The entry date %s falls within a locked fiscal year (locked through %s). No changes are allowed in this period.',
-                    $date->format('Y-m-d'),
-                    $company->accounting_fiscal_year_lock_date->format('Y-m-d')
-                ));
+                throw new RuntimeException(__('accounting.err_date_in_fiscal_lock', [
+                    'date' => $date->format('Y-m-d'),
+                    'lock' => $company->accounting_fiscal_year_lock_date->format('Y-m-d'),
+                ]));
             }
         }
 
@@ -2063,11 +2160,10 @@ class AccountingService
                 $authUser = Auth::user();
                 $canBypass = $authUser instanceof \App\Models\User && $authUser->hasPermission('accounting.lock');
                 if (!$canBypass) {
-                    throw new RuntimeException(sprintf(
-                        'The entry date %s falls within a locked period (locked through %s). Only users with lock-bypass permission can post in this period.',
-                        $date->format('Y-m-d'),
-                        $company->accounting_period_lock_date->format('Y-m-d')
-                    ));
+                    throw new RuntimeException(__('accounting.err_date_in_period_lock', [
+                        'date' => $date->format('Y-m-d'),
+                        'lock' => $company->accounting_period_lock_date->format('Y-m-d'),
+                    ]));
                 }
             }
         }
@@ -2080,7 +2176,13 @@ class AccountingService
     /**
      * Return the exchange rate: units of company base currency per 1 unit of $currency.
      * Looks for the most recent active rate on or before $date.
-     * Returns 1.0 if no rate is found (treats as same-currency).
+     *
+     * Returns 1.0 only for the base currency itself (no conversion needed).
+     * For any OTHER currency, throws when no active rate is configured on or
+     * before $date — silently falling back to 1.0 would post the move with
+     * the foreign amount booked verbatim into base, distorting every report
+     * that aggregates that account. Better to surface a clear configuration
+     * error and ask the user to add a rate before saving.
      */
     public function getExchangeRate(int $companyId, string $currency, Carbon $date): float
     {
@@ -2098,6 +2200,13 @@ class AccountingService
             ->orderByDesc('date')
             ->value('rate');
 
-        return $rate ? (float) $rate : 1.0;
+        if (!$rate) {
+            throw new RuntimeException(__('accounting.err_no_fx_rate', [
+                'currency' => $currency,
+                'date'     => $date->toDateString(),
+            ]));
+        }
+
+        return (float) $rate;
     }
 }

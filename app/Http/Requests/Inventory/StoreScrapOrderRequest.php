@@ -45,7 +45,7 @@ class StoreScrapOrderRequest extends FormRequest
         return [
             'company_id'        => ['required', Rule::exists('companies', 'id')->whereIn('id', $activeCompanyIds)],
             'product_id'        => ['required', $productRule],
-            'uom_id'            => ['required', 'exists:inventory_uoms,id'],
+            'uom_id'            => ['required', 'exists:inventory_uoms,id', $this->uomMatchingProductCategoryRule()],
             'location_id'       => ['required', $locationRule],
             'scrap_location_id' => ['required', $scrapDestRule],
             'lot_id'            => ['nullable', $lotRule],

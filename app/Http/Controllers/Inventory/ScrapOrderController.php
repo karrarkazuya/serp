@@ -90,7 +90,7 @@ class ScrapOrderController extends Controller
         $data['created_by'] = auth()->id();
         $data['updated_by'] = auth()->id();
         $scrap = DB::transaction(fn () => $this->scrapService->create($data));
-        return redirect()->route('inventory.scrap.show', $scrap)->with('success', 'Scrap order created.');
+        return redirect()->route('inventory.scrap.show', $scrap)->with('success', __('inventory.created'));
     }
 
     public function validateScrap(Request $_request, ScrapOrder $scrapOrder)
@@ -104,7 +104,7 @@ class ScrapOrderController extends Controller
         } catch (\RuntimeException $e) {
             return back()->with('error', $e->getMessage());
         }
-        return redirect()->route('inventory.scrap.show', $scrapOrder)->with('success', 'Scrap order validated.');
+        return redirect()->route('inventory.scrap.show', $scrapOrder)->with('success', __('inventory.scrap_validated'));
     }
 
     public function unlink(Request $_request, ScrapOrder $scrapOrder)
@@ -117,7 +117,7 @@ class ScrapOrderController extends Controller
         } catch (\RuntimeException $e) {
             return back()->with('error', $e->getMessage());
         }
-        return redirect()->route('inventory.scrap.index')->with('success', 'Scrap order deleted.');
+        return redirect()->route('inventory.scrap.index')->with('success', __('inventory.deleted'));
     }
 
     public function addComment(Request $request, ScrapOrder $scrapOrder)
@@ -127,6 +127,6 @@ class ScrapOrderController extends Controller
         abort_unless(in_array($scrapOrder->company_id, $activeCompanyIds), 403);
         $request->validate(['body' => 'required|string|max:5000']);
         DB::transaction(fn () => $scrapOrder->logComment($request->body));
-        return back()->with('success', 'Comment added.');
+        return back()->with('success', __('inventory.comment_added'));
     }
 }

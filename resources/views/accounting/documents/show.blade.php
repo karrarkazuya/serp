@@ -37,9 +37,15 @@
                         @csrf @method('PATCH')
                         <button class="px-3 py-1.5 text-sm font-medium text-white bg-green-700 hover:bg-green-800 rounded">{{ __('accounting.btn_confirm') }}</button>
                     </form>
-                    <form method="POST" action="{{ route($config['routes']['cancel'], $document) }}">
+                    <form method="POST" action="{{ route($config['routes']['cancel'], $document) }}" x-data="{ confirming: false }">
                         @csrf @method('PATCH')
-                        <button class="px-3 py-1.5 text-sm text-gray-700 border border-gray-300 rounded hover:bg-gray-50">{{ __('accounting.btn_cancel') }}</button>
+                        <button type="button" x-show="!confirming" @click="confirming = true"
+                                class="px-3 py-1.5 text-sm text-gray-700 border border-gray-300 rounded hover:bg-gray-50">{{ __('accounting.btn_cancel') }}</button>
+                        <div x-show="confirming" style="display:none" class="flex items-center gap-1.5">
+                            <span class="text-xs text-gray-600">{{ __('accounting.confirm_cancel') }}</span>
+                            <button type="submit" class="px-2 py-1 text-xs font-medium text-white bg-gray-700 rounded">{{ __('accounting.btn_yes') }}</button>
+                            <button type="button" @click="confirming = false" class="px-2 py-1 text-xs text-gray-500">{{ __('accounting.btn_cancel') }}</button>
+                        </div>
                     </form>
                     @endcan
                 @elseif($document->isPosted())
@@ -51,16 +57,22 @@
                     </button>
                     @endif
                     <x-print-action :href="route($config['routes']['print'], $document)" />
-                    <x-print-action :href="route($config['routes']['print'], $document)" label="Preview" :preview="true" />
+                    <x-print-action :href="route($config['routes']['print'], $document)" :label="__('accounting.btn_preview')" :preview="true" />
                     @if(!empty($config['routes']['credit']))
                     <form method="POST" action="{{ route($config['routes']['credit'], $document) }}">
                         @csrf
                         <button class="px-3 py-1.5 text-sm font-medium text-gray-700 bg-gray-200 hover:bg-gray-300 rounded">{{ __('accounting.btn_credit_note') }}</button>
                     </form>
                     @endif
-                    <form method="POST" action="{{ route($config['routes']['reset'], $document) }}">
+                    <form method="POST" action="{{ route($config['routes']['reset'], $document) }}" x-data="{ confirming: false }">
                         @csrf @method('PATCH')
-                        <button class="px-3 py-1.5 text-sm font-medium text-gray-700 bg-gray-200 hover:bg-gray-300 rounded">{{ __('accounting.btn_reset_draft') }}</button>
+                        <button type="button" x-show="!confirming" @click="confirming = true"
+                                class="px-3 py-1.5 text-sm font-medium text-gray-700 bg-gray-200 hover:bg-gray-300 rounded">{{ __('accounting.btn_reset_draft') }}</button>
+                        <div x-show="confirming" style="display:none" class="flex items-center gap-1.5">
+                            <span class="text-xs text-amber-700">{{ __('accounting.warn_reset_posted') }}</span>
+                            <button type="submit" class="px-2 py-1 text-xs font-medium text-white bg-amber-600 rounded">{{ __('accounting.btn_yes') }}</button>
+                            <button type="button" @click="confirming = false" class="px-2 py-1 text-xs text-gray-500">{{ __('accounting.btn_cancel') }}</button>
+                        </div>
                     </form>
                     @endcan
                 @elseif($document->isCancelled())
@@ -125,7 +137,7 @@
                 <div>
                     <label class="block text-xs font-semibold text-gray-500 mb-1">{{ __('accounting.field_memo') }}</label>
                     <input type="text" name="memo" maxlength="255"
-                           value="{{ old('memo', 'Payment for ' . ($document->name ?: "#{$document->id}")) }}"
+                           value="{{ old('memo', __('accounting.ledger_payment_for', ['ref' => $document->name ?: "#{$document->id}"])) }}"
                            class="w-full text-sm border border-gray-300 rounded px-3 py-1.5 focus:outline-none focus:ring-1 focus:ring-purple-500">
                 </div>
             </div>
@@ -154,7 +166,7 @@
         <div class="mx-4 mt-4 rounded-xl border border-gray-200 bg-white shadow-sm overflow-hidden">
             <div class="px-5 py-2.5 border-b border-gray-100 flex items-center justify-between bg-gray-50">
                 <p class="text-xs font-semibold text-gray-600 uppercase">{{ __('accounting.installment_schedule') }}</p>
-                <span class="text-xs text-gray-500">{{ $installments->count() }} installments · {{ $document->paymentTerm?->name }}</span>
+                <span class="text-xs text-gray-500">{{ trans_choice('accounting.installment_count', $installments->count(), ['count' => $installments->count()]) }} · {{ $document->paymentTerm?->name }}</span>
             </div>
             <table class="w-full text-sm">
                 <thead class="bg-gray-50 border-b border-gray-100">

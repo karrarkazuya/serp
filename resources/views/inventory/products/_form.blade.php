@@ -36,6 +36,15 @@
     addSupplier() { this.suppliers.push({ partner_id: '', partner_name: '', price: '', min_qty: 0, delay: 0, partnerOpen: false, partnerOptions: [] }); },
     removeSupplier(i) { this.suppliers.splice(i, 1); }
 }">
+    {{-- Inert-fields banner: a chunk of the form below saves data that no
+         downstream service consumes yet. Users were quietly filling in
+         vendor catalog rows, weight/volume/barcode, etc. and getting no
+         behaviour back. Surface that explicitly instead of letting users
+         discover it the hard way. --}}
+    <div class="mx-5 mt-5 px-4 py-2.5 rounded-lg border border-amber-200 bg-amber-50 text-xs text-amber-800">
+        {{ __('inventory.product_inert_fields_notice') }}
+    </div>
+
     {{-- Title --}}
     <div class="mb-5">
         <input type="text" name="name" value="{{ $val('name') }}" required placeholder="{{ __('inventory.name') }}"

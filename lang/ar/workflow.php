@@ -376,5 +376,6 @@ return [
     'failed_to_save_step'           => 'فشل حفظ الخطوة.',
     'network_error_retry'           => 'خطأ في الشبكة. يرجى المحاولة مرة أخرى.',
     'also_visible_in'               => 'مرئي أيضاً في',
+    'from_ticket'                   => 'من التذكرة',
 
 ];

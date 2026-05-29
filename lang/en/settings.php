@@ -156,4 +156,5 @@ return [
     'queue_jobs_unit'       => 'jobs',
     'debug_on'              => 'ON',
     'debug_off'             => 'OFF',
+    'system_role_locked'    => 'This is a system role. Its key, active state, and permission set are managed by the seeder and cannot be changed here.',
 ];

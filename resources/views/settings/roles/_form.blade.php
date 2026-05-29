@@ -9,7 +9,7 @@
 
 @if($isSystem)
 <div class="shrink-0 mx-5 mt-4 bg-amber-50 border border-amber-200 rounded-lg px-4 py-3 text-sm text-amber-700">
-    {{ __('settings.system_role_locked') ?? 'This is a system role. Its key, active state, and permission set are managed by the seeder and cannot be changed here.' }}
+    {{ __('settings.system_role_locked') }}
 </div>
 @endif
 

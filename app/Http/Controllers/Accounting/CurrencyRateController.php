@@ -81,7 +81,7 @@ class CurrencyRateController extends Controller
 
         $rate = DB::transaction(fn () => CurrencyRate::create($data));
 
-        return redirect()->route('accounting.currencies.show', $rate)->with('success', 'Exchange rate saved.');
+        return redirect()->route('accounting.currencies.show', $rate)->with('success', __('accounting.rate_saved'));
     }
 
     public function edit(CurrencyRate $currencyRate)
@@ -104,7 +104,7 @@ class CurrencyRateController extends Controller
 
         DB::transaction(fn () => $currencyRate->update($data));
 
-        return redirect()->route('accounting.currencies.show', $currencyRate)->with('success', 'Exchange rate updated.');
+        return redirect()->route('accounting.currencies.show', $currencyRate)->with('success', __('accounting.updated'));
     }
 
     public function unlink(Request $request, CurrencyRate $currencyRate)
@@ -115,7 +115,7 @@ class CurrencyRateController extends Controller
 
         DB::transaction(fn () => $currencyRate->delete());
 
-        return redirect()->route('accounting.currencies.index')->with('success', 'Exchange rate deleted.');
+        return redirect()->route('accounting.currencies.index')->with('success', __('accounting.rate_deleted'));
     }
 
     public function addComment(Request $request, CurrencyRate $currencyRate)
@@ -127,6 +127,6 @@ class CurrencyRateController extends Controller
         $request->validate(['body' => 'required|string|max:5000']);
         DB::transaction(fn () => $currencyRate->logComment($request->body));
 
-        return back()->with('success', 'Comment added.');
+        return back()->with('success', __('accounting.comment_added'));
     }
 }

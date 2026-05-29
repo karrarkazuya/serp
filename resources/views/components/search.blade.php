@@ -262,14 +262,14 @@
                         <div class="border-t border-gray-200 my-2"></div>
                     @endif
                     <button type="button" @click="modalOpen = true; open = false" class="block px-2 py-1.5 text-sm font-medium text-[#714B67] hover:bg-gray-100 rounded">
-                        Add Custom Filter
+                        {{ __('common.add_custom_filter') }}
                     </button>
                 </div>
 
                 <div class="px-4 border-r border-gray-200">
                     <div class="flex items-center gap-2 mb-3 text-sm font-bold text-gray-700">
                         <svg class="w-4 h-4 text-[#714B67]" fill="currentColor" viewBox="0 0 20 20"><path d="M10 2L2 6l8 4 8-4-8-4zm-6 8l6 3 6-3v2l-6 3-6-3v-2zm0 4l6 3 6-3v2l-6 3-6-3v-2z"/></svg>
-                        Group By
+                        {{ __('common.group_by') }}
                     </div>
                     @forelse($groupOptions as $group)
                         <button type="button"
@@ -286,7 +286,7 @@
                         <button type="button"
                                 @click="customGroupOpen = !customGroupOpen; customGroupSearch = ''"
                                 class="block w-full px-2 py-1.5 text-left text-sm font-medium text-[#714B67] hover:bg-gray-100 rounded">
-                            Add Custom Group
+                            {{ __('common.add_custom_group') }}
                         </button>
                         <div x-show="customGroupOpen"
                              x-transition.opacity.duration.100ms
@@ -296,7 +296,7 @@
                             <div class="p-2 border-b border-gray-100">
                                 <input type="text"
                                        x-model="customGroupSearch"
-                                       placeholder="Search fields..."
+                                       placeholder="{{ __('common.ph_search_fields') }}"
                                        class="w-full px-2 py-1 text-xs border border-gray-200 rounded focus:outline-none focus:ring-1 focus:ring-purple-400">
                             </div>
                             <div class="max-h-52 overflow-y-auto py-1">
@@ -315,10 +315,10 @@
                 <div class="px-4">
                     <div class="flex items-center gap-2 mb-3 text-sm font-bold text-gray-700">
                         <svg class="w-4 h-4 text-yellow-400" fill="currentColor" viewBox="0 0 20 20"><path d="M9.05 2.93c.3-.92 1.6-.92 1.9 0l1.18 3.63h3.82c.97 0 1.37 1.24.59 1.8l-3.09 2.25 1.18 3.63c.3.92-.75 1.69-1.54 1.12L10 13.12l-3.09 2.24c-.79.57-1.84-.2-1.54-1.12l1.18-3.63-3.09-2.25c-.78-.56-.38-1.8.59-1.8h3.82l1.18-3.63z"/></svg>
-                        Favorites
+                        {{ __('common.favorites') }}
                     </div>
                     <button type="button" class="block px-2 py-1.5 text-sm font-medium text-gray-700 hover:bg-gray-100 rounded">
-                        Save current search
+                        {{ __('common.save_current_search') }}
                     </button>
                 </div>
             </div>
@@ -331,7 +331,7 @@
          style="display:none">
         <div class="bg-white w-full max-w-5xl rounded shadow-2xl border border-gray-300 overflow-visible" @click.outside="modalOpen = false">
             <div class="flex items-center px-4 py-3 border-b border-gray-200">
-                <h2 class="text-lg font-semibold text-gray-800">Add Custom Filter</h2>
+                <h2 class="text-lg font-semibold text-gray-800">{{ __('common.add_custom_filter') }}</h2>
                 <button type="button" @click="modalOpen = false" class="ms-auto text-gray-500 hover:text-gray-800">
                     <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M6 18L18 6M6 6l12 12"/>
@@ -341,12 +341,12 @@
 
             <div class="px-4 py-5 border-b border-gray-200">
                 <div class="text-sm font-semibold text-gray-600 mb-4">
-                    Match
+                    {{ __('common.filter_match_prefix') }}
                     <select x-model="draftMatch" class="border-0 bg-transparent px-0 py-0 text-sm font-semibold text-gray-600 focus:ring-0">
-                        <option value="any">any</option>
-                        <option value="all">all</option>
+                        <option value="any">{{ __('common.filter_match_any') }}</option>
+                        <option value="all">{{ __('common.filter_match_all') }}</option>
                     </select>
-                    of the following rules:
+                    {{ __('common.filter_match_suffix') }}
                 </div>
                 <div x-show="draftRules.length" class="mb-3 space-y-2" style="display:none">
                     <template x-for="(rule, index) in draftRules" :key="`${rule.field}_${rule.operator}_${index}`">
@@ -425,15 +425,15 @@
                         <input :type="currentField?.type === 'datetime' ? 'datetime-local' : (currentField?.type === 'date' ? 'date' : 'number')"
                                x-model="draft.value_to"
                                class="w-full border-0 border-b border-gray-300 px-2 py-2 text-sm focus:border-[#714B67] focus:ring-0"
-                               placeholder="To">
+                               placeholder="{{ __('common.ph_to') }}">
                     </div>
                 </div>
-                <button type="button" class="mt-3 text-sm font-semibold text-[#714B67] hover:text-[#5c3d55]" @click="addDraftRule()">New Rule</button>
+                <button type="button" class="mt-3 text-sm font-semibold text-[#714B67] hover:text-[#5c3d55]" @click="addDraftRule()">{{ __('common.new_rule') }}</button>
             </div>
 
             <div class="px-4 py-4 flex items-center gap-2">
-                <button type="button" @click="addFilter()" class="px-4 py-2 bg-[#714B67] text-white text-sm font-semibold rounded hover:bg-[#5c3d55]">Add</button>
-                <button type="button" @click="modalOpen = false" class="px-4 py-2 bg-gray-200 text-gray-700 text-sm font-semibold rounded hover:bg-gray-300">Cancel</button>
+                <button type="button" @click="addFilter()" class="px-4 py-2 bg-[#714B67] text-white text-sm font-semibold rounded hover:bg-[#5c3d55]">{{ __('common.add') }}</button>
+                <button type="button" @click="modalOpen = false" class="px-4 py-2 bg-gray-200 text-gray-700 text-sm font-semibold rounded hover:bg-gray-300">{{ __('common.cancel') }}</button>
             </div>
         </div>
     </div>

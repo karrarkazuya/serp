@@ -96,10 +96,10 @@ class RouteController extends Controller
         $data['updated_by'] = auth()->id();
         $route = DB::transaction(function () use ($data) {
             $r = Route::create($data);
-            $this->chatterService->logCreated($r, 'Route');
+            $this->chatterService->logCreated($r, __('inventory.chatter_label_route'));
             return $r;
         });
-        return redirect()->route('inventory.config.routes.show', $route)->with('success', 'Route created.');
+        return redirect()->route('inventory.config.routes.show', $route)->with('success', __('inventory.created'));
     }
 
     public function newRuleRow(Request $request): \Illuminate\View\View
@@ -182,7 +182,7 @@ class RouteController extends Controller
                 }
             }
         });
-        return redirect()->route('inventory.config.routes.show', $route)->with('success', 'Route updated.');
+        return redirect()->route('inventory.config.routes.show', $route)->with('success', __('inventory.updated'));
     }
 
     public function archive(Request $_request, Route $route)
@@ -191,7 +191,7 @@ class RouteController extends Controller
         $activeCompanyIds = $this->companyContext->getActiveCompanyIds();
         abort_unless(in_array($route->company_id, $activeCompanyIds), 403);
         DB::transaction(fn () => $route->update(['active' => false, 'updated_by' => auth()->id()]));
-        return redirect()->route('inventory.config.routes.index')->with('success', 'Route archived.');
+        return redirect()->route('inventory.config.routes.index')->with('success', __('inventory.archived'));
     }
 
     public function unarchive(Request $_request, Route $route)
@@ -200,7 +200,7 @@ class RouteController extends Controller
         $activeCompanyIds = $this->companyContext->getActiveCompanyIds();
         abort_unless(in_array($route->company_id, $activeCompanyIds), 403);
         DB::transaction(fn () => $route->update(['active' => true, 'updated_by' => auth()->id()]));
-        return redirect()->route('inventory.config.routes.show', $route)->with('success', 'Route restored.');
+        return redirect()->route('inventory.config.routes.show', $route)->with('success', __('inventory.restored'));
     }
 
     public function unlink(Request $_request, Route $route)
@@ -212,6 +212,6 @@ class RouteController extends Controller
             $route->rules()->delete();
             $route->delete();
         });
-        return redirect()->route('inventory.config.routes.index')->with('success', 'Route deleted.');
+        return redirect()->route('inventory.config.routes.index')->with('success', __('inventory.deleted'));
     }
 }

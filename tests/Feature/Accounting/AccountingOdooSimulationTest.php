@@ -506,8 +506,10 @@ class AccountingOdooSimulationTest extends TestCase
         // 2026-01-15 → picks 2026-01-01 (1300)
         $this->assertSame(1300.0, $this->svc->getExchangeRate($this->company->id, 'USD', Carbon::parse('2026-01-15')));
 
-        // 2025-12-31 → no rate yet → fallback 1.0
-        $this->assertSame(1.0, $this->svc->getExchangeRate($this->company->id, 'USD', Carbon::parse('2025-12-31')));
+        // 2025-12-31 → no rate on or before this date → throws (no silent 1:1 fallback)
+        $this->expectException(\RuntimeException::class);
+        $this->expectExceptionMessage('No active exchange rate found for USD on or before 2025-12-31');
+        $this->svc->getExchangeRate($this->company->id, 'USD', Carbon::parse('2025-12-31'));
     }
 
     /**
@@ -525,14 +527,19 @@ class AccountingOdooSimulationTest extends TestCase
     }
 
     /**
-     * When no rate exists for a currency, the service returns 1.0 (treated as same currency).
+     * When no rate exists for a non-base currency, the service throws — silent
+     * 1:1 fallback would book foreign amounts into base verbatim and distort
+     * every report that aggregates the affected account. The user must
+     * configure a rate before saving foreign-currency entries.
      */
-    public function test_fx_falls_back_to_1_when_no_rate_exists(): void
+    public function test_fx_throws_when_no_rate_exists_for_non_base_currency(): void
     {
         $this->company->update(['currency' => 'IQD']);
         Auth::login($this->admin);
 
-        $this->assertSame(1.0, $this->svc->getExchangeRate($this->company->id, 'EUR', Carbon::parse('2026-01-01')));
+        $this->expectException(\RuntimeException::class);
+        $this->expectExceptionMessage('No active exchange rate found for EUR on or before 2026-01-01');
+        $this->svc->getExchangeRate($this->company->id, 'EUR', Carbon::parse('2026-01-01'));
     }
 
     /**

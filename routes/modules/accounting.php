@@ -149,9 +149,10 @@ Route::prefix('accounting')->name('accounting.')->group(function () {
 
     // Journal Entries (manual moves in Phase 1)
     Route::prefix('moves')->name('moves.')->group(function () {
-        Route::get('/',              [AccountMoveController::class, 'read'])     ->middleware('permission:accounting.read')   ->name('index');
+        Route::get('/',              [AccountMoveController::class, 'read'])       ->middleware('permission:accounting.read')   ->name('index');
         Route::get('/create',        [AccountMoveController::class, 'create'])   ->middleware('permission:accounting.create') ->name('create');
         Route::post('/',             [AccountMoveController::class, 'store'])    ->middleware('permission:accounting.create') ->name('store');
+        Route::delete('/bulk',       [AccountMoveController::class, 'bulkUnlink'])->middleware('permission:accounting.unlink')->name('bulk-delete');
         Route::get('/{move}',              [AccountMoveController::class, 'show'])         ->middleware('permission:accounting.read')   ->name('show');
         Route::get('/{move}/edit',         [AccountMoveController::class, 'edit'])         ->middleware('permission:accounting.write')  ->name('edit');
         Route::put('/{move}',              [AccountMoveController::class, 'write'])        ->middleware('permission:accounting.write')  ->name('update');

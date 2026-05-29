@@ -131,7 +131,7 @@
                 @foreach($users as $u)
                 @if($u->id !== $auth->id)
                 <form method="POST" action="{{ route('chat.direct', $u) }}"
-                      x-show="dmSearch === '' || '{{ addslashes(strtolower($u->name)) }}'.includes(dmSearch.toLowerCase())"
+                      x-show="dmSearch === '' || {{ Js::from(strtolower($u->name)) }}.includes(dmSearch.toLowerCase())"
                       style="display:none">
                     @csrf
                     <button type="submit"
@@ -481,12 +481,12 @@
                     <form method="POST"
                           action="{{ route('chat.members.remove', [$room, $member]) }}"
                           class="shrink-0 opacity-0 group-hover:opacity-100 transition-opacity"
-                          @submit.prevent="$dispatch('confirm-delete', { message: {{ Js::from($auth->id === $member->id ? 'Leave this group?' : 'Remove ' . $member->name . ' from this group?') }}, form: $el })">
+                          @submit.prevent="$dispatch('confirm-delete', { message: @js($auth->id === $member->id ? __('chat.confirm_leave_group') : __('chat.confirm_remove_member', ['name' => $member->name])), form: $el })">
                         @csrf
                         @method('DELETE')
                         <button type="submit"
                                 class="text-[10px] px-2 py-0.5 rounded text-gray-400 hover:text-red-500 hover:bg-red-50 transition-colors font-medium">
-                            {{ $auth->id === $member->id ? 'Leave' : 'Remove' }}
+                            {{ $auth->id === $member->id ? __('chat.leave') : __('chat.remove') }}
                         </button>
                     </form>
                     @endif
@@ -505,7 +505,7 @@
                         @foreach($users as $u)
                         @if(!$room->members->contains('id', $u->id))
                         <form method="POST" action="{{ route('chat.members.add', $room) }}"
-                              x-show="'{{ addslashes(strtolower($u->name)) }}'.includes(addSearch.toLowerCase())"
+                              x-show="{{ Js::from(strtolower($u->name)) }}.includes(addSearch.toLowerCase())"
                               style="display:none">
                             @csrf
                             <input type="hidden" name="user_id" value="{{ $u->id }}">

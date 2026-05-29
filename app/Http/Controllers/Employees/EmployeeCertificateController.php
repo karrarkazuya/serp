@@ -9,6 +9,7 @@ use App\Services\Company\CompanyContextService;
 use App\Helpers\GroupsQuery;
 use App\Helpers\SearchFilters;
 use App\Helpers\SortsTable;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
@@ -202,6 +203,31 @@ class EmployeeCertificateController extends Controller
         });
 
         return redirect()->route('employees.certificates.show', $certificate)->with('success', 'Certificate restored.');
+    }
+
+    public function bulkUnlink(Request $request): RedirectResponse
+    {
+        $this->authorize('delete', Employee::class);
+
+        $activeCompanyIds = $this->companyContext->getActiveCompanyIds();
+        $selectAll = $request->boolean('select_all');
+        $ids = $request->input('ids', []);
+
+        DB::transaction(function () use ($selectAll, $ids, $activeCompanyIds) {
+            $query = EmployeeCertificate::whereHas('employee', function ($q) use ($activeCompanyIds) {
+                empty($activeCompanyIds)
+                    ? $q->whereRaw('1 = 0')
+                    : $q->whereIn('company_id', $activeCompanyIds);
+            });
+            if (!$selectAll) {
+                $query->whereIn('id', $ids);
+            }
+            foreach ($query->get() as $certificate) {
+                $certificate->delete();
+            }
+        });
+
+        return redirect()->route('employees.certificates.index')->with('success', 'Selected certificates deleted.');
     }
 
     public function unlink(EmployeeCertificate $certificate)

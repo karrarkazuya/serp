@@ -122,7 +122,7 @@ class AccountPaymentController extends Controller
             return back()->withInput()->with('error', $e->getMessage());
         }
 
-        return redirect()->route('accounting.payments.show', $payment)->with('success', 'Payment saved as draft.');
+        return redirect()->route('accounting.payments.show', $payment)->with('success', __('accounting.payment_saved'));
     }
 
     public function confirm(Request $request, AccountPayment $payment)
@@ -142,7 +142,7 @@ class AccountPaymentController extends Controller
             return back()->with('error', $e->getMessage());
         }
 
-        return redirect()->route('accounting.payments.show', $payment)->with('success', 'Payment confirmed.');
+        return redirect()->route('accounting.payments.show', $payment)->with('success', __('accounting.payment_confirmed'));
     }
 
     public function resetDraft(Request $request, AccountPayment $payment)
@@ -158,7 +158,7 @@ class AccountPaymentController extends Controller
             return back()->with('error', $e->getMessage());
         }
 
-        return redirect()->route('accounting.payments.show', $payment)->with('success', 'Payment reset to draft.');
+        return redirect()->route('accounting.payments.show', $payment)->with('success', __('accounting.payment_reset'));
     }
 
     public function cancel(Request $request, AccountPayment $payment)
@@ -173,7 +173,7 @@ class AccountPaymentController extends Controller
             return back()->with('error', $e->getMessage());
         }
 
-        return redirect()->route('accounting.payments.show', $payment)->with('success', 'Payment cancelled.');
+        return redirect()->route('accounting.payments.show', $payment)->with('success', __('accounting.payment_cancelled'));
     }
 
     public function unlink(Request $_request, AccountPayment $payment)
@@ -188,7 +188,7 @@ class AccountPaymentController extends Controller
             return back()->with('error', $e->getMessage());
         }
 
-        return redirect()->route('accounting.payments.index')->with('success', 'Payment deleted.');
+        return redirect()->route('accounting.payments.index')->with('success', __('accounting.payment_deleted'));
     }
 
     public function addComment(Request $request, AccountPayment $payment)
@@ -199,6 +199,6 @@ class AccountPaymentController extends Controller
         $request->validate(['body' => 'required|string|max:5000']);
         DB::transaction(fn () => $payment->logComment($request->body));
 
-        return back()->with('success', 'Comment added.');
+        return back()->with('success', __('accounting.comment_added'));
     }
 }

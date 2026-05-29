@@ -5,6 +5,11 @@
 @source '../**/*.blade.php';
 @source '../**/*.js';
 
+/* Alpine x-cloak: hide elements until Alpine has hydrated. Without this rule,
+   x-cloak does nothing and the element flashes visible before Alpine removes
+   the attribute. */
+[x-cloak] { display: none !important; }
+
 @theme {
     --font-sans: 'Inter', ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji',
         'Segoe UI Symbol', 'Noto Color Emoji';

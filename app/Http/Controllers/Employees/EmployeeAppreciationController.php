@@ -11,6 +11,7 @@ use App\Services\FileService;
 use App\Helpers\GroupsQuery;
 use App\Helpers\SearchFilters;
 use App\Helpers\SortsTable;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
@@ -259,6 +260,34 @@ class EmployeeAppreciationController extends Controller
         });
 
         return redirect()->route('employees.appreciations.show', $appreciation)->with('success', __('employees.appreciation_unarchived'));
+    }
+
+    public function bulkUnlink(Request $request): RedirectResponse
+    {
+        $this->authorize('delete', Employee::class);
+
+        $activeCompanyIds = $this->companyContext->getActiveCompanyIds();
+        $selectAll = $request->boolean('select_all');
+        $ids = $request->input('ids', []);
+
+        DB::transaction(function () use ($selectAll, $ids, $activeCompanyIds) {
+            $query = EmployeeAppreciation::whereHas('employees', function ($q) use ($activeCompanyIds) {
+                empty($activeCompanyIds)
+                    ? $q->whereRaw('1 = 0')
+                    : $q->whereIn('hr_employees.company_id', $activeCompanyIds);
+            });
+            if (!$selectAll) {
+                $query->whereIn('id', $ids);
+            }
+            foreach ($query->get() as $appreciation) {
+                if ($appreciation->file_path) {
+                    $this->fileService->deleteByUuid($appreciation->file_path);
+                }
+                $appreciation->delete();
+            }
+        });
+
+        return redirect()->route('employees.appreciations.index')->with('success', __('employees.appreciations_deleted'));
     }
 
     public function unlink(EmployeeAppreciation $appreciation)

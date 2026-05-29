@@ -2,11 +2,14 @@
 
 namespace App\Services\Inventory;
 
+use App\Models\Inventory\Location;
 use App\Models\Inventory\Lot;
 use App\Models\Inventory\Move;
 use App\Models\Inventory\MoveLine;
 use App\Models\Inventory\OperationType;
 use App\Models\Inventory\Picking;
+use App\Models\Inventory\Product;
+use App\Models\Inventory\PutawayRule;
 use App\Models\Inventory\Quant;
 use App\Services\Chatter\ChatterService;
 
@@ -31,7 +34,7 @@ class PickingService
             $this->addMove($picking, $moveRow);
         }
 
-        $this->chatterService->logCreated($picking, 'Transfer');
+        $this->chatterService->logCreated($picking, __('inventory.chatter_label_transfer'));
         return $picking->fresh();
     }
 
@@ -47,6 +50,23 @@ class PickingService
         $moveData['created_by']       = auth()->id();
         $moveData['updated_by']       = auth()->id();
 
+        // Odoo parity: PutawayRule destination redirection. When a move lands
+        // an internal location that has a matching putaway rule, redirect the
+        // dest to the rule's fixed_location_id (e.g. "Stock" → "Stock/Aisle-A
+        // /Shelf-3"). The picking-level dest stays untouched so the operator
+        // can still see the warehouse-level destination on the header; only
+        // the move row carries the refined target.
+        if (!empty($moveData['product_id']) && !empty($moveData['location_dest_id'])) {
+            $destLocation = Location::find($moveData['location_dest_id']);
+            $product      = Product::with('category')->find($moveData['product_id']);
+            if ($destLocation && $product) {
+                $redirect = PutawayRule::resolveFor($product, $destLocation, $picking->company_id);
+                if ($redirect) {
+                    $moveData['location_dest_id'] = $redirect->id;
+                }
+            }
+        }
+
         return Move::create($moveData);
     }
 
@@ -57,7 +77,7 @@ class PickingService
         $picking->moves()->update(['state' => 'confirmed', 'updated_by' => auth()->id()]);
         $picking->update(['state' => Picking::STATE_CONFIRMED, 'updated_by' => auth()->id()]);
 
-        $this->chatterService->log($picking, 'Transfer confirmed.', 'log');
+        $this->chatterService->log($picking, __('inventory.chatter_transfer_confirmed'), 'log');
         return $picking->fresh();
     }
 
@@ -87,16 +107,27 @@ class PickingService
 
         $allAvailable = true;
 
-        foreach ($picking->moves()->with('product')->get() as $move) {
+        foreach ($picking->moves()->with(['product.uom', 'uom'])->get() as $move) {
             // Non-storable products (consumable / service) don't consume physical stock
             if (!$move->product?->isStorable()) {
                 $move->update(['reserved_qty' => $move->product_qty, 'state' => 'assigned', 'updated_by' => auth()->id()]);
                 continue;
             }
 
-            $toReserve    = (float) $move->product_qty;
-            $reserved     = 0.0;
-            $lotTracked   = $move->product?->requiresLotTracking();
+            // Quants are always stored in the product's reference UoM (Odoo
+            // convention — no uom_id column on inventory_quants). Reservation
+            // math therefore lives in product UoM; we convert move.product_qty
+            // (which is in move UoM, e.g. user picked a kg-tracked product and
+            // entered 1.5 g for this transfer) and convert back to move UoM
+            // before storing on move/line rows so the user sees their original
+            // unit on the screen.
+            $moveUom    = $move->uom;
+            $productUom = $move->product->uom;
+            $toReserve  = ($moveUom && $productUom)
+                ? $moveUom->convertQty((float) $move->product_qty, $productUom)
+                : (float) $move->product_qty;
+            $reserved        = 0.0;
+            $lotTracked      = $move->product?->requiresLotTracking();
             $lotReservations = [];
 
             // Clear stale detailed operations before re-reserving
@@ -106,16 +137,20 @@ class PickingService
 
             // Odoo parity: removal_strategy comes from the product's category
             // (defaults to FIFO). Reservation order:
-            //   fifo → earliest in_date first
+            //   fifo → earliest in_date first  (DEFAULT)
             //   lifo → latest in_date first
             //   fefo → earliest lot.expiration_date first (lots with no
             //          expiration sort last so they're not consumed before
             //          expiring stock)
-            //   closest_location → would need warehouse coordinates; falls
-            //          back to FIFO until that's modeled
-            // Reads quants under lockForUpdate so concurrent moves can't both
-            // claim the same available units.
+            // Legacy `closest_location` rows still in the DB resolve to FIFO
+            // — the dropdown no longer offers it (the picker had no warehouse-
+            // coordinate model, so it always behaved as FIFO anyway). Reads
+            // quants under lockForUpdate so concurrent moves can't both claim
+            // the same available units.
             $strategy = $move->product?->category?->removal_strategy ?? 'fifo';
+            if ($strategy === 'closest_location') {
+                $strategy = 'fifo';
+            }
             $quantQuery = Quant::where('inventory_quants.company_id', $move->company_id)
                 ->where('inventory_quants.product_id', $move->product_id)
                 ->where('inventory_quants.location_id', $move->location_src_id)
@@ -147,8 +182,14 @@ class PickingService
                 }
             }
 
-            // Create detailed operation lines per lot (Odoo action_assign behaviour)
+            // Create detailed operation lines per lot (Odoo action_assign behaviour).
+            // $res['qty'] is in product UoM (came directly from quant.quantity);
+            // store on the line in the move's UoM so the user sees consistent
+            // units across move and lines.
             foreach ($lotReservations as $res) {
+                $lineQtyInMoveUom = ($moveUom && $productUom)
+                    ? $productUom->convertQty($res['qty'], $moveUom)
+                    : $res['qty'];
                 MoveLine::create([
                     'company_id'       => $move->company_id,
                     'move_id'          => $move->id,
@@ -158,14 +199,18 @@ class PickingService
                     'location_id'      => $move->location_src_id,
                     'location_dest_id' => $move->location_dest_id,
                     'lot_id'           => $res['lot_id'],
-                    'reserved_qty'     => $res['qty'],
-                    'qty_done'         => $res['qty'],
+                    'reserved_qty'     => $lineQtyInMoveUom,
+                    'qty_done'         => $lineQtyInMoveUom,
                     'date'             => now()->toDateString(),
                 ]);
             }
 
+            $reservedInMoveUom = ($moveUom && $productUom)
+                ? $productUom->convertQty($reserved, $moveUom)
+                : $reserved;
+
             $move->update([
-                'reserved_qty' => $reserved,
+                'reserved_qty' => $reservedInMoveUom,
                 'state'        => $reserved >= $toReserve
                     ? 'assigned'
                     : ($reserved > 0 ? 'partially_available' : 'confirmed'),
@@ -190,13 +235,13 @@ class PickingService
         $picking = Picking::whereKey($picking->id)->lockForUpdate()->first() ?? $picking;
 
         if (!$picking->canValidate()) {
-            throw new \RuntimeException('Transfer cannot be validated in its current state.');
+            throw new \RuntimeException(__('inventory.err_transfer_bad_state'));
         }
 
         $hasAnyDone    = false;
         $backorderItems = [];
 
-        foreach ($picking->moves()->with(['product', 'moveLines'])->get() as $move) {
+        foreach ($picking->moves()->with(['product.uom', 'uom', 'moveLines.uom'])->get() as $move) {
             $qtyDone = isset($doneQties[$move->id]) ? (float) $doneQties[$move->id] : (float) $move->product_qty;
 
             // Enforce lot/serial tracking: require move lines with lot info before validating
@@ -204,27 +249,25 @@ class PickingService
                 $opType = $picking->operationType;
                 if ($opType && ($opType->use_create_lots || $opType->use_existing_lots)) {
                     if ($move->moveLines->count() === 0) {
-                        throw new \RuntimeException(
-                            "Product \"{$move->product->name}\" requires a lot/serial number. " .
-                            "Please fill in the detailed operations before validating."
-                        );
+                        throw new \RuntimeException(__('inventory.err_product_needs_lot', [
+                            'name' => $move->product->name,
+                        ]));
                     }
                     $isSerial = $move->product?->isTrackedBySerial();
                     foreach ($move->moveLines as $line) {
                         if (!$line->lot_id && !$line->lot_name) {
-                            throw new \RuntimeException(
-                                "All lines for product \"{$move->product->name}\" must have a lot/serial number assigned."
-                            );
+                            throw new \RuntimeException(__('inventory.err_lines_need_lot', [
+                                'name' => $move->product->name,
+                            ]));
                         }
                         // Odoo parity: serial-tracked products require exactly
                         // one unit per move line — each serial is a physical
                         // single-instance asset. Lot-tracked allows N per line.
                         if ($isSerial && abs((float) $line->qty_done - 1.0) > 0.0001) {
-                            throw new \RuntimeException(sprintf(
-                                'Serial-tracked product "%s" requires exactly 1 unit per serial. Line has %s.',
-                                $move->product->name,
-                                number_format((float) $line->qty_done, 4)
-                            ));
+                            throw new \RuntimeException(__('inventory.err_serial_one_per_line', [
+                                'name' => $move->product->name,
+                                'qty'  => number_format((float) $line->qty_done, 4),
+                            ]));
                         }
                     }
                     // Odoo parity: a serial number is a unique physical asset.
@@ -261,27 +304,53 @@ class PickingService
                 $srcLocation = $move->srcLocation ?? \App\Models\Inventory\Location::find($move->location_src_id);
                 $srcIsInternal = $srcLocation && $srcLocation->usage === 'internal';
 
+                // Quants are in product reference UoM — convert every move/line
+                // qty out of its picker UoM before touching a quant. Without
+                // this, transferring 1 kg of a g-tracked product subtracts only
+                // 1 g from the source quant (1000× under-reported), silently
+                // creating a stock surplus that adjustments would later cover.
+                $productUom = $move->product->uom;
+                $moveUom    = $move->uom;
+
                 if ($move->moveLines->count() > 0) {
                     // Lot-tracked: move quants per move line
+                    $productUomTotal = 0.0;
                     foreach ($move->moveLines as $line) {
                         $lineQty = (float) $line->qty_done;
                         if ($lineQty <= 0) continue;
                         $lot = $this->resolveOrCreateLot($line);
+
+                        $lineUom = $line->uom ?? $moveUom;
+                        $lineProductQty = ($lineUom && $productUom)
+                            ? $lineUom->convertQty($lineQty, $productUom)
+                            : $lineQty;
+
                         if ($srcIsInternal) {
-                            $this->assertSufficientOnHand($move, $lot?->id, $lineQty);
+                            $this->assertSufficientOnHand($move, $lot?->id, $lineProductQty);
                         }
-                        $this->updateQuant($picking->company_id, $move->product_id, $move->location_src_id,  $lot?->id, -$lineQty);
-                        $this->updateQuant($picking->company_id, $move->product_id, $move->location_dest_id, $lot?->id,  $lineQty);
+                        $this->updateQuant($picking->company_id, $move->product_id, $move->location_src_id,  $lot?->id, -$lineProductQty);
+                        $this->updateQuant($picking->company_id, $move->product_id, $move->location_dest_id, $lot?->id,  $lineProductQty);
                         $line->update(['lot_id' => $lot?->id, 'updated_by' => auth()->id()]);
+                        $productUomTotal += $lineProductQty;
                     }
-                    $qtyDone = $move->moveLines->sum('qty_done');
+                    // Display move.qty_done in move UoM — convert the aggregated
+                    // product-UoM total back. Summing line.qty_done directly
+                    // would mix units if a line ever had a different UoM than
+                    // its move (e.g. line in g, move in kg).
+                    $qtyDone = ($moveUom && $productUom)
+                        ? $productUom->convertQty($productUomTotal, $moveUom)
+                        : $productUomTotal;
                 } else {
-                    // Simple (no lots)
+                    // Simple (no lots) — convert move qty_done to product UoM
+                    $moveProductQty = ($moveUom && $productUom)
+                        ? $moveUom->convertQty($qtyDone, $productUom)
+                        : $qtyDone;
+
                     if ($srcIsInternal) {
-                        $this->assertSufficientOnHand($move, null, $qtyDone);
+                        $this->assertSufficientOnHand($move, null, $moveProductQty);
                     }
-                    $this->updateQuant($picking->company_id, $move->product_id, $move->location_src_id,  null, -$qtyDone);
-                    $this->updateQuant($picking->company_id, $move->product_id, $move->location_dest_id, null,  $qtyDone);
+                    $this->updateQuant($picking->company_id, $move->product_id, $move->location_src_id,  null, -$moveProductQty);
+                    $this->updateQuant($picking->company_id, $move->product_id, $move->location_dest_id, null,  $moveProductQty);
                 }
             }
 
@@ -294,7 +363,7 @@ class PickingService
         }
 
         if (!$hasAnyDone) {
-            throw new \RuntimeException('Nothing to validate. Please enter done quantities before validating.');
+            throw new \RuntimeException(__('inventory.err_nothing_to_validate'));
         }
 
         $picking->update([
@@ -308,7 +377,7 @@ class PickingService
             $backorder = $this->createBackorder($picking, $backorderItems);
         }
 
-        $this->chatterService->log($picking, 'Transfer validated.', 'log');
+        $this->chatterService->log($picking, __('inventory.chatter_transfer_validated'), 'log');
 
         return ['picking' => $picking->fresh(), 'backorder' => $backorder];
     }
@@ -320,7 +389,7 @@ class PickingService
         $picking = Picking::whereKey($picking->id)->lockForUpdate()->first() ?? $picking;
 
         if ($picking->isDone()) {
-            throw new \RuntimeException('Done transfers cannot be cancelled.');
+            throw new \RuntimeException(__('inventory.err_done_no_cancel'));
         }
 
         // Release all quant reservations before cancelling
@@ -329,7 +398,7 @@ class PickingService
         $picking->moves()->update(['state' => 'cancelled', 'updated_by' => auth()->id()]);
         $picking->update(['state' => Picking::STATE_CANCELLED, 'updated_by' => auth()->id()]);
 
-        $this->chatterService->log($picking, 'Transfer cancelled.', 'log');
+        $this->chatterService->log($picking, __('inventory.chatter_transfer_cancelled'), 'log');
         return $picking->fresh();
     }
 
@@ -337,7 +406,7 @@ class PickingService
     {
         $returnOpType = $picking->operationType->returnPickingType;
         if (!$returnOpType) {
-            throw new \RuntimeException('No return operation type configured.');
+            throw new \RuntimeException(__('inventory.err_no_return_optype'));
         }
 
         $returnData = [
@@ -347,7 +416,7 @@ class PickingService
             'location_src_id'    => $picking->location_dest_id,
             'location_dest_id'   => $picking->location_src_id,
             'origin_picking_id'  => $picking->id,
-            'origin'             => 'Return of ' . $picking->name,
+            'origin'             => __('inventory.origin_return_of', ['ref' => $picking->name]),
             'scheduled_date'     => now(),
             'active'             => true,
             'created_by'         => auth()->id(),
@@ -434,7 +503,7 @@ class PickingService
         $backorder->moves()->update(['state' => 'confirmed', 'updated_by' => auth()->id()]);
         $backorder->update(['state' => Picking::STATE_CONFIRMED, 'updated_by' => auth()->id()]);
 
-        $this->chatterService->log($backorder, 'Backorder of ' . $picking->name . '.', 'log');
+        $this->chatterService->log($backorder, __('inventory.chatter_backorder_of', ['ref' => $picking->name]), 'log');
         return $backorder->fresh();
     }
 
@@ -451,11 +520,23 @@ class PickingService
 
     /**
      * Release the quant reservation for a single move and reset move.reserved_qty to 0.
+     *
+     * move.reserved_qty is stored in move UoM; quant.reserved_quantity is in
+     * product reference UoM. Convert before distributing the release across
+     * quants — otherwise releasing 1 kg of a g-tracked reservation would
+     * underflow only 1 g back, leaking 999 g of "reserved" stock that no
+     * subsequent action could free.
      */
     public function releaseMoveReservation(Move $move): void
     {
-        $toRelease = (float) $move->reserved_qty;
-        if ($toRelease <= 0 || !$move->product?->isStorable()) return;
+        if ((float) $move->reserved_qty <= 0 || !$move->product?->isStorable()) return;
+
+        $move->loadMissing(['uom', 'product.uom']);
+        $moveUom    = $move->uom;
+        $productUom = $move->product?->uom;
+        $toRelease  = ($moveUom && $productUom)
+            ? $moveUom->convertQty((float) $move->reserved_qty, $productUom)
+            : (float) $move->reserved_qty;
 
         // Distribute the release across quants for this product/location (highest reserved first)
         $quants = Quant::where('company_id', $move->company_id)
@@ -534,12 +615,11 @@ class PickingService
                 ->whereHas('location', fn ($q) => $q->where('usage', 'internal'))
                 ->sum('quantity');
             if ($onHand > 0.0001) {
-                throw new \RuntimeException(sprintf(
-                    'Serial "%s" for product "%s" is already on hand (qty %s). Serials are unique physical units and cannot be received twice.',
-                    $lotName,
-                    $move->product?->name ?? '#' . $move->product_id,
-                    number_format($onHand, 4)
-                ));
+                throw new \RuntimeException(__('inventory.err_serial_already_on_hand', [
+                    'name'    => $lotName,
+                    'product' => $move->product?->name ?? '#' . $move->product_id,
+                    'qty'     => number_format($onHand, 4),
+                ]));
             }
         }
     }
@@ -550,6 +630,10 @@ class PickingService
      * inflate qty_done on a delivery picking and silently take the source
      * quant negative — "delivered" units could then be hidden via a later
      * inventory adjustment, covering up theft.
+     *
+     * `$qty` must be in the **product reference UoM** (matches the unit of
+     * quant.quantity that we sum against). Callers are responsible for the
+     * `move.uom → product.uom` conversion before calling.
      *
      * Caller must already be inside the validate() transaction so the
      * sum-then-act check is atomic against concurrent moves.
@@ -565,12 +649,11 @@ class PickingService
 
         if ($qty > $onHand + 0.0001) {
             $productName = $move->product?->name ?? "#{$move->product_id}";
-            throw new \RuntimeException(sprintf(
-                'Insufficient stock for "%s" at source location. Available: %s, requested: %s.',
-                $productName,
-                number_format($onHand, 4),
-                number_format($qty, 4)
-            ));
+            throw new \RuntimeException(__('inventory.err_insufficient_at_source', [
+                'product'   => $productName,
+                'on_hand'   => number_format($onHand, 4),
+                'requested' => number_format($qty, 4),
+            ]));
         }
     }
 

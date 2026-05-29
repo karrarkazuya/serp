@@ -146,7 +146,7 @@
                         <select name="payment_method"
                                 class="w-full border-0 bg-transparent focus:outline-none focus:ring-0 text-sm py-1 text-gray-700">
                             @foreach($paymentMethods as $key => $label)
-                            <option value="{{ $key }}" {{ old('payment_method', 'manual') === $key ? 'selected' : '' }}>{{ $label }}</option>
+                            <option value="{{ $key }}" {{ old('payment_method', 'manual') === $key ? 'selected' : '' }}>{{ trans()->has('accounting.payment_method_' . $key) ? __('accounting.payment_method_' . $key) : $label }}</option>
                             @endforeach
                         </select>
                     </div>

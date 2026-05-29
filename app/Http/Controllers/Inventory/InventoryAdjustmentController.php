@@ -102,7 +102,7 @@ class InventoryAdjustmentController extends Controller
 
         $adjustment = DB::transaction(fn () => $this->adjustmentService->create($data));
 
-        return redirect()->route('inventory.adjustments.show', $adjustment)->with('success', 'Physical inventory created.');
+        return redirect()->route('inventory.adjustments.show', $adjustment)->with('success', __('inventory.created'));
     }
 
     public function startCount(Request $_request, InventoryAdjustment $inventoryAdjustment)
@@ -112,7 +112,7 @@ class InventoryAdjustmentController extends Controller
         abort_unless(in_array($inventoryAdjustment->company_id, $activeCompanyIds), 403);
         abort_unless($inventoryAdjustment->isDraft(), 403);
         DB::transaction(fn () => $this->adjustmentService->startCount($inventoryAdjustment));
-        return back()->with('success', 'Inventory count started. Update quantities below.');
+        return back()->with('success', __('inventory.inv_count_started_hint'));
     }
 
     public function updateLine(Request $request, InventoryAdjustment $inventoryAdjustment, InventoryAdjustmentLine $line)
@@ -125,7 +125,7 @@ class InventoryAdjustmentController extends Controller
 
         $data = $request->validate(['inventory_qty' => ['required', 'numeric', 'min:0']]);
         DB::transaction(fn () => $this->adjustmentService->updateLine($line, (float) $data['inventory_qty']));
-        return back()->with('success', 'Line updated.');
+        return back()->with('success', __('inventory.line_updated'));
     }
 
     public function validateAdjustment(Request $_request, InventoryAdjustment $inventoryAdjustment)
@@ -140,7 +140,7 @@ class InventoryAdjustmentController extends Controller
             return back()->with('error', $e->getMessage());
         }
 
-        return redirect()->route('inventory.adjustments.show', $inventoryAdjustment)->with('success', 'Physical inventory validated.');
+        return redirect()->route('inventory.adjustments.show', $inventoryAdjustment)->with('success', __('inventory.adjustment_validated'));
     }
 
     public function unlink(Request $_request, InventoryAdjustment $inventoryAdjustment)
@@ -153,7 +153,7 @@ class InventoryAdjustmentController extends Controller
         } catch (\RuntimeException $e) {
             return back()->with('error', $e->getMessage());
         }
-        return redirect()->route('inventory.adjustments.index')->with('success', 'Physical inventory deleted.');
+        return redirect()->route('inventory.adjustments.index')->with('success', __('inventory.deleted'));
     }
 
     public function addComment(Request $request, InventoryAdjustment $inventoryAdjustment)
@@ -163,6 +163,6 @@ class InventoryAdjustmentController extends Controller
         abort_unless(in_array($inventoryAdjustment->company_id, $activeCompanyIds), 403);
         $request->validate(['body' => 'required|string|max:5000']);
         DB::transaction(fn () => $inventoryAdjustment->logComment($request->body));
-        return back()->with('success', 'Comment added.');
+        return back()->with('success', __('inventory.comment_added'));
     }
 }

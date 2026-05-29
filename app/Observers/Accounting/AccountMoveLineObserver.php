@@ -57,11 +57,10 @@ class AccountMoveLineObserver
             ->values();
 
         if ($dirtyProtected->isNotEmpty()) {
-            throw new RuntimeException(sprintf(
-                'Posted move line #%d is immutable. Field(s) "%s" cannot be modified. Reset the parent entry to draft first.',
-                $line->id,
-                $dirtyProtected->implode(', ')
-            ));
+            throw new RuntimeException(__('accounting.err_posted_line_immutable', [
+                'id'     => $line->id,
+                'fields' => $dirtyProtected->implode(', '),
+            ]));
         }
     }
 
@@ -73,10 +72,9 @@ class AccountMoveLineObserver
         // wipes lines during draft edits) — Eloquent will have the model's
         // current state, which matches the parent at this point.
         if ($line->state === 'posted') {
-            throw new RuntimeException(sprintf(
-                'Posted move line #%d cannot be deleted. Reset the parent entry to draft first.',
-                $line->id
-            ));
+            throw new RuntimeException(__('accounting.err_posted_line_no_delete', [
+                'id' => $line->id,
+            ]));
         }
     }
 }

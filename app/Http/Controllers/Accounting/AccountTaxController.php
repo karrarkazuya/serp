@@ -109,7 +109,7 @@ class AccountTaxController extends Controller
 
         $tax = DB::transaction(fn () => AccountTax::create($data));
 
-        return redirect()->route('accounting.taxes.show', $tax)->with('success', 'Tax created.');
+        return redirect()->route('accounting.taxes.show', $tax)->with('success', __('accounting.created'));
     }
 
     public function edit(AccountTax $tax)
@@ -138,7 +138,7 @@ class AccountTaxController extends Controller
 
         DB::transaction(fn () => $tax->update($data));
 
-        return redirect()->route('accounting.taxes.show', $tax)->with('success', 'Tax updated.');
+        return redirect()->route('accounting.taxes.show', $tax)->with('success', __('accounting.updated'));
     }
 
     public function archive(Request $request, AccountTax $tax)
@@ -149,7 +149,7 @@ class AccountTaxController extends Controller
 
         DB::transaction(fn () => $tax->update(['active' => false]));
 
-        return redirect()->route('accounting.taxes.show', $tax)->with('success', 'Tax archived.');
+        return redirect()->route('accounting.taxes.show', $tax)->with('success', __('accounting.archived'));
     }
 
     public function unarchive(Request $request, AccountTax $tax)
@@ -160,7 +160,7 @@ class AccountTaxController extends Controller
 
         DB::transaction(fn () => $tax->update(['active' => true]));
 
-        return redirect()->route('accounting.taxes.show', $tax)->with('success', 'Tax restored.');
+        return redirect()->route('accounting.taxes.show', $tax)->with('success', __('accounting.restored'));
     }
 
     public function unlink(Request $request, AccountTax $tax)
@@ -171,7 +171,7 @@ class AccountTaxController extends Controller
 
         DB::transaction(fn () => $tax->delete());
 
-        return redirect()->route('accounting.taxes.index')->with('success', 'Tax deleted.');
+        return redirect()->route('accounting.taxes.index')->with('success', __('accounting.deleted'));
     }
 
     public function addComment(Request $request, AccountTax $tax)
@@ -183,6 +183,6 @@ class AccountTaxController extends Controller
         $request->validate(['body' => 'required|string|max:5000']);
         DB::transaction(fn () => $tax->logComment($request->body));
 
-        return back()->with('success', 'Comment added.');
+        return back()->with('success', __('accounting.comment_added'));
     }
 }

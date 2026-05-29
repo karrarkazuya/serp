@@ -95,7 +95,7 @@ class AccountingTaxGroupController extends Controller
 
         $group = DB::transaction(fn () => AccountingTaxGroup::create($data));
 
-        return redirect()->route('accounting.tax-groups.show', $group)->with('success', 'Tax group created.');
+        return redirect()->route('accounting.tax-groups.show', $group)->with('success', __('accounting.created'));
     }
 
     public function edit(AccountingTaxGroup $taxGroup)
@@ -122,7 +122,7 @@ class AccountingTaxGroupController extends Controller
 
         DB::transaction(fn () => $taxGroup->update($data));
 
-        return redirect()->route('accounting.tax-groups.show', $taxGroup)->with('success', 'Tax group updated.');
+        return redirect()->route('accounting.tax-groups.show', $taxGroup)->with('success', __('accounting.updated'));
     }
 
     public function unlink(Request $request, AccountingTaxGroup $taxGroup)
@@ -133,7 +133,7 @@ class AccountingTaxGroupController extends Controller
 
         DB::transaction(fn () => $taxGroup->delete());
 
-        return redirect()->route('accounting.tax-groups.index')->with('success', 'Tax group deleted.');
+        return redirect()->route('accounting.tax-groups.index')->with('success', __('accounting.deleted'));
     }
 
     public function addComment(Request $request, AccountingTaxGroup $taxGroup)
@@ -145,6 +145,6 @@ class AccountingTaxGroupController extends Controller
         $request->validate(['body' => 'required|string|max:5000']);
         DB::transaction(fn () => $taxGroup->logComment($request->body));
 
-        return back()->with('success', 'Comment added.');
+        return back()->with('success', __('accounting.comment_added'));
     }
 }

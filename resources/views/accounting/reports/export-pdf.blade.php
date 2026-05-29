@@ -73,7 +73,7 @@
                 $found = collect($totals)->firstWhere('key', $col['key']);
             @endphp
             <td class="{{ ($col['align'] ?? '') === 'right' ? 'num' : '' }}">
-                {{ $found['value'] ?? ($i === 0 ? 'Total' : '') }}
+                {{ $found['value'] ?? ($i === 0 ? __('accounting.total') : '') }}
             </td>
             @endforeach
         </tr>

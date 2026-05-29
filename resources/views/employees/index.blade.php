@@ -229,7 +229,8 @@
 
     @else
     {{-- Paginated list --}}
-    <x-list :paginator="$employees" :empty-text="__('employees.no_employees')" :selectable="true" :total-count="$employees->total()" :model="\App\Models\Employees\Employee::class">
+    <x-list :paginator="$employees" :empty-text="__('employees.no_employees')" :selectable="true" :total-count="$employees->total()" :model="\App\Models\Employees\Employee::class"
+            :bulk-delete-url="route('employees.bulk-delete')">
         <x-slot:columns>
             <x-sortable-th column="name"       :label="__('common.name')"             class="px-4 py-2" :default="true" />
             <x-sortable-th column="department"  :label="__('common.department')"       class="px-3 py-2" />

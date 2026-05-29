@@ -130,7 +130,8 @@
     </x-list>
 
     @else
-    <x-list :paginator="$records" :selectable="true" :total-count="$records->total()" :empty-text="__('employees.no_appreciations')" :model="\App\Models\Employees\Employee::class">
+    <x-list :paginator="$records" :selectable="true" :total-count="$records->total()" :empty-text="__('employees.no_appreciations')" :model="\App\Models\Employees\Employee::class"
+            :bulk-delete-url="route('employees.appreciations.bulk-delete')">
         <x-slot:columns>
             <th class="px-4 py-2 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">{{ __('employees.doc_name') }}</th>
             <th class="px-3 py-2 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">{{ __('employees.doc_employee') }}</th>

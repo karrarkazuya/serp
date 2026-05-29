@@ -97,13 +97,10 @@ class Picking extends Model
 
     public function getStateLabelAttribute(): string
     {
-        return match ($this->state) {
-            self::STATE_DRAFT      => 'Draft',
-            self::STATE_CONFIRMED  => 'Confirmed',
-            self::STATE_ASSIGNED   => 'Ready',
-            self::STATE_DONE       => 'Done',
-            self::STATE_CANCELLED  => 'Cancelled',
-            default                => ucfirst($this->state),
-        };
+        // Route through the lang file so Arabic users see "جاهز" instead of
+        // "Ready" on every picking listing. Falls back to ucfirst($state) for
+        // any future state code that arrives without a translation key.
+        $key = 'inventory.picking_state_' . $this->state;
+        return trans()->has($key) ? __($key) : ucfirst($this->state);
     }
 }

@@ -45,10 +45,12 @@ class Currency extends Model
         'active' => ['label' => 'Active',         'column' => 'active',         'type' => 'boolean'],
     ];
 
+    // `uuid`, `created_by`, `updated_by` are intentionally NOT fillable —
+    // AuditableObserver stamps them via forceFill, so leaving them out of
+    // mass-assignment closes off the tampering surface (Rule 7 alignment).
     protected $fillable = [
-        'uuid', 'code', 'name', 'symbol', 'position',
+        'code', 'name', 'symbol', 'position',
         'decimal_places', 'rounding', 'active',
-        'created_by', 'updated_by',
     ];
 
     protected $casts = [

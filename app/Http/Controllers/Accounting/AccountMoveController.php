@@ -12,8 +12,10 @@ use App\Models\Accounting\AccountMove;
 use App\Services\Accounting\AccountingService;
 use App\Services\Company\CompanyContextService;
 use Carbon\Carbon;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Gate;
 
 class AccountMoveController extends Controller
 {
@@ -151,7 +153,7 @@ class AccountMoveController extends Controller
         if (!$move->isDraft()) {
             return redirect()
                 ->route('accounting.moves.show', $move)
-                ->with('error', 'Only draft entries can be edited.');
+                ->with('error', __('accounting.only_draft_edit'));
         }
 
         $move->load(['lines.account', 'lines.partner', 'journal', 'partner']);
@@ -193,7 +195,7 @@ class AccountMoveController extends Controller
 
         return redirect()
             ->route('accounting.moves.show', $move)
-            ->with('success', $move->isPosted() ? 'Entry posted.' : 'Entry updated.');
+            ->with('success', $move->isPosted() ? __('accounting.entry_posted') : __('accounting.updated'));
     }
 
     public function post(Request $_request, AccountMove $move)
@@ -208,7 +210,7 @@ class AccountMoveController extends Controller
             return back()->with('error', $e->getMessage());
         }
 
-        return redirect()->route('accounting.moves.show', $move)->with('success', 'Entry posted.');
+        return redirect()->route('accounting.moves.show', $move)->with('success', __('accounting.entry_posted'));
     }
 
     public function resetToDraft(Request $_request, AccountMove $move)
@@ -218,7 +220,7 @@ class AccountMoveController extends Controller
         abort_unless(in_array($move->company_id, $activeCompanyIds), 403);
 
         DB::transaction(fn () => $this->accounting->resetMoveToDraft($move));
-        return redirect()->route('accounting.moves.show', $move)->with('success', 'Entry reset to draft.');
+        return redirect()->route('accounting.moves.show', $move)->with('success', __('accounting.entry_reset'));
     }
 
     public function cancel(Request $_request, AccountMove $move)
@@ -231,7 +233,7 @@ class AccountMoveController extends Controller
         abort_unless(in_array($move->company_id, $activeCompanyIds), 403);
 
         DB::transaction(fn () => $this->accounting->cancelMove($move));
-        return redirect()->route('accounting.moves.show', $move)->with('success', 'Entry cancelled.');
+        return redirect()->route('accounting.moves.show', $move)->with('success', __('accounting.entry_cancelled'));
     }
 
     public function reverse(Request $request, AccountMove $move)
@@ -253,7 +255,30 @@ class AccountMoveController extends Controller
         // the original move fires when the user posts it.
         return redirect()
             ->route('accounting.moves.show', $reversal)
-            ->with('success', 'Reversal entry drafted. Review the lines and post to apply.');
+            ->with('success', __('accounting.reversal_drafted'));
+    }
+
+    public function bulkUnlink(Request $request): RedirectResponse
+    {
+        $this->authorize('delete', AccountMove::class);
+
+        $activeCompanyIds = $this->companyContext->getActiveCompanyIds();
+        $selectAll = $request->boolean('select_all');
+        $ids = $request->input('ids', []);
+
+        DB::transaction(function () use ($selectAll, $ids, $activeCompanyIds) {
+            $query = AccountMove::whereIn('company_id', $activeCompanyIds)->where('move_type', 'entry');
+            if (!$selectAll) {
+                $query->whereIn('id', $ids);
+            }
+            foreach ($query->get() as $move) {
+                if (Gate::allows('delete', $move)) {
+                    $this->accounting->deleteMove($move);
+                }
+            }
+        });
+
+        return redirect()->route('accounting.moves.index')->with('success', __('accounting.bulk_entries_deleted'));
     }
 
     public function unlink(Request $_request, AccountMove $move)
@@ -268,7 +293,7 @@ class AccountMoveController extends Controller
             return back()->with('error', $e->getMessage());
         }
 
-        return redirect()->route('accounting.moves.index')->with('success', 'Entry deleted.');
+        return redirect()->route('accounting.moves.index')->with('success', __('accounting.entry_deleted'));
     }
 
     public function addComment(Request $request, AccountMove $move)
@@ -280,6 +305,6 @@ class AccountMoveController extends Controller
         $request->validate(['body' => 'required|string|max:5000']);
         DB::transaction(fn () => $move->logComment($request->body));
 
-        return back()->with('success', 'Comment added.');
+        return back()->with('success', __('accounting.comment_added'));
     }
 }

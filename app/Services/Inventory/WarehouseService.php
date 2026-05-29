@@ -15,7 +15,7 @@ class WarehouseService
     {
         $warehouse = Warehouse::create($data);
         $this->setupWarehouseLocationsAndTypes($warehouse);
-        $this->chatterService->logCreated($warehouse, 'Warehouse');
+        $this->chatterService->logCreated($warehouse, __('inventory.chatter_label_warehouse'));
         return $warehouse->fresh();
     }
 
@@ -24,7 +24,7 @@ class WarehouseService
         $changes = $this->detectChanges($warehouse, $data);
         $warehouse->update($data);
         if (!empty($changes)) {
-            $this->chatterService->logUpdated($warehouse, $changes, 'Warehouse');
+            $this->chatterService->logUpdated($warehouse, $changes, __('inventory.chatter_label_warehouse'));
         }
         return $warehouse->fresh();
     }
@@ -32,20 +32,20 @@ class WarehouseService
     public function archive(Warehouse $warehouse): Warehouse
     {
         $warehouse->update(['active' => false]);
-        $this->chatterService->logArchived($warehouse, 'Warehouse');
+        $this->chatterService->logArchived($warehouse, __('inventory.chatter_label_warehouse'));
         return $warehouse;
     }
 
     public function unarchive(Warehouse $warehouse): Warehouse
     {
         $warehouse->update(['active' => true]);
-        $this->chatterService->logUnarchived($warehouse, 'Warehouse');
+        $this->chatterService->logUnarchived($warehouse, __('inventory.chatter_label_warehouse'));
         return $warehouse;
     }
 
     public function delete(Warehouse $warehouse): void
     {
-        $this->chatterService->log($warehouse, 'Warehouse deleted.', 'system');
+        $this->chatterService->log($warehouse, __('inventory.chatter_warehouse_deleted'), 'system');
         $warehouse->delete();
     }
 
@@ -78,7 +78,7 @@ class WarehouseService
         $stockLoc = Location::create([
             'company_id' => $companyId,
             'parent_id'  => $viewLoc->id,
-            'name'       => 'Stock',
+            'name'       => __('inventory.wh_loc_stock'),
             'usage'      => 'internal',
             'active'     => true,
             'created_by' => auth()->id(),
@@ -89,7 +89,7 @@ class WarehouseService
         $inputLoc = $needsInput ? Location::create([
             'company_id' => $companyId,
             'parent_id'  => $viewLoc->id,
-            'name'       => 'Input',
+            'name'       => __('inventory.wh_loc_input'),
             'usage'      => 'internal',
             'active'     => true,
             'created_by' => auth()->id(),
@@ -100,7 +100,7 @@ class WarehouseService
         $qcLoc = $needsQc ? Location::create([
             'company_id' => $companyId,
             'parent_id'  => $viewLoc->id,
-            'name'       => 'Quality Control',
+            'name'       => __('inventory.wh_loc_qc'),
             'usage'      => 'internal',
             'active'     => true,
             'created_by' => auth()->id(),
@@ -111,7 +111,7 @@ class WarehouseService
         $outputLoc = $needsOutput ? Location::create([
             'company_id' => $companyId,
             'parent_id'  => $viewLoc->id,
-            'name'       => 'Output',
+            'name'       => __('inventory.wh_loc_output'),
             'usage'      => 'internal',
             'active'     => true,
             'created_by' => auth()->id(),
@@ -122,7 +122,7 @@ class WarehouseService
         $packLoc = $needsPack ? Location::create([
             'company_id' => $companyId,
             'parent_id'  => $viewLoc->id,
-            'name'       => 'Packing Zone',
+            'name'       => __('inventory.wh_loc_packing'),
             'usage'      => 'internal',
             'active'     => true,
             'created_by' => auth()->id(),
@@ -139,7 +139,7 @@ class WarehouseService
             'warehouse_id'            => $warehouse->id,
             'default_location_src_id' => $supplierLoc?->id,
             'default_location_dest_id' => $stockLoc->id,
-            'name'                    => $short . ': Receipts',
+            'name'                    => __('inventory.wh_optype_receipts', ['short' => $short]),
             'code'                    => 'incoming',
             'use_create_lots'         => true,
             'use_existing_lots'       => true,
@@ -154,7 +154,7 @@ class WarehouseService
             'warehouse_id'            => $warehouse->id,
             'default_location_src_id' => $stockLoc->id,
             'default_location_dest_id' => $customerLoc?->id,
-            'name'                    => $short . ': Delivery Orders',
+            'name'                    => __('inventory.wh_optype_deliveries', ['short' => $short]),
             'code'                    => 'outgoing',
             'use_create_lots'         => false,
             'use_existing_lots'       => true,
@@ -169,7 +169,7 @@ class WarehouseService
             'warehouse_id'            => $warehouse->id,
             'default_location_src_id' => $stockLoc->id,
             'default_location_dest_id' => $stockLoc->id,
-            'name'                    => $short . ': Internal Transfers',
+            'name'                    => __('inventory.wh_optype_internal', ['short' => $short]),
             'code'                    => 'internal',
             'use_create_lots'         => false,
             'use_existing_lots'       => true,

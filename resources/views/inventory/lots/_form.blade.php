@@ -31,9 +31,17 @@
             <label class="w-40 shrink-0 text-sm text-gray-500">{{ __('inventory.expiration_date') }}</label>
             <input type="date" name="expiration_date" value="{{ $val('expiration_date') }}" class="flex-1 text-sm bg-transparent border-0 focus:outline-none px-0 py-0.5">
         </div>
+        {{-- `use_date` (Best Before) is stored on the lot but not yet read by
+             any picking/scrap path — only `expiration_date` drives FEFO sorting
+             and the "expired" badge. Left in the form so data isn't lost when
+             best-before logic ships, but flagged so users know it's inert. --}}
         <div class="flex items-center gap-4 py-2 border-b border-gray-100">
-            <label class="w-40 shrink-0 text-sm text-gray-500">{{ __('inventory.best_before_date') }}</label>
-            <input type="date" name="use_date" value="{{ $val('use_date') }}" class="flex-1 text-sm bg-transparent border-0 focus:outline-none px-0 py-0.5">
+            <label class="w-40 shrink-0 text-sm text-gray-500">
+                {{ __('inventory.best_before_date') }}
+                <span class="ml-1 text-[10px] font-medium text-amber-600 uppercase tracking-wide">{{ __('inventory.stored_only') }}</span>
+            </label>
+            <input type="date" name="use_date" value="{{ $val('use_date') }}" class="flex-1 text-sm bg-transparent border-0 focus:outline-none px-0 py-0.5"
+                   title="{{ __('inventory.best_before_not_consumed') }}">
         </div>
     </div>
 </div>

@@ -336,6 +336,7 @@ class AppServiceProvider extends ServiceProvider
             AccountPayment::class,
             AccountPartialReconcile::class,
             AccountTax::class,
+            \App\Models\Accounting\Currency::class,
             CurrencyRate::class,
             AccountingPaymentTerm::class,
             AccountingPaymentTermLine::class,
@@ -352,6 +353,17 @@ class AppServiceProvider extends ServiceProvider
         // D8 (Odoo parity): block direct mutation/deletion of posted move lines.
         // Reset-to-draft is the supported path for editing posted entries.
         \App\Models\Accounting\AccountMoveLine::observe(\App\Observers\Accounting\AccountMoveLineObserver::class);
+
+        // Inventory equivalent: a `done` Move has already moved units between
+        // quants — mutating its qty/locations/product after the fact would
+        // desynchronise the ledger from the stock that physically moved. The
+        // picking service drives the state machine; this observer is the
+        // backstop for any direct Eloquent write that slips past it.
+        \App\Models\Inventory\Move::observe(\App\Observers\Inventory\MoveObserver::class);
+        // Same protection one level down: move lines on a done move are the
+        // per-lot trail that produced the quant updates. MoveLine has no
+        // `state` of its own — the observer reads the parent Move's state.
+        \App\Models\Inventory\MoveLine::observe(\App\Observers\Inventory\MoveLineObserver::class);
 
         // When an employee's working schedule changes, wipe + regenerate their
         // planned-days buffer so the new calendar takes effect from tomorrow.

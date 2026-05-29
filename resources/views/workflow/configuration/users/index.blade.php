@@ -28,9 +28,9 @@
             <x-sortable-th column="name"         :label="__('common.name')"          class="px-4 py-2" :default="true" />
             <x-sortable-th column="email"        :label="__('common.email')"         class="px-3 py-2" />
             <x-sortable-th column="job_position" :label="__('workflow.position_label')" class="px-3 py-2 hidden sm:table-cell" />
-            <th class="px-3 py-2 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">{{ __('workflow.default_dept_col') }}</th>
-            <th class="px-3 py-2 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide hidden md:table-cell">{{ __('workflow.groups_col') }}</th>
-            <th class="px-3 py-2 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">{{ __('common.status') }}</th>
+            <th class="px-3 py-2 text-start text-xs font-semibold text-gray-500 uppercase tracking-wide">{{ __('workflow.default_dept_col') }}</th>
+            <th class="px-3 py-2 text-start text-xs font-semibold text-gray-500 uppercase tracking-wide hidden md:table-cell">{{ __('workflow.groups_col') }}</th>
+            <th class="px-3 py-2 text-start text-xs font-semibold text-gray-500 uppercase tracking-wide">{{ __('common.status') }}</th>
             <th class="px-3 py-2"></th>
         </x-slot:columns>
 
@@ -87,9 +87,9 @@
             <x-sortable-th column="name"         :label="__('common.name')"          class="px-4 py-2" :default="true" />
             <x-sortable-th column="email"        :label="__('common.email')"         class="px-3 py-2" />
             <x-sortable-th column="job_position" :label="__('workflow.position_label')" class="px-3 py-2 hidden sm:table-cell" />
-            <th class="px-3 py-2 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">{{ __('workflow.default_dept_col') }}</th>
-            <th class="px-3 py-2 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide hidden md:table-cell">{{ __('workflow.groups_col') }}</th>
-            <th class="px-3 py-2 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">{{ __('common.status') }}</th>
+            <th class="px-3 py-2 text-start text-xs font-semibold text-gray-500 uppercase tracking-wide">{{ __('workflow.default_dept_col') }}</th>
+            <th class="px-3 py-2 text-start text-xs font-semibold text-gray-500 uppercase tracking-wide hidden md:table-cell">{{ __('workflow.groups_col') }}</th>
+            <th class="px-3 py-2 text-start text-xs font-semibold text-gray-500 uppercase tracking-wide">{{ __('common.status') }}</th>
             <th class="px-3 py-2"></th>
         </x-slot:columns>
 
@@ -116,8 +116,8 @@
                     <span class="inline-flex px-2 py-0.5 rounded text-xs bg-gray-100 text-gray-400">{{ __('workflow.not_enrolled_label') }}</span>
                 @endif
             </td>
-            <td class="px-3 py-2 text-right" onclick="event.stopPropagation()">
-                <a href="{{ route('workflow.config.users.show', $user) }}" class="text-xs text-purple-600 hover:text-purple-700 mr-3">{{ __('common.view') }}</a>
+            <td class="px-3 py-2 text-end" onclick="event.stopPropagation()">
+                <a href="{{ route('workflow.config.users.show', $user) }}" class="text-xs text-purple-600 hover:text-purple-700 me-3">{{ __('common.view') }}</a>
                 @can('create', \App\Models\Workflow\WorkflowUser::class)
                 <a href="{{ route('workflow.config.users.edit', $user) }}" class="text-xs text-gray-600 hover:text-gray-700">{{ __('workflow.configure_btn') }}</a>
                 @endcan

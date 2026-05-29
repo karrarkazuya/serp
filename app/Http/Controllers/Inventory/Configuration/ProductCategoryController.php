@@ -65,7 +65,11 @@ class ProductCategoryController extends Controller
         $data = $request->validate([
             'parent_id'        => ['nullable', 'exists:inventory_product_categories,id'],
             'name'             => ['required', 'string', 'max:255'],
-            'removal_strategy' => ['required', 'in:fifo,lifo,fefo,closest_location'],
+            // `closest_location` was removed from this list — it had no
+            // implementation behind it and silently behaved as FIFO. Legacy
+            // rows on disk are still rendered (see ProductCategory accessor),
+            // but new writes must pick a strategy the engine actually runs.
+            'removal_strategy' => ['required', 'in:fifo,lifo,fefo'],
             'costing_method'   => ['required', 'in:standard_price,average_cost,fifo'],
         ]);
         $data['active']      = true;
@@ -75,11 +79,11 @@ class ProductCategoryController extends Controller
         $category = DB::transaction(function () use ($data) {
             $cat = ProductCategory::create($data);
             $cat->updateCompleteName();
-            $this->chatterService->logCreated($cat, 'Product Category');
+            $this->chatterService->logCreated($cat, __('inventory.chatter_label_category'));
             return $cat;
         });
 
-        return redirect()->route('inventory.config.product-categories.show', $category)->with('success', 'Category created.');
+        return redirect()->route('inventory.config.product-categories.show', $category)->with('success', __('inventory.created'));
     }
 
     public function edit(ProductCategory $productCategory)
@@ -95,7 +99,11 @@ class ProductCategoryController extends Controller
         $data = $request->validate([
             'parent_id'        => ['nullable', 'exists:inventory_product_categories,id'],
             'name'             => ['required', 'string', 'max:255'],
-            'removal_strategy' => ['required', 'in:fifo,lifo,fefo,closest_location'],
+            // `closest_location` was removed from this list — it had no
+            // implementation behind it and silently behaved as FIFO. Legacy
+            // rows on disk are still rendered (see ProductCategory accessor),
+            // but new writes must pick a strategy the engine actually runs.
+            'removal_strategy' => ['required', 'in:fifo,lifo,fefo'],
             'costing_method'   => ['required', 'in:standard_price,average_cost,fifo'],
         ]);
 
@@ -103,7 +111,7 @@ class ProductCategoryController extends Controller
         if (array_key_exists('parent_id', $data) && $data['parent_id']) {
             $parentId = (int) $data['parent_id'];
             if ($parentId === $productCategory->id || $this->isCategoryDescendantOf($parentId, $productCategory->id)) {
-                return back()->withInput()->with('error', 'Selected parent would create a circular category hierarchy.');
+                return back()->withInput()->with('error', __('inventory.parent_cycle_category'));
             }
         }
 
@@ -112,7 +120,7 @@ class ProductCategoryController extends Controller
             $productCategory->update($data);
             $productCategory->updateCompleteName();
         });
-        return redirect()->route('inventory.config.product-categories.show', $productCategory)->with('success', 'Category updated.');
+        return redirect()->route('inventory.config.product-categories.show', $productCategory)->with('success', __('inventory.updated'));
     }
 
     private function isCategoryDescendantOf(int $candidateAncestorId, int $rootId): bool
@@ -135,13 +143,13 @@ class ProductCategoryController extends Controller
             DB::transaction(function () use ($productCategory) {
                 ProductCategory::whereKey($productCategory->id)->lockForUpdate()->firstOrFail();
                 if ($productCategory->children()->exists()) {
-                    throw new \RuntimeException('Cannot delete a category with sub-categories.');
+                    throw new \RuntimeException(__('inventory.err_category_has_children'));
                 }
                 $productCategory->delete();
             });
         } catch (\RuntimeException $e) {
             return back()->with('error', $e->getMessage());
         }
-        return redirect()->route('inventory.config.product-categories.index')->with('success', 'Category deleted.');
+        return redirect()->route('inventory.config.product-categories.index')->with('success', __('inventory.deleted'));
     }
 }

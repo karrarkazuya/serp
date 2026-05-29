@@ -16,7 +16,7 @@
     <h2 class="text-sm font-semibold text-gray-700 mb-4">{{ __('settings.company_info') }}</h2>
 
     {{-- Logo upload --}}
-    <div class="mb-5" x-data="{ preview: '{{ $company?->logo_url ?? '' }}' }">
+    <div class="mb-5" x-data="{ preview: @js($company?->logo_url ?? '') }">
         <label class="block text-xs font-medium text-gray-600 mb-2">{{ __('settings.logo') }}</label>
         <div class="flex items-center gap-4">
             <label class="cursor-pointer group">

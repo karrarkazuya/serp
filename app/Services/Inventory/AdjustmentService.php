@@ -29,7 +29,7 @@ class AdjustmentService
         $data['state'] = 'draft';
 
         $adjustment = InventoryAdjustment::create($data);
-        $this->chatterService->logCreated($adjustment, 'Physical Inventory');
+        $this->chatterService->logCreated($adjustment, __('inventory.chatter_label_adjustment'));
         return $adjustment;
     }
 
@@ -68,7 +68,7 @@ class AdjustmentService
         }
 
         $adjustment->update(['state' => 'in_progress', 'updated_by' => auth()->id()]);
-        $this->chatterService->log($adjustment, 'Physical inventory count started.', 'log');
+        $this->chatterService->log($adjustment, __('inventory.chatter_adjustment_started'), 'log');
         return $adjustment->fresh();
     }
 
@@ -85,13 +85,13 @@ class AdjustmentService
     public function validate(InventoryAdjustment $adjustment): InventoryAdjustment
     {
         if (!$adjustment->isInProgress()) {
-            throw new \RuntimeException('Only in-progress adjustments can be validated.');
+            throw new \RuntimeException(__('inventory.err_adjustment_not_in_progress'));
         }
 
         // Get the inventory adjustment virtual location
         $adjLocation = Location::where('usage', 'inventory')->whereNull('company_id')->first();
         if (!$adjLocation) {
-            throw new \RuntimeException('Inventory Adjustments virtual location not found.');
+            throw new \RuntimeException(__('inventory.err_adjustment_no_virtual_loc'));
         }
 
         foreach ($adjustment->lines()->with('product')->get() as $line) {
@@ -135,7 +135,7 @@ class AdjustmentService
                 'uom_id'          => $line->product->uom_id,
                 'location_src_id' => $src,
                 'location_dest_id' => $dest,
-                'name'            => 'Inventory Adjustment: ' . ($line->product->name ?? ''),
+                'name'            => __('inventory.line_adjustment_of', ['product' => $line->product->name ?? '']),
                 'product_qty'     => abs($diff),
                 'qty_done'        => abs($diff),
                 'state'           => 'done',
@@ -153,17 +153,17 @@ class AdjustmentService
             'updated_by' => auth()->id(),
         ]);
 
-        $this->chatterService->log($adjustment, 'Physical inventory validated.', 'log');
+        $this->chatterService->log($adjustment, __('inventory.chatter_adjustment_validated'), 'log');
         return $adjustment->fresh();
     }
 
     public function delete(InventoryAdjustment $adjustment): void
     {
         if ($adjustment->isDone()) {
-            throw new \RuntimeException('Done adjustments cannot be deleted.');
+            throw new \RuntimeException(__('inventory.err_adjustment_done_no_delete'));
         }
         $adjustment->lines()->delete();
-        $this->chatterService->log($adjustment, 'Physical inventory deleted.', 'system');
+        $this->chatterService->log($adjustment, __('inventory.chatter_adjustment_deleted'), 'system');
         $adjustment->delete();
     }
 }

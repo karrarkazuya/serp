@@ -146,6 +146,7 @@ class AccountJournal extends Model
 
     public function getTypeLabelAttribute(): string
     {
-        return self::TYPES[$this->type] ?? $this->type;
+        $key = 'accounting.journal_type_' . $this->type;
+        return trans()->has($key) ? __($key) : (self::TYPES[$this->type] ?? $this->type);
     }
 }

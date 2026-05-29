@@ -7,6 +7,7 @@ use App\Helpers\SearchFilters;
 use App\Helpers\SortsTable;
 use App\Http\Controllers\Controller;
 use App\Models\Inventory\Lot;
+use App\Models\Inventory\Product;
 use App\Services\Chatter\ChatterService;
 use App\Services\Company\CompanyContextService;
 use Illuminate\Http\Request;
@@ -94,14 +95,24 @@ class LotController extends Controller
             $q->whereIn('company_id', $activeCompanyIds)->orWhereNull('company_id');
         });
 
+        // Odoo parity: when the product opts in to expiration tracking, the
+        // lot MUST carry an expiration date — otherwise FEFO removal would
+        // sort it last (the null-tail bucket) and effectively make tracked
+        // stock invisible to expiry-driven picks. The product flag drives the
+        // rule, the form layer enforces it before any quant is written.
+        $productHasExpiration = $this->productRequiresExpirationDate($request->input('product_id'));
+        $expirationRule       = $productHasExpiration ? ['required', 'date'] : ['nullable', 'date'];
+
         $data = $request->validate([
             'company_id'      => ['required', $companyRule],
             'product_id'      => ['required', $productRule],
             'name'            => ['required', 'string', 'max:128'],
             'ref'             => ['nullable', 'string', 'max:128'],
-            'expiration_date' => ['nullable', 'date'],
+            'expiration_date' => $expirationRule,
             'use_date'        => ['nullable', 'date'],
-            'removal_date'    => ['nullable', 'date'],
+            // `removal_date` removed from the validation — no view exposed
+            // the field and no service consumed the column. Pure dead form
+            // validation. The column survives in the DB for forward-compat.
             'note'            => ['nullable', 'string'],
         ]);
 
@@ -111,11 +122,11 @@ class LotController extends Controller
 
         $lot = DB::transaction(function () use ($data) {
             $lot = Lot::create($data);
-            $this->chatterService->logCreated($lot, 'Lot');
+            $this->chatterService->logCreated($lot, __('inventory.chatter_label_lot'));
             return $lot;
         });
 
-        return redirect()->route('inventory.lots.show', $lot)->with('success', 'Lot created.');
+        return redirect()->route('inventory.lots.show', $lot)->with('success', __('inventory.created'));
     }
 
     public function edit(Lot $lot)
@@ -133,21 +144,29 @@ class LotController extends Controller
         $activeCompanyIds = $this->companyContext->getActiveCompanyIds();
         abort_unless(in_array($lot->company_id, $activeCompanyIds), 403);
 
+        // On edit, the product is locked (Lot::product is immutable post-create
+        // by convention — there's no product picker on the lot edit form), so
+        // we read the flag straight off the existing Lot row.
+        $productHasExpiration = (bool) ($lot->product?->has_expiration_date ?? false);
+        $expirationRule       = $productHasExpiration ? ['required', 'date'] : ['nullable', 'date'];
+
         $data = $request->validate([
             'name'            => ['required', 'string', 'max:128'],
             'ref'             => ['nullable', 'string', 'max:128'],
-            'expiration_date' => ['nullable', 'date'],
+            'expiration_date' => $expirationRule,
             'use_date'        => ['nullable', 'date'],
-            'removal_date'    => ['nullable', 'date'],
+            // `removal_date` removed from the validation — no view exposed
+            // the field and no service consumed the column. Pure dead form
+            // validation. The column survives in the DB for forward-compat.
             'note'            => ['nullable', 'string'],
         ]);
 
         DB::transaction(function () use ($lot, $data) {
             $lot->update(array_merge($data, ['updated_by' => auth()->id()]));
-            $this->chatterService->logUpdated($lot, [], 'Lot');
+            $this->chatterService->logUpdated($lot, [], __('inventory.chatter_label_lot'));
         });
 
-        return redirect()->route('inventory.lots.show', $lot)->with('success', 'Lot updated.');
+        return redirect()->route('inventory.lots.show', $lot)->with('success', __('inventory.updated'));
     }
 
     public function unlink(Request $_request, Lot $lot)
@@ -156,7 +175,7 @@ class LotController extends Controller
         $activeCompanyIds = $this->companyContext->getActiveCompanyIds();
         abort_unless(in_array($lot->company_id, $activeCompanyIds), 403);
         DB::transaction(fn () => $lot->delete());
-        return redirect()->route('inventory.lots.index')->with('success', 'Lot deleted.');
+        return redirect()->route('inventory.lots.index')->with('success', __('inventory.deleted'));
     }
 
     public function addComment(Request $request, Lot $lot)
@@ -166,6 +185,19 @@ class LotController extends Controller
         abort_unless(in_array($lot->company_id, $activeCompanyIds), 403);
         $request->validate(['body' => 'required|string|max:5000']);
         DB::transaction(fn () => $lot->logComment($request->body));
-        return back()->with('success', 'Comment added.');
+        return back()->with('success', __('inventory.comment_added'));
+    }
+
+    /**
+     * Lightweight lookup for the create flow: we only need the boolean flag,
+     * not the full Product row. Returns false for any invalid / missing id —
+     * the existence rule on product_id will catch genuine bad input, so a
+     * false here just means the field is `nullable` and the existence
+     * validator handles the 4xx separately.
+     */
+    private function productRequiresExpirationDate(mixed $productId): bool
+    {
+        if (!$productId) return false;
+        return (bool) Product::whereKey($productId)->value('has_expiration_date');
     }
 }

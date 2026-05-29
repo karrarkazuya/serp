@@ -11,7 +11,7 @@
 </div>
 @endif
 
-<div class="p-6" x-data="{ color: '{{ old('color', $tag?->color ?? '#8B5CF6') }}' }">
+<div class="p-6" x-data="{ color: @js(old('color', $tag?->color ?? '#8B5CF6')) }">
     <div class="mb-6">
         <input type="text" name="name" value="{{ old('name', $tag?->name) }}" required placeholder="{{ __('contacts.tag_name') }}"
                class="w-full text-3xl font-bold text-gray-900 placeholder-gray-300 border-0 border-b-2 focus:outline-none focus:border-purple-500 pb-1 bg-transparent {{ $errors->has('name') ? 'border-red-400' : 'border-gray-200' }}">

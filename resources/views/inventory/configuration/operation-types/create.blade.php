@@ -39,7 +39,7 @@
                         <div class="flex items-center gap-4 py-2 border-b border-gray-100">
                             <label class="w-40 shrink-0 text-sm text-gray-500">{{ __('inventory.operation_type') }}</label>
                             <select name="code" class="flex-1 text-sm bg-transparent border-0 focus:outline-none px-0 py-0.5">
-                                @foreach(['incoming' => 'Receipt', 'outgoing' => 'Delivery', 'internal' => 'Internal Transfer'] as $k => $v)
+                                @foreach(['incoming' => __('inventory.op_type_incoming'), 'outgoing' => __('inventory.op_type_outgoing'), 'internal' => __('inventory.op_type_internal')] as $k => $v)
                                 <option value="{{ $k }}" {{ old('code', 'incoming') === $k ? 'selected' : '' }}>{{ $v }}</option>
                                 @endforeach
                             </select>
@@ -69,7 +69,7 @@
                         <div class="flex items-center gap-4 py-2 border-b border-gray-100">
                             <label class="w-40 shrink-0 text-sm text-gray-500">{{ __('inventory.action') }}</label>
                             <select name="reservation_method" class="flex-1 text-sm bg-transparent border-0 focus:outline-none px-0 py-0.5">
-                                @foreach(['at_confirm' => 'At Confirmation', 'before_scheduled' => 'Before Scheduled Date', 'manual' => 'Manually'] as $k => $v)
+                                @foreach(['at_confirm' => __('inventory.reservation_at_confirm'), 'before_scheduled' => __('inventory.reservation_before_scheduled'), 'manual' => __('inventory.reservation_manual')] as $k => $v)
                                 <option value="{{ $k }}" {{ old('reservation_method', 'at_confirm') === $k ? 'selected' : '' }}>{{ $v }}</option>
                                 @endforeach
                             </select>

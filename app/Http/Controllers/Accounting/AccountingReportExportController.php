@@ -71,18 +71,18 @@ class AccountingReportExportController extends Controller
         ]);
 
         return [
-            'title'   => 'General Ledger',
+            'title'   => __('accounting.report_general_ledger'),
             'meta'    => $this->dateMeta($f),
             'records' => $rows,
             'columns' => [
-                ['key' => 'date',    'label' => 'Date'],
-                ['key' => 'entry',   'label' => 'Entry'],
-                ['key' => 'journal', 'label' => 'Journal'],
-                ['key' => 'account', 'label' => 'Account'],
-                ['key' => 'partner', 'label' => 'Partner'],
-                ['key' => 'label',   'label' => 'Label'],
-                ['key' => 'debit',   'label' => 'Debit',  'align' => 'right'],
-                ['key' => 'credit',  'label' => 'Credit', 'align' => 'right'],
+                ['key' => 'date',    'label' => __('accounting.col_date')],
+                ['key' => 'entry',   'label' => __('accounting.col_entry')],
+                ['key' => 'journal', 'label' => __('accounting.col_journal')],
+                ['key' => 'account', 'label' => __('accounting.col_account')],
+                ['key' => 'partner', 'label' => __('accounting.col_partner')],
+                ['key' => 'label',   'label' => __('accounting.col_label')],
+                ['key' => 'debit',   'label' => __('accounting.col_debit'),  'align' => 'right'],
+                ['key' => 'credit',  'label' => __('accounting.col_credit'), 'align' => 'right'],
             ],
             'totals' => [
                 ['key' => 'debit',  'value' => number_format((float) $rows->sum(fn ($r) => (float) $r['debit']),  2, '.', '')],
@@ -105,15 +105,15 @@ class AccountingReportExportController extends Controller
         ]);
 
         return [
-            'title'   => 'Trial Balance',
+            'title'   => __('accounting.report_trial_balance'),
             'meta'    => $this->dateMeta($f),
             'records' => $rows,
             'columns' => [
-                ['key' => 'code',    'label' => 'Code'],
-                ['key' => 'account', 'label' => 'Account'],
-                ['key' => 'debit',   'label' => 'Debit',   'align' => 'right'],
-                ['key' => 'credit',  'label' => 'Credit',  'align' => 'right'],
-                ['key' => 'balance', 'label' => 'Balance', 'align' => 'right'],
+                ['key' => 'code',    'label' => __('accounting.col_code')],
+                ['key' => 'account', 'label' => __('accounting.col_account')],
+                ['key' => 'debit',   'label' => __('accounting.col_debit'),   'align' => 'right'],
+                ['key' => 'credit',  'label' => __('accounting.col_credit'),  'align' => 'right'],
+                ['key' => 'balance', 'label' => __('accounting.col_balance'), 'align' => 'right'],
             ],
             'totals' => [
                 ['key' => 'debit',   'value' => number_format((float) $rows->sum(fn ($r) => (float) $r['debit']),   2, '.', '')],
@@ -133,44 +133,44 @@ class AccountingReportExportController extends Controller
         $records = collect();
         foreach ($data['income'] as $row) {
             $records->push([
-                'section' => 'Income',
+                'section' => __('accounting.section_income'),
                 'code'    => $row->account_code,
                 'account' => $row->account_name,
                 'amount'  => number_format(abs((float) $row->net), 2, '.', ''),
             ]);
         }
         $records->push([
-            'section' => 'Income', 'code' => '', 'account' => 'Total Income',
+            'section' => __('accounting.section_income'), 'code' => '', 'account' => __('accounting.total_income'),
             'amount'  => number_format((float) $data['total_income'], 2, '.', ''),
         ]);
         foreach ($data['expense'] as $row) {
             $records->push([
-                'section' => 'Expenses',
+                'section' => __('accounting.section_expenses'),
                 'code'    => $row->account_code,
                 'account' => $row->account_name,
                 'amount'  => number_format(abs((float) $row->net), 2, '.', ''),
             ]);
         }
         $records->push([
-            'section' => 'Expenses', 'code' => '', 'account' => 'Total Expenses',
+            'section' => __('accounting.section_expenses'), 'code' => '', 'account' => __('accounting.total_expenses'),
             'amount'  => number_format((float) $data['total_expense'], 2, '.', ''),
         ]);
         $records->push([
-            'section' => $data['net_profit'] >= 0 ? 'Net Profit' : 'Net Loss',
+            'section' => $data['net_profit'] >= 0 ? __('accounting.net_profit') : __('accounting.net_loss'),
             'code'    => '',
             'account' => '',
             'amount'  => number_format(abs((float) $data['net_profit']), 2, '.', ''),
         ]);
 
         return [
-            'title'   => 'Profit and Loss',
+            'title'   => __('accounting.report_profit_loss'),
             'meta'    => $this->dateMeta($f),
             'records' => $records,
             'columns' => [
-                ['key' => 'section', 'label' => 'Section'],
-                ['key' => 'code',    'label' => 'Code'],
-                ['key' => 'account', 'label' => 'Account'],
-                ['key' => 'amount',  'label' => 'Amount', 'align' => 'right'],
+                ['key' => 'section', 'label' => __('accounting.col_section')],
+                ['key' => 'code',    'label' => __('accounting.col_code')],
+                ['key' => 'account', 'label' => __('accounting.col_account')],
+                ['key' => 'amount',  'label' => __('accounting.col_amount'), 'align' => 'right'],
             ],
         ];
     }
@@ -194,23 +194,23 @@ class AccountingReportExportController extends Controller
             }
             return $records;
         };
-        $emit('Assets',      $data['assets']);
-        $records->push(['section' => 'Assets', 'code' => '', 'account' => 'Total Assets', 'amount' => number_format((float) $data['total_assets'], 2, '.', '')]);
-        $emit('Liabilities', $data['liabilities']);
-        $records->push(['section' => 'Liabilities', 'code' => '', 'account' => 'Total Liabilities', 'amount' => number_format((float) $data['total_liabilities'], 2, '.', '')]);
-        $emit('Equity',      $data['equity']);
-        $records->push(['section' => 'Equity', 'code' => '', 'account' => 'Current Year Earnings', 'amount' => number_format((float) $data['current_year_earnings'], 2, '.', '')]);
-        $records->push(['section' => 'Equity', 'code' => '', 'account' => 'Total Equity', 'amount' => number_format((float) $data['total_equity'], 2, '.', '')]);
+        $emit(__('accounting.section_assets'), $data['assets']);
+        $records->push(['section' => __('accounting.section_assets'), 'code' => '', 'account' => __('accounting.total_assets'), 'amount' => number_format((float) $data['total_assets'], 2, '.', '')]);
+        $emit(__('accounting.section_liabilities'), $data['liabilities']);
+        $records->push(['section' => __('accounting.section_liabilities'), 'code' => '', 'account' => __('accounting.total_liabilities'), 'amount' => number_format((float) $data['total_liabilities'], 2, '.', '')]);
+        $emit(__('accounting.section_equity'), $data['equity']);
+        $records->push(['section' => __('accounting.section_equity'), 'code' => '', 'account' => __('accounting.current_year_earnings'), 'amount' => number_format((float) $data['current_year_earnings'], 2, '.', '')]);
+        $records->push(['section' => __('accounting.section_equity'), 'code' => '', 'account' => __('accounting.total_equity'), 'amount' => number_format((float) $data['total_equity'], 2, '.', '')]);
 
         return [
-            'title'   => 'Balance Sheet',
-            'meta'    => ['As Of' => $f['date_to'] ?? 'today'],
+            'title'   => __('accounting.report_balance_sheet'),
+            'meta'    => [__('accounting.meta_as_of') => $f['date_to'] ?? __('accounting.meta_today')],
             'records' => $records,
             'columns' => [
-                ['key' => 'section', 'label' => 'Section'],
-                ['key' => 'code',    'label' => 'Code'],
-                ['key' => 'account', 'label' => 'Account'],
-                ['key' => 'amount',  'label' => 'Amount', 'align' => 'right'],
+                ['key' => 'section', 'label' => __('accounting.col_section')],
+                ['key' => 'code',    'label' => __('accounting.col_code')],
+                ['key' => 'account', 'label' => __('accounting.col_account')],
+                ['key' => 'amount',  'label' => __('accounting.col_amount'), 'align' => 'right'],
             ],
         ];
     }
@@ -231,15 +231,15 @@ class AccountingReportExportController extends Controller
         ]);
 
         return [
-            'title'   => 'Cash Flow Statement',
+            'title'   => __('accounting.report_cash_flow'),
             'meta'    => $this->dateMeta($f),
             'records' => $rows,
             'columns' => [
-                ['key' => 'code',    'label' => 'Code'],
-                ['key' => 'account', 'label' => 'Account'],
-                ['key' => 'inflow',  'label' => 'Inflow',  'align' => 'right'],
-                ['key' => 'outflow', 'label' => 'Outflow', 'align' => 'right'],
-                ['key' => 'net',     'label' => 'Net',     'align' => 'right'],
+                ['key' => 'code',    'label' => __('accounting.col_code')],
+                ['key' => 'account', 'label' => __('accounting.col_account')],
+                ['key' => 'inflow',  'label' => __('accounting.col_inflow'),  'align' => 'right'],
+                ['key' => 'outflow', 'label' => __('accounting.col_outflow'), 'align' => 'right'],
+                ['key' => 'net',     'label' => __('accounting.col_net'),     'align' => 'right'],
             ],
             'totals' => [
                 ['key' => 'inflow',  'value' => number_format($data['total_inflow'],  2, '.', '')],
@@ -264,16 +264,16 @@ class AccountingReportExportController extends Controller
         ]);
 
         return [
-            'title'   => 'Tax Report',
+            'title'   => __('accounting.report_tax'),
             'meta'    => $this->dateMeta($f),
             'records' => $rows,
             'columns' => [
-                ['key' => 'use',    'label' => 'Tax Use'],
-                ['key' => 'tax',    'label' => 'Tax'],
-                ['key' => 'base',   'label' => 'Base',   'align' => 'right'],
-                ['key' => 'debit',  'label' => 'Debit',  'align' => 'right'],
-                ['key' => 'credit', 'label' => 'Credit', 'align' => 'right'],
-                ['key' => 'net',    'label' => 'Net',    'align' => 'right'],
+                ['key' => 'use',    'label' => __('accounting.col_tax_use')],
+                ['key' => 'tax',    'label' => __('accounting.col_tax')],
+                ['key' => 'base',   'label' => __('accounting.col_base'),   'align' => 'right'],
+                ['key' => 'debit',  'label' => __('accounting.col_debit'),  'align' => 'right'],
+                ['key' => 'credit', 'label' => __('accounting.col_credit'), 'align' => 'right'],
+                ['key' => 'net',    'label' => __('accounting.col_net'),    'align' => 'right'],
             ],
             'totals' => [
                 ['key' => 'base',   'value' => number_format((float) $rows->sum(fn ($r) => (float) $r['base']),   2, '.', '')],
@@ -303,15 +303,15 @@ class AccountingReportExportController extends Controller
         ]);
 
         return [
-            'title'   => 'Partner Ledger',
-            'meta'    => array_merge($this->dateMeta($f), ['Scope' => $this->scopeLabel($scope)]),
+            'title'   => __('accounting.report_partner_ledger'),
+            'meta'    => array_merge($this->dateMeta($f), [__('accounting.meta_scope') => $this->scopeLabel($scope)]),
             'records' => $rows,
             'columns' => [
-                ['key' => 'partner', 'label' => 'Partner'],
-                ['key' => 'type',    'label' => 'Type'],
-                ['key' => 'debit',   'label' => 'Debit',   'align' => 'right'],
-                ['key' => 'credit',  'label' => 'Credit',  'align' => 'right'],
-                ['key' => 'balance', 'label' => 'Balance', 'align' => 'right'],
+                ['key' => 'partner', 'label' => __('accounting.col_partner')],
+                ['key' => 'type',    'label' => __('accounting.col_type')],
+                ['key' => 'debit',   'label' => __('accounting.col_debit'),   'align' => 'right'],
+                ['key' => 'credit',  'label' => __('accounting.col_credit'),  'align' => 'right'],
+                ['key' => 'balance', 'label' => __('accounting.col_balance'), 'align' => 'right'],
             ],
             'totals' => [
                 ['key' => 'debit',   'value' => number_format((float) $rows->sum(fn ($r) => (float) $r['debit']),   2, '.', '')],
@@ -325,12 +325,12 @@ class AccountingReportExportController extends Controller
 
     private function buildAgedReceivable(Request $r): array
     {
-        return $this->buildAged($r, 'out_invoice', 'Aged Receivable');
+        return $this->buildAged($r, 'out_invoice', __('accounting.report_aged_receivable'));
     }
 
     private function buildAgedPayable(Request $r): array
     {
-        return $this->buildAged($r, 'in_invoice', 'Aged Payable');
+        return $this->buildAged($r, 'in_invoice', __('accounting.report_aged_payable'));
     }
 
     private function buildAged(Request $r, string $moveType, string $title): array
@@ -338,7 +338,7 @@ class AccountingReportExportController extends Controller
         $f = $this->filters($r, ['as_of', 'partner_id']);
         $rows = $this->reports->agedReport($f['as_of'], $moveType, $f['partner_id'] ?? null)
             ->map(fn ($row) => [
-                'invoice' => $row->name ?: '(Draft)',
+                'invoice' => $row->name ?: __('accounting.aged_draft_fallback'),
                 'partner' => $row->partner_name,
                 'invoice_date' => $row->invoice_date instanceof \DateTimeInterface ? $row->invoice_date->format('Y-m-d') : (string) $row->invoice_date,
                 'due_date'     => $row->invoice_date_due instanceof \DateTimeInterface ? $row->invoice_date_due->format('Y-m-d') : (string) $row->invoice_date_due,
@@ -349,16 +349,16 @@ class AccountingReportExportController extends Controller
 
         return [
             'title'   => $title,
-            'meta'    => ['As Of' => $f['as_of']],
+            'meta'    => [__('accounting.meta_as_of') => $f['as_of']],
             'records' => $rows,
             'columns' => [
-                ['key' => 'invoice',      'label' => 'Document'],
-                ['key' => 'partner',      'label' => 'Partner'],
-                ['key' => 'invoice_date', 'label' => 'Date'],
-                ['key' => 'due_date',     'label' => 'Due Date'],
-                ['key' => 'bucket',       'label' => 'Bucket'],
-                ['key' => 'days',         'label' => 'Days',     'align' => 'right'],
-                ['key' => 'residual',     'label' => 'Residual', 'align' => 'right'],
+                ['key' => 'invoice',      'label' => __('accounting.col_document')],
+                ['key' => 'partner',      'label' => __('accounting.col_partner')],
+                ['key' => 'invoice_date', 'label' => __('accounting.col_date')],
+                ['key' => 'due_date',     'label' => __('accounting.col_due_date')],
+                ['key' => 'bucket',       'label' => __('accounting.col_bucket')],
+                ['key' => 'days',         'label' => __('accounting.col_days'),     'align' => 'right'],
+                ['key' => 'residual',     'label' => __('accounting.col_residual'), 'align' => 'right'],
             ],
             'totals' => [
                 ['key' => 'residual', 'value' => number_format((float) $rows->sum(fn ($r) => (float) $r['residual']), 2, '.', '')],
@@ -383,18 +383,18 @@ class AccountingReportExportController extends Controller
         ]);
 
         return [
-            'title'   => 'Journal Audit',
+            'title'   => __('accounting.report_journal_audit'),
             'meta'    => $this->dateMeta($f),
             'records' => $rows,
             'columns' => [
-                ['key' => 'date',     'label' => 'Date'],
-                ['key' => 'entry',    'label' => 'Entry'],
-                ['key' => 'ref',      'label' => 'Reference'],
-                ['key' => 'journal',  'label' => 'Journal'],
-                ['key' => 'partner',  'label' => 'Partner'],
-                ['key' => 'state',    'label' => 'State'],
-                ['key' => 'amount',   'label' => 'Amount',   'align' => 'right'],
-                ['key' => 'currency', 'label' => 'Currency'],
+                ['key' => 'date',     'label' => __('accounting.col_date')],
+                ['key' => 'entry',    'label' => __('accounting.col_entry')],
+                ['key' => 'ref',      'label' => __('accounting.col_reference')],
+                ['key' => 'journal',  'label' => __('accounting.col_journal')],
+                ['key' => 'partner',  'label' => __('accounting.col_partner')],
+                ['key' => 'state',    'label' => __('accounting.col_state')],
+                ['key' => 'amount',   'label' => __('accounting.col_amount'),   'align' => 'right'],
+                ['key' => 'currency', 'label' => __('accounting.col_currency')],
             ],
         ];
     }
@@ -419,16 +419,16 @@ class AccountingReportExportController extends Controller
         ]);
 
         return [
-            'title'   => 'Bank Reconciliation',
+            'title'   => __('accounting.report_bank_recon'),
             'meta'    => $this->dateMeta($f),
             'records' => $rows,
             'columns' => [
-                ['key' => 'date',    'label' => 'Date'],
-                ['key' => 'entry',   'label' => 'Entry'],
-                ['key' => 'partner', 'label' => 'Partner'],
-                ['key' => 'label',   'label' => 'Label'],
-                ['key' => 'debit',   'label' => 'Debit',  'align' => 'right'],
-                ['key' => 'credit',  'label' => 'Credit', 'align' => 'right'],
+                ['key' => 'date',    'label' => __('accounting.col_date')],
+                ['key' => 'entry',   'label' => __('accounting.col_entry')],
+                ['key' => 'partner', 'label' => __('accounting.col_partner')],
+                ['key' => 'label',   'label' => __('accounting.col_label')],
+                ['key' => 'debit',   'label' => __('accounting.col_debit'),  'align' => 'right'],
+                ['key' => 'credit',  'label' => __('accounting.col_credit'), 'align' => 'right'],
             ],
             'totals' => [
                 ['key' => 'debit',  'value' => number_format((float) $rows->sum(fn ($r) => (float) $r['debit']),  2, '.', '')],
@@ -445,22 +445,22 @@ class AccountingReportExportController extends Controller
         $data = $this->reports->executiveSummary($f);
 
         $records = collect([
-            ['metric' => 'Total Income',         'value' => number_format($data['total_income'],  2, '.', '')],
-            ['metric' => 'Total Expense',        'value' => number_format($data['total_expense'], 2, '.', '')],
-            ['metric' => 'Net Profit / Loss',    'value' => number_format($data['net_profit'],    2, '.', '')],
-            ['metric' => 'Total Assets (as of)', 'value' => number_format($data['total_assets'],  2, '.', '')],
-            ['metric' => 'Total Liabilities',    'value' => number_format($data['total_liabs'],   2, '.', '')],
-            ['metric' => 'Draft Entries',        'value' => (string) $data['draft_count']],
-            ['metric' => 'Overdue Documents',    'value' => (string) $data['overdue_count']],
+            ['metric' => __('accounting.metric_total_income'),    'value' => number_format($data['total_income'],  2, '.', '')],
+            ['metric' => __('accounting.metric_total_expense'),   'value' => number_format($data['total_expense'], 2, '.', '')],
+            ['metric' => __('accounting.metric_net_profit_loss'), 'value' => number_format($data['net_profit'],    2, '.', '')],
+            ['metric' => __('accounting.metric_total_assets'),    'value' => number_format($data['total_assets'],  2, '.', '')],
+            ['metric' => __('accounting.metric_total_liabs'),     'value' => number_format($data['total_liabs'],   2, '.', '')],
+            ['metric' => __('accounting.metric_draft_entries'),   'value' => (string) $data['draft_count']],
+            ['metric' => __('accounting.metric_overdue_docs'),    'value' => (string) $data['overdue_count']],
         ]);
 
         return [
-            'title'   => 'Executive Summary',
+            'title'   => __('accounting.report_executive'),
             'meta'    => $this->dateMeta($f),
             'records' => $records,
             'columns' => [
-                ['key' => 'metric', 'label' => 'Metric'],
-                ['key' => 'value',  'label' => 'Value', 'align' => 'right'],
+                ['key' => 'metric', 'label' => __('accounting.col_metric')],
+                ['key' => 'value',  'label' => __('accounting.col_value'), 'align' => 'right'],
             ],
         ];
     }
@@ -470,18 +470,18 @@ class AccountingReportExportController extends Controller
     private function dateMeta(array $f): array
     {
         $meta = [];
-        if (!empty($f['date_from'])) $meta['From'] = $f['date_from'];
-        if (!empty($f['date_to']))   $meta['To']   = $f['date_to'];
+        if (!empty($f['date_from'])) $meta[__('accounting.meta_from')] = $f['date_from'];
+        if (!empty($f['date_to']))   $meta[__('accounting.meta_to')]   = $f['date_to'];
         return $meta;
     }
 
     private function scopeLabel(string $scope): string
     {
         return match ($scope) {
-            'receivable' => 'Receivables',
-            'payable'    => 'Payables',
-            'ar_ap'      => 'AR + AP',
-            'all'        => 'All accounts',
+            'receivable' => __('accounting.scope_receivable'),
+            'payable'    => __('accounting.scope_payable'),
+            'ar_ap'      => __('accounting.scope_ar_ap'),
+            'all'        => __('accounting.scope_all_accounts'),
             default      => $scope,
         };
     }

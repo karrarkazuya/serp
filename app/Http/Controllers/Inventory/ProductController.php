@@ -128,6 +128,9 @@ class ProductController extends Controller
         $data       = $request->validated();
         $routeIds   = $data['routes'] ?? [];
         $suppliers  = $data['suppliers'] ?? [];
+        // Unchecked HTML checkbox = no posted value. Without this, the box
+        // could never be *un*checked on edit (it'd silently stay true forever).
+        $data['has_expiration_date'] = $request->boolean('has_expiration_date');
         unset($data['routes'], $data['suppliers']);
 
         $imageRecord = null;
@@ -151,7 +154,7 @@ class ProductController extends Controller
             throw $e;
         }
 
-        return redirect()->route('inventory.products.show', $product)->with('success', 'Product created.');
+        return redirect()->route('inventory.products.show', $product)->with('success', __('inventory.created'));
     }
 
     public function edit(Product $product)
@@ -175,6 +178,7 @@ class ProductController extends Controller
         $data      = $request->validated();
         $routeIds  = $data['routes'] ?? [];
         $suppliers = $data['suppliers'] ?? [];
+        $data['has_expiration_date'] = $request->boolean('has_expiration_date');
         unset($data['routes'], $data['suppliers']);
 
         $oldImageUuid = $product->image_uuid;
@@ -199,7 +203,7 @@ class ProductController extends Controller
             $this->fileService->deleteByUuid($oldImageUuid);
         }
 
-        return redirect()->route('inventory.products.show', $product)->with('success', 'Product updated.');
+        return redirect()->route('inventory.products.show', $product)->with('success', __('inventory.updated'));
     }
 
     public function archive(Request $_request, Product $product)
@@ -208,7 +212,7 @@ class ProductController extends Controller
         $activeCompanyIds = $this->companyContext->getActiveCompanyIds();
         abort_unless(in_array($product->company_id, $activeCompanyIds) || is_null($product->company_id), 403);
         DB::transaction(fn () => $this->productService->archive($product));
-        return redirect()->route('inventory.products.index')->with('success', 'Product archived.');
+        return redirect()->route('inventory.products.index')->with('success', __('inventory.archived'));
     }
 
     public function unarchive(Request $_request, Product $product)
@@ -217,7 +221,7 @@ class ProductController extends Controller
         $activeCompanyIds = $this->companyContext->getActiveCompanyIds();
         abort_unless(in_array($product->company_id, $activeCompanyIds) || is_null($product->company_id), 403);
         DB::transaction(fn () => $this->productService->unarchive($product));
-        return redirect()->route('inventory.products.show', $product)->with('success', 'Product restored.');
+        return redirect()->route('inventory.products.show', $product)->with('success', __('inventory.restored'));
     }
 
     public function unlink(Request $_request, Product $product)
@@ -228,7 +232,7 @@ class ProductController extends Controller
         $imageUuid = $product->image_uuid;
         DB::transaction(fn () => $this->productService->delete($product));
         if ($imageUuid) $this->fileService->deleteByUuid($imageUuid);
-        return redirect()->route('inventory.products.index')->with('success', 'Product deleted.');
+        return redirect()->route('inventory.products.index')->with('success', __('inventory.deleted'));
     }
 
     public function addComment(Request $request, Product $product)
@@ -238,6 +242,6 @@ class ProductController extends Controller
         abort_unless(in_array($product->company_id, $activeCompanyIds) || is_null($product->company_id), 403);
         $request->validate(['body' => 'required|string|max:5000']);
         DB::transaction(fn () => $product->logComment($request->body));
-        return back()->with('success', 'Comment added.');
+        return back()->with('success', __('inventory.comment_added'));
     }
 }

@@ -90,7 +90,8 @@
     </x-list>
 
     @else
-    <x-list :paginator="$moves" :empty-text="__('accounting.no_moves')" :selectable="true" :total-count="$moves->total()" :model="\App\Models\Accounting\AccountMove::class">
+    <x-list :paginator="$moves" :empty-text="__('accounting.no_moves')" :selectable="true" :total-count="$moves->total()" :model="\App\Models\Accounting\AccountMove::class"
+            :bulk-delete-url="route('accounting.moves.bulk-delete')">
         <x-slot:columns>
             <x-sortable-th column="date" :label="__('accounting.col_date')"   class="px-4 py-2" :default="true" />
             <x-sortable-th column="name" :label="__('accounting.col_number')" class="px-3 py-2" />

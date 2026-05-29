@@ -62,9 +62,9 @@
             </div>
 
             @foreach([
-                [__('accounting.col_type'),          $amountTypes[$tax->amount_type] ?? $tax->amount_type],
+                [__('accounting.col_type'),          $tax->amount_type_label],
                 [__('accounting.col_rate_amount'),   $tax->amount_type === 'percent' ? number_format((float)$tax->amount, 2).'%' : number_format((float)$tax->amount, 2)],
-                [__('accounting.col_applies_to'),    $typeTaxUse[$tax->type_tax_use] ?? $tax->type_tax_use],
+                [__('accounting.col_applies_to'),    $tax->type_tax_use_label],
                 [__('accounting.col_tax_account'),   $tax->account?->display_name ?? '—'],
                 [__('accounting.price_inclusive'),   $tax->include_base_amount ? __('accounting.tax_yes_included') : __('accounting.tax_no_added_on_top')],
                 [__('common.description'),           $tax->description ?: '—'],

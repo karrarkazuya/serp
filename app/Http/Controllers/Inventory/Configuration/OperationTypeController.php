@@ -86,7 +86,10 @@ class OperationTypeController extends Controller
             'return_picking_type_id'      => ['nullable', 'exists:inventory_operation_types,id'],
             'use_create_lots'             => ['boolean'],
             'use_existing_lots'           => ['boolean'],
-            'show_entire_packs'           => ['boolean'],
+            // `show_entire_packs` removed from the validation — no view ever
+            // exposed the toggle and no service consumed the column. It was a
+            // dead form field. Column still exists in the DB for forward
+            // compatibility with a future pack-display flow.
         ]);
         abort_unless(in_array($data['company_id'], $activeCompanyIds), 403);
         $data['active']               = true;
@@ -95,10 +98,10 @@ class OperationTypeController extends Controller
         $data['updated_by']           = auth()->id();
         $operationType = DB::transaction(function () use ($data) {
             $op = OperationType::create($data);
-            $this->chatterService->logCreated($op, 'Operation Type');
+            $this->chatterService->logCreated($op, __('inventory.chatter_label_optype'));
             return $op;
         });
-        return redirect()->route('inventory.config.operation-types.show', $operationType)->with('success', 'Operation type created.');
+        return redirect()->route('inventory.config.operation-types.show', $operationType)->with('success', __('inventory.created'));
     }
 
     public function edit(OperationType $operationType)
@@ -124,11 +127,14 @@ class OperationTypeController extends Controller
             'return_picking_type_id'      => ['nullable', 'exists:inventory_operation_types,id'],
             'use_create_lots'             => ['boolean'],
             'use_existing_lots'           => ['boolean'],
-            'show_entire_packs'           => ['boolean'],
+            // `show_entire_packs` removed from the validation — no view ever
+            // exposed the toggle and no service consumed the column. It was a
+            // dead form field. Column still exists in the DB for forward
+            // compatibility with a future pack-display flow.
         ]);
         $data['updated_by'] = auth()->id();
         DB::transaction(fn () => $operationType->update($data));
-        return redirect()->route('inventory.config.operation-types.show', $operationType)->with('success', 'Operation type updated.');
+        return redirect()->route('inventory.config.operation-types.show', $operationType)->with('success', __('inventory.updated'));
     }
 
     public function archive(Request $_request, OperationType $operationType)
@@ -137,7 +143,7 @@ class OperationTypeController extends Controller
         $activeCompanyIds = $this->companyContext->getActiveCompanyIds();
         abort_unless(in_array($operationType->company_id, $activeCompanyIds), 403);
         DB::transaction(fn () => $operationType->update(['active' => false, 'updated_by' => auth()->id()]));
-        return redirect()->route('inventory.config.operation-types.index')->with('success', 'Operation type archived.');
+        return redirect()->route('inventory.config.operation-types.index')->with('success', __('inventory.archived'));
     }
 
     public function unarchive(Request $_request, OperationType $operationType)
@@ -146,7 +152,7 @@ class OperationTypeController extends Controller
         $activeCompanyIds = $this->companyContext->getActiveCompanyIds();
         abort_unless(in_array($operationType->company_id, $activeCompanyIds), 403);
         DB::transaction(fn () => $operationType->update(['active' => true, 'updated_by' => auth()->id()]));
-        return redirect()->route('inventory.config.operation-types.show', $operationType)->with('success', 'Operation type restored.');
+        return redirect()->route('inventory.config.operation-types.show', $operationType)->with('success', __('inventory.restored'));
     }
 
     public function unlink(Request $_request, OperationType $operationType)
@@ -162,13 +168,13 @@ class OperationTypeController extends Controller
             DB::transaction(function () use ($operationType) {
                 OperationType::whereKey($operationType->id)->lockForUpdate()->firstOrFail();
                 if ($operationType->pickings()->exists()) {
-                    throw new \RuntimeException('Cannot delete an operation type with existing transfers.');
+                    throw new \RuntimeException(__('inventory.err_optype_has_pickings'));
                 }
                 $operationType->delete();
             });
         } catch (\RuntimeException $e) {
             return back()->with('error', $e->getMessage());
         }
-        return redirect()->route('inventory.config.operation-types.index')->with('success', 'Operation type deleted.');
+        return redirect()->route('inventory.config.operation-types.index')->with('success', __('inventory.deleted'));
     }
 }

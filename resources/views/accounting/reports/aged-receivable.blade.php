@@ -19,7 +19,8 @@
         @php
         $buckets = ['Current', '1–30', '31–60', '61–90', '90+'];
         $grouped = $rows->groupBy('bucket');
-        $bucketColors = ['Current' => 'gray', '1–30' => 'yellow', '31–60' => 'orange', '61–90' => 'red', '90+' => 'red'];
+        $bucketColors  = ['Current' => 'gray', '1–30' => 'yellow', '31–60' => 'orange', '61–90' => 'red', '90+' => 'red'];
+        $bucketLabels  = ['Current' => __('accounting.bucket_current'), '1–30' => __('accounting.bucket_30'), '31–60' => __('accounting.bucket_60'), '61–90' => __('accounting.bucket_90'), '90+' => __('accounting.bucket_90_plus')];
         @endphp
 
         {{-- Summary cards --}}
@@ -32,7 +33,7 @@
                 $color = $bucketColors[$bucket] ?? 'gray';
             @endphp
             <div class="bg-white rounded-lg border border-{{ $color }}-200 shadow-sm p-3">
-                <p class="text-[10px] font-semibold text-gray-500 uppercase">{{ $bucket }} days</p>
+                <p class="text-[10px] font-semibold text-gray-500 uppercase">{{ $bucketLabels[$bucket] ?? $bucket }}</p>
                 <p class="text-lg font-bold tabular-nums {{ $bucketTotal > 0 ? 'text-' . $color . '-700' : 'text-gray-400' }}"><x-money :amount="(float) $bucketTotal" /></p>
                 <p class="text-[10px] text-gray-400">{{ $bucketCount }} {{ Str::plural('item', $bucketCount) }}</p>
             </div>
@@ -45,7 +46,7 @@
         @if(($grouped[$bucket] ?? collect())->isNotEmpty())
         <div class="mb-3 bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
             <div class="px-4 py-2 bg-gray-50 border-b border-gray-200 flex items-center justify-between">
-                <span class="text-sm font-bold text-gray-800">{{ $bucket }} {{ __('accounting.days_overdue') }}</span>
+                <span class="text-sm font-bold text-gray-800">{{ $bucketLabels[$bucket] ?? $bucket }} {{ __('accounting.days_overdue') }}</span>
                 <span class="text-xs text-gray-500"><x-money :amount="(float) $grouped[$bucket]->sum('residual')" /></span>
             </div>
             <table class="min-w-full text-sm">

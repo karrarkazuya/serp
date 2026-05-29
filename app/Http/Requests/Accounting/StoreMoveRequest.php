@@ -80,4 +80,29 @@ class StoreMoveRequest extends FormRequest
         }
         $this->merge(['lines' => $cleaned]);
     }
+
+    /**
+     * Same allowedCurrencies gate as StoreDocumentRequest — empty list means
+     * no restriction, non-empty list rejects out-of-list submissions before
+     * they reach the service.
+     */
+    public function withValidator($validator): void
+    {
+        $validator->after(function ($validator) {
+            $currency  = $this->input('currency');
+            $companyId = $this->input('company_id');
+            if ($currency && $companyId) {
+                $company = \App\Models\Settings\Company::find($companyId);
+                if ($company) {
+                    $allowed = $company->allowedCurrencies()->pluck('code')->all();
+                    if (!empty($allowed) && !in_array($currency, $allowed, true)) {
+                        $validator->errors()->add(
+                            'currency',
+                            __('accounting.val_currency_not_allowed')
+                        );
+                    }
+                }
+            }
+        });
+    }
 }

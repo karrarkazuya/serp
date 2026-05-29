@@ -79,7 +79,7 @@
     </div>
 
     {{-- Specialization Type + conditional value --}}
-    <div x-data="{ specType: '{{ old('specialization_type', $bonus->specialization_type ?? 'amount') }}' }">
+    <div x-data="{ specType: @js(old('specialization_type', $bonus->specialization_type ?? 'amount')) }">
         <div class="flex items-center gap-4 py-1.5 border-b border-gray-100">
             <label class="w-48 shrink-0 text-sm text-gray-500">{{ __('employees.specialization_type') }}</label>
             <div class="flex items-center gap-5">

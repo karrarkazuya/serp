@@ -33,7 +33,7 @@
                         <input type="text" name="name" value="{{ old('name') }}"
                                class="w-full border-b border-gray-300 focus:border-purple-500 focus:outline-none py-1.5 text-sm bg-transparent" required>
                     </div>
-                    <div x-data="{ color: '{{ old('color', '#714B67') }}' }">
+                    <div x-data="{ color: @js(old('color', '#714B67')) }">
                         <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1">{{ __('common.color') }}</label>
                         <div class="flex items-center gap-2">
                             <input type="color" name="color" x-model="color"

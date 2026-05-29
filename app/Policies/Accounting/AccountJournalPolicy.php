@@ -4,17 +4,21 @@ namespace App\Policies\Accounting;
 
 use App\Models\Accounting\AccountJournal;
 use App\Models\User;
+use App\Policies\Concerns\ScopesByCompany;
 
 class AccountJournalPolicy
 {
+    use ScopesByCompany;
+
     public function viewAny(User $user): bool
     {
         return $user->hasPermission('accounting.read');
     }
 
-    public function view(User $user, AccountJournal $_journal): bool
+    public function view(User $user, AccountJournal $journal): bool
     {
-        return $user->hasPermission('accounting.read');
+        return $user->hasPermission('accounting.read')
+            && $this->withinActiveCompany($journal);
     }
 
     public function create(User $user): bool
@@ -22,18 +26,21 @@ class AccountJournalPolicy
         return $user->hasPermission('accounting.create');
     }
 
-    public function update(User $user, AccountJournal $_journal): bool
+    public function update(User $user, AccountJournal $journal): bool
     {
-        return $user->hasPermission('accounting.write');
+        return $user->hasPermission('accounting.write')
+            && $this->withinActiveCompany($journal);
     }
 
-    public function delete(User $user, AccountJournal $_journal): bool
+    public function delete(User $user, AccountJournal $journal): bool
     {
-        return $user->hasPermission('accounting.unlink');
+        return $user->hasPermission('accounting.unlink')
+            && $this->withinActiveCompany($journal);
     }
 
-    public function comment(User $user, AccountJournal $_journal): bool
+    public function comment(User $user, AccountJournal $journal): bool
     {
-        return $user->hasPermission('accounting.write');
+        return $user->hasPermission('accounting.write')
+            && $this->withinActiveCompany($journal);
     }
 }

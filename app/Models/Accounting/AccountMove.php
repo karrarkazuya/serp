@@ -225,14 +225,27 @@ class AccountMove extends Model
 
     public function getStateLabelAttribute(): string
     {
-        return self::STATES[$this->state] ?? $this->state;
+        // The STATES constant is kept as English-labeled for back-compat with
+        // any direct array consumers (`AccountMove::STATES['draft']` returns
+        // 'Draft'). For UI-facing rendering, prefer this accessor — it routes
+        // through the lang files so Arabic locale gets "مسودة" / "مرحَّل"
+        // instead of the raw English. Falls back to the raw state code if a
+        // future state lands in the column but no translation key exists yet.
+        $key = 'accounting.status_' . $this->state;
+        return trans()->has($key) ? __($key) : $this->state;
     }
 
     public function getPaymentStateLabelAttribute(): string
     {
         $paymentState = $this->payment_state ?: 'not_paid';
+        $key = 'accounting.status_' . $paymentState;
+        return trans()->has($key) ? __($key) : (string) $paymentState;
+    }
 
-        return self::PAYMENT_STATES[$paymentState] ?? (string) $paymentState;
+    public function getMoveTypeLabelAttribute(): string
+    {
+        $key = 'accounting.move_type_' . $this->move_type;
+        return trans()->has($key) ? __($key) : (self::MOVE_TYPES[$this->move_type] ?? $this->move_type);
     }
 
     public function isPaid(): bool
@@ -243,7 +256,8 @@ class AccountMove extends Model
     public function getDisplayNameAttribute(): string
     {
         // D9 (Odoo parity): drafts use '/' as a placeholder until they're
-        // posted and reserve a real sequence number.
-        return ($this->name && $this->name !== '/') ? $this->name : '(Draft)';
+        // posted and reserve a real sequence number. Localised label so
+        // Arabic users see "(مسودة)" rather than "(Draft)".
+        return ($this->name && $this->name !== '/') ? $this->name : __('accounting.draft_placeholder');
     }
 }

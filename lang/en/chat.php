@@ -26,4 +26,8 @@ return [
     'start_of_group'        => 'This is the start of the #:name group.',
     'start_of_dm'           => 'This is the beginning of your conversation with :name.',
     'be_first_to_say'       => 'Be the first to say something!',
+    'leave'                 => 'Leave',
+    'remove'                => 'Remove',
+    'confirm_leave_group'   => 'Leave this group?',
+    'confirm_remove_member' => 'Remove :name from this group?',
 ];

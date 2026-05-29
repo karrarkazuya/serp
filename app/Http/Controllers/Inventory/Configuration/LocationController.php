@@ -84,10 +84,10 @@ class LocationController extends Controller
         $location = DB::transaction(function () use ($data) {
             $loc = Location::create($data);
             $loc->updateCompleteName();
-            $this->chatterService->logCreated($loc, 'Location');
+            $this->chatterService->logCreated($loc, __('inventory.chatter_label_location'));
             return $loc;
         });
-        return redirect()->route('inventory.config.locations.show', $location)->with('success', 'Location created.');
+        return redirect()->route('inventory.config.locations.show', $location)->with('success', __('inventory.created'));
     }
 
     public function edit(Location $location)
@@ -113,7 +113,7 @@ class LocationController extends Controller
         if (array_key_exists('parent_id', $data) && $data['parent_id']) {
             $parentId = (int) $data['parent_id'];
             if ($parentId === $location->id || $this->isLocationDescendantOf($parentId, $location->id)) {
-                return back()->withInput()->with('error', 'Selected parent would create a circular location hierarchy.');
+                return back()->withInput()->with('error', __('inventory.parent_cycle_location'));
             }
         }
 
@@ -122,7 +122,7 @@ class LocationController extends Controller
             $location->update($data);
             $location->updateCompleteName();
         });
-        return redirect()->route('inventory.config.locations.show', $location)->with('success', 'Location updated.');
+        return redirect()->route('inventory.config.locations.show', $location)->with('success', __('inventory.updated'));
     }
 
     /**
@@ -148,7 +148,7 @@ class LocationController extends Controller
         $activeCompanyIds = $this->companyContext->getActiveCompanyIds();
         abort_unless(in_array($location->company_id, $activeCompanyIds), 403);
         DB::transaction(fn () => $location->update(['active' => false, 'updated_by' => auth()->id()]));
-        return redirect()->route('inventory.config.locations.index')->with('success', 'Location archived.');
+        return redirect()->route('inventory.config.locations.index')->with('success', __('inventory.archived'));
     }
 
     public function unarchive(Request $_request, Location $location)
@@ -157,7 +157,7 @@ class LocationController extends Controller
         $activeCompanyIds = $this->companyContext->getActiveCompanyIds();
         abort_unless(in_array($location->company_id, $activeCompanyIds), 403);
         DB::transaction(fn () => $location->update(['active' => true, 'updated_by' => auth()->id()]));
-        return redirect()->route('inventory.config.locations.show', $location)->with('success', 'Location restored.');
+        return redirect()->route('inventory.config.locations.show', $location)->with('success', __('inventory.restored'));
     }
 
     public function unlink(Request $_request, Location $location)
@@ -176,14 +176,14 @@ class LocationController extends Controller
             DB::transaction(function () use ($location) {
                 Location::whereKey($location->id)->lockForUpdate()->firstOrFail();
                 if ($location->children()->exists()) {
-                    throw new \RuntimeException('Cannot delete a location with sub-locations.');
+                    throw new \RuntimeException(__('inventory.err_location_has_children'));
                 }
                 $location->delete();
             });
         } catch (\RuntimeException $e) {
             return back()->with('error', $e->getMessage());
         }
-        return redirect()->route('inventory.config.locations.index')->with('success', 'Location deleted.');
+        return redirect()->route('inventory.config.locations.index')->with('success', __('inventory.deleted'));
     }
 
     public function addComment(Request $request, Location $location)
@@ -193,6 +193,6 @@ class LocationController extends Controller
         abort_unless(in_array($location->company_id, $activeCompanyIds), 403);
         $request->validate(['body' => 'required|string|max:5000']);
         DB::transaction(fn () => $location->logComment($request->body));
-        return back()->with('success', 'Comment added.');
+        return back()->with('success', __('inventory.comment_added'));
     }
 }

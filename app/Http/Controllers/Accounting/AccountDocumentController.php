@@ -402,7 +402,7 @@ class AccountDocumentController extends Controller
 
         if (!$document->isDraft()) {
             return redirect()->route($this->config($moveType)['routes']['show'], $document)
-                ->with('error', 'Only draft documents can be edited.');
+                ->with('error', __('accounting.only_draft_doc_edit'));
         }
 
         $document->load(['journal', 'partner', 'company', 'paymentTerm', 'incoterm', 'lines.account', 'lines.taxes']);
@@ -468,7 +468,7 @@ class AccountDocumentController extends Controller
 
         DB::transaction(fn () => $this->accounting->resetMoveToDraft($document));
 
-        return redirect()->route($this->config($moveType)['routes']['show'], $document)->with('success', 'Document reset to draft.');
+        return redirect()->route($this->config($moveType)['routes']['show'], $document)->with('success', __('accounting.document_reset'));
     }
 
     private function cancel(AccountMove $document, string $moveType)
@@ -483,7 +483,7 @@ class AccountDocumentController extends Controller
 
         DB::transaction(fn () => $this->accounting->cancelMove($document));
 
-        return redirect()->route($this->config($moveType)['routes']['show'], $document)->with('success', 'Document cancelled.');
+        return redirect()->route($this->config($moveType)['routes']['show'], $document)->with('success', __('accounting.document_cancelled'));
     }
 
     private function markPaid(Request $request, AccountMove $document, string $moveType)
@@ -507,7 +507,7 @@ class AccountDocumentController extends Controller
             return back()->with('error', $e->getMessage());
         }
 
-        return redirect()->route($this->config($moveType)['routes']['show'], $document)->with('success', 'Payment registered.');
+        return redirect()->route($this->config($moveType)['routes']['show'], $document)->with('success', __('accounting.payment_registered'));
     }
 
     private function creditNote(AccountMove $document, string $moveType)
@@ -529,7 +529,7 @@ class AccountDocumentController extends Controller
         // the new document with a prompt to review-then-post — auto-reconcile
         // with the original fires when they post it.
         return redirect()->route($route, $creditNote)
-            ->with('success', 'Credit note drafted. Review the lines and post to apply.');
+            ->with('success', __('accounting.credit_note_drafted'));
     }
 
     private function print(AccountMove $document, string $moveType)
@@ -556,7 +556,7 @@ class AccountDocumentController extends Controller
             return back()->with('error', $e->getMessage());
         }
 
-        return redirect()->route($this->config($moveType)['routes']['index'])->with('success', 'Document deleted.');
+        return redirect()->route($this->config($moveType)['routes']['index'])->with('success', __('accounting.document_deleted'));
     }
 
     private function addComment(Request $request, AccountMove $document, string $moveType)
@@ -567,7 +567,7 @@ class AccountDocumentController extends Controller
         $request->validate(['body' => 'required|string|max:5000']);
         DB::transaction(fn () => $document->logComment($request->body));
 
-        return back()->with('success', 'Comment added.');
+        return back()->with('success', __('accounting.comment_added'));
     }
 
     private function assertDocumentAccess(AccountMove $document, string $moveType): void

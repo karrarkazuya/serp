@@ -47,11 +47,11 @@
             @foreach($group['items'] as $tax)
             <tr x-show="open" class="hover:bg-gray-50 cursor-pointer" onclick="window.location='{{ route('accounting.taxes.show', $tax) }}'">
                 <td class="px-4 py-3 text-sm font-semibold text-[#71639e]">{{ $tax->name }}</td>
-                <td class="px-4 py-3 text-sm text-gray-700">{{ $amountTypes[$tax->amount_type] ?? $tax->amount_type }}</td>
+                <td class="px-4 py-3 text-sm text-gray-700">{{ $tax->amount_type_label }}</td>
                 <td class="px-4 py-3 text-sm tabular-nums text-gray-700">
                     {{ $tax->amount_type === 'percent' ? number_format((float)$tax->amount, 2) . '%' : number_format((float)$tax->amount, 2) }}
                 </td>
-                <td class="px-4 py-3 text-sm text-gray-700">{{ $typeTaxUse[$tax->type_tax_use] ?? $tax->type_tax_use }}</td>
+                <td class="px-4 py-3 text-sm text-gray-700">{{ $tax->type_tax_use_label }}</td>
                 <td class="px-4 py-3 text-sm text-gray-600">{{ $tax->account?->display_name ?? '—' }}</td>
                 <td class="px-4 py-3">
                     <span class="inline-block px-2 py-0.5 rounded text-[11px] font-medium {{ $tax->active ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500' }}">
@@ -82,11 +82,11 @@
             @foreach($taxes as $tax)
             <tr class="hover:bg-gray-50 cursor-pointer" onclick="window.location='{{ route('accounting.taxes.show', $tax) }}'">
                 <td class="px-4 py-3 text-sm font-semibold text-[#71639e]">{{ $tax->name }}</td>
-                <td class="px-4 py-3 text-sm text-gray-700">{{ $amountTypes[$tax->amount_type] ?? $tax->amount_type }}</td>
+                <td class="px-4 py-3 text-sm text-gray-700">{{ $tax->amount_type_label }}</td>
                 <td class="px-4 py-3 text-sm tabular-nums text-gray-700">
                     {{ $tax->amount_type === 'percent' ? number_format((float)$tax->amount, 2) . '%' : number_format((float)$tax->amount, 2) }}
                 </td>
-                <td class="px-4 py-3 text-sm text-gray-700">{{ $typeTaxUse[$tax->type_tax_use] ?? $tax->type_tax_use }}</td>
+                <td class="px-4 py-3 text-sm text-gray-700">{{ $tax->type_tax_use_label }}</td>
                 <td class="px-4 py-3 text-sm text-gray-600">{{ $tax->account?->display_name ?? '—' }}</td>
                 <td class="px-4 py-3">
                     <span class="inline-block px-2 py-0.5 rounded text-[11px] font-medium {{ $tax->active ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500' }}">

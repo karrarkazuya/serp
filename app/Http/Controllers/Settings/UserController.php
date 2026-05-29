@@ -10,8 +10,10 @@ use App\Services\Settings\UserService;
 use App\Helpers\GroupsQuery;
 use App\Helpers\SearchFilters;
 use App\Helpers\SortsTable;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Gate;
 
 class UserController extends Controller
 {
@@ -95,6 +97,32 @@ class UserController extends Controller
         return redirect()
             ->route('settings.users.show', $user)
             ->with('success', 'User updated successfully.');
+    }
+
+    public function bulkUnlink(Request $request): RedirectResponse
+    {
+        $this->authorize('delete', User::class);
+
+        $selectAll = $request->boolean('select_all');
+        $ids = $request->input('ids', []);
+        $actorId = auth()->id();
+
+        DB::transaction(function () use ($selectAll, $ids, $actorId) {
+            $query = User::whereKeyNot(0);
+            if (!$selectAll) {
+                $query->whereIn('id', $ids);
+            }
+            foreach ($query->get() as $user) {
+                if ($user->id === $actorId) {
+                    continue; // cannot delete self
+                }
+                if (Gate::allows('delete', $user)) {
+                    $this->userService->delete($user);
+                }
+            }
+        });
+
+        return redirect()->route('settings.users.index')->with('success', 'Selected users deleted.');
     }
 
     public function unlink(User $user)

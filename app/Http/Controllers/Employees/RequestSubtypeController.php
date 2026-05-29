@@ -10,6 +10,7 @@ use App\Http\Requests\Employees\StoreRequestSubtypeRequest;
 use App\Http\Requests\Employees\UpdateRequestSubtypeRequest;
 use App\Models\Employees\RequestSubtype;
 use App\Services\Company\CompanyContextService;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
@@ -106,6 +107,32 @@ class RequestSubtypeController extends Controller
         $this->assertWithinActiveCompanies($subtype);
         DB::transaction(fn () => $subtype->update(['active' => true]));
         return redirect()->route('employees.request-subtypes.show', $subtype)->with('success', __('employees.subtype_unarchived'));
+    }
+
+    public function bulkUnlink(Request $request): RedirectResponse
+    {
+        $this->authorize('delete', RequestSubtype::class);
+
+        $activeCompanyIds = $this->companyContext->getActiveCompanyIds();
+        $selectAll = $request->boolean('select_all');
+        $ids = $request->input('ids', []);
+
+        DB::transaction(function () use ($selectAll, $ids, $activeCompanyIds) {
+            $query = RequestSubtype::where(function ($q) use ($activeCompanyIds) {
+                $q->whereNull('company_id');
+                if (!empty($activeCompanyIds)) {
+                    $q->orWhereIn('company_id', $activeCompanyIds);
+                }
+            });
+            if (!$selectAll) {
+                $query->whereIn('id', $ids);
+            }
+            foreach ($query->get() as $subtype) {
+                $subtype->delete();
+            }
+        });
+
+        return redirect()->route('employees.request-subtypes.index')->with('success', __('employees.subtype_deleted'));
     }
 
     public function unlink(Request $_request, RequestSubtype $subtype)

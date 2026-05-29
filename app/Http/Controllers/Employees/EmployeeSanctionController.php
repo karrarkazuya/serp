@@ -11,6 +11,7 @@ use App\Services\FileService;
 use App\Helpers\GroupsQuery;
 use App\Helpers\SearchFilters;
 use App\Helpers\SortsTable;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
@@ -255,6 +256,34 @@ class EmployeeSanctionController extends Controller
         });
 
         return redirect()->route('employees.sanctions.show', $sanction)->with('success', __('employees.sanction_unarchived'));
+    }
+
+    public function bulkUnlink(Request $request): RedirectResponse
+    {
+        $this->authorize('delete', Employee::class);
+
+        $activeCompanyIds = $this->companyContext->getActiveCompanyIds();
+        $selectAll = $request->boolean('select_all');
+        $ids = $request->input('ids', []);
+
+        DB::transaction(function () use ($selectAll, $ids, $activeCompanyIds) {
+            $query = EmployeeSanction::whereHas('employees', function ($q) use ($activeCompanyIds) {
+                empty($activeCompanyIds)
+                    ? $q->whereRaw('1 = 0')
+                    : $q->whereIn('hr_employees.company_id', $activeCompanyIds);
+            });
+            if (!$selectAll) {
+                $query->whereIn('id', $ids);
+            }
+            foreach ($query->get() as $sanction) {
+                if ($sanction->file_path) {
+                    $this->fileService->deleteByUuid($sanction->file_path);
+                }
+                $sanction->delete();
+            }
+        });
+
+        return redirect()->route('employees.sanctions.index')->with('success', __('employees.sanctions_deleted'));
     }
 
     public function unlink(EmployeeSanction $sanction)

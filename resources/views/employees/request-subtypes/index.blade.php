@@ -65,6 +65,7 @@
             :selectable="true"
             :total-count="$subtypes->total()"
             :model="\App\Models\Employees\RequestSubtype::class"
+            :bulk-delete-url="route('employees.request-subtypes.bulk-delete')"
             empty-text="{{ __('employees.no_subtypes') }}">
         <x-slot:columns>
             <x-sortable-th column="name"    :label="__('employees.subtype_name')"        class="px-4 py-2" :default="true" />

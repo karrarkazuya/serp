@@ -19,9 +19,11 @@ use App\Services\FileService;
 use App\Helpers\GroupsQuery;
 use App\Helpers\SearchFilters;
 use App\Helpers\SortsTable;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Gate;
 
 class EmployeeController extends Controller
 {
@@ -368,6 +370,29 @@ class EmployeeController extends Controller
         DB::transaction(fn () => $this->employeeService->unarchive($employee));
 
         return redirect()->route('employees.show', $employee)->with('success', 'Employee restored.');
+    }
+
+    public function bulkUnlink(Request $request): RedirectResponse
+    {
+        $this->authorize('delete', Employee::class);
+
+        $activeCompanyIds = $this->companyContext->getActiveCompanyIds();
+        $selectAll = $request->boolean('select_all');
+        $ids = $request->input('ids', []);
+
+        DB::transaction(function () use ($selectAll, $ids, $activeCompanyIds) {
+            $query = Employee::whereIn('company_id', $activeCompanyIds);
+            if (!$selectAll) {
+                $query->whereIn('id', $ids);
+            }
+            foreach ($query->get() as $employee) {
+                if (Gate::allows('delete', $employee)) {
+                    $this->employeeService->delete($employee);
+                }
+            }
+        });
+
+        return redirect()->route('employees.index')->with('success', 'Selected employees deleted.');
     }
 
     public function unlink(Request $_request, Employee $employee)

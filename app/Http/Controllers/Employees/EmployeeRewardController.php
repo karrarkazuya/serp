@@ -11,6 +11,7 @@ use App\Services\FileService;
 use App\Helpers\GroupsQuery;
 use App\Helpers\SearchFilters;
 use App\Helpers\SortsTable;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
@@ -259,6 +260,34 @@ class EmployeeRewardController extends Controller
         });
 
         return redirect()->route('employees.rewards.show', $reward)->with('success', __('employees.reward_unarchived'));
+    }
+
+    public function bulkUnlink(Request $request): RedirectResponse
+    {
+        $this->authorize('delete', Employee::class);
+
+        $activeCompanyIds = $this->companyContext->getActiveCompanyIds();
+        $selectAll = $request->boolean('select_all');
+        $ids = $request->input('ids', []);
+
+        DB::transaction(function () use ($selectAll, $ids, $activeCompanyIds) {
+            $query = EmployeeReward::whereHas('employees', function ($q) use ($activeCompanyIds) {
+                empty($activeCompanyIds)
+                    ? $q->whereRaw('1 = 0')
+                    : $q->whereIn('hr_employees.company_id', $activeCompanyIds);
+            });
+            if (!$selectAll) {
+                $query->whereIn('id', $ids);
+            }
+            foreach ($query->get() as $reward) {
+                if ($reward->file_path) {
+                    $this->fileService->deleteByUuid($reward->file_path);
+                }
+                $reward->delete();
+            }
+        });
+
+        return redirect()->route('employees.rewards.index')->with('success', __('employees.rewards_deleted'));
     }
 
     public function unlink(EmployeeReward $reward)
