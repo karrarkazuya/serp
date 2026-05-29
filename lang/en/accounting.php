@@ -534,6 +534,9 @@ return [
     // Cross-field validation
     'val_due_before_invoice' => 'The due date cannot be before the invoice date.',
     'val_currency_not_allowed' => 'The selected currency is not in this company\'s allowed currencies list.',
+    'val_currency_unknown'   => 'Unknown currency code. Pick one from the seeded currencies.',
+    'val_rate_duplicate'     => 'An exchange rate already exists for this company, currency, and date.',
+    'err_base_amount_currency' => 'A line in the company\'s base currency cannot also carry a non-zero amount_currency value.',
     'parent_cycle'             => 'Selected parent would create a circular hierarchy.',
     'cancel_undid_match'       => 'Reconciled match was undone because the linked entry :ref was cancelled.',
     'reset_undid_match'        => 'Reconciled match was undone because the linked entry :ref was reset to draft.',

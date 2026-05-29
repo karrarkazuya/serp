@@ -112,6 +112,27 @@ class Company extends Model
     }
 
     /**
+     * Authoritative "is this currency code valid for this company?" check.
+     *
+     * Empty pivot → every active currency is permitted (back-compat with
+     * single-currency companies). Otherwise the explicitly-configured list
+     * applies — and the company's base `currency` is ALWAYS included even
+     * if a misconfigured pivot forgot it. That fail-open-for-base rule was
+     * documented but the previous validator callbacks ignored it, blocking
+     * legitimate base-currency invoices.
+     */
+    public function permitsCurrency(?string $code): bool
+    {
+        if (!$code) return true;                          // unset = "use default" — let downstream resolve
+        if ($code === $this->currency) return true;       // base is always permitted
+
+        $allowed = $this->allowedCurrencies()->pluck('code')->all();
+        if (empty($allowed)) return true;                 // no restriction → everything goes
+
+        return in_array($code, $allowed, true);
+    }
+
+    /**
      * MC2: target accounts when cross-currency reconciliation leaves a base
      * residual after foreign residuals close. Both must be configured before
      * reconcileLines will post adjustments — otherwise the reconcile errors

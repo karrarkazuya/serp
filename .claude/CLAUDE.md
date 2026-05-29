@@ -528,6 +528,148 @@ Accepted `options` shapes (`SearchFilters::normalizeOptions` coerces all three):
 
 The export path picks this up with **no per-model exportable.php change** — adding options to `$searchable` is the only step needed for both the filter UI and the labelled export. Skipping this is a Rule 12 violation: the user-facing pill/cell ends up showing the raw enum identifier instead of the business label.
 
+### 14. Import — `<x-import>` is auto-rendered by `<x-list>`. Add a `config/importable.php` entry; never hand-roll.
+
+The import system mirrors the export system at the same level of abstraction. There is exactly one user-facing button (the `<x-import>` modal trigger) and exactly one server endpoint (`POST /import`) — both auto-wired by the model passed to `<x-list :model="...">`. Adding import support to a new module is a config + permission + policy change. **Never** add per-view Import buttons, per-module upload controllers, or hand-rolled CSV parsers.
+
+#### How import is auto-rendered
+
+`<x-list>` derives `$canImport` the same way it derives `$canExport` / `$canDelete` — by calling `Gate::allows('import', $model)`. When permission passes AND there is a matching `config/importable.php` entry whose `class` equals the list's `:model`, the component renders the `<x-import>` trigger button in a small toolbar above the table. No per-view code, no `@can` block, no manual prop.
+
+#### Pieces
+
+| Piece | Role |
+|---|---|
+| `<x-list :model="Model::class">` | Auto-renders the Import trigger when Gate allows + the model has an importable entry. Existing call sites pick it up for free. |
+| `<x-import>` | Modal: download sample (XLSX/CSV) + upload UI. Receives `modelKey` + `importUrl`. Auto-instantiated by `<x-list>` — do not call manually. |
+| `config/importable.php` | Server-side whitelist. Declares the model class, permission key, FormRequest (validation), service class + method (creation), and per-field type + lookup config. |
+| `App\Services\ImportService` | Reads XLSX / CSV with PhpSpreadsheet (read-only mode, no formula evaluation), normalises headers (label OR key), coerces each cell to its declared type, validates the row against the FormRequest's `rules()`, and calls the configured service create method. |
+| `App\Http\Controllers\ImportController` | `GET /import/{modelKey}/template` streams the sample file. `POST /import` runs the upload inside one `DB::transaction` — any row that fails rolls back the entire batch. |
+| `module.import` permission | Seeded in `CoreSeeder::seedPermissions`. Checked in the policy's `import(User $user)` method. |
+
+#### Adding import to a module
+
+**1. Policy** — add an `import` ability:
+```php
+public function import(User $user): bool
+{
+    return $user->hasPermission('contacts.import');
+}
+```
+
+**2. Seed the permission** in `CoreSeeder::seedPermissions()`:
+```php
+['name' => 'Import Contacts', 'key' => 'contacts.import', 'module' => 'contacts',
+ 'description' => 'Bulk-import contact records from XLSX or CSV. Each row is validated and created using the same flow as a manual New Contact.'],
+```
+
+**3. Add entry to `config/importable.php`:**
+```php
+'contacts' => [
+    'class'          => \App\Models\Contacts\Contact::class,
+    'permission'     => 'contacts.import',
+    'company_scoped' => true,
+    'filename'       => 'contacts-import-template',
+    // The form request whose rules() validates each row — same ruleset
+    // the controller's store() would apply. authorize() is intentionally
+    // bypassed (authorization happens at the route + controller).
+    'request'        => \App\Http\Requests\Contacts\StoreContactRequest::class,
+    // The service + method called per row. Mirrors how store() persists.
+    'service'        => \App\Services\Contacts\ContactService::class,
+    'service_method' => 'create',
+    'fields' => [
+        ['key' => 'name',         'label' => 'Name',         'type' => 'string',  'required' => true, 'example' => 'John Doe'],
+        ['key' => 'contact_type', 'label' => 'Type',         'type' => 'enum',    'required' => true, 'options' => ['individual', 'company'], 'default' => 'individual'],
+        ['key' => 'company_id',   'label' => 'Company',      'type' => 'relation', 'relation' => ['table' => 'companies', 'lookup' => ['id', 'name']]],
+        ['key' => 'phones',       'label' => 'Phones',       'type' => 'array',   'separator' => ';'],
+        // ...
+    ],
+],
+```
+
+**No view changes required.** As long as the list view already calls `<x-list :model="Contact::class">`, the Import button appears automatically for any user who passes `Gate::allows('import', Contact::class)`.
+
+#### Required vs. optional config keys
+
+| Key | Required | Notes |
+|---|---|---|
+| `class` | yes | FQ Eloquent model class. Used by `<x-list>` to resolve the modelKey. |
+| `permission` | yes | Permission key checked by the controller AND the Gate policy. |
+| `company_scoped` | yes (bool) | When true, missing `company_id` defaults to the actor's only active company; multi-company users must provide it. |
+| `request` | yes | FormRequest whose `rules()` validates each row. Must be a subclass of `Illuminate\Foundation\Http\FormRequest`. |
+| `service` | yes | Service class instantiated via the container. |
+| `service_method` | optional | Defaults to `create`. |
+| `filename` | optional | Sample template base name (no extension). Defaults to the model key. |
+| `fields[]` | yes | Allowed columns. Order = template column order. |
+
+#### Field types
+
+| `type` | Coercion behaviour |
+|---|---|
+| `string` | Trim, pass through as string. |
+| `integer` | `(int) $raw`. |
+| `decimal` | Strips currency / spaces, casts to `float`. |
+| `boolean` | `true`/`false`/`yes`/`no`/`1`/`0`/`y`/`n` (case-insensitive). |
+| `date` | `Carbon::parse` → `Y-m-d`. Malformed values fall through so the FormRequest can reject them with a row-specific message. |
+| `datetime` | `Carbon::parse` → `Y-m-d H:i:s`. |
+| `email` / `url` | Pass-through string; rely on the FormRequest's `email` / `url` rule for validation. |
+| `enum` | Matches case-insensitively against `options[]`; unknown values fall through. |
+| `array` | Splits by `separator` (default `;`). Empty parts dropped. |
+| `relation` | Numeric → cast to id. Non-numeric → looked up in `relation.table` by `relation.lookup` columns. **Company-scoped tables are automatically filtered by the actor's active companies** so an import can never reference another tenant's row by name. |
+
+Add a `'default' => 'value'` to fall back when the column is blank. Add `'example' => '...'` to seed the sample template.
+
+#### Security guarantees (non-negotiable — do not relax)
+
+1. **Permission gate is enforced three times.** Route middleware does not exist (the controller uses dynamic per-model permission) — instead the controller calls `hasPermission($config['permission'])` and `<x-list>` checks `Gate::allows('import', $model)`. Hiding the button is UX-only; the server-side check in `ImportController::authorizeImport` is the real gate.
+2. **Every row goes through the FormRequest's `rules()`.** Same validation the controller's `store()` would apply, including Rule 11 cross-company FK checks. Authorization (`authorize()`) is deliberately bypassed because the actor was already authorised at the controller level — calling `$this->user()->hasPermission()` from within a programmatically-instantiated FormRequest hits a null user. Bypass authorize, never bypass rules.
+3. **Single `DB::transaction` wraps the entire batch.** If any row throws (validation, FK violation, service-level exception, anything), every prior row in the batch rolls back atomically. The controller catches and reports `Row N: <message>` so the user can fix and retry.
+4. **PhpSpreadsheet is configured `setReadDataOnly(true)`** and we never call `getCalculatedValue()`. Imported `=...` cells travel through validation as literal strings and are rejected by the FormRequest unless the field genuinely accepts that text.
+5. **CWE-1236 formula-injection escapes from export are stripped on import.** A cell exported as `'+964770000000` (leading single-quote escape) is normalised back to `+964770000000` so round-tripping works without corrupting data. The escape is only stripped when the second character is one of the formula triggers (`=`/`+`/`-`/`@`/`\t`/`\r`).
+6. **Cross-company relation lookups are blocked.** When a `type: relation` column does a name-based lookup, the SQL automatically filters by the actor's active companies (when the target table has `company_id`). An importer in Company A cannot pull in a Company B record by typing its name.
+7. **MIME + extension whitelist.** `ImportController` validates `mimes:csv,txt,xlsx,xls` and a 10 MB cap. The Alpine `accept="..."` is a UX hint only.
+8. **Per-row cap.** `ImportService::MAX_ROWS = 5000` (excluding header). The reader rejects files past the cap before any insert runs.
+9. **Open-redirect defence.** The optional `redirect` form field is sanitised by `ImportController::safeRedirect` — must start with `/` (and not `//`).
+10. **Throttle:** `/import` is rate-limited to 10 / minute per user; `/import/{modelKey}/template` to 30 / minute. Imports are heavier than exports because every row runs full validation + service flow.
+
+#### FormRequest `rules()` must be context-free
+
+The importer instantiates the FormRequest with `new $requestClass()` so it can borrow the rule definitions without triggering `authorize()` against a null user. As a side effect, the request is **not bound to an HTTP request**: `$this->user()`, `$this->input(...)`, `$this->route(...)`, and `$this->all()` are all unsafe inside `rules()`. Resolve dependencies via `app(...)` instead.
+
+```php
+// ❌ Wrong — breaks the importer
+public function rules(): array
+{
+    $ids = $this->user()->allowedCompanyIds();              // null user → crash
+    $companyId = $this->input('company_id');                // no request bound
+    return ['name' => 'required|...', 'company_id' => Rule::in($ids)];
+}
+
+// ✅ Correct — resolves via container, no request dependency
+public function rules(): array
+{
+    $ids = app(CompanyContextService::class)->getActiveCompanyIds();
+    return ['name' => 'required|...', 'company_id' => Rule::in($ids)];
+}
+```
+
+This restriction does NOT apply to `authorize()` — that method runs only via the real HTTP request lifecycle in the controller, never from the importer.
+
+#### Pivot / has-many fields are silently dropped
+
+The importer calls `service.create($validated)`, which is typically `Model::create($data)` — only `$fillable` columns are persisted. Pivot / has-many fields (tags, phones, related contacts, invoice lines, etc.) are normally attached by the *controller's* `store()` method, not the service. Listing them in `importable.php` will silently drop them.
+
+If a module genuinely needs to import pivot / has-many data, add a dedicated `createFromImport(array $data)` method on the service that runs the full attach flow and point `service_method => 'createFromImport'`. Don't widen the existing `create` method — other callers don't pass pivot keys.
+
+#### What NOT to do
+
+- Do not put `<x-import>` directly in a list view — the `<x-list>` component already renders it. Manual placement duplicates the button.
+- Do not call `ImportService::processRows()` outside a `DB::transaction`. The controller wraps it; if you write a new entry-point, the wrapper is mandatory.
+- Do not skip the FormRequest. Direct service calls bypass cross-company FK rules (Rule 11) and produce unscoped writes.
+- Do not raise `MAX_ROWS` per-module. If you genuinely need to ingest more than 5 000 rows, queue a background job that chunks the file — keep the synchronous path bounded.
+- Do not call `getCalculatedValue()` on an XLSX cell. We never evaluate formulas on import; that is the whole point of `setReadDataOnly(true)`.
+- Do not assume the file uses the field keys. Headers can be either the field's `key` or its `label` (with optional trailing `*` for required) — the parser normalises both. The sample template uses labels for readability.
+
 ---
 
 ## Controller Method Naming
@@ -641,7 +783,7 @@ When building a new module, follow `docs/implement_new_module.md` using Contacts
 - [ ] Model: fillable, casts, relationships, `scopeActive`, `scopeForCompanies` (if company-scoped), **`use SoftDeletes`**
 - [ ] Register model with `AuditableObserver` in `AppServiceProvider`
 - [ ] Permissions seeded in `PermissionSeeder` and assigned in `RoleSeeder`
-- [ ] Policy: `viewAny`, `view`, `create`, `update`, `delete`, `comment`, **`export`**. For company-scoped models, `use App\Policies\Concerns\ScopesByCompany;` and gate model-bound abilities with `&& $this->withinActiveCompany($model)` — this makes `@can` checks fail-closed for cross-tenant records without relying on the controller. Reference: [EmployeePolicy.php](app/Policies/Employees/EmployeePolicy.php).
+- [ ] Policy: `viewAny`, `view`, `create`, `update`, `delete`, `comment`, **`export`**, **`import`** (when the module supports bulk import). For company-scoped models, `use App\Policies\Concerns\ScopesByCompany;` and gate model-bound abilities with `&& $this->withinActiveCompany($model)` — this makes `@can` checks fail-closed for cross-tenant records without relying on the controller. Reference: [EmployeePolicy.php](app/Policies/Employees/EmployeePolicy.php).
 - [ ] Form requests: authorize + validate. **Every FK to a company-scoped table** uses `Rule::exists(...)->whereIn('company_id', $activeCompanyIds)` (Rule 11), not bare `'exists:table,id'`. Image fields use explicit `mimetypes:image/jpeg,image/png,image/gif,image/webp|mimes:jpg,jpeg,png,gif,webp` — never bare `'image'` (Rule 10).
 - [ ] Service: create, update, archive, unarchive — business logic + chatter, no transactions
 - [ ] Controller: follows naming above, wraps in `DB::transaction`, applies company gate
@@ -653,6 +795,7 @@ When building a new module, follow `docs/implement_new_module.md` using Contacts
 - [ ] For every enum-like column (DB enum, fixed string set, priority codes), declare `'options' => [...]` in `$searchable` (Rule 13). The filter dropdown and export labels both read from it — no extra exportable.php entry needed.
 - [ ] Export: add entry to `config/exportable.php`, seed `module.export` permission, add `export()` to policy (nullable model param), add `<x-export>` + row checkboxes to index view
 - [ ] Bulk delete (opt-in): make policy `delete()` accept `?Model $model = null`, add `bulkUnlink` controller method, add bulk-delete route, pass `:bulk-delete-url` to `<x-list>`
+- [ ] Import (opt-in, Rule 14): add entry to `config/importable.php` (model class, permission, FormRequest, service+method, fields with types), seed `module.import` permission, add `import()` method to policy. No view changes — `<x-list :model="Model::class">` renders the Import trigger automatically.
 - [ ] Group By: add `GroupsQuery` import + group-by detection block to `read()` (before `SortsTable::apply()`), add `@if(isset($groups))` / `@else` branching in the index view with `<x-list :grouped="true">` and `<tbody x-data>` blocks
 
 ---
@@ -691,6 +834,10 @@ The Workflow module is the most complex. Key specifics:
 - `app/Http/Controllers/ExportController.php` — generic `POST /export` endpoint
 - `app/Services/ExportService.php` — XLSX / CSV file generation via PhpSpreadsheet
 - `docs/components/export.md` — export component usage guide
+- `config/importable.php` — import model whitelist (class, permission, FormRequest, service, fields per module)
+- `app/Http/Controllers/ImportController.php` — generic `POST /import` + `GET /import/{modelKey}/template`
+- `app/Services/ImportService.php` — XLSX / CSV parsing + row coercion + per-row FormRequest validation
+- `docs/components/import.md` — import component usage guide
 
 ---
 
@@ -823,3 +970,8 @@ Never use `confirm()`, `alert()`, or `prompt()`. These block the thread, cannot 
 - Do not duplicate enum option lists into `config/exportable.php` — the export reads option labels from the model's `$searchable` (single source of truth). Adding `options` only to exportable.php leaves the filter dropdown broken; only `$searchable` updates fix both.
 - Do not pass `:can-export` or `:can-delete` manually on `<x-list>` — always pass `:model="ModelClass::class"` and let the component auto-derive permissions from the Gate policy. Manual overrides are only for non-standard edge cases
 - Do not write a new bulk action as a one-off per-view feature — add it to `TableList.php` + `list.blade.php` so all lists gain it automatically via the `:model` auto-derive path
+- Do not place `<x-import>` directly in any list view — `<x-list>` already renders it when the model has a `config/importable.php` entry and the actor passes the `import` Gate (Rule 14). Manual placement duplicates the button.
+- Do not skip the FormRequest in an import flow — calling `ImportService::processRows()` without the `request` key in the config bypasses Rule 11 cross-company FK validation. Use the same FormRequest the controller's `store()` uses.
+- Do not call `PhpSpreadsheet`'s `getCalculatedValue()` on imported cells (Rule 14 #4). We never evaluate formulas on import; doing so re-enables formula-based exfil payloads.
+- Do not increase `ImportService::MAX_ROWS` past 5000 to "support a big file" — chunk in a queued job instead. The synchronous request must stay bounded.
+- Do not run `ImportService::processRows()` outside `DB::transaction` — partial commits on a failing row violate Rule 14 #3 (atomic batch).

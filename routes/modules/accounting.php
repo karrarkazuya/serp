@@ -192,7 +192,7 @@ Route::prefix('accounting')->name('accounting.')->group(function () {
         Route::get('/{currencyRate}',           [CurrencyRateController::class, 'show'])  ->middleware('permission:accounting.read')  ->name('show');
         Route::get('/{currencyRate}/edit',      [CurrencyRateController::class, 'edit'])  ->middleware('permission:accounting.write') ->name('edit');
         Route::put('/{currencyRate}',           [CurrencyRateController::class, 'write']) ->middleware('permission:accounting.write') ->name('update');
-        Route::delete('/{currencyRate}',        [CurrencyRateController::class, 'unlink'])       ->middleware('permission:accounting.write') ->name('delete');
+        Route::delete('/{currencyRate}',        [CurrencyRateController::class, 'unlink'])       ->middleware('permission:accounting.unlink') ->name('delete');
         Route::post('/{currencyRate}/comment',  [CurrencyRateController::class, 'addComment']) ->middleware('permission:accounting.write') ->name('comment');
     });
 

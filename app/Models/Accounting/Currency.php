@@ -73,6 +73,11 @@ class Currency extends Model
      * Format an amount according to this currency's metadata. Used by views
      * instead of bare `number_format(..., 2)` so non-2-decimal currencies
      * (JPY, BHD, IQD) render correctly.
+     *
+     * `before` always emits `{symbol}{number}` (USD $1,234.56) — Latin glyphs
+     * read fine glued to a digit. `after` inserts a non-breaking space so
+     * Arabic glyphs (د.ع, ر.س) don't visually join the trailing digit under
+     * RTL layout. The NBSP keeps the whole token unbreakable across lines.
      */
     public function format(float $amount): string
     {
@@ -82,7 +87,7 @@ class Currency extends Model
 
         return $this->position === 'before'
             ? "{$symbol}{$number}"
-            : "{$number} {$symbol}";
+            : "{$number}\u{00A0}{$symbol}";
     }
 
     /**
@@ -107,15 +112,34 @@ class Currency extends Model
         return self::resolveByCode($code);
     }
 
-    /** @var array<string, ?self> */
+    /** @var array<string, self> */
     private static array $cacheByCode = [];
 
+    /**
+     * Cache resolved Currency rows for the request lifecycle. **Only hits are
+     * cached** — a missed lookup re-queries on every call so a row inserted
+     * later in the same request (seeders, tests, admin tools) becomes visible
+     * immediately instead of being shadowed by a stale `null`.
+     */
     private static function resolveByCode(string $code): ?self
     {
         $code = strtoupper(trim($code));
-        if (array_key_exists($code, self::$cacheByCode)) {
+        if ($code === '') return null;
+        if (isset(self::$cacheByCode[$code])) {
             return self::$cacheByCode[$code];
         }
-        return self::$cacheByCode[$code] = self::query()->where('code', $code)->first();
+        $found = self::query()->where('code', $code)->first();
+        if ($found) {
+            self::$cacheByCode[$code] = $found;
+        }
+        return $found;
+    }
+
+    /**
+     * Test/seeder hook — clear the lookup cache so subsequent calls re-query.
+     */
+    public static function clearCache(): void
+    {
+        self::$cacheByCode = [];
     }
 }

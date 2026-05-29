@@ -1,16 +1,23 @@
 @if($grouped)
 {{-- Grouped mode: slot provides <tbody x-data="{ open }"> blocks; no pagination --}}
-<div class="flex-1 overflow-auto {{ $class }}">
-    <table class="w-full text-sm border-collapse">
-        @isset($columns)
-        <thead>
-            <tr class="border-b border-gray-200 bg-gray-50">
-                {{ $columns }}
-            </tr>
-        </thead>
-        @endisset
-        {{ $slot }}
-    </table>
+<div class="flex flex-col flex-1 min-h-0">
+    @if($canImport)
+    <div class="flex items-center justify-end gap-2 px-3 py-1.5 bg-gray-50 border-b border-gray-200 shrink-0">
+        <x-import :model-key="$importModelKey" :import-url="route('import')" />
+    </div>
+    @endif
+    <div class="flex-1 overflow-auto {{ $class }}">
+        <table class="w-full text-sm border-collapse">
+            @isset($columns)
+            <thead>
+                <tr class="border-b border-gray-200 bg-gray-50">
+                    {{ $columns }}
+                </tr>
+            </thead>
+            @endisset
+            {{ $slot }}
+        </table>
+    </div>
 </div>
 @elseif($selectable)
 {{-- Selectable wrapper — provides Alpine selection state shared with row checkboxes --}}
@@ -82,6 +89,12 @@
          },
      }"
      @click.outside="actionsOpen = false">
+
+    @if($canImport)
+    <div x-show="selected.length === 0" class="flex items-center justify-end gap-2 px-3 py-1.5 bg-gray-50 border-b border-gray-200 shrink-0">
+        <x-import :model-key="$importModelKey" :import-url="route('import')" />
+    </div>
+    @endif
 
     {{-- Selection action bar --}}
     <div x-show="selected.length > 0"
@@ -249,30 +262,37 @@
 </div>
 @else
 {{-- Non-selectable — original layout --}}
-<div class="flex-1 overflow-auto {{ $class }}">
-    <table class="w-full text-sm border-collapse">
-        @isset($columns)
-        <thead>
-            <tr class="border-b border-gray-200 bg-gray-50">
-                {{ $columns }}
-            </tr>
-        </thead>
-        @endisset
-        <tbody class="divide-y divide-gray-100">
-            @if($isEmpty)
-                <tr>
-                    <td colspan="100" class="px-4 py-20 text-center text-sm text-gray-400">{{ $emptyText }}</td>
+<div class="flex flex-col flex-1 min-h-0">
+    @if($canImport)
+    <div class="flex items-center justify-end gap-2 px-3 py-1.5 bg-gray-50 border-b border-gray-200 shrink-0">
+        <x-import :model-key="$importModelKey" :import-url="route('import')" />
+    </div>
+    @endif
+    <div class="flex-1 overflow-auto {{ $class }}">
+        <table class="w-full text-sm border-collapse">
+            @isset($columns)
+            <thead>
+                <tr class="border-b border-gray-200 bg-gray-50">
+                    {{ $columns }}
                 </tr>
-            @else
-                {{ $slot }}
-            @endif
-        </tbody>
-    </table>
-</div>
+            </thead>
+            @endisset
+            <tbody class="divide-y divide-gray-100">
+                @if($isEmpty)
+                    <tr>
+                        <td colspan="100" class="px-4 py-20 text-center text-sm text-gray-400">{{ $emptyText }}</td>
+                    </tr>
+                @else
+                    {{ $slot }}
+                @endif
+            </tbody>
+        </table>
+    </div>
 
-@if($hasPagination)
-<div class="bg-white border-t border-gray-200 px-6 py-3">
-    {{ $paginator->withQueryString()->links() }}
+    @if($hasPagination)
+    <div class="bg-white border-t border-gray-200 px-6 py-3">
+        {{ $paginator->withQueryString()->links() }}
+    </div>
+    @endif
 </div>
-@endif
 @endif

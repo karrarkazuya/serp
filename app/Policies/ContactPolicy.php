@@ -51,4 +51,9 @@ class ContactPolicy
     {
         return $user->hasPermission('contacts.export');
     }
+
+    public function import(User $user): bool
+    {
+        return $user->hasPermission('contacts.import');
+    }
 }

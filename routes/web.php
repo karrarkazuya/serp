@@ -8,6 +8,7 @@ use App\Http\Controllers\CompanySwitchController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\ExportController;
 use App\Http\Controllers\FileController;
+use App\Http\Controllers\ImportController;
 use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\SharedLinkController;
@@ -54,6 +55,19 @@ Route::middleware('auth')->group(function () {
     Route::post('/export', [ExportController::class, 'export'])
         ->middleware('throttle:20,1')
         ->name('export');
+
+    // Generic import — permission is enforced dynamically inside the
+    // controller (one per importable model in config/importable.php). The
+    // whole row-by-row insert is wrapped in a single DB::transaction so a
+    // single failed row rolls back every previously-imported row in the
+    // batch. Tight throttle: imports run row-validating store() flow per
+    // record, much heavier than exports.
+    Route::get('/import/{modelKey}/template', [ImportController::class, 'template'])
+        ->middleware('throttle:30,1')
+        ->name('import.template');
+    Route::post('/import', [ImportController::class, 'import'])
+        ->middleware('throttle:10,1')
+        ->name('import');
 
     // Personal saved searches — scoped per-user. The Search component's
     // "Save current search" persists the current URL query string against

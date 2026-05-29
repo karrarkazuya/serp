@@ -84,23 +84,30 @@ class StoreMoveRequest extends FormRequest
     /**
      * Same allowedCurrencies gate as StoreDocumentRequest — empty list means
      * no restriction, non-empty list rejects out-of-list submissions before
-     * they reach the service.
+     * they reach the service. Also enforces per-line currency: a line cannot
+     * use a currency the company doesn't permit even if the header currency
+     * is fine, and lines cannot mix non-base currencies into a base-only move.
      */
     public function withValidator($validator): void
     {
         $validator->after(function ($validator) {
-            $currency  = $this->input('currency');
             $companyId = $this->input('company_id');
-            if ($currency && $companyId) {
-                $company = \App\Models\Settings\Company::find($companyId);
-                if ($company) {
-                    $allowed = $company->allowedCurrencies()->pluck('code')->all();
-                    if (!empty($allowed) && !in_array($currency, $allowed, true)) {
-                        $validator->errors()->add(
-                            'currency',
-                            __('accounting.val_currency_not_allowed')
-                        );
-                    }
+            if (!$companyId) return;
+            $company = \App\Models\Settings\Company::find($companyId);
+            if (!$company) return;
+
+            $currency = $this->input('currency');
+            if ($currency && !$company->permitsCurrency($currency)) {
+                $validator->errors()->add('currency', __('accounting.val_currency_not_allowed'));
+            }
+
+            foreach ((array) $this->input('lines', []) as $i => $line) {
+                $lineCurrency = $line['currency'] ?? null;
+                if ($lineCurrency && !$company->permitsCurrency($lineCurrency)) {
+                    $validator->errors()->add(
+                        "lines.$i.currency",
+                        __('accounting.val_currency_not_allowed')
+                    );
                 }
             }
         });

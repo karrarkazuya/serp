@@ -14,11 +14,14 @@ class TableList extends Component
     public bool $hasPagination;
     public bool $canExport;
     public bool $canDelete;
+    public bool $canImport;
+    public ?string $importModelKey;
 
     /**
-     * @param  ?string  $model         Model class string — auto-derives canExport / canDelete from policy.
+     * @param  ?string  $model         Model class string — auto-derives canExport / canDelete / canImport from policy.
      * @param  ?bool    $canExport     Explicit override; null = auto-derive from $model.
      * @param  ?bool    $canDelete     Explicit override; null = auto-derive from $model.
+     * @param  ?bool    $canImport     Explicit override; null = auto-derive from $model.
      * @param  string   $bulkDeleteUrl POST target for bulk delete; Delete button is disabled when empty.
      */
     public function __construct(
@@ -31,10 +34,13 @@ class TableList extends Component
         public ?string $model = null,
         ?bool $canExport = null,
         ?bool $canDelete = null,
+        ?bool $canImport = null,
         public string $bulkDeleteUrl = '',
     ) {
         $this->canExport = $canExport ?? $this->gate('export');
         $this->canDelete = $canDelete ?? $this->gate('delete');
+        $this->importModelKey = $this->resolveImportModelKey();
+        $this->canImport = ($canImport ?? $this->gate('import')) && $this->importModelKey !== null;
 
         if ($this->grouped) {
             $this->isEmpty       = false;
@@ -61,5 +67,25 @@ class TableList extends Component
         }
 
         return rescue(fn () => Gate::allows($ability, $this->model), false, false);
+    }
+
+    /**
+     * Find the config/importable.php key whose `class` matches the list's
+     * `:model`. Returns null when the model has no importable entry —
+     * the Import trigger is hidden in that case even if the Gate would allow.
+     */
+    private function resolveImportModelKey(): ?string
+    {
+        if (!$this->model) {
+            return null;
+        }
+
+        foreach ((array) config('importable', []) as $key => $config) {
+            if (($config['class'] ?? null) === $this->model) {
+                return (string) $key;
+            }
+        }
+
+        return null;
     }
 }

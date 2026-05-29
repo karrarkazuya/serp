@@ -96,6 +96,22 @@ return [
     'clear_selection'            => 'Clear selection',
     'yes_delete'                 => 'Yes, delete',
 
+    // Import
+    'import'                     => 'Import',
+    'importing'                  => 'Importing…',
+    'import_data'                => 'Import Data',
+    'import_step1'               => 'Step 1 — Download the template',
+    'import_step1_desc'          => 'Download the sample file with the right columns, fill in your data, and save it.',
+    'import_step2'               => 'Step 2 — Upload your file',
+    'import_step2_desc'          => 'Accepted formats: XLSX, CSV. The first row must contain column labels or keys from the template.',
+    'import_choose_file'         => 'Click to choose a file…',
+    'import_max_rows'            => 'Maximum :n rows per import.',
+    'import_atomic_title'        => 'Atomic',
+    'import_atomic_desc'         => 'All rows are imported inside a single database transaction. If any row fails validation, nothing is created.',
+    'import_no_rows'             => 'The file does not contain any data rows.',
+    'import_rolled_back'         => 'Import failed and was rolled back. :error',
+    'import_success'             => 'Imported :count record.|Imported :count records.',
+
     // Notifications
     'notifications'   => 'Notifications',
     'mark_all_read'   => 'Mark all read',

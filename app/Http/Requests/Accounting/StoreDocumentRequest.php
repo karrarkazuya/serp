@@ -125,14 +125,11 @@ class StoreDocumentRequest extends FormRequest
             $companyId = $this->input('company_id');
             if ($currency && $companyId) {
                 $company = \App\Models\Settings\Company::find($companyId);
-                if ($company) {
-                    $allowed = $company->allowedCurrencies()->pluck('code')->all();
-                    if (!empty($allowed) && !in_array($currency, $allowed, true)) {
-                        $validator->errors()->add(
-                            'currency',
-                            __('accounting.val_currency_not_allowed')
-                        );
-                    }
+                if ($company && !$company->permitsCurrency($currency)) {
+                    $validator->errors()->add(
+                        'currency',
+                        __('accounting.val_currency_not_allowed')
+                    );
                 }
             }
         });

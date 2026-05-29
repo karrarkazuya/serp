@@ -485,6 +485,11 @@ class CoreSeeder extends Seeder
             ['name' => 'Export Inventory',         'key' => 'inventory.export',             'module' => 'inventory',  'description' => 'Export inventory records to XLSX or CSV.'],
             ['name' => 'Export Accounting',        'key' => 'accounting.export',            'module' => 'accounting', 'description' => 'Export accounting records to XLSX or CSV.'],
 
+            // Import permissions — one per module. Imports run each row through the
+            // matching FormRequest + service create method (same as store()), so the
+            // capability is at least as powerful as `module.create`. Assign with care.
+            ['name' => 'Import Contacts',          'key' => 'contacts.import',              'module' => 'contacts',   'description' => 'Bulk-import contact records from XLSX or CSV. Each row is validated and created using the same flow as a manual New Contact.'],
+
             // Accounting — Unified Accounting System
             ['name' => 'Read Accounting',      'key' => 'accounting.read',   'module' => 'accounting', 'description' => 'View chart of accounts, journals, and journal entries.'],
             ['name' => 'Create Accounting',    'key' => 'accounting.create', 'module' => 'accounting', 'description' => 'Create accounts, journals, and draft journal entries.'],

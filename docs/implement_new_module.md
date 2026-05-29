@@ -208,7 +208,11 @@ Add module permissions in `database/seeders/PermissionSeeder.php`:
 ['name' => 'Create Invoices', 'key' => 'invoices.create', 'module' => 'invoices', 'description' => 'Create invoices.'],
 ['name' => 'Edit Invoices',   'key' => 'invoices.write',  'module' => 'invoices', 'description' => 'Edit and archive invoices.'],
 ['name' => 'Delete Invoices', 'key' => 'invoices.unlink', 'module' => 'invoices', 'description' => 'Delete invoices.'],
+['name' => 'Export Invoices', 'key' => 'invoices.export', 'module' => 'invoices', 'description' => 'Export invoices to XLSX / CSV.'],
+['name' => 'Import Invoices', 'key' => 'invoices.import', 'module' => 'invoices', 'description' => 'Bulk-import invoices from XLSX or CSV. Each row is validated and created through the same flow as a manual New Invoice.'],
 ```
+
+> **Note**: the `module.export` and `module.import` permissions are scoped to the same bulk-data flows as the manual create. `import` is effectively a super-set of `create` (one upload can create thousands of rows), so treat it with the same care you'd use for `create`. Always seed both, and only assign them to roles whose users you actually want operating on bulk data.
 
 Then assign them in `database/seeders/RoleSeeder.php` as needed.
 
@@ -266,6 +270,20 @@ class InvoicePolicy
     public function comment(User $user, Invoice $_invoice): bool
     {
         return $user->hasPermission('invoices.write');
+    }
+
+    // List-level Gate abilities — used by <x-list>'s :model auto-derive
+    // path. The model parameter is intentionally absent — these are checked
+    // before any record exists.
+
+    public function export(User $user): bool
+    {
+        return $user->hasPermission('invoices.export');
+    }
+
+    public function import(User $user): bool
+    {
+        return $user->hasPermission('invoices.import');
     }
 }
 ```
@@ -846,7 +864,88 @@ class InvoiceCategoryController extends Controller
 
 This pattern is appropriate when: the records are simple config with no sensitive access rules, the parent module's permissions are sufficient, and a full policy + form request would add no real value.
 
-## 14. In-App Notifications
+## 14. Bulk Import (CSV / XLSX)
+
+The import system mirrors the export system. Once you opt in, the `<x-list :model="...">` component automatically renders an Import trigger in a small toolbar above the table — **no view changes**, no per-module controller. Adding a new module to the importer is a four-step config + permission + policy change.
+
+See [.claude/CLAUDE.md](.claude/CLAUDE.md) "Rule 14" for the security contract.
+
+### Step 1 — Add the policy ability
+
+The `import` Gate ability is a list-level check (no model parameter). `<x-list>` calls `Gate::allows('import', Invoice::class)` and only renders the Import button when it passes.
+
+```php
+public function import(User $user): bool
+{
+    return $user->hasPermission('invoices.import');
+}
+```
+
+### Step 2 — Seed the permission
+
+In `database/seeders/CoreSeeder::seedPermissions()`:
+
+```php
+['name' => 'Import Invoices', 'key' => 'invoices.import', 'module' => 'invoices',
+ 'description' => 'Bulk-import invoices from XLSX or CSV. Each row is validated and created through the same flow as a manual New Invoice.'],
+```
+
+### Step 3 — Register in `config/importable.php`
+
+```php
+'invoices' => [
+    'class'          => \App\Models\Invoices\Invoice::class,
+    'permission'     => 'invoices.import',
+    'company_scoped' => true,
+    'filename'       => 'invoices-import-template',
+    'request'        => \App\Http\Requests\Invoices\StoreInvoiceRequest::class,
+    'service'        => \App\Services\Invoices\InvoiceService::class,
+    'service_method' => 'create',
+    'fields' => [
+        ['key' => 'number',      'label' => 'Number',      'type' => 'string', 'required' => true, 'example' => 'INV-001'],
+        ['key' => 'partner_id',  'label' => 'Customer',    'type' => 'relation', 'relation' => ['table' => 'contacts', 'lookup' => ['id', 'name']], 'required' => true],
+        ['key' => 'date',        'label' => 'Date',        'type' => 'date',     'required' => true, 'example' => '2026-05-30'],
+        ['key' => 'amount_total','label' => 'Total',       'type' => 'decimal',  'example' => '1234.56'],
+        ['key' => 'state',       'label' => 'State',       'type' => 'enum', 'options' => ['draft','posted','cancelled'], 'default' => 'draft'],
+    ],
+],
+```
+
+### Step 4 — Verify
+
+`php artisan route:list --json | grep import` should show:
+- `POST /import` → `import`
+- `GET /import/{modelKey}/template` → `import.template`
+
+Log in as a user with `invoices.import` and load the invoices index page — an Import button should appear in the small toolbar above the table. Click it, download the XLSX template, fill in two rows, upload — both rows are created via `InvoiceService::create()` inside a single `DB::transaction`.
+
+### Important contracts (do NOT bypass)
+
+| Contract | Enforced by |
+|---|---|
+| Same validation as manual `store()` | `ImportService::processRows` instantiates `StoreInvoiceRequest` and validates each row against its `rules()`. **`authorize()` is intentionally bypassed** — authorization already happened at the controller level. |
+| Same business logic as manual `store()` | The service create method is called (chatter logging, post-create side effects). The importer never writes to the DB directly. |
+| Atomic batch | The controller wraps `processRows()` in `DB::transaction`. If any row throws, every prior row in the batch rolls back. |
+| Cross-company FK protection | Rule 11 lives in the FormRequest's `rules()`. Because the importer reuses those rules, an importer in Company A cannot reference a Company B record by id. Relation-by-name lookups in `ImportService::coerceRelation` also filter by active company IDs. |
+| Formula-injection defence (CWE-1236) | PhpSpreadsheet reads with `setReadDataOnly(true)`; we never call `getCalculatedValue()`. Cells like `=cmd|...` are passed through to validation as literal strings and rejected by the FormRequest. |
+| Row cap | `ImportService::MAX_ROWS = 5000`. Do not raise this per-module; if you need bigger files, queue a chunked background job. |
+
+### Field types reference
+
+| `type` | Behaviour |
+|---|---|
+| `string` / `email` / `url` | Pass-through, FormRequest validates. |
+| `integer` | `(int) $raw`. |
+| `decimal` | Strips currency / spaces, casts to `float`. |
+| `boolean` | `yes`/`no`/`1`/`0`/`true`/`false`/`y`/`n` (case-insensitive). |
+| `date` / `datetime` | `Carbon::parse` → ISO format. Malformed values fall through so the FormRequest rejects them with a row-specific message. |
+| `enum` | Matches case-insensitively against `options[]`. Use `default` for a fallback. |
+| `array` | Splits by `separator` (default `;`). |
+| `relation` | Numeric → id. Non-numeric → looked up by `relation.lookup` columns. **Auto-filters by `company_id` when present.** |
+
+Add `'default' => 'value'` so blank columns fall back; add `'example' => '...'` to seed the downloaded template.
+
+## 15. In-App Notifications
 
 When an action should alert another user (assignment, completion, rejection), call `$user->notify()` from the service method. This sends an in-app notification visible in the notification bell.
 
@@ -866,7 +965,7 @@ if ($targetUser && $targetUser->id !== auth()->user()?->id) {
 }
 ```
 
-## 15. Verify
+## 16. Verify
 
 Run:
 
@@ -886,9 +985,9 @@ php artisan view:clear
 - Migration created.
 - Model has fillable fields, casts, relationships, `$sortable`, `$searchable`, `chatterTracked`, and scopes.
 - Model registered with `AuditableObserver` in `AppServiceProvider`.
-- Permissions seeded.
+- Permissions seeded — including `module.export` and `module.import` if applicable.
 - Role permissions updated.
-- Policy created with standard + any custom methods.
+- Policy created with standard + any custom methods + `export()` + `import()` (list-level abilities, no model parameter).
 - Form requests authorize and validate correctly.
 - Company-scoped IDs validated against active allowed companies.
 - Service has create, update, archive, unarchive, delete — with `detectChanges()` in update, chatter on every operation, notifications where appropriate.
@@ -897,4 +996,6 @@ php artisan view:clear
 - Views follow Odoo UI, `<x-list>` + `<x-search>` on index, `<x-chatter>` on show, record navigation on show.
 - Navigation updated.
 - Dynamic relation config added when needed.
+- Export registered in `config/exportable.php` (when applicable).
+- Import registered in `config/importable.php` (when applicable). `<x-list :model="Model::class">` renders the Import trigger automatically; no per-view code.
 - Tests or at least route/view/build checks pass.

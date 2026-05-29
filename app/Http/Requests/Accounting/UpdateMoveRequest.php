@@ -2,12 +2,20 @@
 
 namespace App\Http\Requests\Accounting;
 
-use App\Models\Accounting\AccountMove;
-use App\Services\Company\CompanyContextService;
-use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
-class UpdateMoveRequest extends FormRequest
+/**
+ * Inherits StoreMoveRequest's rules + withValidator (allowed-currency gate
+ * on header and per-line). Pins company_id to the existing move so a user
+ * editing draft Move M (originally in Company A) cannot reroute downstream
+ * FK validation to Company B's records by posting `company_id = B`.
+ *
+ * Previously this class was a near-duplicate of StoreMoveRequest WITHOUT
+ * the withValidator currency check, meaning a draft move could be edited
+ * out of its allowed currency set or even into a journal-pin violation
+ * — see CurrencyAuditTest::test_update_move_blocks_disallowed_currency.
+ */
+class UpdateMoveRequest extends StoreMoveRequest
 {
     public function authorize(): bool
     {
@@ -16,76 +24,28 @@ class UpdateMoveRequest extends FormRequest
 
     public function rules(): array
     {
+        $rules = parent::rules();
+
         // company_id is IMMUTABLE on update — pinned to the existing move's
-        // company_id via `Rule::in([$move->company_id])`. The controller also
-        // unsets `company_id` from $data as defense in depth. Without these,
-        // a user editing draft Move M (originally in Company A) could submit
-        // company_id = B and have all FK validation re-target B-scoped
-        // accounts/journals/partners; the service would then update the move
-        // with company_id = B, breaking audit-trail integrity ("this entry
-        // was always in B").
-        $activeCompanyIds = app(CompanyContextService::class)->getActiveCompanyIds();
-        $move        = $this->route('move');
-        $companyId   = $move?->company_id;
-        $companyRule = Rule::in([$companyId]);
+        // company_id via Rule::in([...]). The service layer also strips
+        // company_id from $data as defense in depth.
+        $move = $this->route('move');
+        if ($move) {
+            $rules['company_id'] = ['required', Rule::in([$move->company_id])];
+        }
 
-        $journalRule = Rule::exists('account_journals', 'id')->where(function ($q) use ($companyId) {
-            empty($companyId) ? $q->whereRaw('1 = 0') : $q->where('company_id', $companyId)->where('active', true);
-        });
-
-        $accountInCompany = Rule::exists('accounts', 'id')->where(function ($q) use ($companyId) {
-            empty($companyId) ? $q->whereRaw('1 = 0') : $q->where('company_id', $companyId)->where('active', true);
-        });
-
-        $partnerInCompany = Rule::exists('contacts', 'id')->where(function ($q) use ($companyId, $activeCompanyIds) {
-            $q->where(function ($inner) use ($companyId) {
-                $inner->where('company_id', $companyId)->orWhereNull('company_id');
-            });
-            if (!empty($activeCompanyIds)) {
-                $q->where(function ($inner) use ($activeCompanyIds) {
-                    $inner->whereIn('company_id', $activeCompanyIds)->orWhereNull('company_id');
-                });
-            }
-        });
-
-        return [
-            'company_id'  => ['required', $companyRule],
-            'journal_id'  => ['required', $journalRule],
-            'partner_id'  => ['nullable', $partnerInCompany],
-            // See StoreDocumentRequest for the rationale on bounding move dates.
-            'date'        => ['required', 'date', 'after_or_equal:-20 years', 'before_or_equal:+1 year'],
-            'ref'         => ['nullable', 'string', 'max:128'],
-            'move_type'   => ['nullable', 'string', Rule::in(['entry'])],
-            'currency'    => ['nullable', 'string', 'max:10'],
-            'narration'   => ['nullable', 'string', 'max:10000'],
-
-            'lines'                 => ['required', 'array', 'min:2'],
-            'lines.*.account_id'    => ['required', $accountInCompany],
-            'lines.*.partner_id'    => ['nullable', $partnerInCompany],
-            'lines.*.name'          => ['required', 'string', 'max:255'],
-            'lines.*.debit'         => ['nullable', 'numeric', 'min:0'],
-            'lines.*.credit'        => ['nullable', 'numeric', 'min:0'],
-            'lines.*.currency'      => ['nullable', 'string', 'max:10'],
-            'lines.*.amount_currency' => ['nullable', 'numeric'],
-            'lines.*.sequence'      => ['nullable', 'integer', 'min:0'],
-
-            'action' => ['nullable', 'string', Rule::in(['save', 'post'])],
-        ];
+        return $rules;
     }
 
     protected function prepareForValidation(): void
     {
-        $lines = $this->input('lines', []);
-        $cleaned = [];
-        foreach ($lines as $line) {
-            $hasContent = ($line['account_id'] ?? null) !== null
-                || ($line['name'] ?? '') !== ''
-                || (float) ($line['debit']  ?? 0) !== 0.0
-                || (float) ($line['credit'] ?? 0) !== 0.0;
-            if ($hasContent) {
-                $cleaned[] = $line;
-            }
+        parent::prepareForValidation();
+
+        // Pin company_id BEFORE rules() resolves so all the FK exists-rules
+        // (journal, account, partner, etc.) re-target the original company.
+        $move = $this->route('move');
+        if ($move) {
+            $this->merge(['company_id' => $move->company_id]);
         }
-        $this->merge(['lines' => $cleaned]);
     }
 }

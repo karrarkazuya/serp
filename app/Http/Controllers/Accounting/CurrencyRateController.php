@@ -102,6 +102,12 @@ class CurrencyRateController extends Controller
         $data = $request->validated();
         $data['active'] = (bool) ($data['active'] ?? true);
 
+        // MC-fix #8: defense-in-depth strip for immutable fields. The form
+        // request already omits these from the rule set so validated() won't
+        // include them, but a future maintainer adding them back would
+        // silently break the audit trail. Cheap insurance.
+        unset($data['currency'], $data['company_id']);
+
         DB::transaction(fn () => $currencyRate->update($data));
 
         return redirect()->route('accounting.currencies.show', $currencyRate)->with('success', __('accounting.updated'));

@@ -949,19 +949,25 @@ class AccountingOdooParitySimulationTest extends TestCase
         ]);
         $invoice = $this->service->postMove($invoice);
 
-        // The service tracks the foreign-currency face value on `amount_currency`.
-        // `debit`/`credit` in the current build are not rate-converted at create
-        // time (only manual journal entries with debit=0 + amount_currency!=0 are
-        // converted via the syncLines branch). What the test really asserts:
-        // - move currency = EUR
-        // - amount_total = 1000 EUR (native face)
-        // - AR line carries currency=EUR + amount_currency=1000
+        // Post-MC-fix #1: foreign-currency document amounts are now properly
+        // converted to the company base currency at create time. The base
+        // columns (`debit`/`credit`/`amount_total`) carry USD; the foreign
+        // face value is preserved in `amount_currency`. Previously the
+        // base column wrongly contained the foreign 1000 — corrupting
+        // trial balance for every multi-currency invoice. Asserts:
+        //   - move currency = EUR (document declared)
+        //   - amount_total = 1100 USD (1000 EUR * 1.10 rate)
+        //   - AR line:
+        //       * currency='EUR'
+        //       * amount_currency=1000 (foreign face)
+        //       * debit=1100 (base after conversion)
         $recvLine = $invoice->lines->firstWhere('account_id', $recv->id);
 
         $this->assertSame('EUR', $invoice->currency);
-        $this->assertSame(1000.0, (float) $invoice->amount_total);
+        $this->assertSame(1100.0, round((float) $invoice->amount_total, 2));
         $this->assertSame('EUR', $recvLine->currency);
         $this->assertSame(1000.0, round((float) $recvLine->amount_currency, 2));
+        $this->assertSame(1100.0, round((float) $recvLine->debit, 2));
     }
 
     /** @test Test 31: full EUR payment of an EUR invoice records per-side foreign amount on the partial_reconcile row. */

@@ -35,12 +35,55 @@ use RuntimeException;
  */
 class AccountingService
 {
-    /** Rounding scale used for balance equality checks. */
+    /**
+     * Fallback rounding scale used for balance equality checks and when no
+     * Currency lookup is configured. Per-currency rounding (decimal_places,
+     * rounding step) is preferred — see {@see roundForCurrency}.
+     */
     public const SCALE = 2;
+
+    /**
+     * Per-request cache for `getExchangeRate` so a multi-line foreign-currency
+     * save doesn't re-query the rate row once per line. Keyed by
+     * `"{companyId}:{currency}:{Y-m-d}"`. Reset at object boundary, so it
+     * naturally clears between web requests; tests instantiate a fresh
+     * service per case via the container.
+     *
+     * @var array<string, float>
+     */
+    private array $rateCache = [];
 
     public function __construct(
         private readonly ChatterService $chatterService,
     ) {}
+
+    /**
+     * Round `$amount` according to the per-currency `decimal_places` /
+     * `rounding` settings on the Currency lookup. Falls back to the legacy
+     * 2-decimal SCALE when the currency code is not seeded (or null).
+     *
+     * Used at value-write boundaries (debit/credit, amount_currency,
+     * amount_total, residuals) so JPY/IQD (0 dp) doesn't accumulate phantom
+     * cents and BHD/KWD (3 dp) doesn't lose precision.
+     */
+    public function roundForCurrency(float $amount, ?string $currencyCode): float
+    {
+        if ($currencyCode === null || $currencyCode === '') {
+            return round($amount, self::SCALE);
+        }
+        $currency = \App\Models\Accounting\Currency::byCode($currencyCode);
+        return $currency ? $currency->round($amount) : round($amount, self::SCALE);
+    }
+
+    /**
+     * Resolve the company's base currency code (falls back to 'IQD' for
+     * compatibility with the seeded demo data — companies created before
+     * multi-currency had no `currency` column).
+     */
+    private function baseCurrencyFor(int $companyId): string
+    {
+        return Company::find($companyId)?->currency ?: 'IQD';
+    }
 
     // ─────────────────────────────────────────────────────────────────────────
     // Accounts
@@ -269,9 +312,40 @@ class AccountingService
             throw new RuntimeException(__('accounting.err_only_draft_edit'));
         }
 
+        // Resolve the journal that will be in effect after the update so the
+        // currency-pin check sees the new journal, not the old one.
+        $effectiveJournal = $move->journal;
         if (isset($data['journal_id']) && (int) $data['journal_id'] !== (int) $move->journal_id) {
-            $newJournal = AccountJournal::findOrFail($data['journal_id']);
-            $this->assertSameCompany($newJournal->company_id, $move->company_id, 'journal');
+            $effectiveJournal = AccountJournal::findOrFail($data['journal_id']);
+            $this->assertSameCompany($effectiveJournal->company_id, $move->company_id, 'journal');
+        }
+
+        // O9 (Odoo parity) on the edit path: a journal currency-pin is enforced
+        // at create-time but used to be silent on update. Without this, a user
+        // could switch a draft to a currency-pinned journal AND change the
+        // currency to something else, slipping past the pin entirely.
+        if (!empty($effectiveJournal?->currency)) {
+            $requested = $data['currency'] ?? $move->currency;
+            if ($requested !== null && $requested !== '' && $requested !== $effectiveJournal->currency) {
+                throw new RuntimeException(__('accounting.err_journal_currency_pin', [
+                    'journal'   => $effectiveJournal->name,
+                    'pinned'    => $effectiveJournal->currency,
+                    'requested' => $requested,
+                ]));
+            }
+            $data['currency'] = $effectiveJournal->currency;
+        }
+
+        // MC-fix: enforce the company's allowed-currency list at the service
+        // layer too (the form request already does this for HTTP callers, but
+        // direct service callers — scheduled jobs, console commands — need
+        // the guarantee too). Same fail-open-for-base semantics as the form.
+        $requestedCurrency = $data['currency'] ?? $move->currency;
+        if ($requestedCurrency) {
+            $company = Company::find($move->company_id);
+            if ($company && !$company->permitsCurrency($requestedCurrency)) {
+                throw new RuntimeException(__('accounting.val_currency_not_allowed'));
+            }
         }
 
         $changes = $this->detectChanges($move, $data);
@@ -289,8 +363,15 @@ class AccountingService
 
     public function updateDocument(AccountMove $move, array $data, array $items): AccountMove
     {
+        // The controller strips `company_id` from $data as immutable-field
+        // defense, but buildDocumentLines now needs it to look up the
+        // company's base currency for FX conversion. Re-inject from the
+        // pre-existing move (which is the same company anyway — the form
+        // request pins company_id to $move->company_id).
+        $data['company_id'] = $data['company_id'] ?? $move->company_id;
+
         $lines = $this->buildDocumentLines($data, $items);
-        unset($data['control_account_id']);
+        unset($data['control_account_id'], $data['company_id']);
         $data = $this->resolveInvoiceDueDate($data);
 
         return $this->updateMove($move, $data, $lines);
@@ -640,10 +721,30 @@ class AccountingService
             throw new RuntimeException(__('accounting.err_already_paid'));
         }
 
-        $amount = round((float) ($data['amount'] ?? $residual), self::SCALE);
-        if ($amount <= 0) {
+        $amountForeign = round((float) ($data['amount'] ?? $residual), self::SCALE);
+        if ($amountForeign <= 0) {
             throw new RuntimeException(__('accounting.err_amount_positive'));
         }
+
+        $date = Carbon::parse($data['date'] ?? now()->toDateString());
+        $paymentCurrency = $data['currency'] ?? $move->currency;
+        $baseCurrency    = $this->baseCurrencyFor((int) $move->company_id);
+
+        // MC-fix #1 follow-through: when the payment is denominated in the
+        // document's foreign currency, convert to base for ledger
+        // bookkeeping. Without this the payment posts at face value (e.g.
+        // 1000 EUR booked as 1000 USD) while the AR line carries the
+        // correctly-converted base amount (1100 USD), so the residual never
+        // closes and the FX-adjustment path fires for a non-FX gap.
+        // `amount` below is BASE; `amountForeign` is preserved for
+        // amount_currency tracking on the payment lines.
+        if ($paymentCurrency && $paymentCurrency !== $baseCurrency) {
+            $rate  = $this->getExchangeRate((int) $move->company_id, $paymentCurrency, $date);
+            $amount = $this->roundForCurrency($amountForeign * $rate, $baseCurrency);
+        } else {
+            $amount = $amountForeign;
+        }
+
         // Allow overpayments: reconcile only up to the outstanding residual.
         $reconcileAmount = min($amount, $residual);
 
@@ -656,7 +757,6 @@ class AccountingService
             throw new RuntimeException(__('accounting.err_journal_no_liquidity'));
         }
 
-        $date = Carbon::parse($data['date'] ?? now()->toDateString());
         $paymentType = in_array($move->move_type, ['out_invoice', 'in_refund'], true) ? 'inbound' : 'outbound';
         $memo = $data['memo'] ?? __('accounting.ledger_payment_for', ['ref' => $move->name ?: "#{$move->id}"]);
 
@@ -674,14 +774,19 @@ class AccountingService
         // safe because all installments live on the same account.
         $counterpartAccountId = $counterpartLines->first()->account_id;
 
+        // Foreign tracking on payment lines: debit/credit hold the BASE
+        // amount; amount_currency holds the foreign face value, signed by
+        // direction so per-currency balance reconciles. syncLines auto-
+        // strips both when paymentCurrency equals base.
+        $isForeign = $paymentCurrency && $paymentCurrency !== $baseCurrency;
         $lines = $paymentType === 'inbound'
             ? [
-                ['account_id' => $liquidityAccountId,    'partner_id' => $move->partner_id, 'name' => $memo, 'debit' => $amount, 'credit' => 0, 'sequence' => 10],
-                ['account_id' => $counterpartAccountId,  'partner_id' => $move->partner_id, 'name' => $memo, 'debit' => 0, 'credit' => $amount, 'sequence' => 20],
+                ['account_id' => $liquidityAccountId,    'partner_id' => $move->partner_id, 'name' => $memo, 'debit' => $amount, 'credit' => 0, 'currency' => $paymentCurrency, 'amount_currency' => $isForeign ? +$amountForeign : 0, 'sequence' => 10],
+                ['account_id' => $counterpartAccountId,  'partner_id' => $move->partner_id, 'name' => $memo, 'debit' => 0, 'credit' => $amount, 'currency' => $paymentCurrency, 'amount_currency' => $isForeign ? -$amountForeign : 0, 'sequence' => 20],
             ]
             : [
-                ['account_id' => $counterpartAccountId,  'partner_id' => $move->partner_id, 'name' => $memo, 'debit' => $amount, 'credit' => 0, 'sequence' => 10],
-                ['account_id' => $liquidityAccountId,    'partner_id' => $move->partner_id, 'name' => $memo, 'debit' => 0, 'credit' => $amount, 'sequence' => 20],
+                ['account_id' => $counterpartAccountId,  'partner_id' => $move->partner_id, 'name' => $memo, 'debit' => $amount, 'credit' => 0, 'currency' => $paymentCurrency, 'amount_currency' => $isForeign ? +$amountForeign : 0, 'sequence' => 10],
+                ['account_id' => $liquidityAccountId,    'partner_id' => $move->partner_id, 'name' => $memo, 'debit' => 0, 'credit' => $amount, 'currency' => $paymentCurrency, 'amount_currency' => $isForeign ? -$amountForeign : 0, 'sequence' => 20],
             ];
 
         $paymentMove = $this->createMove([
@@ -690,7 +795,7 @@ class AccountingService
             'partner_id' => $move->partner_id,
             'date' => $date->toDateString(),
             'move_type' => 'entry',
-            'currency' => $data['currency'] ?? $move->currency,
+            'currency' => $paymentCurrency,
             'ref' => $memo,
         ], $lines);
 
@@ -1501,6 +1606,14 @@ class AccountingService
         $drift = round($this->getLineResidual($openSide), self::SCALE);
         if ($drift <= 0.005) return;
 
+        // Capture the openSide's remaining foreign residual BEFORE posting
+        // the adjustment — we need it to populate the closing reconcile's
+        // foreign columns explicitly (MC-fix #5). Without this, the
+        // foreign-side COALESCE in getLineForeignResidual would later sum
+        // the adjustment's BASE amount as if it were a foreign-currency
+        // amount, double-counting against the foreign residual.
+        $foreignResidualAtClose = $this->getLineForeignResidual($openSide);
+
         // openSide is the AR/AP line whose base residual remains. We post a
         // tiny adjustment move on the SAME control account to close it, with
         // the offsetting line on the company's FX gain or loss account.
@@ -1565,12 +1678,25 @@ class AccountingService
             ->first();
 
         if ($adjustmentControlLine) {
+            // MC-fix #5: populate foreign columns explicitly.
+            //   - openSide's foreign column consumes its remaining foreign
+            //     residual (so the line closes in foreign too)
+            //   - adjustment line's foreign column is 0 (the adjustment is
+            //     base-only, no foreign-currency consumption)
+            // Letting either default to NULL would re-trigger the legacy
+            // COALESCE(*, amount) path, which double-counts the base amount
+            // against future foreign-residual reads.
+            $openSideForeign   = $this->roundForCurrency($foreignResidualAtClose, $openSide->currency);
+            $adjustmentForeign = 0.0;
+
             AccountPartialReconcile::create([
-                'company_id' => $openSide->company_id,
-                'debit_move_line_id'  => $openIsDebit ? $openSide->id : $adjustmentControlLine->id,
-                'credit_move_line_id' => $openIsDebit ? $adjustmentControlLine->id : $openSide->id,
-                'amount' => $drift,
-                'date'   => $date->toDateString(),
+                'company_id'             => $openSide->company_id,
+                'debit_move_line_id'     => $openIsDebit ? $openSide->id : $adjustmentControlLine->id,
+                'credit_move_line_id'    => $openIsDebit ? $adjustmentControlLine->id : $openSide->id,
+                'amount'                 => $drift,
+                'debit_amount_currency'  => $openIsDebit ? $openSideForeign : $adjustmentForeign,
+                'credit_amount_currency' => $openIsDebit ? $adjustmentForeign : $openSideForeign,
+                'date'                   => $date->toDateString(),
             ]);
         }
     }
@@ -1732,6 +1858,23 @@ class AccountingService
             throw new RuntimeException(__('accounting.err_control_account_req'));
         }
 
+        // MC-fix: convert document amounts to company base currency before
+        // storing in debit/credit. price_unit / quantity / discount on the
+        // form are in *document* currency; the ledger's debit/credit columns
+        // are in *base* currency. Previously the foreign value was written
+        // verbatim into debit/credit, corrupting trial balance and account
+        // balance for every multi-currency invoice. amount_currency keeps
+        // the original foreign value so per-currency reports stay accurate.
+        $baseCurrency    = $this->baseCurrencyFor($companyId);
+        $needsConversion = $currency && $currency !== $baseCurrency;
+        $moveDate        = Carbon::parse($data['date'] ?? now()->toDateString());
+        $rate            = $needsConversion
+            ? $this->getExchangeRate($companyId, $currency, $moveDate)
+            : 1.0;
+        $toBase = fn (float $foreign): float => $needsConversion
+            ? $this->roundForCurrency($foreign * $rate, $baseCurrency)
+            : $foreign;
+
         // Debit/credit direction per type:
         // out_invoice: lines → credit, control → debit
         // in_invoice:  lines → debit,  control → credit
@@ -1743,8 +1886,13 @@ class AccountingService
         // Tax scope: sale for customer-side, purchase for vendor-side
         $taxScope = in_array($moveType, ['out_invoice', 'out_refund'], true) ? 'sale' : 'purchase';
 
-        $lines     = [];
-        $subtotal  = 0.0;
+        $lines         = [];
+        $subtotal      = 0.0;   // foreign subtotal (sum of net amounts)
+        $baseSubtotal  = 0.0;   // base subtotal — accumulated from per-line rounded bases,
+                                // NOT computed as toBase($subtotal). This keeps the
+                                // sum of debits/credits exactly equal to the control
+                                // line's base even when per-line rounding drifts a
+                                // cent or two from the round-and-multiply path.
         $taxTotals = [];
         $sequence  = 10;
 
@@ -1789,20 +1937,23 @@ class AccountingService
                 $label = $product?->name ?? '';
             }
 
+            $baseNet      = $toBase($netAmount);
+            $baseSubtotal = round($baseSubtotal + $baseNet, self::SCALE);
+
             $lines[] = [
                 'account_id'      => $item['account_id'],
                 'partner_id'      => $partnerId,
                 'product_id'      => $productId ?: null,
                 'uom_id'          => $uomId ?: null,
                 'name'            => $label,
-                'debit'           => $lineOnCredit ? 0 : $netAmount,
-                'credit'          => $lineOnCredit ? $netAmount : 0,
+                'debit'           => $lineOnCredit ? 0 : $baseNet,
+                'credit'          => $lineOnCredit ? $baseNet : 0,
                 'currency'        => $currency,
                 'amount_currency' => $netAmount,
                 'discount'        => $discount,
                 'sequence'        => $sequence,
                 'tax_ids'         => $taxes->pluck('id')->all(),
-                'tax_base_amount' => $netAmount,
+                'tax_base_amount' => $needsConversion ? $toBase($netAmount) : $netAmount,
             ];
             $sequence += 10;
 
@@ -1851,26 +2002,30 @@ class AccountingService
             throw new RuntimeException(__('accounting.err_invoice_total_zero'));
         }
 
-        $totalTaxes = 0.0;
+        $totalTaxes     = 0.0;
+        $baseTotalTaxes = 0.0;
         foreach ($taxTotals as $taxLine) {
-            $amount = $taxLine['amount'];
-            $totalTaxes = round($totalTaxes + $amount, self::SCALE);
+            $amount         = $taxLine['amount'];
+            $baseAmount     = $toBase($amount);
+            $totalTaxes     = round($totalTaxes + $amount, self::SCALE);
+            $baseTotalTaxes = round($baseTotalTaxes + $baseAmount, self::SCALE);
             $lines[] = [
                 'account_id'      => $taxLine['account_id'],
                 'partner_id'      => $taxLine['partner_id'],
                 'name'            => $taxLine['name'],
-                'debit'           => $lineOnCredit ? 0 : $amount,
-                'credit'          => $lineOnCredit ? $amount : 0,
+                'debit'           => $lineOnCredit ? 0 : $baseAmount,
+                'credit'          => $lineOnCredit ? $baseAmount : 0,
                 'currency'        => $taxLine['currency'],
                 'amount_currency' => $amount,
                 'sequence'        => $sequence,
                 'tax_line_id'     => $taxLine['tax_line_id'],
-                'tax_base_amount' => $taxLine['tax_base_amount'],
+                'tax_base_amount' => $needsConversion ? $toBase($taxLine['tax_base_amount']) : $taxLine['tax_base_amount'],
             ];
             $sequence += 10;
         }
 
-        $grandTotal = round($subtotal + $totalTaxes, self::SCALE);
+        $grandTotal     = round($subtotal + $totalTaxes, self::SCALE);
+        $baseGrandTotal = round($baseSubtotal + $baseTotalTaxes, self::SCALE);
 
         $controlLabels = [
             'out_invoice' => __('accounting.ledger_control_customer_bal'),
@@ -1894,17 +2049,33 @@ class AccountingService
             $data['invoice_date_due'] ?? null
         );
 
+        // Allocate the BASE grand total across installments proportionally
+        // to the foreign split, absorbing any rounding residual into the
+        // last installment. Without this, sum(installment.base) can drift
+        // a cent or two from sum(line.base + tax.base), causing the
+        // base-currency balance check to fail.
+        $totalAssignedBase = 0.0;
+        $lastIndex         = count($installments) - 1;
         foreach ($installments as $i => $installment) {
             $label = count($installments) > 1
                 ? sprintf('%s (%d/%d)', $controlLabels[$moveType], $i + 1, count($installments))
                 : $controlLabels[$moveType];
 
+            if ($i === $lastIndex) {
+                $baseInstallment = round($baseGrandTotal - $totalAssignedBase, self::SCALE);
+            } elseif ($grandTotal > 0) {
+                $baseInstallment = round(($installment['amount'] / $grandTotal) * $baseGrandTotal, self::SCALE);
+            } else {
+                $baseInstallment = 0.0;
+            }
+            $totalAssignedBase = round($totalAssignedBase + $baseInstallment, self::SCALE);
+
             $lines[] = [
                 'account_id'      => $controlAccountId,
                 'partner_id'      => $partnerId,
                 'name'            => $label,
-                'debit'           => $controlOnDebit ? $installment['amount'] : 0,
-                'credit'          => $controlOnDebit ? 0 : $installment['amount'],
+                'debit'           => $controlOnDebit ? $baseInstallment : 0,
+                'credit'          => $controlOnDebit ? 0 : $baseInstallment,
                 'currency'        => $currency,
                 'amount_currency' => $installment['amount'],
                 'sequence'        => 9000 + $i,
@@ -2018,6 +2189,24 @@ class AccountingService
             // Skip totally blank rows to allow the UI to send an extra empty row.
             if ($debit === 0.0 && $credit === 0.0 && empty($line['account_id']) && empty($line['name'])) {
                 continue;
+            }
+
+            // MC-fix #12: a line in the company's BASE currency has no
+            // meaningful "foreign amount" — debit/credit already ARE the
+            // base amount. Strip currency + amount_currency on write so:
+            //   - assertBalancedByCurrency doesn't silently skip a bucket
+            //     it should have rejected (the previous behaviour)
+            //   - the column never holds redundant data that would confuse
+            //     downstream reads (per-currency residual, FX adjustments)
+            // The strip mirrors Odoo's convention: a base-currency line
+            // stores currency = NULL and amount_currency = 0. Callers that
+            // pass amount_currency=netAmount for base lines (the legacy
+            // shape inside buildDocumentLines + manual journals) just see
+            // it dropped instead of throwing — the value is fully recoverable
+            // from debit/credit anyway.
+            if ($lineCurrency && $lineCurrency === $baseCurrency) {
+                $amountCurrency = 0.0;
+                $lineCurrency   = null;
             }
 
             // FX conversion: if line currency differs from company base and debit/credit are zero,
@@ -2186,18 +2375,30 @@ class AccountingService
      */
     public function getExchangeRate(int $companyId, string $currency, Carbon $date): float
     {
-        $company      = Company::find($companyId);
-        $baseCurrency = $company?->currency ?: 'IQD';
+        $baseCurrency = $this->baseCurrencyFor($companyId);
 
         if ($currency === $baseCurrency) {
             return 1.0;
         }
 
+        // Per-request cache: a 50-line foreign-currency invoice used to run
+        // 50 identical SELECTs; with the cache we resolve one rate per
+        // (company, currency, date) tuple per request. Cache lives on the
+        // service instance — naturally clears between requests.
+        $cacheKey = "{$companyId}:{$currency}:{$date->toDateString()}";
+        if (isset($this->rateCache[$cacheKey])) {
+            return $this->rateCache[$cacheKey];
+        }
+
+        // Deterministic tiebreaker on identical-date rows: id DESC picks the
+        // most recently inserted row, so when a user re-saves a rate for the
+        // same date the latest write wins instead of the planner's choice.
         $rate = CurrencyRate::where('company_id', $companyId)
             ->where('currency', $currency)
             ->where('active', true)
             ->whereDate('date', '<=', $date->toDateString())
             ->orderByDesc('date')
+            ->orderByDesc('id')
             ->value('rate');
 
         if (!$rate) {
@@ -2207,6 +2408,6 @@ class AccountingService
             ]));
         }
 
-        return (float) $rate;
+        return $this->rateCache[$cacheKey] = (float) $rate;
     }
 }
