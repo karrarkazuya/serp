@@ -70,18 +70,4 @@ class Warehouse extends Model
         return empty($ids) ? $q->whereRaw('1=0') : $q->whereIn('company_id', $ids);
     }
 
-    public function getIncomingPickingType(): ?OperationType
-    {
-        return $this->operationTypes()->where('code', 'incoming')->first();
-    }
-
-    public function getOutgoingPickingType(): ?OperationType
-    {
-        return $this->operationTypes()->where('code', 'outgoing')->first();
-    }
-
-    public function getInternalPickingType(): ?OperationType
-    {
-        return $this->operationTypes()->where('code', 'internal')->first();
-    }
 }

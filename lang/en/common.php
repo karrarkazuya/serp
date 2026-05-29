@@ -121,4 +121,15 @@ return [
     'loading'      => 'Loading...',
     'no_records_found' => 'No records found',
     'no_results'   => 'No results',
+
+    // Common placeholders surfaced by several module forms
+    'none'                  => 'None',
+    'optional_description'  => 'Optional description…',
+    'search_product'        => 'Search product…',
+    'description_optional'  => 'Description (optional)',
+    'terms_and_conditions'  => 'Terms and Conditions',
+    'select_company'        => 'Select company…',
+    'select_parent'         => 'Select parent…',
+    'select_manager'        => 'Select manager…',
+    'internal_notes'        => 'Internal notes…',
 ];

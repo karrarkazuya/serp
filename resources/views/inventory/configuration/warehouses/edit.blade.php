@@ -35,7 +35,33 @@
                     <div>
                         <div class="flex items-center gap-4 py-2 border-b border-gray-100">
                             <label class="w-40 shrink-0 text-sm text-gray-500">{{ __('inventory.short_name') }}</label>
-                            <input type="text" name="code" value="{{ old('code', $warehouse->code) }}" required maxlength="5" class="flex-1 text-sm bg-transparent border-0 focus:outline-none px-0 py-0.5">
+                            {{-- short_name is fixed post-create: it's part of the
+                                 unique (company_id, short_name) key and drives
+                                 the OperationType sequence prefix. Showing it as
+                                 read-only is honest; the previous form posted
+                                 `code` (silently dropped) and offered a fake edit. --}}
+                            <span class="flex-1 text-sm text-gray-800">{{ $warehouse->short_name }}</span>
+                        </div>
+                    </div>
+                    <div>
+                        {{-- reception_steps + delivery_steps were missing — the
+                             update request validates both as required, so any
+                             save from this form returned 422. --}}
+                        <div class="flex items-center gap-4 py-2 border-b border-gray-100">
+                            <label class="w-40 shrink-0 text-sm text-gray-500">{{ __('inventory.reception_steps') }}</label>
+                            <select name="reception_steps" class="flex-1 text-sm bg-transparent border-0 focus:outline-none px-0 py-0.5">
+                                @foreach(['one_step' => __('inventory.reception_one_step'), 'two_steps' => __('inventory.reception_two_steps'), 'three_steps' => __('inventory.reception_three_steps')] as $k => $v)
+                                <option value="{{ $k }}" @selected(old('reception_steps', $warehouse->reception_steps) === $k)>{{ $v }}</option>
+                                @endforeach
+                            </select>
+                        </div>
+                        <div class="flex items-center gap-4 py-2 border-b border-gray-100">
+                            <label class="w-40 shrink-0 text-sm text-gray-500">{{ __('inventory.delivery_steps') }}</label>
+                            <select name="delivery_steps" class="flex-1 text-sm bg-transparent border-0 focus:outline-none px-0 py-0.5">
+                                @foreach(['one_step' => __('inventory.delivery_one_step'), 'two_steps' => __('inventory.delivery_two_steps'), 'three_steps' => __('inventory.delivery_three_steps')] as $k => $v)
+                                <option value="{{ $k }}" @selected(old('delivery_steps', $warehouse->delivery_steps) === $k)>{{ $v }}</option>
+                                @endforeach
+                            </select>
                         </div>
                     </div>
                 </div>

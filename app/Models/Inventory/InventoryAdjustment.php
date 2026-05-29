@@ -39,14 +39,18 @@ class InventoryAdjustment extends Model
         'active' => ['label' => 'Active',    'column' => 'active', 'type' => 'boolean'],
     ];
 
+    // `exhausted` is intentionally absent from $fillable + $casts: the column
+    // exists in the schema (it would gate Odoo's "Include Exhausted Products"
+    // toggle on the inventory count UI), but no view sets it and no service
+    // reads it. Mass-assigning a dead toggle hid this from review; the column
+    // stays in the DB so the feature can ship later without a schema change.
     protected $fillable = [
-        'company_id', 'name', 'state', 'exhausted', 'date', 'note', 'active',
+        'company_id', 'name', 'state', 'date', 'note', 'active',
     ];
 
     protected $casts = [
-        'date'      => 'date',
-        'exhausted' => 'boolean',
-        'active'    => 'boolean',
+        'date'   => 'date',
+        'active' => 'boolean',
     ];
 
     public function company(): BelongsTo  { return $this->belongsTo(Company::class); }

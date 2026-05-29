@@ -61,10 +61,13 @@
                         <span class="w-40 shrink-0 text-sm text-gray-500">{{ __('inventory.qty_on_hand') }}</span>
                         <span class="flex-1 text-sm font-semibold text-gray-900">{{ number_format($lot->getOnHandQty(), 2) }}</span>
                     </div>
-                    @if($lot->description)
+                    {{-- `$lot->description` returned null because the schema
+                         column is `note`, not `description`. The block never
+                         rendered. Aligned to the correct column. --}}
+                    @if($lot->note)
                     <div class="flex items-start gap-4 py-2 border-b border-gray-100">
-                        <span class="w-40 shrink-0 text-sm text-gray-500">{{ __('inventory.description') }}</span>
-                        <span class="flex-1 text-sm text-gray-800">{{ $lot->description }}</span>
+                        <span class="w-40 shrink-0 text-sm text-gray-500">{{ __('inventory.note') }}</span>
+                        <span class="flex-1 text-sm text-gray-800">{{ $lot->note }}</span>
                     </div>
                     @endif
                 </div>

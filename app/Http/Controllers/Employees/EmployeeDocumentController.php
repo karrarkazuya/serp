@@ -139,7 +139,7 @@ class EmployeeDocumentController extends Controller
             return $document;
         });
 
-        return redirect()->route('employees.documents.show', $document)->with('success', 'Document created.');
+        return redirect()->route('employees.documents.show', $document)->with('success', __('employees.document_created'));
     }
 
     public function edit(EmployeeDocument $document)
@@ -192,7 +192,7 @@ class EmployeeDocumentController extends Controller
 
         DB::transaction(fn () => $document->update($data));
 
-        return redirect()->route('employees.documents.show', $document)->with('success', 'Document updated.');
+        return redirect()->route('employees.documents.show', $document)->with('success', __('employees.document_updated'));
     }
 
     public function archive(Request $request, EmployeeDocument $document)
@@ -207,7 +207,7 @@ class EmployeeDocumentController extends Controller
 
         DB::transaction(fn () => $document->update(['active' => false]));
 
-        return redirect()->route('employees.documents.index')->with('success', 'Document archived.');
+        return redirect()->route('employees.documents.index')->with('success', __('employees.document_archived'));
     }
 
     public function unarchive(Request $request, EmployeeDocument $document)
@@ -222,7 +222,7 @@ class EmployeeDocumentController extends Controller
 
         DB::transaction(fn () => $document->update(['active' => true]));
 
-        return redirect()->route('employees.documents.show', $document)->with('success', 'Document restored.');
+        return redirect()->route('employees.documents.show', $document)->with('success', __('employees.document_unarchived'));
     }
 
     public function unlink(EmployeeDocument $document)
@@ -242,7 +242,7 @@ class EmployeeDocumentController extends Controller
             $document->delete();
         });
 
-        return redirect()->route('employees.documents.index')->with('success', 'Document deleted.');
+        return redirect()->route('employees.documents.index')->with('success', __('employees.document_deleted'));
     }
 
     // ── Inline helpers (used from employee edit page) ─────────────────────────
@@ -281,7 +281,7 @@ class EmployeeDocumentController extends Controller
             $fileRecord?->update(['source_type' => $document->getTable(), 'source_id' => $document->id]);
         });
 
-        return redirect()->route('employees.edit', $employee)->with('success', 'Document added.');
+        return redirect()->route('employees.edit', $employee)->with('success', __('employees.document_added'));
     }
 
     public function employeeUnlink(Request $_request, Employee $employee, EmployeeDocument $document)
@@ -299,7 +299,7 @@ class EmployeeDocumentController extends Controller
             $document->delete();
         });
 
-        return redirect()->back()->with('success', 'Document deleted.');
+        return redirect()->back()->with('success', __('employees.document_deleted'));
     }
 
     public function download(Request $_request, Employee $employee, EmployeeDocument $document)

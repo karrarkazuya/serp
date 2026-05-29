@@ -43,6 +43,8 @@ return [
             ['key' => 'active',       'label' => 'Active',       'column' => 'active'],
             ['key' => 'created_at',   'label' => 'Created On',   'column' => 'created_at'],
             ['key' => 'updated_at',   'label' => 'Updated On',   'column' => 'updated_at'],
+            ['key' => 'created_by',   'label' => 'Created By',   'column' => 'created_by'],
+            ['key' => 'updated_by',   'label' => 'Updated By',   'column' => 'updated_by'],
         ],
     ],
 
@@ -78,6 +80,8 @@ return [
             ['key' => 'active',            'label' => 'Active',              'column' => 'active'],
             ['key' => 'created_at',        'label' => 'Created On',          'column' => 'created_at'],
             ['key' => 'updated_at',        'label' => 'Updated On',          'column' => 'updated_at'],
+            ['key' => 'created_by',        'label' => 'Created By',          'column' => 'created_by'],
+            ['key' => 'updated_by',        'label' => 'Updated By',          'column' => 'updated_by'],
         ],
     ],
 
@@ -104,6 +108,8 @@ return [
             ['key' => 'manager_decision_reason', 'label' => 'Manager Reason', 'column' => 'manager_decision_reason'],
             ['key' => 'hr_decision_reason',      'label' => 'HR Reason',      'column' => 'hr_decision_reason'],
             ['key' => 'created_at',        'label' => 'Created On',         'column' => 'created_at'],
+            ['key' => 'created_by',        'label' => 'Created By',         'column' => 'created_by'],
+            ['key' => 'updated_by',        'label' => 'Updated By',         'column' => 'updated_by'],
         ],
     ],
 
@@ -124,6 +130,8 @@ return [
             ['key' => 'requires_attachment',  'label' => 'Requires Attachment',  'column' => 'requires_attachment'],
             ['key' => 'company_id',          'label' => 'Company ID',   'column' => 'company_id'],
             ['key' => 'active',              'label' => 'Active',       'column' => 'active'],
+            ['key' => 'created_by',          'label' => 'Created By',   'column' => 'created_by'],
+            ['key' => 'updated_by',          'label' => 'Updated By',   'column' => 'updated_by'],
         ],
     ],
 
@@ -149,6 +157,8 @@ return [
             ['key' => 'notes',              'label' => 'Notes',               'column' => 'notes'],
             ['key' => 'created_at',         'label' => 'Created On',          'column' => 'created_at'],
             ['key' => 'updated_at',         'label' => 'Updated On',          'column' => 'updated_at'],
+            ['key' => 'created_by',         'label' => 'Created By',          'column' => 'created_by'],
+            ['key' => 'updated_by',         'label' => 'Updated By',          'column' => 'updated_by'],
         ],
     ],
 
@@ -171,6 +181,8 @@ return [
             ['key' => 'active',           'label' => 'Active',           'column' => 'active'],
             ['key' => 'created_at',       'label' => 'Created On',       'column' => 'created_at'],
             ['key' => 'updated_at',       'label' => 'Updated On',       'column' => 'updated_at'],
+            ['key' => 'created_by',       'label' => 'Created By',       'column' => 'created_by'],
+            ['key' => 'updated_by',       'label' => 'Updated By',       'column' => 'updated_by'],
         ],
     ],
 
@@ -197,6 +209,8 @@ return [
             ['key' => 'invoice_origin',     'label' => 'Source Document', 'column' => 'invoice_origin'],
             ['key' => 'created_at',    'label' => 'Created On',    'column' => 'created_at'],
             ['key' => 'updated_at',    'label' => 'Updated On',    'column' => 'updated_at'],
+            ['key' => 'created_by',    'label' => 'Created By',    'column' => 'created_by'],
+            ['key' => 'updated_by',    'label' => 'Updated By',    'column' => 'updated_by'],
         ],
     ],
 
@@ -222,6 +236,8 @@ return [
             ['key' => 'expiry_date',               'label' => 'Expiry Date',              'column' => 'expiry_date'],
             ['key' => 'active',                    'label' => 'Active',                   'column' => 'active'],
             ['key' => 'created_at',                'label' => 'Created On',               'column' => 'created_at'],
+            ['key' => 'created_by',                'label' => 'Created By',               'column' => 'created_by'],
+            ['key' => 'updated_by',                'label' => 'Updated By',               'column' => 'updated_by'],
         ],
     ],
 
@@ -247,6 +263,8 @@ return [
             ['key' => 'expiry_date',               'label' => 'Expiry Date',              'column' => 'expiry_date'],
             ['key' => 'active',                    'label' => 'Active',                   'column' => 'active'],
             ['key' => 'created_at',                'label' => 'Created On',               'column' => 'created_at'],
+            ['key' => 'created_by',                'label' => 'Created By',               'column' => 'created_by'],
+            ['key' => 'updated_by',                'label' => 'Updated By',               'column' => 'updated_by'],
         ],
     ],
 
@@ -270,6 +288,8 @@ return [
             ['key' => 'expiry_date',               'label' => 'Expiry Date',              'column' => 'expiry_date'],
             ['key' => 'active',                    'label' => 'Active',                   'column' => 'active'],
             ['key' => 'created_at',                'label' => 'Created On',               'column' => 'created_at'],
+            ['key' => 'created_by',                'label' => 'Created By',               'column' => 'created_by'],
+            ['key' => 'updated_by',                'label' => 'Updated By',               'column' => 'updated_by'],
         ],
     ],
 
@@ -295,6 +315,8 @@ return [
             ['key' => 'expiry_date',               'label' => 'Expiry Date',              'column' => 'expiry_date'],
             ['key' => 'active',                    'label' => 'Active',                   'column' => 'active'],
             ['key' => 'created_at',                'label' => 'Created On',               'column' => 'created_at'],
+            ['key' => 'created_by',                'label' => 'Created By',               'column' => 'created_by'],
+            ['key' => 'updated_by',                'label' => 'Updated By',               'column' => 'updated_by'],
         ],
     ],
 
@@ -312,6 +334,8 @@ return [
             ['key' => 'affective_date',            'label' => 'Affective Date',           'column' => 'affective_date'],
             ['key' => 'active',                    'label' => 'Active',                   'column' => 'active'],
             ['key' => 'created_at',                'label' => 'Created On',               'column' => 'created_at'],
+            ['key' => 'created_by',                'label' => 'Created By',               'column' => 'created_by'],
+            ['key' => 'updated_by',                'label' => 'Updated By',               'column' => 'updated_by'],
         ],
     ],
 
@@ -333,6 +357,8 @@ return [
             ['key' => 'affective_date',           'label' => 'Affective Date',          'column' => 'affective_date'],
             ['key' => 'active',                   'label' => 'Active',                  'column' => 'active'],
             ['key' => 'created_at',               'label' => 'Created On',              'column' => 'created_at'],
+            ['key' => 'created_by',               'label' => 'Created By',              'column' => 'created_by'],
+            ['key' => 'updated_by',               'label' => 'Updated By',              'column' => 'updated_by'],
         ],
     ],
 
@@ -349,6 +375,8 @@ return [
             ['key' => 'active',       'label' => 'Active',       'column' => 'active'],
             ['key' => 'created_at',   'label' => 'Created On',   'column' => 'created_at'],
             ['key' => 'updated_at',   'label' => 'Updated On',   'column' => 'updated_at'],
+            ['key' => 'created_by',   'label' => 'Created By',   'column' => 'created_by'],
+            ['key' => 'updated_by',   'label' => 'Updated By',   'column' => 'updated_by'],
         ],
     ],
 

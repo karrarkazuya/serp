@@ -62,15 +62,19 @@ class ProductCategoryController extends Controller
     public function store(Request $request)
     {
         abort_unless($request->user()->hasPermission('inventory.config'), 403);
+        // `closest_location` was removed from the strategy list — it had no
+        // implementation behind it and silently behaved as FIFO. Legacy rows
+        // on disk are still rendered (see ProductCategory accessor), but new
+        // writes must pick a strategy the engine actually runs.
+        //
+        // `costing_method` was previously required here but no service code
+        // consumed it — the form dropdown is now hidden. The column stays in
+        // the DB with the schema default 'standard_price' so a future
+        // valuation pipeline can adopt it without a migration.
         $data = $request->validate([
             'parent_id'        => ['nullable', 'exists:inventory_product_categories,id'],
             'name'             => ['required', 'string', 'max:255'],
-            // `closest_location` was removed from this list — it had no
-            // implementation behind it and silently behaved as FIFO. Legacy
-            // rows on disk are still rendered (see ProductCategory accessor),
-            // but new writes must pick a strategy the engine actually runs.
             'removal_strategy' => ['required', 'in:fifo,lifo,fefo'],
-            'costing_method'   => ['required', 'in:standard_price,average_cost,fifo'],
         ]);
         $data['active']      = true;
         $data['created_by']  = auth()->id();
@@ -96,15 +100,19 @@ class ProductCategoryController extends Controller
     public function write(Request $request, ProductCategory $productCategory)
     {
         abort_unless($request->user()->hasPermission('inventory.config'), 403);
+        // `closest_location` was removed from the strategy list — it had no
+        // implementation behind it and silently behaved as FIFO. Legacy rows
+        // on disk are still rendered (see ProductCategory accessor), but new
+        // writes must pick a strategy the engine actually runs.
+        //
+        // `costing_method` was previously required here but no service code
+        // consumed it — the form dropdown is now hidden. The column stays in
+        // the DB with the schema default 'standard_price' so a future
+        // valuation pipeline can adopt it without a migration.
         $data = $request->validate([
             'parent_id'        => ['nullable', 'exists:inventory_product_categories,id'],
             'name'             => ['required', 'string', 'max:255'],
-            // `closest_location` was removed from this list — it had no
-            // implementation behind it and silently behaved as FIFO. Legacy
-            // rows on disk are still rendered (see ProductCategory accessor),
-            // but new writes must pick a strategy the engine actually runs.
             'removal_strategy' => ['required', 'in:fifo,lifo,fefo'],
-            'costing_method'   => ['required', 'in:standard_price,average_cost,fifo'],
         ]);
 
         // Reject hierarchy cycles (A→B→A). Walks up to 64 levels.

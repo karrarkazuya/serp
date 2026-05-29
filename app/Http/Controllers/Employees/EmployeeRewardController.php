@@ -313,7 +313,7 @@ class EmployeeRewardController extends Controller
         $request->validate(['body' => 'required|string|max:5000']);
         DB::transaction(fn () => $reward->logComment($request->body));
 
-        return back()->with('success', 'Comment added.');
+        return back()->with('success', __('employees.comment_added'));
     }
 
     private function diffChanges(EmployeeReward $record, array $data): array

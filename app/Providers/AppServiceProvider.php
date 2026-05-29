@@ -88,7 +88,11 @@ use App\Models\Workflow\Manager;
 use App\Models\Workflow\WorkflowSharedLink;
 use App\Models\Chat\ChatMessageFile;
 use App\Models\File;
+use App\Models\Workflow\ProcedureStep;
+use App\Models\Workflow\TicketProcedureLine;
 use App\Models\Workflow\WorkflowRecordInput;
+use App\Models\Workflow\WorkflowTemplateInput;
+use App\Models\Workflow\WorkflowTemplateInputOption;
 use App\Models\Workflow\WorkflowUser;
 use App\Observers\AuditableObserver;
 use App\Observers\CompanyAccountingObserver;
@@ -265,9 +269,13 @@ class AppServiceProvider extends ServiceProvider
             Ticket::class,
             TicketTemplate::class,
             Procedure::class,
+            ProcedureStep::class,
             ProcedureTemplate::class,
+            TicketProcedureLine::class,
             WorkflowSharedLink::class,
             WorkflowRecordInput::class,
+            WorkflowTemplateInput::class,
+            WorkflowTemplateInputOption::class,
             ChatMessageFile::class,
             File::class,
             // Employees module

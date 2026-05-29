@@ -37,11 +37,18 @@ class Location extends Model
         'active'        => ['label' => 'Active',        'column' => 'active',        'type' => 'boolean'],
     ];
 
+    // Intentionally absent from $fillable: `removal_strategy`, `barcode`,
+    // `posx`, `posy`, `posz`. These columns exist in the schema (carry-overs
+    // from Odoo's location model: per-location removal override, barcode for
+    // bin scanning, 3D coordinates for warehouse mapping) but no form posts
+    // them, no view renders them, and no service reads them. Listing them
+    // as fillable invited dead mass-assignment from the request. Columns
+    // stay in the DB so the features can ship later without a schema change.
     protected $fillable = [
         'company_id', 'warehouse_id', 'parent_id',
-        'name', 'complete_name', 'usage', 'removal_strategy',
-        'scrap_location', 'return_location', 'barcode', 'notes',
-        'posx', 'posy', 'posz', 'active',
+        'name', 'complete_name', 'usage',
+        'scrap_location', 'return_location', 'notes',
+        'active',
     ];
 
     protected $casts = [

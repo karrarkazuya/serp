@@ -406,7 +406,7 @@
                         </div>
 
                         <textarea name="body" rows="3"
-                                  placeholder="Message {{ $room->isChannel() ? '#' . $room->name : $roomDisplayName }}"
+                                  placeholder="{{ __('chat.ph_message_to', ['target' => $room->isChannel() ? '#' . $room->name : $roomDisplayName]) }}"
                                   class="w-full text-sm bg-transparent border-0 px-4 pt-3 pb-2 focus:outline-none focus:ring-0 resize-none leading-relaxed placeholder-gray-400"
                                   style="min-height: 80px; max-height: 200px;"
                                   @keydown.enter.prevent.exact="$el.closest('form').requestSubmit()"

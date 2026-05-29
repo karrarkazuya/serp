@@ -71,7 +71,7 @@ class GoalController extends Controller
 
         $goal = DB::transaction(fn () => Goal::create($data));
 
-        return redirect()->route('employees.goals.show', $goal)->with('success', 'Goal created.');
+        return redirect()->route('employees.goals.show', $goal)->with('success', __('employees.goal_created'));
     }
 
     public function edit(Goal $goal)
@@ -93,7 +93,7 @@ class GoalController extends Controller
 
         DB::transaction(fn () => $goal->update($data));
 
-        return redirect()->route('employees.goals.show', $goal)->with('success', 'Goal updated.');
+        return redirect()->route('employees.goals.show', $goal)->with('success', __('employees.goal_updated'));
     }
 
     public function archive(Request $_request, Goal $goal)
@@ -102,7 +102,7 @@ class GoalController extends Controller
 
         DB::transaction(fn () => $goal->update(['active' => false]));
 
-        return redirect()->route('employees.goals.index')->with('success', 'Goal archived.');
+        return redirect()->route('employees.goals.index')->with('success', __('employees.goal_archived'));
     }
 
     public function unarchive(Request $_request, Goal $goal)
@@ -111,7 +111,7 @@ class GoalController extends Controller
 
         DB::transaction(fn () => $goal->update(['active' => true]));
 
-        return redirect()->route('employees.goals.show', $goal)->with('success', 'Goal restored.');
+        return redirect()->route('employees.goals.show', $goal)->with('success', __('employees.goal_unarchived'));
     }
 
     public function unlink(Request $_request, Goal $goal)
@@ -120,7 +120,7 @@ class GoalController extends Controller
 
         DB::transaction(fn () => $goal->delete());
 
-        return redirect()->route('employees.goals.index')->with('success', 'Goal deleted.');
+        return redirect()->route('employees.goals.index')->with('success', __('employees.goal_deleted'));
     }
 
     public function addComment(Request $request, Goal $goal)
@@ -128,6 +128,6 @@ class GoalController extends Controller
         $this->authorize('comment', $goal);
         $request->validate(['body' => 'required|string|max:5000']);
         DB::transaction(fn () => $goal->logComment($request->body));
-        return back()->with('success', 'Comment added.');
+        return back()->with('success', __('employees.comment_added'));
     }
 }

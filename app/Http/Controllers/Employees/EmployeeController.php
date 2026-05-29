@@ -218,7 +218,7 @@ class EmployeeController extends Controller
 
         $fileRecord?->update(['source_type' => $employee->getTable(), 'source_id' => $employee->id]);
 
-        return redirect()->route('employees.show', $employee)->with('success', 'Employee created successfully.');
+        return redirect()->route('employees.show', $employee)->with('success', __('employees.employee_created'));
     }
 
     public function edit(Employee $employee)
@@ -267,7 +267,7 @@ class EmployeeController extends Controller
             if (!array_key_exists($fk, $data) || !$data[$fk]) continue;
             $targetId = (int) $data[$fk];
             if ($targetId === $employee->id || $this->isEmployeeDescendantOf($targetId, $employee->id)) {
-                return back()->withInput()->with('error', "Selected {$fk} would create a circular reporting line.");
+                return back()->withInput()->with('error', __('employees.err_circular_reporting', ['field' => $fk]));
             }
         }
 
@@ -347,7 +347,7 @@ class EmployeeController extends Controller
             }
         });
 
-        return redirect()->route('employees.show', $employee)->with('success', 'Employee updated successfully.');
+        return redirect()->route('employees.show', $employee)->with('success', __('employees.employee_updated'));
     }
 
     public function archive(Request $_request, Employee $employee)
@@ -358,7 +358,7 @@ class EmployeeController extends Controller
 
         DB::transaction(fn () => $this->employeeService->archive($employee));
 
-        return redirect()->route('employees.index')->with('success', 'Employee archived.');
+        return redirect()->route('employees.index')->with('success', __('employees.employee_archived'));
     }
 
     public function unarchive(Request $_request, Employee $employee)
@@ -369,7 +369,7 @@ class EmployeeController extends Controller
 
         DB::transaction(fn () => $this->employeeService->unarchive($employee));
 
-        return redirect()->route('employees.show', $employee)->with('success', 'Employee restored.');
+        return redirect()->route('employees.show', $employee)->with('success', __('employees.employee_unarchived'));
     }
 
     public function bulkUnlink(Request $request): RedirectResponse
@@ -392,7 +392,7 @@ class EmployeeController extends Controller
             }
         });
 
-        return redirect()->route('employees.index')->with('success', 'Selected employees deleted.');
+        return redirect()->route('employees.index')->with('success', __('employees.employees_bulk_deleted'));
     }
 
     public function unlink(Request $_request, Employee $employee)
@@ -403,7 +403,7 @@ class EmployeeController extends Controller
 
         DB::transaction(fn () => $this->employeeService->delete($employee));
 
-        return redirect()->route('employees.index')->with('success', 'Employee deleted.');
+        return redirect()->route('employees.index')->with('success', __('employees.employee_deleted'));
     }
 
     /** Kept for backward compat with Blade views; redirects to unified file route. */
@@ -427,7 +427,7 @@ class EmployeeController extends Controller
         $request->validate(['body' => 'required|string|max:5000']);
         DB::transaction(fn () => $employee->logComment($request->body));
 
-        return back()->with('success', 'Comment added.');
+        return back()->with('success', __('employees.comment_added'));
     }
 
     public function checkLinkConflict(Request $request)

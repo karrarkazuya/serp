@@ -70,18 +70,18 @@
                                     <x-relation-dropdown
                                         table="inventory_locations"
                                         field="complete_name"
-                                        :name="'rules[' . $idx . '][source_location_id]'"
+                                        :name="'rules[' . $idx . '][location_src_id]'"
                                         relation="many2one"
-                                        :selected="old('rules.' . $idx . '.source_location_id', $rule->source_location_id)"
+                                        :selected="old('rules.' . $idx . '.location_src_id', $rule->location_src_id)"
                                         compact />
                                 </td>
                                 <td class="py-1.5 w-48">
                                     <x-relation-dropdown
                                         table="inventory_locations"
                                         field="complete_name"
-                                        :name="'rules[' . $idx . '][destination_location_id]'"
+                                        :name="'rules[' . $idx . '][location_dest_id]'"
                                         relation="many2one"
-                                        :selected="old('rules.' . $idx . '.destination_location_id', $rule->destination_location_id)"
+                                        :selected="old('rules.' . $idx . '.location_dest_id', $rule->location_dest_id)"
                                         compact />
                                 </td>
                                 <td class="py-1.5 w-28">

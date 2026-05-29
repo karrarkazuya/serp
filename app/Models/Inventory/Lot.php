@@ -39,15 +39,19 @@ class Lot extends Model
         'expiration_date' => ['label' => 'Expiration Date', 'column' => 'expiration_date', 'type' => 'date'],
     ];
 
+    // `removal_date` is intentionally absent from $fillable + $casts: the
+    // column exists in the schema but no form, validation, or service code
+    // ever sets or reads it. Listing it here was a vector for accidental
+    // mass-assignment of dead data. The column stays in the DB for
+    // forward-compat — if a removal-date logic ever ships, re-add it then.
     protected $fillable = [
         'company_id', 'product_id', 'name', 'ref',
-        'expiration_date', 'use_date', 'removal_date', 'note', 'active',
+        'expiration_date', 'use_date', 'note', 'active',
     ];
 
     protected $casts = [
         'expiration_date' => 'date',
         'use_date'        => 'date',
-        'removal_date'    => 'date',
         'active'          => 'boolean',
     ];
 

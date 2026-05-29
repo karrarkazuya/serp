@@ -52,8 +52,6 @@ class Uom extends Model
     public function scopeActive(Builder $q): Builder   { return $q->where('active', true); }
     public function scopeInactive(Builder $q): Builder { return $q->where('active', false); }
 
-    public function isReference(): bool { return $this->uom_type === 'reference'; }
-
     // R5 / Rule 12: views must not render raw enum DB values. uom_type
     // stored as 'reference' / 'bigger' / 'smaller' maps to a proper label.
     public const TYPE_LABELS = [

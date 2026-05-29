@@ -4,9 +4,12 @@ namespace App\Policies\Employees;
 
 use App\Models\Employees\RequestSubtype;
 use App\Models\User;
+use App\Policies\Concerns\ScopesByCompany;
 
 class RequestSubtypePolicy
 {
+    use ScopesByCompany;
+
     public function viewAny(User $user): bool
     {
         return $user->hasPermission('attendance.requests.config')
@@ -14,9 +17,10 @@ class RequestSubtypePolicy
             || $user->hasPermission('attendance.self.request');
     }
 
-    public function view(User $user, ?RequestSubtype $_subtype = null): bool
+    public function view(User $user, ?RequestSubtype $subtype = null): bool
     {
-        return $this->viewAny($user);
+        if (!$this->viewAny($user)) return false;
+        return $subtype === null || $this->withinActiveCompany($subtype);
     }
 
     public function create(User $user): bool
@@ -24,14 +28,16 @@ class RequestSubtypePolicy
         return $user->hasPermission('attendance.requests.config');
     }
 
-    public function update(User $user, ?RequestSubtype $_subtype = null): bool
+    public function update(User $user, ?RequestSubtype $subtype = null): bool
     {
-        return $user->hasPermission('attendance.requests.config');
+        if (!$user->hasPermission('attendance.requests.config')) return false;
+        return $subtype === null || $this->withinActiveCompany($subtype);
     }
 
-    public function delete(User $user, ?RequestSubtype $_subtype = null): bool
+    public function delete(User $user, ?RequestSubtype $subtype = null): bool
     {
-        return $user->hasPermission('attendance.requests.config');
+        if (!$user->hasPermission('attendance.requests.config')) return false;
+        return $subtype === null || $this->withinActiveCompany($subtype);
     }
 
     public function export(User $user): bool

@@ -88,7 +88,7 @@ window.rolePicker = function () {
         </div>
         <div class="flex-1 min-w-52">
             <label class="block text-[11px] font-semibold text-gray-400 uppercase tracking-wider mb-1">{{ __('common.description') }}</label>
-            <input type="text" name="description" value="{{ $fv('description') }}" placeholder="Optional description…"
+            <input type="text" name="description" value="{{ $fv('description') }}" placeholder="{{ __('common.optional_description') }}"
                    class="w-full px-3 py-1.5 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#714B67]/25 focus:border-[#714B67] transition-colors">
         </div>
         <div class="flex items-center gap-2 pt-4">

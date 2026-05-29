@@ -60,7 +60,7 @@ class EmployeeCategoryController extends Controller
 
         $category = DB::transaction(fn () => EmployeeCategory::create($data));
 
-        return redirect()->route('employees.categories.show', $category)->with('success', 'Category created.');
+        return redirect()->route('employees.categories.show', $category)->with('success', __('employees.category_created'));
     }
 
     public function show(EmployeeCategory $employeeCategory)
@@ -87,28 +87,28 @@ class EmployeeCategoryController extends Controller
 
         DB::transaction(fn () => $employeeCategory->update($data));
 
-        return redirect()->route('employees.categories.show', $employeeCategory)->with('success', 'Category updated.');
+        return redirect()->route('employees.categories.show', $employeeCategory)->with('success', __('employees.category_updated'));
     }
 
     public function archive(Request $_request, EmployeeCategory $employeeCategory)
     {
         $this->authorize('update', \App\Models\Employees\Employee::class);
         DB::transaction(fn () => $employeeCategory->update(['active' => false]));
-        return redirect()->route('employees.categories.index')->with('success', 'Category archived.');
+        return redirect()->route('employees.categories.index')->with('success', __('employees.category_archived'));
     }
 
     public function unarchive(Request $_request, EmployeeCategory $employeeCategory)
     {
         $this->authorize('update', \App\Models\Employees\Employee::class);
         DB::transaction(fn () => $employeeCategory->update(['active' => true]));
-        return redirect()->route('employees.categories.show', $employeeCategory)->with('success', 'Category restored.');
+        return redirect()->route('employees.categories.show', $employeeCategory)->with('success', __('employees.category_unarchived'));
     }
 
     public function unlink(Request $_request, EmployeeCategory $employeeCategory)
     {
         $this->authorize('delete', \App\Models\Employees\Employee::class);
         DB::transaction(fn () => $employeeCategory->delete());
-        return redirect()->route('employees.categories.index')->with('success', 'Category deleted.');
+        return redirect()->route('employees.categories.index')->with('success', __('employees.category_deleted'));
     }
 
     public function addComment(Request $request, EmployeeCategory $employeeCategory)
@@ -116,6 +116,6 @@ class EmployeeCategoryController extends Controller
         $this->authorize('update', \App\Models\Employees\Employee::class);
         $request->validate(['body' => 'required|string|max:5000']);
         DB::transaction(fn () => $employeeCategory->logComment($request->body));
-        return back()->with('success', 'Comment added.');
+        return back()->with('success', __('employees.comment_added'));
     }
 }

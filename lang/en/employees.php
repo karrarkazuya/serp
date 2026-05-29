@@ -10,6 +10,13 @@ return [
     'employee_archived'  => 'Employee archived.',
     'employee_unarchived'=> 'Employee restored.',
     'employee_deleted'   => 'Employee deleted.',
+    'employees_bulk_deleted' => 'Selected employees deleted.',
+    'err_circular_reporting' => 'Selected :field would create a circular reporting line.',
+    'job_position_created' => 'Job position created.',
+    'job_position_updated' => 'Job position updated.',
+    'job_position_archived' => 'Job position archived.',
+    'job_position_unarchived' => 'Job position restored.',
+    'job_position_deleted' => 'Job position deleted.',
 
     // Filters
     'probation'        => 'Probation',
@@ -103,6 +110,7 @@ return [
     'cert_bachelor'    => 'Bachelor',
     'cert_master'      => 'Master',
     'cert_doctor'      => 'Doctor',
+    'cert_other'       => 'Other',
     'field_of_study'   => 'Field of Study',
     'school'           => 'School',
 
@@ -114,6 +122,13 @@ return [
     'permit_expiration'=> 'Permit Expiration',
 
     // HR Settings
+    'employment_status' => 'Employment Status',
+    'emp_status_draft'      => 'Draft',
+    'emp_status_active'     => 'Active',
+    'emp_status_probation'  => 'Probation',
+    'emp_status_suspended'  => 'Suspended',
+    'emp_status_resigned'   => 'Resigned',
+    'emp_status_terminated' => 'Terminated',
     'hire_date'        => 'Hire Date',
     'first_contract'   => 'First Contract',
     'end_date'         => 'End Date',
@@ -127,6 +142,12 @@ return [
     'bank_transfer'    => 'Bank Transfer',
     'cheque'           => 'Cheque',
     'departure_notes'  => 'Departure Notes',
+
+    // Contract status (rendered on the inline contract editor in employee show)
+    'contract_status_draft'     => 'Draft',
+    'contract_status_open'      => 'Open',
+    'contract_status_close'     => 'Closed',
+    'contract_status_cancelled' => 'Cancelled',
 
     // Skills
     'add_skill'        => '+ Add Skill',
@@ -168,6 +189,7 @@ return [
     'certificate_deleted'   => 'Certificate deleted.',
     'certificate_archived'  => 'Certificate archived.',
     'certificate_unarchived'=> 'Certificate restored.',
+    'certificates_bulk_deleted' => 'Selected certificates deleted.',
     'certificate_type'      => 'Type of Certificate',
     'study_type'            => 'Type of Study',
     'issuing_institution'   => 'Issuing Institution',
@@ -188,6 +210,7 @@ return [
     'no_employees_assigned'     => 'No employees assigned to this position.',
     'add_employee'              => 'Add Employee',
     'select_employee'           => 'Select employee...',
+    'select_department'         => 'Select department...',
     'position_employee_added'   => 'Employee added to position.',
     'position_employee_removed' => 'Employee removed from position.',
     'position_employees_saved'  => 'Employees updated.',
@@ -252,6 +275,8 @@ return [
     'department_archived' => 'Department archived.',
     'department_unarchived'=> 'Department restored.',
     'department_deleted'  => 'Department deleted.',
+    // trans_choice helper for the department tree node meta label
+    'employees_count'     => '{1} :count employee|[2,*] :count employees',
     'department_name'     => 'Department Name',
     'parent_department'   => 'Parent Department',
     'dept_is_archived'    => 'This department is archived.',
@@ -284,6 +309,7 @@ return [
     'schedule_created'    => 'Working schedule created.',
     'schedule_updated'    => 'Working schedule updated.',
     'schedule_archived'   => 'Working schedule archived.',
+    'schedule_unarchived' => 'Working schedule restored.',
     'schedule_deleted'    => 'Working schedule deleted.',
     'schedule_name'       => 'Working Schedule Name',
     'flexible_hours'      => 'Flexible Hours',
@@ -338,6 +364,7 @@ return [
     'skill_type_created'  => 'Skill type created.',
     'skill_type_updated'  => 'Skill type updated.',
     'skill_type_archived' => 'Skill type archived.',
+    'skill_type_unarchived'=> 'Skill type restored.',
     'skill_type_deleted'  => 'Skill type deleted.',
     'skills_section'      => 'Skills',
     'levels_section'      => 'Levels',
@@ -355,6 +382,7 @@ return [
     'departure_reason_created'   => 'Departure reason created.',
     'departure_reason_updated'   => 'Departure reason updated.',
     'departure_reason_archived'  => 'Departure reason archived.',
+    'departure_reason_unarchived'=> 'Departure reason restored.',
     'departure_reason_deleted'   => 'Departure reason deleted.',
 
     // Employee Categories sub-module
@@ -363,6 +391,8 @@ return [
     'no_categories'       => 'No employee categories found.',
     'category_created'    => 'Category created.',
     'category_updated'    => 'Category updated.',
+    'category_archived'   => 'Category archived.',
+    'category_unarchived' => 'Category restored.',
     'category_deleted'    => 'Category deleted.',
     'category_name'       => 'Category Name',
 
@@ -382,6 +412,7 @@ return [
     'goal_created'        => 'Goal created.',
     'goal_updated'        => 'Goal updated.',
     'goal_archived'       => 'Goal archived.',
+    'goal_unarchived'     => 'Goal restored.',
     'goal_deleted'        => 'Goal deleted.',
 
     // Challenges sub-module
@@ -400,6 +431,7 @@ return [
     'employment_type_created'   => 'Employment type created.',
     'employment_type_updated'   => 'Employment type updated.',
     'employment_type_archived'  => 'Employment type archived.',
+    'employment_type_unarchived'=> 'Employment type restored.',
     'employment_type_deleted'   => 'Employment type deleted.',
 
     // Resume Line Types sub-module
@@ -409,6 +441,7 @@ return [
     'resume_line_type_created'   => 'Resume line type created.',
     'resume_line_type_updated'   => 'Resume line type updated.',
     'resume_line_type_archived'  => 'Resume line type archived.',
+    'resume_line_type_unarchived'=> 'Resume line type restored.',
     'resume_line_type_deleted'   => 'Resume line type deleted.',
 
     // Bonuses sub-module
@@ -450,6 +483,27 @@ return [
     'reward_archived'   => 'Reward archived.',
     'reward_unarchived' => 'Reward restored.',
     'reward_deleted'    => 'Reward deleted.',
+
+    // Contract sub-module
+    'contract_created'  => 'Contract created.',
+    'contract_updated'  => 'Contract updated.',
+    'contract_deleted'  => 'Contract deleted.',
+    'contract_active_set' => 'Active contract set.',
+
+    // Work Location sub-module
+    'work_location_created'    => 'Work location created.',
+    'work_location_updated'    => 'Work location updated.',
+    'work_location_archived'   => 'Work location archived.',
+    'work_location_unarchived' => 'Work location restored.',
+    'work_location_deleted'    => 'Work location deleted.',
+
+    // EmployeeDocument (standalone documents — the `document_*` keys earlier
+    // belong to the contract-document editor)
+    'document_created'  => 'Document created.',
+    'document_added'    => 'Document added.',
+
+    // Challenge restored
+    'challenge_unarchived' => 'Challenge restored.',
 
     // Job Grades sub-module
     'job_grades_title'     => 'Job Grades',

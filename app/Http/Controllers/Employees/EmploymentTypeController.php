@@ -70,7 +70,7 @@ class EmploymentTypeController extends Controller
 
         $employmentType = DB::transaction(fn () => EmploymentType::create($data));
 
-        return redirect()->route('employees.employment-types.show', $employmentType)->with('success', 'Employment type created.');
+        return redirect()->route('employees.employment-types.show', $employmentType)->with('success', __('employees.employment_type_created'));
     }
 
     public function edit(EmploymentType $employmentType)
@@ -91,7 +91,7 @@ class EmploymentTypeController extends Controller
 
         DB::transaction(fn () => $employmentType->update($data));
 
-        return redirect()->route('employees.employment-types.show', $employmentType)->with('success', 'Employment type updated.');
+        return redirect()->route('employees.employment-types.show', $employmentType)->with('success', __('employees.employment_type_updated'));
     }
 
     public function archive(Request $_request, EmploymentType $employmentType)
@@ -100,7 +100,7 @@ class EmploymentTypeController extends Controller
 
         DB::transaction(fn () => $employmentType->update(['active' => false]));
 
-        return redirect()->route('employees.employment-types.index')->with('success', 'Employment type archived.');
+        return redirect()->route('employees.employment-types.index')->with('success', __('employees.employment_type_archived'));
     }
 
     public function unarchive(Request $_request, EmploymentType $employmentType)
@@ -109,7 +109,7 @@ class EmploymentTypeController extends Controller
 
         DB::transaction(fn () => $employmentType->update(['active' => true]));
 
-        return redirect()->route('employees.employment-types.show', $employmentType)->with('success', 'Employment type restored.');
+        return redirect()->route('employees.employment-types.show', $employmentType)->with('success', __('employees.employment_type_unarchived'));
     }
 
     public function unlink(Request $_request, EmploymentType $employmentType)
@@ -118,7 +118,7 @@ class EmploymentTypeController extends Controller
 
         DB::transaction(fn () => $employmentType->delete());
 
-        return redirect()->route('employees.employment-types.index')->with('success', 'Employment type deleted.');
+        return redirect()->route('employees.employment-types.index')->with('success', __('employees.employment_type_deleted'));
     }
 
     public function addComment(Request $request, EmploymentType $employmentType)
@@ -126,6 +126,6 @@ class EmploymentTypeController extends Controller
         $this->authorize('comment', $employmentType);
         $request->validate(['body' => 'required|string|max:5000']);
         DB::transaction(fn () => $employmentType->logComment($request->body));
-        return back()->with('success', 'Comment added.');
+        return back()->with('success', __('employees.comment_added'));
     }
 }

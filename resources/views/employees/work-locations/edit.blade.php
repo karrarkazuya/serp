@@ -45,7 +45,7 @@
                             table="companies"
                             field="name"
                             :selected="old('company_id', $location->company_id)"
-                            placeholder="Select company..."
+                            placeholder="{{ __('common.select_company') }}"
                             compact
                         />
                     </div>

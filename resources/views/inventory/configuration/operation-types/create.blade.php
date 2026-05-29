@@ -45,11 +45,14 @@
                             </select>
                         </div>
                         <div class="flex items-center gap-4 py-2 border-b border-gray-100">
-                            <label class="w-40 shrink-0 text-sm text-gray-500">{{ __('inventory.sequence') }}</label>
+                            <label class="w-40 shrink-0 text-sm text-gray-500">{{ __('inventory.sequence_prefix') }}</label>
                             <input type="text" name="sequence_prefix" value="{{ old('sequence_prefix') }}" required class="flex-1 text-sm bg-transparent border-0 focus:outline-none px-0 py-0.5" placeholder="WH/IN/">
                         </div>
                         <div class="flex items-center gap-4 py-2 border-b border-gray-100">
-                            <label class="w-40 shrink-0 text-sm text-gray-500">{{ __('inventory.reference') }}</label>
+                            {{-- This row was labelled `inventory.reference` ("Reference"),
+                                 which made no sense over a 1-10 number input. The
+                                 field is the digit-count for the sequence — corrected. --}}
+                            <label class="w-40 shrink-0 text-sm text-gray-500">{{ __('inventory.sequence_padding') }}</label>
                             <input type="number" name="sequence_padding" value="{{ old('sequence_padding', 5) }}" min="1" max="10" class="flex-1 text-sm bg-transparent border-0 focus:outline-none px-0 py-0.5">
                         </div>
                     </div>
@@ -66,14 +69,13 @@
                             <label class="w-40 shrink-0 text-sm text-gray-500">{{ __('inventory.to') }}</label>
                             <x-relation-dropdown table="inventory_locations" field="complete_name" name="default_location_dest_id" relation="many2one" :selected="old('default_location_dest_id')" class="flex-1" compact />
                         </div>
-                        <div class="flex items-center gap-4 py-2 border-b border-gray-100">
-                            <label class="w-40 shrink-0 text-sm text-gray-500">{{ __('inventory.action') }}</label>
-                            <select name="reservation_method" class="flex-1 text-sm bg-transparent border-0 focus:outline-none px-0 py-0.5">
-                                @foreach(['at_confirm' => __('inventory.reservation_at_confirm'), 'before_scheduled' => __('inventory.reservation_before_scheduled'), 'manual' => __('inventory.reservation_manual')] as $k => $v)
-                                <option value="{{ $k }}" {{ old('reservation_method', 'at_confirm') === $k ? 'selected' : '' }}>{{ $v }}</option>
-                                @endforeach
-                            </select>
-                        </div>
+                        {{-- `reservation_method` was a dropdown labelled "Action"
+                             that posted a value with no DB column, no fillable
+                             entry, and no validation rule. Pure dead UI. The
+                             reservation behaviour in PickingService is fixed
+                             (release-then-reserve via Check Availability); add
+                             this back when the picking flow actually branches
+                             on the picked method. --}}
                     </div>
                 </div>
             </div>

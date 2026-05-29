@@ -32,17 +32,21 @@ class OperationType extends Model
         'active' => ['label' => 'Active', 'column' => 'active', 'type' => 'boolean'],
     ];
 
+    // `show_entire_packs` is intentionally absent from $fillable + $casts:
+    // the column exists in the schema but no form, validation, or service
+    // code ever sets or reads it (it would gate a "show whole-pack moves"
+    // UI feature that wasn't built). The column stays in the DB for
+    // forward-compat with that future feature.
     protected $fillable = [
         'company_id', 'warehouse_id', 'default_location_src_id', 'default_location_dest_id',
         'return_picking_type_id', 'name', 'code', 'use_existing_lots', 'use_create_lots',
-        'show_entire_packs', 'sequence_prefix', 'sequence_next_number', 'sequence_padding',
+        'sequence_prefix', 'sequence_next_number', 'sequence_padding',
         'active',
     ];
 
     protected $casts = [
         'use_existing_lots' => 'boolean',
         'use_create_lots'   => 'boolean',
-        'show_entire_packs' => 'boolean',
         'active'            => 'boolean',
     ];
 

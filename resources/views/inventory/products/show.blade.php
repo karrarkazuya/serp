@@ -67,7 +67,6 @@
                             [__('inventory.product_type'), $product->product_type_label],
                             [__('inventory.category'), $product->category?->name],
                             [__('inventory.unit_of_measure'), $product->uom?->name],
-                            [__('inventory.purchase_uom'), $product->uomPo?->name],
                             [__('inventory.barcode'), $product->barcode],
                             [__('inventory.tracking'), $product->tracking_label],
                             [__('inventory.sales_price'), number_format($product->sale_price ?? 0, 2)],
@@ -97,17 +96,10 @@
                     </div>
                 </div>
 
-                {{-- Routes --}}
-                @if($product->routes->isNotEmpty())
-                <div class="mt-4 flex items-center gap-4 py-2 border-b border-gray-100">
-                    <span class="w-40 shrink-0 text-sm text-gray-500">{{ __('inventory.section_routes') }}</span>
-                    <div class="flex flex-wrap gap-1.5">
-                        @foreach($product->routes as $route)
-                        <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-700">{{ $route->name }}</span>
-                        @endforeach
-                    </div>
-                </div>
-                @endif
+                {{-- The Product → Routes display was removed: no engine
+                     consumed product-level routes, so listing them here gave
+                     a false impression of behaviour. Existing inventory_product_routes
+                     pivot rows are preserved in the DB. --}}
 
                 {{-- Suppliers --}}
                 @if($product->suppliers->isNotEmpty())

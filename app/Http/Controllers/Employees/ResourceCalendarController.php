@@ -124,7 +124,7 @@ class ResourceCalendarController extends Controller
             return $schedule;
         });
 
-        return redirect()->route('employees.schedules.show', $schedule)->with('success', 'Working schedule created.');
+        return redirect()->route('employees.schedules.show', $schedule)->with('success', __('employees.schedule_created'));
     }
 
     public function edit(ResourceCalendar $schedule)
@@ -190,7 +190,7 @@ class ResourceCalendarController extends Controller
             }
         });
 
-        return redirect()->route('employees.schedules.show', $schedule)->with('success', 'Working schedule updated.');
+        return redirect()->route('employees.schedules.show', $schedule)->with('success', __('employees.schedule_updated'));
     }
 
     public function archive(Request $_request, ResourceCalendar $schedule)
@@ -201,7 +201,7 @@ class ResourceCalendarController extends Controller
 
         DB::transaction(fn () => $schedule->update(['active' => false]));
 
-        return redirect()->route('employees.schedules.index')->with('success', 'Working schedule archived.');
+        return redirect()->route('employees.schedules.index')->with('success', __('employees.schedule_archived'));
     }
 
     public function unarchive(Request $_request, ResourceCalendar $schedule)
@@ -212,7 +212,7 @@ class ResourceCalendarController extends Controller
 
         DB::transaction(fn () => $schedule->update(['active' => true]));
 
-        return redirect()->route('employees.schedules.show', $schedule)->with('success', 'Working schedule restored.');
+        return redirect()->route('employees.schedules.show', $schedule)->with('success', __('employees.schedule_unarchived'));
     }
 
     public function unlink(Request $_request, ResourceCalendar $schedule)
@@ -223,7 +223,7 @@ class ResourceCalendarController extends Controller
 
         DB::transaction(fn () => $schedule->delete());
 
-        return redirect()->route('employees.schedules.index')->with('success', 'Working schedule deleted.');
+        return redirect()->route('employees.schedules.index')->with('success', __('employees.schedule_deleted'));
     }
 
     public function addComment(Request $request, ResourceCalendar $schedule)
@@ -235,7 +235,7 @@ class ResourceCalendarController extends Controller
         $request->validate(['body' => 'required|string|max:5000']);
         DB::transaction(fn () => $schedule->logComment($request->body));
 
-        return back()->with('success', 'Comment added.');
+        return back()->with('success', __('employees.comment_added'));
     }
 
     private function timeToDecimal(string $time): float

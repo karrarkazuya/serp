@@ -20,7 +20,9 @@ class ProductCategory extends Model
     public array $chatterTracked = [
         'name'             => 'Name',
         'removal_strategy' => 'Removal Strategy',
-        'costing_method'   => 'Costing Method',
+        // `costing_method` removed from chatter tracking because the form
+        // dropdown is hidden and no service consumes the column — there are
+        // no value transitions to record. Re-add when valuation ships.
     ];
 
     public array $sortable = [
@@ -36,8 +38,11 @@ class ProductCategory extends Model
         'created_at'    => ['label' => 'Created on', 'column' => 'created_at',    'type' => 'datetime'],
     ];
 
+    // `costing_method` removed from $fillable: form no longer posts it and no
+    // service code reads it. Column stays in the DB with its 'standard_price'
+    // default so future valuation logic can adopt it without a schema change.
     protected $fillable = [
-        'parent_id', 'name', 'complete_name', 'removal_strategy', 'costing_method', 'active',
+        'parent_id', 'name', 'complete_name', 'removal_strategy', 'active',
     ];
 
     protected $casts = ['active' => 'boolean'];
@@ -64,7 +69,7 @@ class ProductCategory extends Model
 
     // R5 / Rule 12: views must not render raw enum DB values. Map each
     // stored value to a human label; views call $cat->removal_strategy_label
-    // and $cat->costing_method_label instead of ucwords/str_replace hacks.
+    // instead of ucwords/str_replace hacks.
     //
     // `closest_location` was REMOVED from the dropdown because the picking
     // service has no warehouse-coordinates model to compute "closest" — the
@@ -79,19 +84,6 @@ class ProductCategory extends Model
         'fefo' => 'FEFO (First Expired, First Out)',
     ];
 
-    // Costing methods are stored on the category but NOT YET CONSUMED — the
-    // picking / scrap / adjustment paths never recompute `cost` based on the
-    // method picked here. Exposing the dropdown without wiring inventory
-    // valuation amounts to a fake choice. The constant + label accessor are
-    // kept so existing rows render correctly, but the form view labels the
-    // dropdown as "(stored only)" and only `standard_price` is offered as
-    // the default. See [docs] before adding more.
-    public const COSTING_METHODS = [
-        'standard_price' => 'Standard Price',
-        'average_cost'   => 'Average Cost (AVCO)',
-        'fifo'           => 'First In, First Out (FIFO)',
-    ];
-
     public function getRemovalStrategyLabelAttribute(): string
     {
         // Legacy rows stored 'closest_location' before the dropdown was
@@ -99,10 +91,5 @@ class ProductCategory extends Model
         // that actually fires.
         $key = $this->removal_strategy === 'closest_location' ? 'fifo' : $this->removal_strategy;
         return self::REMOVAL_STRATEGIES[$key] ?? $key;
-    }
-
-    public function getCostingMethodLabelAttribute(): string
-    {
-        return self::COSTING_METHODS[$this->costing_method] ?? $this->costing_method;
     }
 }

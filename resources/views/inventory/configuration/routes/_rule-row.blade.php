@@ -19,7 +19,7 @@
         <x-relation-dropdown
             table="inventory_locations"
             field="complete_name"
-            :name="'rules[' . $idx . '][source_location_id]'"
+            :name="'rules[' . $idx . '][location_src_id]'"
             relation="many2one"
             :selected="null"
             compact />
@@ -28,7 +28,7 @@
         <x-relation-dropdown
             table="inventory_locations"
             field="complete_name"
-            :name="'rules[' . $idx . '][destination_location_id]'"
+            :name="'rules[' . $idx . '][location_dest_id]'"
             relation="many2one"
             :selected="null"
             compact />

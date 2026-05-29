@@ -304,9 +304,13 @@
                     <p class="text-xs font-semibold text-gray-400 uppercase mt-4 mb-2">{{ __('employees.family_status') }}</p>
                     <div class="flex items-center gap-4 py-1.5 border-b border-gray-100">
                         <label class="w-44 shrink-0 text-sm text-gray-500">{{ __('employees.marital_status') }}</label>
+                        {{-- Marital status options were hardcoded English strings — Arabic
+                             users saw "Single / Married / Cohabitant / Widower / Divorced"
+                             on every form. The translation keys already exist; route the
+                             labels through __() so the form respects the active locale. --}}
                         <select name="marital_status" class="flex-1 text-sm text-gray-800 bg-transparent border-0 focus:outline-none px-0 py-0">
                             <option value="">—</option>
-                            @foreach(['single' => 'Single', 'married' => 'Married', 'cohabitant' => 'Cohabitant', 'widower' => 'Widower', 'divorced' => 'Divorced'] as $k => $v)
+                            @foreach(['single' => __('employees.single'), 'married' => __('employees.married'), 'cohabitant' => __('employees.cohabitant'), 'widower' => __('employees.widower'), 'divorced' => __('employees.divorced')] as $k => $v)
                                 <option value="{{ $k }}" {{ $val('marital_status') === $k ? 'selected' : '' }}>{{ $v }}</option>
                             @endforeach
                         </select>
@@ -363,7 +367,12 @@
                         <label class="w-44 shrink-0 text-sm text-gray-500">{{ __('employees.certificate_level') }}</label>
                         <select name="certificate_level" class="flex-1 text-sm text-gray-800 bg-transparent border-0 focus:outline-none px-0 py-0">
                             <option value="">—</option>
-                            @foreach(['none' => __('employees.cert_none'), 'graduate' => __('employees.cert_graduate'), 'bachelor' => __('employees.cert_bachelor'), 'master' => __('employees.cert_master'), 'doctor' => __('employees.cert_doctor'), 'other' => __('employees.other_gender')] as $k => $v)
+                            {{-- The "other" option used `employees.other_gender` —
+                                 the GENDER dropdown's translation key. It
+                                 happens to read "Other" in en/ar, so the bug
+                                 was invisible, but the semantic mismatch was
+                                 real. Routed through cert_other now. --}}
+                            @foreach(['none' => __('employees.cert_none'), 'graduate' => __('employees.cert_graduate'), 'bachelor' => __('employees.cert_bachelor'), 'master' => __('employees.cert_master'), 'doctor' => __('employees.cert_doctor'), 'other' => __('employees.cert_other')] as $k => $v)
                                 <option value="{{ $k }}" {{ $val('certificate_level') === $k ? 'selected' : '' }}>{{ $v }}</option>
                             @endforeach
                         </select>
@@ -406,9 +415,12 @@
                                class="flex-1 text-sm text-gray-800 bg-transparent border-0 focus:outline-none px-0 py-0" placeholder="-">
                     </div>
                     <div class="flex items-center gap-4 py-1.5 border-b border-gray-100">
-                        <label class="w-44 shrink-0 text-sm text-gray-500">{{ __('common.status') }}</label>
+                        {{-- Employment status was rendered with hardcoded English
+                             labels — Arabic users saw "Draft / Active / Probation"
+                             on every employee form. Now routed through __(). --}}
+                        <label class="w-44 shrink-0 text-sm text-gray-500">{{ __('employees.employment_status') }}</label>
                         <select name="employment_status" class="flex-1 text-sm text-gray-800 bg-transparent border-0 focus:outline-none px-0 py-0">
-                            @foreach(['draft' => 'Draft', 'active' => 'Active', 'probation' => 'Probation', 'suspended' => 'Suspended', 'resigned' => 'Resigned', 'terminated' => 'Terminated'] as $k => $v)
+                            @foreach(['draft' => __('employees.emp_status_draft'), 'active' => __('employees.emp_status_active'), 'probation' => __('employees.emp_status_probation'), 'suspended' => __('employees.emp_status_suspended'), 'resigned' => __('employees.emp_status_resigned'), 'terminated' => __('employees.emp_status_terminated')] as $k => $v)
                                 <option value="{{ $k }}" {{ $val('employment_status', 'active') === $k ? 'selected' : '' }}>{{ $v }}</option>
                             @endforeach
                         </select>
@@ -443,7 +455,8 @@
                         <label class="w-44 shrink-0 text-sm text-gray-500">{{ __('employees.payment_method') }}</label>
                         <select name="payment_method" class="flex-1 text-sm text-gray-800 bg-transparent border-0 focus:outline-none px-0 py-0">
                             <option value="">—</option>
-                            @foreach(['cash' => 'Cash', 'bank_transfer' => 'Bank Transfer', 'cheque' => 'Cheque'] as $k => $v)
+                            {{-- Options were hardcoded English; the keys exist in employees.php for both locales. --}}
+                            @foreach(['cash' => __('employees.cash'), 'bank_transfer' => __('employees.bank_transfer'), 'cheque' => __('employees.cheque')] as $k => $v)
                                 <option value="{{ $k }}" {{ $val('payment_method') === $k ? 'selected' : '' }}>{{ $v }}</option>
                             @endforeach
                         </select>
@@ -454,7 +467,7 @@
                     </div>
                     <div class="flex items-start gap-4 py-1.5 border-b border-gray-100">
                         <label class="w-44 shrink-0 text-sm text-gray-500 pt-0.5">{{ __('common.notes') }}</label>
-                        <textarea name="notes" rows="4" class="flex-1 text-sm text-gray-800 bg-transparent border-0 focus:outline-none px-0 py-0 resize-y" placeholder="Internal notes...">{{ $val('notes') }}</textarea>
+                        <textarea name="notes" rows="4" class="flex-1 text-sm text-gray-800 bg-transparent border-0 focus:outline-none px-0 py-0 resize-y" placeholder="{{ __('common.internal_notes') }}">{{ $val('notes') }}</textarea>
                     </div>
                 </div>
             </div>

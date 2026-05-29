@@ -34,12 +34,38 @@
                     <div>
                         <div class="flex items-center gap-4 py-2 border-b border-gray-100">
                             <label class="w-40 shrink-0 text-sm text-gray-500">{{ __('inventory.short_name') }}</label>
-                            <input type="text" name="code" value="{{ old('code') }}" required maxlength="5" placeholder="e.g. WH" class="flex-1 text-sm bg-transparent border-0 focus:outline-none px-0 py-0.5">
+                            {{-- Field renamed from `code` → `short_name` to match
+                                 the schema column / validation rule. The previous
+                                 name silently dropped on submit and the controller
+                                 returned 422 because `short_name` was missing. --}}
+                            <input type="text" name="short_name" value="{{ old('short_name') }}" required maxlength="8" placeholder="e.g. WH" class="flex-1 text-sm bg-transparent border-0 focus:outline-none px-0 py-0.5">
                         </div>
                         <div class="flex items-center gap-4 py-2 border-b border-gray-100">
                             <label class="w-40 shrink-0 text-sm text-gray-500">{{ __('inventory.company') }}</label>
                             <x-relation-dropdown table="companies" field="name" name="company_id" relation="many2one"
                                 :selected="old('company_id', $defaultCompanyId ?? null)" class="flex-1" compact />
+                        </div>
+                    </div>
+                    <div>
+                        {{-- reception_steps + delivery_steps were missing from
+                             the original form. The request validates both as
+                             required, so warehouse creation via the UI failed
+                             with a 422 every time. Surfacing them now. --}}
+                        <div class="flex items-center gap-4 py-2 border-b border-gray-100">
+                            <label class="w-40 shrink-0 text-sm text-gray-500">{{ __('inventory.reception_steps') }}</label>
+                            <select name="reception_steps" class="flex-1 text-sm bg-transparent border-0 focus:outline-none px-0 py-0.5">
+                                @foreach(['one_step' => __('inventory.reception_one_step'), 'two_steps' => __('inventory.reception_two_steps'), 'three_steps' => __('inventory.reception_three_steps')] as $k => $v)
+                                <option value="{{ $k }}" @selected(old('reception_steps', 'one_step') === $k)>{{ $v }}</option>
+                                @endforeach
+                            </select>
+                        </div>
+                        <div class="flex items-center gap-4 py-2 border-b border-gray-100">
+                            <label class="w-40 shrink-0 text-sm text-gray-500">{{ __('inventory.delivery_steps') }}</label>
+                            <select name="delivery_steps" class="flex-1 text-sm bg-transparent border-0 focus:outline-none px-0 py-0.5">
+                                @foreach(['one_step' => __('inventory.delivery_one_step'), 'two_steps' => __('inventory.delivery_two_steps'), 'three_steps' => __('inventory.delivery_three_steps')] as $k => $v)
+                                <option value="{{ $k }}" @selected(old('delivery_steps', 'one_step') === $k)>{{ $v }}</option>
+                                @endforeach
+                            </select>
                         </div>
                     </div>
                 </div>

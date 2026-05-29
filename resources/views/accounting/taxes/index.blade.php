@@ -10,10 +10,11 @@
         </x-slot:breadcrumb>
         <x-slot:search>
             <x-search :model="\App\Models\Accounting\AccountTax::class"
+                {{-- Tax-quickfilter chips were hardcoded English; routed through __() like every other localized label. --}}
                 :quickFilters="[
-                    ['label' => 'Sales', 'url' => route('accounting.taxes.index', ['type_tax_use' => 'sale'])],
-                    ['label' => 'Purchases', 'url' => route('accounting.taxes.index', ['type_tax_use' => 'purchase'])],
-                    ['label' => 'Archived', 'url' => route('accounting.taxes.index', ['filter' => 'archived'])],
+                    ['label' => __('accounting.journal_type_sales'),    'url' => route('accounting.taxes.index', ['type_tax_use' => 'sale'])],
+                    ['label' => __('accounting.journal_type_purchase'), 'url' => route('accounting.taxes.index', ['type_tax_use' => 'purchase'])],
+                    ['label' => __('common.archived'),                  'url' => route('accounting.taxes.index', ['filter' => 'archived'])],
                 ]" />
         </x-slot:search>
     </x-toolbar>

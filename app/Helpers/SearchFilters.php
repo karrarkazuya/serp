@@ -6,6 +6,7 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Http\Request;
 use Illuminate\Support\Arr;
+use Illuminate\Support\Facades\Schema;
 
 class SearchFilters
 {
@@ -14,6 +15,12 @@ class SearchFilters
     private const DATE_OPERATORS = ['=', '!=', '>', '<', '>=', '<=', 'between', 'is_set', 'is_not_set'];
     private const BOOLEAN_OPERATORS = ['=', '!=', 'is_set', 'is_not_set'];
     private const RELATION_OPERATORS = ['=', '!=', 'in', 'not_in', 'is_set', 'is_not_set'];
+
+    /**
+     * Cache of `table => [column => bool]` for the `created_by` / `updated_by`
+     * audit columns. Hits Schema once per table per request lifecycle.
+     */
+    private static array $auditColumnCache = [];
 
     public static function apply(Builder $query, Request $request): Builder
     {
@@ -112,7 +119,59 @@ class SearchFilters
             ], $field);
         }
 
+        // Auto-inject `created_by` / `updated_by` filters for any model whose
+        // table actually carries those columns. AuditableObserver populates
+        // them; this surfaces them as user-relation filters on every list
+        // view without having to touch every model's $searchable array.
+        // A model can still override (provide its own entry) — the merge
+        // below only adds keys that weren't explicitly set.
+        self::injectAuditFilters($instance, $normalized);
+
         return $normalized;
+    }
+
+    /**
+     * Append `created_by` and `updated_by` as relation filters when the
+     * table has the columns. No-op if the columns are absent or the model
+     * already declared the keys explicitly.
+     *
+     * @param  array<string, array<string, mixed>>  $normalized
+     */
+    private static function injectAuditFilters(Model $instance, array &$normalized): void
+    {
+        $table = $instance->getTable();
+        if ($table === '') return;
+
+        foreach (['created_by' => 'common.created_by', 'updated_by' => 'common.updated_by'] as $column => $labelKey) {
+            if (array_key_exists($column, $normalized)) continue;
+            if (!self::tableHasAuditColumn($table, $column)) continue;
+
+            $normalized[$column] = [
+                'key'      => $column,
+                'label'    => trans()->has($labelKey) ? __($labelKey) : ucwords(str_replace('_', ' ', $column)),
+                'column'   => $column,
+                'type'     => 'relation',
+                'options'  => [],
+                'relation' => ['table' => 'users', 'field' => 'name'],
+            ];
+        }
+    }
+
+    private static function tableHasAuditColumn(string $table, string $column): bool
+    {
+        if (!array_key_exists($table, self::$auditColumnCache)) {
+            self::$auditColumnCache[$table] = [];
+        }
+        if (!array_key_exists($column, self::$auditColumnCache[$table])) {
+            try {
+                self::$auditColumnCache[$table][$column] = Schema::hasColumn($table, $column);
+            } catch (\Throwable $e) {
+                // Some pseudo-tables (chatter messages on synthetic relations
+                // during tests, etc.) can throw when probed. Fail closed.
+                self::$auditColumnCache[$table][$column] = false;
+            }
+        }
+        return self::$auditColumnCache[$table][$column];
     }
 
     /**

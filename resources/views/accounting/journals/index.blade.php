@@ -2,14 +2,17 @@
 @section('title', __('accounting.journals'))
 
 @php
+    // Quick-filter chip labels were hardcoded English. The translation
+    // keys already existed for every label; routing them through __() so
+    // Arabic users see the local copy on every journal index load.
     $quickFilters = [
-        ['label' => 'Active',    'params' => ['filter' => ''],          'url' => route('accounting.journals.index', array_merge(request()->except('page','filter'), ['filter' => '']))],
-        ['label' => 'Sales',     'params' => ['type' => 'sales'],       'url' => route('accounting.journals.index', array_merge(request()->except('page'), ['type' => 'sales']))],
-        ['label' => 'Purchase',  'params' => ['type' => 'purchase'],    'url' => route('accounting.journals.index', array_merge(request()->except('page'), ['type' => 'purchase']))],
-        ['label' => 'Bank',      'params' => ['type' => 'bank'],        'url' => route('accounting.journals.index', array_merge(request()->except('page'), ['type' => 'bank']))],
-        ['label' => 'Cash',      'params' => ['type' => 'cash'],        'url' => route('accounting.journals.index', array_merge(request()->except('page'), ['type' => 'cash']))],
-        ['label' => 'Misc',      'params' => ['type' => 'general'],     'url' => route('accounting.journals.index', array_merge(request()->except('page'), ['type' => 'general']))],
-        ['label' => 'Archived',  'params' => ['filter' => 'archived'],  'url' => route('accounting.journals.index', array_merge(request()->except('page'), ['filter' => 'archived']))],
+        ['label' => __('common.active'),                  'params' => ['filter' => ''],          'url' => route('accounting.journals.index', array_merge(request()->except('page','filter'), ['filter' => '']))],
+        ['label' => __('accounting.journal_type_sales'),  'params' => ['type' => 'sales'],       'url' => route('accounting.journals.index', array_merge(request()->except('page'), ['type' => 'sales']))],
+        ['label' => __('accounting.journal_type_purchase'),'params' => ['type' => 'purchase'],   'url' => route('accounting.journals.index', array_merge(request()->except('page'), ['type' => 'purchase']))],
+        ['label' => __('accounting.journal_type_bank'),   'params' => ['type' => 'bank'],        'url' => route('accounting.journals.index', array_merge(request()->except('page'), ['type' => 'bank']))],
+        ['label' => __('accounting.journal_type_cash'),   'params' => ['type' => 'cash'],        'url' => route('accounting.journals.index', array_merge(request()->except('page'), ['type' => 'cash']))],
+        ['label' => __('accounting.journal_type_general'),'params' => ['type' => 'general'],     'url' => route('accounting.journals.index', array_merge(request()->except('page'), ['type' => 'general']))],
+        ['label' => __('common.archived'),                'params' => ['filter' => 'archived'],  'url' => route('accounting.journals.index', array_merge(request()->except('page'), ['filter' => 'archived']))],
     ];
 @endphp
 

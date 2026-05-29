@@ -16,9 +16,14 @@ class RouteRule extends Model
 
     protected $table = 'inventory_route_rules';
 
+    // `group_propagation_option` is intentionally absent from $fillable: the
+    // column has a DB default of 'propagate' and no consumer code ever reads
+    // it. Listing it in $fillable was an Odoo carry-over for procurement
+    // groups, a concept this codebase doesn't model. Column kept in the DB
+    // so the schema matches if procurement groups are ever wired in.
     protected $fillable = [
         'company_id', 'route_id', 'operation_type_id', 'location_src_id', 'location_dest_id',
-        'name', 'action', 'sequence', 'delay', 'group_propagation_option', 'active',
+        'name', 'action', 'sequence', 'delay', 'active',
     ];
 
     protected $casts = ['active' => 'boolean'];

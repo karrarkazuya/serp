@@ -103,7 +103,7 @@ class DepartmentController extends Controller
     {
         $dept = DB::transaction(fn () => $this->deptService->create($request->validated()));
 
-        return redirect()->route('employees.departments.show', $dept)->with('success', 'Department created.');
+        return redirect()->route('employees.departments.show', $dept)->with('success', __('employees.department_created'));
     }
 
     public function edit(Department $department)
@@ -125,7 +125,7 @@ class DepartmentController extends Controller
 
         DB::transaction(fn () => $this->deptService->update($department, $request->validated()));
 
-        return redirect()->route('employees.departments.show', $department)->with('success', 'Department updated.');
+        return redirect()->route('employees.departments.show', $department)->with('success', __('employees.department_updated'));
     }
 
     public function archive(Request $_request, Department $department)
@@ -136,7 +136,7 @@ class DepartmentController extends Controller
 
         DB::transaction(fn () => $this->deptService->archive($department));
 
-        return redirect()->route('employees.departments.index')->with('success', 'Department archived.');
+        return redirect()->route('employees.departments.index')->with('success', __('employees.department_archived'));
     }
 
     public function unarchive(Request $_request, Department $department)
@@ -147,7 +147,7 @@ class DepartmentController extends Controller
 
         DB::transaction(fn () => $this->deptService->unarchive($department));
 
-        return redirect()->route('employees.departments.show', $department)->with('success', 'Department restored.');
+        return redirect()->route('employees.departments.show', $department)->with('success', __('employees.department_unarchived'));
     }
 
     public function unlink(Request $_request, Department $department)
@@ -158,7 +158,7 @@ class DepartmentController extends Controller
 
         DB::transaction(fn () => $this->deptService->delete($department));
 
-        return redirect()->route('employees.departments.index')->with('success', 'Department deleted.');
+        return redirect()->route('employees.departments.index')->with('success', __('employees.department_deleted'));
     }
 
     public function addComment(Request $request, Department $department)
@@ -170,7 +170,7 @@ class DepartmentController extends Controller
         $request->validate(['body' => 'required|string|max:5000']);
         DB::transaction(fn () => $department->logComment($request->body));
 
-        return back()->with('success', 'Comment added.');
+        return back()->with('success', __('employees.comment_added'));
     }
 
     private function buildDepartmentTree(Collection $departments): array
@@ -184,8 +184,8 @@ class DepartmentController extends Controller
                 'avatar'      => null,
                 'initials'    => mb_strtoupper(mb_substr($dept->name, 0, 2)),
                 'subtitle'    => $dept->manager?->name,
-                'meta'        => $dept->employees_count ? $dept->employees_count . ' employee' . ($dept->employees_count !== 1 ? 's' : '') : null,
-                'badge'       => $dept->active ? null : 'Archived',
+                'meta'        => $dept->employees_count ? trans_choice('employees.employees_count', $dept->employees_count, ['count' => $dept->employees_count]) : null,
+                'badge'       => $dept->active ? null : __('common.archived'),
                 'badge_color' => 'gray',
                 'children'    => [],
             ];

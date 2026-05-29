@@ -4,9 +4,13 @@
 
 @section('content')
 @php
+    // The `display` field is the human label rendered inside the active
+    // filter chip. Both were hardcoded "Yes" / "No" — Arabic users saw
+    // "active = Yes" on the chip even though the chip's own label was
+    // localized. Localizing display too.
     $userQuickFilters = [
-        ['label' => __('common.active'), 'url' => route('settings.users.index', array_merge(request()->except('page'), ['filters' => json_encode([['field' => 'active', 'operator' => '=', 'value' => '1', 'display' => 'Yes']])]))],
-        ['label' => __('common.inactive'), 'url' => route('settings.users.index', array_merge(request()->except('page'), ['filters' => json_encode([['field' => 'active', 'operator' => '=', 'value' => '0', 'display' => 'No']])]))],
+        ['label' => __('common.active'), 'url' => route('settings.users.index', array_merge(request()->except('page'), ['filters' => json_encode([['field' => 'active', 'operator' => '=', 'value' => '1', 'display' => __('common.yes')]])]))],
+        ['label' => __('common.inactive'), 'url' => route('settings.users.index', array_merge(request()->except('page'), ['filters' => json_encode([['field' => 'active', 'operator' => '=', 'value' => '0', 'display' => __('common.no')]])]))],
     ];
     $userGroups = [
         ['label' => __('settings.default_company'), 'url' => route('settings.users.index', array_merge(request()->except('page'), ['group_by' => 'company_id']))],

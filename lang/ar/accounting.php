@@ -664,4 +664,8 @@ return [
     'aged_draft_fallback'    => '(مسودة)',
     'overdue_doc_count'      => '{1} مستند واحد متأخر|{2} مستندان متأخران|[3,10] :count مستندات متأخرة|[11,*] :count مستنداً متأخراً',
     'settings_updated'       => 'تم تحديث الإعدادات لـ :company.',
+
+    // Form placeholders surfaced on the payments create form
+    'ph_select_journal'      => 'اختر يوميّة...',
+    'ph_auto_from_journal'   => 'تلقائي (من اليوميّة)',
 ];

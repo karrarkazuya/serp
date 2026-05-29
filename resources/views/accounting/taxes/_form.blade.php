@@ -77,7 +77,7 @@
             field="name"
             name="account_id"
             :value="old('account_id', $tax?->account_id ?? '')"
-            placeholder="None" />
+            placeholder="{{ __('common.none') }}" />
     </div>
 </div>
 

@@ -533,6 +533,220 @@ class InventoryHttpTest extends TestCase
             ->assertDontSee('Secret Other Product');
     }
 
+    /**
+     * Regression for a pre-existing RouteController bug: the create-rule form
+     * posted `source_location_id` / `destination_location_id` but the schema
+     * + Eloquent model use `location_src_id` / `location_dest_id`. The
+     * controller's validation + writes matched the form's wrong names, so
+     * mass-assignment silently dropped both location FKs and every nested
+     * rule landed in the DB with location_src_id = null and location_dest_id
+     * = null. No test caught this because routes never had a write-flow test.
+     */
+    public function test_route_edit_persists_nested_rule_locations(): void
+    {
+        app(WarehouseService::class)->create([
+            'company_id'      => $this->company->id,
+            'name'            => 'Route Edit WH',
+            'short_name'      => 'RE',
+            'reception_steps' => 'two_steps', // creates an auto-Route we can edit
+            'delivery_steps'  => 'one_step',
+            'active'          => true,
+        ]);
+        $stock    = Location::where('company_id', $this->company->id)->where('name', 'Stock')->firstOrFail();
+        $input    = Location::where('company_id', $this->company->id)->where('name', 'Input')->firstOrFail();
+        $internal = OperationType::where('company_id', $this->company->id)->where('code', 'internal')->firstOrFail();
+        $route    = \App\Models\Inventory\Route::where('company_id', $this->company->id)->firstOrFail();
+        $existingRule = $route->rules()->first();
+
+        // Add a brand-new rule (no id) + edit the existing one. Both should
+        // persist the location columns under their correct names.
+        $payload = [
+            'name'  => $route->name,
+            'rules' => [
+                [
+                    'id'                => (string) $existingRule->id,
+                    'name'              => $existingRule->name,
+                    'operation_type_id' => (string) $internal->id,
+                    'location_src_id'   => (string) $input->id,
+                    'location_dest_id'  => (string) $stock->id,
+                    'action'            => 'push',
+                    'sequence'          => '20',
+                ],
+                [
+                    'name'              => 'Bonus Stock → Stock rule',
+                    'operation_type_id' => (string) $internal->id,
+                    'location_src_id'   => (string) $stock->id,
+                    'location_dest_id'  => (string) $input->id,
+                    'action'            => 'pull',
+                    'sequence'          => '30',
+                ],
+            ],
+        ];
+
+        $this->actingAs($this->admin)
+            ->withSession(['active_company_ids' => [$this->company->id]])
+            ->put(route('inventory.config.routes.update', $route), $payload)
+            ->assertRedirect(route('inventory.config.routes.show', $route));
+
+        $existingRule->refresh();
+        $this->assertSame($input->id, $existingRule->location_src_id, 'Edit must persist location_src_id, not silently drop it.');
+        $this->assertSame($stock->id, $existingRule->location_dest_id, 'Edit must persist location_dest_id, not silently drop it.');
+
+        $newRule = $route->rules()->where('name', 'Bonus Stock → Stock rule')->firstOrFail();
+        $this->assertSame($stock->id, $newRule->location_src_id);
+        $this->assertSame($input->id, $newRule->location_dest_id);
+    }
+
+    /**
+     * Regression for a non-functional warehouse create form. The form posted
+     * `name="code"` (silently dropped by the validator and never reaching
+     * Eloquent) and omitted reception_steps + delivery_steps entirely. Since
+     * StoreWarehouseRequest validates `short_name` / `reception_steps` /
+     * `delivery_steps` as required, every UI-driven warehouse create returned
+     * 422. No existing test caught it because all other tests create
+     * warehouses through WarehouseService directly. Now the form posts the
+     * correct field names; this test exercises the full HTTP path.
+     */
+    public function test_warehouse_form_create_succeeds_with_required_schema_fields(): void
+    {
+        $this->actingAs($this->admin)
+            ->withSession(['active_company_ids' => [$this->company->id]])
+            ->post(route('inventory.config.warehouses.store'), [
+                'company_id'      => $this->company->id,
+                'name'            => 'New WH',
+                'short_name'      => 'NW',
+                'reception_steps' => 'two_steps',
+                'delivery_steps'  => 'one_step',
+            ])
+            ->assertRedirect(); // Redirects to the show page on success.
+
+        $this->assertDatabaseHas('inventory_warehouses', [
+            'company_id'      => $this->company->id,
+            'name'            => 'New WH',
+            'short_name'      => 'NW',
+            'reception_steps' => 'two_steps',
+            'delivery_steps'  => 'one_step',
+        ]);
+    }
+
+    /**
+     * Regression: the Lot create form posted `name="description"` while the
+     * controller validated and the schema stored `note`. The validator
+     * silently dropped `description`, so the field a user typed into the
+     * form never reached the DB. Form is aligned to the schema now.
+     */
+    public function test_lot_form_persists_note_field(): void
+    {
+        $product = Product::create([
+            'name'         => 'Lot-Note Product',
+            'company_id'   => $this->company->id,
+            'uom_id'       => Uom::where('name', 'Units')->firstOrFail()->id,
+            'uom_po_id'    => Uom::where('name', 'Units')->firstOrFail()->id,
+            'product_type' => 'storable',
+            'tracking'     => 'lot',
+            'active'       => true,
+            'created_by'   => $this->admin->id,
+            'updated_by'   => $this->admin->id,
+        ]);
+
+        $this->actingAs($this->admin)
+            ->withSession(['active_company_ids' => [$this->company->id]])
+            ->post(route('inventory.lots.store'), [
+                'company_id' => $this->company->id,
+                'product_id' => $product->id,
+                'name'       => 'LOT-NOTE-1',
+                'note'       => 'Inspected on receipt — visual check OK.',
+            ])
+            ->assertRedirect();
+
+        $this->assertDatabaseHas('inventory_lots', [
+            'product_id' => $product->id,
+            'name'       => 'LOT-NOTE-1',
+            'note'       => 'Inspected on receipt — visual check OK.',
+        ]);
+    }
+
+    /**
+     * Warehouse edit must accept reception_steps + delivery_steps (form now
+     * exposes them). The previous form omitted both and the validator rejected
+     * every save with a 422.
+     */
+    public function test_warehouse_form_edit_persists_steps_change(): void
+    {
+        $warehouse = app(WarehouseService::class)->create([
+            'company_id'      => $this->company->id,
+            'name'            => 'Edit Me WH',
+            'short_name'      => 'EM',
+            'reception_steps' => 'one_step',
+            'delivery_steps'  => 'one_step',
+            'active'          => true,
+        ]);
+
+        $this->actingAs($this->admin)
+            ->withSession(['active_company_ids' => [$this->company->id]])
+            ->put(route('inventory.config.warehouses.update', $warehouse), [
+                'name'            => 'Edit Me WH',
+                'reception_steps' => 'three_steps',
+                'delivery_steps'  => 'two_steps',
+            ])
+            ->assertRedirect();
+
+        $warehouse->refresh();
+        $this->assertSame('three_steps', $warehouse->reception_steps);
+        $this->assertSame('two_steps', $warehouse->delivery_steps);
+    }
+
+    /**
+     * Policy-level cross-tenant defense-in-depth. Even when a user has the
+     * inventory.read permission, `@can('view', $lot)` must fail-closed if
+     * the lot belongs to a company not in the actor's active set. This
+     * locks in the ScopesByCompany trait wired onto all 10 company-scoped
+     * inventory policies — previously only PickingPolicy had it, so a
+     * Blade `@can` on a Lot/Warehouse/ReorderRule etc. would have passed
+     * for any user with the bare permission regardless of tenant.
+     */
+    public function test_company_scoped_policies_fail_closed_on_cross_tenant_record(): void
+    {
+        $foreignCompany = Company::create(['name' => 'Foreign Co', 'active' => true]);
+        $foreignProduct = Product::create([
+            'name'         => 'Foreign Product',
+            'company_id'   => $foreignCompany->id,
+            'uom_id'       => Uom::where('name', 'Units')->firstOrFail()->id,
+            'uom_po_id'    => Uom::where('name', 'Units')->firstOrFail()->id,
+            'product_type' => 'storable',
+            'tracking'     => 'lot',
+            'active'       => true,
+            'created_by'   => $this->admin->id,
+            'updated_by'   => $this->admin->id,
+        ]);
+        $foreignLot = \App\Models\Inventory\Lot::create([
+            'company_id' => $foreignCompany->id,
+            'product_id' => $foreignProduct->id,
+            'name'       => 'FOREIGN-LOT',
+            'active'     => true,
+            'created_by' => $this->admin->id,
+            'updated_by' => $this->admin->id,
+        ]);
+
+        $this->actingAs($this->admin)
+            ->withSession(['active_company_ids' => [$this->company->id]]);
+
+        // The admin user has inventory.read globally. But the lot belongs to
+        // a company not in their active set — the policy guard must refuse.
+        $this->assertFalse(
+            \Illuminate\Support\Facades\Gate::allows('view', $foreignLot),
+            'LotPolicy::view must reject cross-tenant lots even when permission is held.'
+        );
+        $this->assertFalse(
+            \Illuminate\Support\Facades\Gate::allows('update', $foreignLot),
+            'LotPolicy::update must reject cross-tenant lots.'
+        );
+        $this->assertFalse(
+            \Illuminate\Support\Facades\Gate::allows('delete', $foreignLot),
+            'LotPolicy::delete must reject cross-tenant lots.'
+        );
+    }
+
     // ── Helpers ───────────────────────────────────────────────────────────────
 
     private function createCompany(string $name): Company

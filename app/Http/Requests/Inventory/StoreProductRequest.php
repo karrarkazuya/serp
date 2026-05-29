@@ -20,17 +20,20 @@ class StoreProductRequest extends FormRequest
     {
         $activeCompanyIds = app(CompanyContextService::class)->getActiveCompanyIds();
 
-        // Routes and supplier contacts must stay in the actor's active companies —
-        // without this, a Product in company A could be wired to a Company B route
-        // (replenishment crosses tenant boundary) or a Company B contact as supplier.
-        $routeRule   = $this->companyScopedExists('inventory_routes', $activeCompanyIds, allowNull: true);
+        // Supplier contacts must stay in the actor's active companies —
+        // without this, a Product in company A could be wired to a Company
+        // B contact as supplier.
+        //
+        // Dropped from the schema: `uom_po_id`, `weight`, `volume`, `routes`.
+        // The form no longer renders these (no consumer existed) — the
+        // controller defaults uom_po_id to uom_id so the NOT NULL column
+        // stays satisfied without user input.
         $partnerRule = $this->contactInActiveCompaniesRule($activeCompanyIds);
 
         return [
             'company_id'          => ['nullable', Rule::exists('companies', 'id')->whereIn('id', $activeCompanyIds)],
             'category_id'         => ['nullable', 'exists:inventory_product_categories,id'],
             'uom_id'              => ['required', 'exists:inventory_uoms,id'],
-            'uom_po_id'           => ['required', 'exists:inventory_uoms,id'],
             'name'                => ['required', 'string', 'max:255'],
             'internal_reference'  => ['nullable', 'string', 'max:128'],
             'barcode'             => ['nullable', 'string', 'max:128'],
@@ -41,10 +44,6 @@ class StoreProductRequest extends FormRequest
             'has_expiration_date' => ['nullable', 'boolean'],
             'cost'                => ['nullable', 'numeric', 'min:0'],
             'sale_price'          => ['nullable', 'numeric', 'min:0'],
-            'weight'              => ['nullable', 'numeric', 'min:0'],
-            'volume'              => ['nullable', 'numeric', 'min:0'],
-            'routes'              => ['nullable', 'array'],
-            'routes.*'            => [$routeRule],
             'suppliers'           => ['nullable', 'array'],
             'suppliers.*.partner_id'   => ['nullable', $partnerRule],
             'suppliers.*.partner_name' => ['nullable', 'string', 'max:255'],

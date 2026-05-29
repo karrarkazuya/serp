@@ -57,7 +57,7 @@
                 @if($r->attachment)
                 <div class="flex items-center gap-4 py-1.5 border-b border-gray-100 sm:col-span-2">
                     <span class="w-44 shrink-0 text-sm text-gray-500">{{ __('employees.request_field_attachment') }}</span>
-                    <a href="{{ route('files.serve', $r->attachment) }}" class="text-sm text-purple-700 hover:underline">Open</a>
+                    <a href="{{ route('files.serve', $r->attachment) }}" class="text-sm text-purple-700 hover:underline">{{ __('common.view') }}</a>
                 </div>
                 @endif
             </div>

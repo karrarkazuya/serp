@@ -70,7 +70,7 @@ class ResumeLineTypeController extends Controller
 
         $resumeLineType = DB::transaction(fn () => ResumeLineType::create($data));
 
-        return redirect()->route('employees.resume-line-types.show', $resumeLineType)->with('success', 'Resume line type created.');
+        return redirect()->route('employees.resume-line-types.show', $resumeLineType)->with('success', __('employees.resume_line_type_created'));
     }
 
     public function edit(ResumeLineType $resumeLineType)
@@ -91,7 +91,7 @@ class ResumeLineTypeController extends Controller
 
         DB::transaction(fn () => $resumeLineType->update($data));
 
-        return redirect()->route('employees.resume-line-types.show', $resumeLineType)->with('success', 'Resume line type updated.');
+        return redirect()->route('employees.resume-line-types.show', $resumeLineType)->with('success', __('employees.resume_line_type_updated'));
     }
 
     public function archive(Request $_request, ResumeLineType $resumeLineType)
@@ -100,7 +100,7 @@ class ResumeLineTypeController extends Controller
 
         DB::transaction(fn () => $resumeLineType->update(['active' => false]));
 
-        return redirect()->route('employees.resume-line-types.index')->with('success', 'Resume line type archived.');
+        return redirect()->route('employees.resume-line-types.index')->with('success', __('employees.resume_line_type_archived'));
     }
 
     public function unarchive(Request $_request, ResumeLineType $resumeLineType)
@@ -109,7 +109,7 @@ class ResumeLineTypeController extends Controller
 
         DB::transaction(fn () => $resumeLineType->update(['active' => true]));
 
-        return redirect()->route('employees.resume-line-types.show', $resumeLineType)->with('success', 'Resume line type restored.');
+        return redirect()->route('employees.resume-line-types.show', $resumeLineType)->with('success', __('employees.resume_line_type_unarchived'));
     }
 
     public function unlink(Request $_request, ResumeLineType $resumeLineType)
@@ -118,7 +118,7 @@ class ResumeLineTypeController extends Controller
 
         DB::transaction(fn () => $resumeLineType->delete());
 
-        return redirect()->route('employees.resume-line-types.index')->with('success', 'Resume line type deleted.');
+        return redirect()->route('employees.resume-line-types.index')->with('success', __('employees.resume_line_type_deleted'));
     }
 
     public function addComment(Request $request, ResumeLineType $resumeLineType)
@@ -126,6 +126,6 @@ class ResumeLineTypeController extends Controller
         $this->authorize('comment', $resumeLineType);
         $request->validate(['body' => 'required|string|max:5000']);
         DB::transaction(fn () => $resumeLineType->logComment($request->body));
-        return back()->with('success', 'Comment added.');
+        return back()->with('success', __('employees.comment_added'));
     }
 }

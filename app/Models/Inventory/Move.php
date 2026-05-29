@@ -57,5 +57,4 @@ class Move extends Model
 
     public function getQtyDoneAttribute($val): float { return (float) $val; }
     public function getProductQtyAttribute($val): float { return (float) $val; }
-    public function getRemainingQty(): float { return max(0, $this->product_qty - $this->qty_done); }
 }

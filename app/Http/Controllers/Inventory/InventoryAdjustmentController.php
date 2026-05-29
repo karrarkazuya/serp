@@ -90,11 +90,13 @@ class InventoryAdjustmentController extends Controller
         // Scope `company_id` at the validation layer (not after the fact) so the
         // gate can't disappear under refactor. Matches how every other Inventory
         // request validates company_id.
+        // `exhausted` is no longer accepted — see InventoryAdjustment model
+        // for why (toggle UI never shipped). Removing the validation rule
+        // stops the controller from advertising a knob that nothing reads.
         $data = $request->validate([
             'company_id' => ['required', \Illuminate\Validation\Rule::exists('companies', 'id')->whereIn('id', $activeCompanyIds)],
             'date'       => ['nullable', 'date'],
             'note'       => ['nullable', 'string'],
-            'exhausted'  => ['boolean'],
         ]);
 
         $data['created_by'] = auth()->id();

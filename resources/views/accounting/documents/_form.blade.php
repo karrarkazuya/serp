@@ -185,7 +185,11 @@ window._docFormData = {
     <div class="mb-8 flex items-start justify-between gap-6">
         <input type="hidden" name="move_type" value="{{ $config['move_type'] }}">
         <div class="flex-1 min-w-0">
-            <p class="text-sm text-gray-500">{{ match($config['move_type']) { 'out_invoice' => 'Customer Invoice', 'in_invoice' => 'Vendor Bill', 'out_refund' => 'Customer Credit Note', 'in_refund' => 'Vendor Refund', default => $config['singular'] } }}</p>
+            {{-- Document type subtitle was hardcoded English. The
+                 move_type_* lang keys already exist in both locales — route
+                 the match() through them so Arabic users see the localized
+                 subtitle on every invoice / bill / credit note. --}}
+            <p class="text-sm text-gray-500">{{ match($config['move_type']) { 'out_invoice' => __('accounting.move_type_out_invoice'), 'in_invoice' => __('accounting.move_type_in_invoice'), 'out_refund' => __('accounting.move_type_out_refund'), 'in_refund' => __('accounting.move_type_in_refund'), default => $config['singular'] } }}</p>
             <input type="text" name="name"
                    value="{{ old('name', $document?->name ?? '') }}"
                    placeholder="{{ match($config['move_type']) { 'out_invoice' => 'INV/2026/00001', 'in_invoice' => 'BILL/2026/00001', 'out_refund' => 'RINV/2026/00001', 'in_refund' => 'RSUPP/2026/00001', default => 'REF/2026/00001' } }}"
@@ -321,7 +325,7 @@ window._docFormData = {
                                    @input.debounce.300ms="productSearch(i, line.product_label)"
                                    @focus="line.product_open = true"
                                    @blur="setTimeout(() => line.product_open = false, 150)"
-                                   placeholder="Search product…"
+                                   placeholder="{{ __('common.search_product') }}"
                                    autocomplete="off"
                                    class="w-full text-sm font-medium text-gray-700 bg-white border-0 border-b border-purple-400 focus:outline-none focus:ring-0 px-0 py-1">
                             <div x-show="line.product_open && line.product_results.length > 0"
@@ -334,7 +338,7 @@ window._docFormData = {
                                 </template>
                             </div>
                             {{-- Editable label shown below the product picker --}}
-                            <input type="text" :name="'items[' + i + '][name]'" x-model="line.name" maxlength="255" class="w-full text-xs text-gray-500 border-0 border-b border-dotted border-gray-200 focus:border-purple-400 focus:outline-none focus:ring-0 px-0 py-0.5 mt-0.5" placeholder="Description (optional)">
+                            <input type="text" :name="'items[' + i + '][name]'" x-model="line.name" maxlength="255" class="w-full text-xs text-gray-500 border-0 border-b border-dotted border-gray-200 focus:border-purple-400 focus:outline-none focus:ring-0 px-0 py-0.5 mt-0.5" placeholder="{{ __('common.description_optional') }}">
                         </td>
                         <td class="px-4 py-2 relative">
                             <input type="hidden" :name="'items[' + i + '][account_id]'" :value="line.account_id">
@@ -534,7 +538,7 @@ window._docFormData = {
                     </div>
                     <div>
                         <label class="block text-xs font-semibold text-gray-500 uppercase mb-1">{{ __('accounting.terms_and_conditions') }}</label>
-                        <textarea name="narration" rows="5" class="w-full text-sm border border-gray-200 rounded px-3 py-2 focus:outline-none focus:ring-1 focus:ring-purple-500" placeholder="Terms and Conditions">{{ $val('narration') }}</textarea>
+                        <textarea name="narration" rows="5" class="w-full text-sm border border-gray-200 rounded px-3 py-2 focus:outline-none focus:ring-1 focus:ring-purple-500" placeholder="{{ __('accounting.terms_and_conditions') }}">{{ $val('narration') }}</textarea>
                     </div>
                 </div>
             </div>

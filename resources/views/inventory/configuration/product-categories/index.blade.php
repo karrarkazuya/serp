@@ -24,7 +24,6 @@
             <x-sortable-th column="complete_name" :label="__('inventory.col_name')" class="px-4 py-2" :default="true" />
             <th class="px-3 py-2 text-xs font-semibold text-gray-500 uppercase tracking-wide text-start">{{ __('inventory.col_parent') }}</th>
             <th class="px-3 py-2 text-xs font-semibold text-gray-500 uppercase tracking-wide text-start">{{ __('inventory.removal_strategy') }}</th>
-            <th class="px-3 py-2 text-xs font-semibold text-gray-500 uppercase tracking-wide text-start">{{ __('inventory.col_costing_method') }}</th>
         </x-slot:columns>
 
         @forelse($groups as $group)
@@ -45,7 +44,6 @@
                 <td class="px-4 py-2 font-medium text-gray-900">{{ $category->complete_name }}</td>
                 <td class="px-3 py-2 text-sm text-gray-600">{{ $category->parent?->name ?? '-' }}</td>
                 <td class="px-3 py-2 text-sm text-gray-600">{{ $category->removal_strategy_label }}</td>
-                <td class="px-3 py-2 text-sm text-gray-600">{{ $category->costing_method_label }}</td>
             </tr>
             @endforeach
         </tbody>
@@ -62,14 +60,12 @@
             <x-sortable-th column="complete_name" :label="__('inventory.col_name')" class="px-4 py-2" :default="true" />
             <th class="px-3 py-2 text-xs font-semibold text-gray-500 uppercase tracking-wide text-start">{{ __('inventory.col_parent') }}</th>
             <th class="px-3 py-2 text-xs font-semibold text-gray-500 uppercase tracking-wide text-start">{{ __('inventory.removal_strategy') }}</th>
-            <th class="px-3 py-2 text-xs font-semibold text-gray-500 uppercase tracking-wide text-start">{{ __('inventory.col_costing_method') }}</th>
         </x-slot:columns>
         @foreach($categories as $category)
         <tr class="hover:bg-purple-50/30 cursor-pointer" onclick="window.location='{{ route('inventory.config.product-categories.show', $category) }}'">
             <td class="px-4 py-2 font-medium text-gray-900">{{ $category->complete_name }}</td>
             <td class="px-3 py-2 text-sm text-gray-600">{{ $category->parent?->name ?? '-' }}</td>
             <td class="px-3 py-2 text-sm text-gray-600">{{ $category->removal_strategy_label }}</td>
-            <td class="px-3 py-2 text-sm text-gray-600">{{ $category->costing_method_label }}</td>
         </tr>
         @endforeach
     </x-list>

@@ -4,9 +4,10 @@
 
 @section('content')
 @php
+    // `display` localized — same rationale as in the users index.
     $roleQuickFilters = [
-        ['label' => __('common.active'), 'url' => route('settings.roles.index', array_merge(request()->except('page'), ['filters' => json_encode([['field' => 'active', 'operator' => '=', 'value' => '1', 'display' => 'Yes']])]))],
-        ['label' => __('common.inactive'), 'url' => route('settings.roles.index', array_merge(request()->except('page'), ['filters' => json_encode([['field' => 'active', 'operator' => '=', 'value' => '0', 'display' => 'No']])]))],
+        ['label' => __('common.active'), 'url' => route('settings.roles.index', array_merge(request()->except('page'), ['filters' => json_encode([['field' => 'active', 'operator' => '=', 'value' => '1', 'display' => __('common.yes')]])]))],
+        ['label' => __('common.inactive'), 'url' => route('settings.roles.index', array_merge(request()->except('page'), ['filters' => json_encode([['field' => 'active', 'operator' => '=', 'value' => '0', 'display' => __('common.no')]])]))],
     ];
     $roleGroups = [
         ['label' => __('common.status'), 'url' => route('settings.roles.index', array_merge(request()->except('page'), ['group_by' => 'active']))],

@@ -118,7 +118,7 @@ class EmployeeCertificateController extends Controller
             return $certificate;
         });
 
-        return redirect()->route('employees.certificates.show', $certificate)->with('success', 'Certificate created.');
+        return redirect()->route('employees.certificates.show', $certificate)->with('success', __('employees.certificate_created'));
     }
 
     public function edit(EmployeeCertificate $certificate)
@@ -166,7 +166,7 @@ class EmployeeCertificateController extends Controller
             }
         });
 
-        return redirect()->route('employees.certificates.show', $certificate)->with('success', 'Certificate updated.');
+        return redirect()->route('employees.certificates.show', $certificate)->with('success', __('employees.certificate_updated'));
     }
 
     public function archive(EmployeeCertificate $certificate)
@@ -184,7 +184,7 @@ class EmployeeCertificateController extends Controller
             $certificate->logSystemMessage('Certificate archived.');
         });
 
-        return redirect()->route('employees.certificates.index')->with('success', 'Certificate archived.');
+        return redirect()->route('employees.certificates.index')->with('success', __('employees.certificate_archived'));
     }
 
     public function unarchive(EmployeeCertificate $certificate)
@@ -202,7 +202,7 @@ class EmployeeCertificateController extends Controller
             $certificate->logSystemMessage('Certificate restored.');
         });
 
-        return redirect()->route('employees.certificates.show', $certificate)->with('success', 'Certificate restored.');
+        return redirect()->route('employees.certificates.show', $certificate)->with('success', __('employees.certificate_unarchived'));
     }
 
     public function bulkUnlink(Request $request): RedirectResponse
@@ -227,7 +227,7 @@ class EmployeeCertificateController extends Controller
             }
         });
 
-        return redirect()->route('employees.certificates.index')->with('success', 'Selected certificates deleted.');
+        return redirect()->route('employees.certificates.index')->with('success', __('employees.certificates_bulk_deleted'));
     }
 
     public function unlink(EmployeeCertificate $certificate)
@@ -242,7 +242,7 @@ class EmployeeCertificateController extends Controller
 
         DB::transaction(fn () => $certificate->delete());
 
-        return redirect()->route('employees.certificates.index')->with('success', 'Certificate deleted.');
+        return redirect()->route('employees.certificates.index')->with('success', __('employees.certificate_deleted'));
     }
 
     public function addComment(Request $request, EmployeeCertificate $certificate)
@@ -259,7 +259,7 @@ class EmployeeCertificateController extends Controller
 
         DB::transaction(fn () => $certificate->logComment($request->body));
 
-        return back()->with('success', 'Comment added.');
+        return back()->with('success', __('employees.comment_added'));
     }
 
     private function diffChanges(EmployeeCertificate $certificate, array $data): array

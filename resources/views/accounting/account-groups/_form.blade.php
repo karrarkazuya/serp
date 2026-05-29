@@ -47,7 +47,7 @@
                 table="accounting_account_groups"
                 field="name"
                 :value="old('parent_id', $accountGroup->parent_id ?? '')"
-                placeholder="None (top-level)" />
+                placeholder="{{ __('common.none') }}" />
         </div>
     </div>
 </div>

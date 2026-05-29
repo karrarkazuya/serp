@@ -71,7 +71,7 @@ class ChallengeController extends Controller
 
         $challenge = DB::transaction(fn () => Challenge::create($data));
 
-        return redirect()->route('employees.challenges.show', $challenge)->with('success', 'Challenge created.');
+        return redirect()->route('employees.challenges.show', $challenge)->with('success', __('employees.challenge_created'));
     }
 
     public function edit(Challenge $challenge)
@@ -93,7 +93,7 @@ class ChallengeController extends Controller
 
         DB::transaction(fn () => $challenge->update($data));
 
-        return redirect()->route('employees.challenges.show', $challenge)->with('success', 'Challenge updated.');
+        return redirect()->route('employees.challenges.show', $challenge)->with('success', __('employees.challenge_updated'));
     }
 
     public function archive(Request $_request, Challenge $challenge)
@@ -102,7 +102,7 @@ class ChallengeController extends Controller
 
         DB::transaction(fn () => $challenge->update(['active' => false]));
 
-        return redirect()->route('employees.challenges.index')->with('success', 'Challenge archived.');
+        return redirect()->route('employees.challenges.index')->with('success', __('employees.challenge_archived'));
     }
 
     public function unarchive(Request $_request, Challenge $challenge)
@@ -111,7 +111,7 @@ class ChallengeController extends Controller
 
         DB::transaction(fn () => $challenge->update(['active' => true]));
 
-        return redirect()->route('employees.challenges.show', $challenge)->with('success', 'Challenge restored.');
+        return redirect()->route('employees.challenges.show', $challenge)->with('success', __('employees.challenge_unarchived'));
     }
 
     public function unlink(Request $_request, Challenge $challenge)
@@ -120,7 +120,7 @@ class ChallengeController extends Controller
 
         DB::transaction(fn () => $challenge->delete());
 
-        return redirect()->route('employees.challenges.index')->with('success', 'Challenge deleted.');
+        return redirect()->route('employees.challenges.index')->with('success', __('employees.challenge_deleted'));
     }
 
     public function addComment(Request $request, Challenge $challenge)
@@ -128,6 +128,6 @@ class ChallengeController extends Controller
         $this->authorize('comment', $challenge);
         $request->validate(['body' => 'required|string|max:5000']);
         DB::transaction(fn () => $challenge->logComment($request->body));
-        return back()->with('success', 'Comment added.');
+        return back()->with('success', __('employees.comment_added'));
     }
 }

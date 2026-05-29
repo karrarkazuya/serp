@@ -45,7 +45,7 @@ class ContractController extends Controller
             $this->chatterService->log($employee, "Contract created: {$contract->name}", 'log');
         });
 
-        return redirect()->route('employees.show', $employee)->with('success', 'Contract created.');
+        return redirect()->route('employees.show', $employee)->with('success', __('employees.contract_created'));
     }
 
     public function write(Request $request, Employee $employee, Contract $contract)
@@ -94,7 +94,7 @@ class ContractController extends Controller
             }
         });
 
-        return redirect()->route('employees.show', $employee)->with('success', 'Contract updated.');
+        return redirect()->route('employees.show', $employee)->with('success', __('employees.contract_updated'));
     }
 
     public function setActive(Request $_request, Employee $employee, Contract $contract)
@@ -109,7 +109,7 @@ class ContractController extends Controller
             $this->chatterService->log($employee, "Current contract set to: {$contract->name}", 'log');
         });
 
-        return redirect()->route('employees.show', $employee)->with('success', 'Active contract set.');
+        return redirect()->route('employees.show', $employee)->with('success', __('employees.contract_active_set'));
     }
 
     public function unlink(Request $_request, Employee $employee, Contract $contract)
@@ -131,7 +131,7 @@ class ContractController extends Controller
             $this->chatterService->log($employee, "Contract deleted: {$name}", 'system');
         });
 
-        return redirect()->route('employees.show', $employee)->with('success', 'Contract deleted.');
+        return redirect()->route('employees.show', $employee)->with('success', __('employees.contract_deleted'));
     }
 
     private function detectContractChanges(Contract $contract, array $data): array

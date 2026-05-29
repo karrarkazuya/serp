@@ -77,12 +77,9 @@ return [
     'product'             => 'Product',
     'category'            => 'Category',
     'unit_of_measure'     => 'Unit of Measure',
-    'purchase_uom'        => 'Purchase UoM',
     'sales_price'         => 'Sales Price',
     'cost'                => 'Cost',
     'tracking'            => 'Tracking',
-    'weight'              => 'Weight (kg)',
-    'volume'              => 'Volume (m³)',
     'reference'           => 'Reference',
     'barcode'             => 'Barcode',
     'product_type'        => 'Product Type',
@@ -120,9 +117,16 @@ return [
     'min_qty'             => 'Min Qty',
     'max_qty'             => 'Max Qty',
     'short_name'          => 'Short Name',
+    'reception_steps'       => 'Incoming Shipments',
+    'delivery_steps'        => 'Outgoing Shipments',
+    'reception_one_step'    => 'Receive directly to stock (1 step)',
+    'reception_two_steps'   => 'Receive then transfer to stock (2 steps)',
+    'reception_three_steps' => 'Receive, quality check, then transfer to stock (3 steps)',
+    'delivery_one_step'     => 'Ship directly from stock (1 step)',
+    'delivery_two_steps'    => 'Pick from stock then ship (2 steps)',
+    'delivery_three_steps'  => 'Pick, pack, then ship (3 steps)',
     'parent'              => 'Parent',
     'removal_strategy'    => 'Removal Strategy',
-    'costing_method'      => 'Costing Method',
     'name'                => 'Name',
     'type'                => 'Type',
     'ratio'               => 'Ratio',
@@ -131,6 +135,8 @@ return [
     'route'               => 'Route',
     'warehouse'           => 'Warehouse',
     'sequence'            => 'Sequence',
+    'sequence_prefix'     => 'Sequence Prefix',
+    'sequence_padding'    => 'Number Padding',
     'action'              => 'Action',
     'price'               => 'Price',
     'product_code'        => 'Product Code',
@@ -171,7 +177,6 @@ return [
     'col_name'           => 'Name',
     'col_short_name'     => 'Short Name',
     'col_parent'         => 'Parent',
-    'col_costing_method' => 'Costing Method',
     'col_type'           => 'Type',
     'col_warehouse'      => 'Warehouse',
     'col_ratio'          => 'Ratio',
@@ -188,7 +193,6 @@ return [
     'section_purchase'    => 'Purchase',
     'section_description' => 'Description',
     'section_vendors'     => 'Vendors / Suppliers',
-    'section_routes'      => 'Routes',
     'section_rules'       => 'Rules',
 
     // Status Labels
@@ -290,19 +294,10 @@ return [
     'removal_fefo'          => 'First Expiry First Out (FEFO)',
     'removal_closest'       => 'Closest Location',
 
-    // Costing method options
-    'costing_standard'      => 'Standard Price',
-    'costing_avco'          => 'Average Cost (AVCO)',
-
     // Operation type code options
     'op_type_incoming'      => 'Receipt',
     'op_type_outgoing'      => 'Delivery',
     'op_type_internal'      => 'Internal Transfer',
-
-    // Reservation method options
-    'reservation_at_confirm'       => 'At Confirmation',
-    'reservation_before_scheduled' => 'Before Scheduled Date',
-    'reservation_manual'           => 'Manually',
 
     // ── Flash messages (used by inventory controllers) ──────────────────────
     'created'              => 'Created successfully.',
@@ -352,7 +347,6 @@ return [
     'err_adjustment_no_virtual_loc'  => 'Inventory Adjustments virtual location not found.',
     'err_adjustment_done_no_delete'  => 'Done adjustments cannot be deleted.',
     'stored_only'                    => 'stored only',
-    'costing_method_not_consumed'    => 'The costing method is stored on the category but not yet wired to inventory valuation — the product cost field is still used as-is for every move.',
     'origin_replenishment'           => 'Replenishment',
     'origin_return_of'               => 'Return of :ref',
     'best_before_not_consumed'       => 'Stored on the lot, but not yet read by any picking/scrap path — only Expiration Date drives FEFO sorting and the "expired" badge.',
@@ -360,7 +354,6 @@ return [
     'err_done_move_no_delete'        => 'Move #:id is done and cannot be deleted. Cancel the picking or create a return instead.',
     'err_done_moveline_immutable'    => 'Move line #:id belongs to a done move and cannot be modified.',
     'err_done_moveline_no_delete'    => 'Move line #:id belongs to a done move and cannot be deleted.',
-    'product_inert_fields_notice'    => 'Heads up: several product fields are stored but not yet consumed — internal reference, barcode, weight, volume, purchase UoM, and routes. They save with the product but no picking, scrap, or report path reads them today. The suppliers table is now read by the replenishment flow (vendor stamp + lead time), but is not consulted anywhere else.',
     // PickingService exception messages (bubble up as flash errors)
     'err_transfer_bad_state'         => 'Transfer cannot be validated in its current state.',
     'err_product_needs_lot'          => 'Product ":name" requires a lot/serial number. Please fill in the detailed operations before validating.',
@@ -398,6 +391,13 @@ return [
     'wh_optype_receipts'     => ':short: Receipts',
     'wh_optype_deliveries'   => ':short: Delivery Orders',
     'wh_optype_internal'     => ':short: Internal Transfers',
+    // Push-chain route names (auto-created by WarehouseService for multi-step receipts)
+    'route_receipt_two_step'   => ':short: Receipt in 2 steps (Input → Stock)',
+    'route_receipt_three_step' => ':short: Receipt in 3 steps (Input → QC → Stock)',
+    'route_rule_input_to_stock' => 'Push: :short Input → Stock',
+    'route_rule_input_to_qc'    => 'Push: :short Input → QC',
+    'route_rule_qc_to_stock'    => 'Push: :short QC → Stock',
+    'chatter_chain_of'          => 'Auto-created from :ref via push rule.',
 
     // ── Service-layer ledger labels (line names on inventory moves) ─────────
     'line_scrap_of'             => 'Scrap: :product',

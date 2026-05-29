@@ -71,7 +71,7 @@ class BadgeController extends Controller
 
         $badge = DB::transaction(fn () => Badge::create($data));
 
-        return redirect()->route('employees.badges.show', $badge)->with('success', 'Badge created.');
+        return redirect()->route('employees.badges.show', $badge)->with('success', __('employees.badge_created'));
     }
 
     public function edit(Badge $badge)
@@ -93,7 +93,7 @@ class BadgeController extends Controller
 
         DB::transaction(fn () => $badge->update($data));
 
-        return redirect()->route('employees.badges.show', $badge)->with('success', 'Badge updated.');
+        return redirect()->route('employees.badges.show', $badge)->with('success', __('employees.badge_updated'));
     }
 
     public function archive(Request $_request, Badge $badge)
@@ -102,7 +102,7 @@ class BadgeController extends Controller
 
         DB::transaction(fn () => $badge->update(['active' => false]));
 
-        return redirect()->route('employees.badges.index')->with('success', 'Badge archived.');
+        return redirect()->route('employees.badges.index')->with('success', __('employees.badge_archived'));
     }
 
     public function unarchive(Request $_request, Badge $badge)
@@ -111,7 +111,7 @@ class BadgeController extends Controller
 
         DB::transaction(fn () => $badge->update(['active' => true]));
 
-        return redirect()->route('employees.badges.show', $badge)->with('success', 'Badge restored.');
+        return redirect()->route('employees.badges.show', $badge)->with('success', __('employees.badge_unarchived'));
     }
 
     public function unlink(Request $_request, Badge $badge)
@@ -120,7 +120,7 @@ class BadgeController extends Controller
 
         DB::transaction(fn () => $badge->delete());
 
-        return redirect()->route('employees.badges.index')->with('success', 'Badge deleted.');
+        return redirect()->route('employees.badges.index')->with('success', __('employees.badge_deleted'));
     }
 
     public function addComment(Request $request, Badge $badge)
@@ -128,6 +128,6 @@ class BadgeController extends Controller
         $this->authorize('comment', $badge);
         $request->validate(['body' => 'required|string|max:5000']);
         DB::transaction(fn () => $badge->logComment($request->body));
-        return back()->with('success', 'Comment added.');
+        return back()->with('success', __('employees.comment_added'));
     }
 }

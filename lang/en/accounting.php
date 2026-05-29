@@ -679,4 +679,8 @@ return [
     'overdue_doc_count'      => '{1} :count overdue document|[2,*] :count overdue documents',
     // Settings success
     'settings_updated'       => 'Settings updated for :company.',
+
+    // Form placeholders surfaced on the payments create form
+    'ph_select_journal'        => 'Select journal…',
+    'ph_auto_from_journal'     => 'Auto (from journal)',
 ];

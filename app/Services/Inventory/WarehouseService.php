@@ -4,6 +4,8 @@ namespace App\Services\Inventory;
 
 use App\Models\Inventory\Location;
 use App\Models\Inventory\OperationType;
+use App\Models\Inventory\Route;
+use App\Models\Inventory\RouteRule;
 use App\Models\Inventory\Warehouse;
 use App\Services\Chatter\ChatterService;
 
@@ -133,12 +135,22 @@ class WarehouseService
         $supplierLoc  = Location::where('usage', 'supplier')->whereNull('company_id')->first();
         $customerLoc  = Location::where('usage', 'customer')->whereNull('company_id')->first();
 
+        // Odoo parity: the receipt OperationType's default destination is the
+        // FIRST location of the receipt flow. For 1-step that's Stock; for
+        // 2/3-step it's Input. Without this, a multi-step warehouse would
+        // create receipts that go straight to Stock (skipping Input/QC) and
+        // the chain push rules never fire — multi-step would be decorative.
+        $receiptFirstDest = match ($warehouse->reception_steps) {
+            'two_steps', 'three_steps' => $inputLoc->id,
+            default                    => $stockLoc->id,
+        };
+
         // Create operation types
         $receiptType = OperationType::create([
             'company_id'              => $companyId,
             'warehouse_id'            => $warehouse->id,
             'default_location_src_id' => $supplierLoc?->id,
-            'default_location_dest_id' => $stockLoc->id,
+            'default_location_dest_id' => $receiptFirstDest,
             'name'                    => __('inventory.wh_optype_receipts', ['short' => $short]),
             'code'                    => 'incoming',
             'use_create_lots'         => true,
@@ -184,6 +196,25 @@ class WarehouseService
         $deliveryType->update(['return_picking_type_id' => $receiptType->id]);
         $internalType->update(['return_picking_type_id' => $internalType->id]);
 
+        // Multi-step receipt chain — wire Route + push RouteRules. Once the
+        // receipt picking is validated (Supplier → Input), the engine in
+        // PickingService::validate() fires the push rule whose location_src
+        // matches the destination just received at, auto-creating the next
+        // picking (Input → Stock for 2-step, Input → QC then QC → Stock for
+        // 3-step). The same internal OpType is reused across both chain
+        // links — keeps the warehouse's INT/ sequence contiguous and avoids
+        // a per-link op type proliferation.
+        if ($warehouse->reception_steps === 'two_steps') {
+            $this->createReceiptChainRoute($companyId, $warehouse, $internalType, [
+                ['src' => $inputLoc, 'dest' => $stockLoc, 'label' => __('inventory.route_rule_input_to_stock', ['short' => $short])],
+            ], __('inventory.route_receipt_two_step', ['short' => $short]));
+        } elseif ($warehouse->reception_steps === 'three_steps') {
+            $this->createReceiptChainRoute($companyId, $warehouse, $internalType, [
+                ['src' => $inputLoc, 'dest' => $qcLoc,    'label' => __('inventory.route_rule_input_to_qc',  ['short' => $short])],
+                ['src' => $qcLoc,    'dest' => $stockLoc, 'label' => __('inventory.route_rule_qc_to_stock', ['short' => $short])],
+            ], __('inventory.route_receipt_three_step', ['short' => $short]));
+        }
+
         // Update warehouse with location references (null when the step
         // setting doesn't use that intermediate location).
         $warehouse->update([
@@ -199,6 +230,54 @@ class WarehouseService
             $loc->refresh();
             $loc->updateCompleteName();
         }
+    }
+
+    /**
+     * Build the Route row and one RouteRule per chain link. All rules share
+     * the warehouse's internal OperationType so the chain pickings get a
+     * contiguous sequence under the warehouse's INT/ prefix.
+     *
+     * @param array<array{src: Location, dest: Location, label: string}> $links
+     */
+    private function createReceiptChainRoute(
+        ?int $companyId,
+        Warehouse $warehouse,
+        OperationType $internalType,
+        array $links,
+        string $routeName,
+    ): Route {
+        // `supplied_wh_id` / `supplier_wh_id` and the `*_selectable` flags are
+        // intentionally not set — no engine queries by them and they're no
+        // longer in $fillable. See the Route model for the full rationale.
+        $route = Route::create([
+            'company_id' => $companyId,
+            'name'       => $routeName,
+            'sequence'   => 10,
+            'active'     => true,
+            'created_by' => auth()->id(),
+            'updated_by' => auth()->id(),
+        ]);
+
+        $sequence = 10;
+        foreach ($links as $link) {
+            RouteRule::create([
+                'company_id'              => $companyId,
+                'route_id'                => $route->id,
+                'operation_type_id'       => $internalType->id,
+                'location_src_id'         => $link['src']->id,
+                'location_dest_id'        => $link['dest']->id,
+                'name'                    => $link['label'],
+                'action'                  => 'push',
+                'sequence'                => $sequence,
+                'delay'                   => 0,
+                'active'                  => true,
+                'created_by'              => auth()->id(),
+                'updated_by'              => auth()->id(),
+            ]);
+            $sequence += 10;
+        }
+
+        return $route;
     }
 
     private function detectChanges(Warehouse $warehouse, array $data): array

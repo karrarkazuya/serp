@@ -1,6 +1,5 @@
 @php
     $val = fn($field, $default = '') => old($field, $product?->{$field} ?? $default);
-    $selectedRoutes = old('routes', $product ? $product->routes->pluck('id')->toArray() : []);
     $suppliers = old('suppliers', $product ? $product->suppliers->map(fn($s) => [
         'partner_id' => $s->partner_id, 'partner_name' => $s->partner?->name ?? '',
         'price' => $s->price, 'min_qty' => $s->min_qty, 'delay' => $s->delay,
@@ -36,14 +35,11 @@
     addSupplier() { this.suppliers.push({ partner_id: '', partner_name: '', price: '', min_qty: 0, delay: 0, partnerOpen: false, partnerOptions: [] }); },
     removeSupplier(i) { this.suppliers.splice(i, 1); }
 }">
-    {{-- Inert-fields banner: a chunk of the form below saves data that no
-         downstream service consumes yet. Users were quietly filling in
-         vendor catalog rows, weight/volume/barcode, etc. and getting no
-         behaviour back. Surface that explicitly instead of letting users
-         discover it the hard way. --}}
-    <div class="mx-5 mt-5 px-4 py-2.5 rounded-lg border border-amber-200 bg-amber-50 text-xs text-amber-800">
-        {{ __('inventory.product_inert_fields_notice') }}
-    </div>
+    {{-- The previous "inert fields notice" banner pointed at half a dozen
+         dead controls (weight, volume, purchase UoM, routes pivot). Those
+         controls were hidden in the cleanup pass — the remaining fields
+         (internal_reference, barcode) are searched and displayed, so a
+         user-facing inert warning is no longer accurate. --}}
 
     {{-- Title --}}
     <div class="mb-5">
@@ -80,11 +76,10 @@
                 <x-relation-dropdown table="inventory_uoms" field="name" name="uom_id" relation="many2one"
                     :selected="old('uom_id', $product?->uom_id)" class="flex-1" compact />
             </div>
-            <div class="flex items-center gap-4 py-2 border-b border-gray-100">
-                <label class="w-40 shrink-0 text-sm text-gray-500">{{ __('inventory.purchase_uom') }}</label>
-                <x-relation-dropdown table="inventory_uoms" field="name" name="uom_po_id" relation="many2one"
-                    :selected="old('uom_po_id', $product?->uom_po_id)" class="flex-1" compact />
-            </div>
+            {{-- `purchase_uom` (uom_po_id) was a separate UoM for PO documents;
+                 no purchase-orders module reads it. Hidden until that ships.
+                 Controller defaults uom_po_id = uom_id on save so the NOT
+                 NULL column stays satisfied. --}}
         </div>
 
         {{-- Right column --}}
@@ -105,14 +100,10 @@
                     @endforeach
                 </select>
             </div>
-            <div class="flex items-center gap-4 py-2 border-b border-gray-100">
-                <label class="w-40 shrink-0 text-sm text-gray-500">{{ __('inventory.weight') }}</label>
-                <input type="number" name="weight" value="{{ $val('weight', 0) }}" step="0.001" min="0" class="flex-1 text-sm text-gray-800 bg-transparent border-0 focus:outline-none focus:ring-0 px-0 py-0.5">
-            </div>
-            <div class="flex items-center gap-4 py-2 border-b border-gray-100">
-                <label class="w-40 shrink-0 text-sm text-gray-500">{{ __('inventory.volume') }}</label>
-                <input type="number" name="volume" value="{{ $val('volume', 0) }}" step="0.001" min="0" class="flex-1 text-sm text-gray-800 bg-transparent border-0 focus:outline-none focus:ring-0 px-0 py-0.5">
-            </div>
+            {{-- `weight` and `volume` were free-entry numbers — no shipping,
+                 forecasting, or report path read them, so users typed in
+                 dimensions and got no behaviour back. Hidden; columns kept
+                 in the DB. --}}
         </div>
 
         {{-- Image --}}
@@ -142,11 +133,13 @@
 
         <div class="min-h-48 pt-4">
             <div x-show="tab === 'inventory'" style="display:none">
-                <div class="flex items-center gap-4 py-2 border-b border-gray-100">
-                    <label class="w-40 shrink-0 text-sm text-gray-500">{{ __('inventory.route') }}</label>
-                    <x-relation-dropdown table="inventory_routes" field="name" name="routes"
-                        relation="many2many" :selected="$selectedRoutes" class="flex-1" compact />
-                </div>
+                {{-- The `routes` many-to-many dropdown was rendered here. No
+                     engine reads product-level routes (push chain fires off
+                     the warehouse Route, not the Product's routes pivot), so
+                     users picked routes and got no behaviour back. Hidden;
+                     the inventory_product_routes pivot table is left empty
+                     for new products and the existing rows render only on
+                     the show page if any happen to have been attached. --}}
                 <div class="flex items-center gap-4 py-2 border-b border-gray-100">
                     <label class="w-40 shrink-0 text-sm text-gray-500">{{ __('inventory.expiration_date') }}</label>
                     <label class="flex items-center gap-2 text-sm text-gray-800">

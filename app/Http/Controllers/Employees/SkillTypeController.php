@@ -91,7 +91,7 @@ class SkillTypeController extends Controller
             return $skillType;
         });
 
-        return redirect()->route('employees.skill-types.show', $skillType)->with('success', 'Skill type created.');
+        return redirect()->route('employees.skill-types.show', $skillType)->with('success', __('employees.skill_type_created'));
     }
 
     public function edit(SkillType $skillType)
@@ -138,7 +138,7 @@ class SkillTypeController extends Controller
             }
         });
 
-        return redirect()->route('employees.skill-types.show', $skillType)->with('success', 'Skill type updated.');
+        return redirect()->route('employees.skill-types.show', $skillType)->with('success', __('employees.skill_type_updated'));
     }
 
     public function archive(Request $_request, SkillType $skillType)
@@ -147,7 +147,7 @@ class SkillTypeController extends Controller
 
         DB::transaction(fn () => $skillType->update(['active' => false]));
 
-        return redirect()->route('employees.skill-types.index')->with('success', 'Skill type archived.');
+        return redirect()->route('employees.skill-types.index')->with('success', __('employees.skill_type_archived'));
     }
 
     public function unarchive(Request $_request, SkillType $skillType)
@@ -156,7 +156,7 @@ class SkillTypeController extends Controller
 
         DB::transaction(fn () => $skillType->update(['active' => true]));
 
-        return redirect()->route('employees.skill-types.show', $skillType)->with('success', 'Skill type restored.');
+        return redirect()->route('employees.skill-types.show', $skillType)->with('success', __('employees.skill_type_unarchived'));
     }
 
     public function unlink(Request $_request, SkillType $skillType)
@@ -165,7 +165,7 @@ class SkillTypeController extends Controller
 
         DB::transaction(fn () => $skillType->delete());
 
-        return redirect()->route('employees.skill-types.index')->with('success', 'Skill type deleted.');
+        return redirect()->route('employees.skill-types.index')->with('success', __('employees.skill_type_deleted'));
     }
 
     public function addComment(Request $request, SkillType $skillType)
@@ -173,6 +173,6 @@ class SkillTypeController extends Controller
         $this->authorize('comment', $skillType);
         $request->validate(['body' => 'required|string|max:5000']);
         DB::transaction(fn () => $skillType->logComment($request->body));
-        return back()->with('success', 'Comment added.');
+        return back()->with('success', __('employees.comment_added'));
     }
 }

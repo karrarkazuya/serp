@@ -74,7 +74,7 @@
                         <td class="py-2 text-gray-800 font-medium">{{ $rule->name }}</td>
                         <td class="py-2 text-gray-600">{{ $rule->action_label }}</td>
                         <td class="py-2 text-gray-600">{{ $rule->operationType?->name }}</td>
-                        <td class="py-2 text-gray-600">{{ $rule->sourceLocation?->complete_name ?? __('inventory.any') }}</td>
+                        <td class="py-2 text-gray-600">{{ $rule->srcLocation?->complete_name ?? __('inventory.any') }}</td>
                         <td class="py-2 text-gray-600">{{ $rule->destLocation?->complete_name ?? __('inventory.any') }}</td>
                     </tr>
                     @endforeach

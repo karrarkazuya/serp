@@ -16,19 +16,18 @@ class StoreLocationRequest extends FormRequest
     public function rules(): array
     {
         $activeCompanyIds = app(CompanyContextService::class)->getActiveCompanyIds();
+        // `removal_strategy`, `barcode`, `posx/y/z` were validated here but
+        // no form sends them and no Location-level code reads them — see the
+        // Location model for the full rationale. Dropped from validation so
+        // the contract matches the form actually rendered.
         return [
             'company_id'       => ['nullable', Rule::exists('companies', 'id')->whereIn('id', $activeCompanyIds)],
             'parent_id'        => ['nullable', $this->inventoryLocationRule($activeCompanyIds)],
             'name'             => ['required', 'string', 'max:255'],
             'usage'            => ['required', Rule::in(['supplier', 'view', 'internal', 'customer', 'inventory', 'production', 'transit'])],
-            'removal_strategy' => ['nullable', Rule::in(['fifo', 'lifo', 'fefo', 'closest_location'])],
             'scrap_location'   => ['boolean'],
             'return_location'  => ['boolean'],
-            'barcode'          => ['nullable', 'string', 'max:64'],
             'notes'            => ['nullable', 'string', 'max:255'],
-            'posx'             => ['nullable', 'integer', 'min:0'],
-            'posy'             => ['nullable', 'integer', 'min:0'],
-            'posz'             => ['nullable', 'integer', 'min:0'],
         ];
     }
 }

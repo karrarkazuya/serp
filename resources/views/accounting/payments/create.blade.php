@@ -135,7 +135,7 @@
                     <span class="w-44 shrink-0 text-sm font-medium text-gray-600">{{ __('accounting.field_journal') }} <span class="text-red-500">*</span></span>
                     <div class="flex-1 border-l-2 border-[#714B67] pl-2">
                         <x-relation-dropdown name="journal_id" table="account_journals" field="name"
-                            :value="old('journal_id')" placeholder="Select journal…" required />
+                            :value="old('journal_id')" placeholder="{{ __('accounting.ph_select_journal') }}" required />
                     </div>
                 </div>
 
@@ -157,7 +157,7 @@
                     <span class="w-44 shrink-0 text-sm font-medium text-gray-600">{{ __('accounting.field_destination_acct') }}</span>
                     <div class="flex-1">
                         <x-relation-dropdown name="destination_account_id" table="accounts" field="name"
-                            :value="old('destination_account_id')" placeholder="Auto (from journal)" />
+                            :value="old('destination_account_id')" placeholder="{{ __('accounting.ph_auto_from_journal') }}" />
                     </div>
                 </div>
             </div>

@@ -70,7 +70,7 @@ class DepartureReasonController extends Controller
 
         $departureReason = DB::transaction(fn () => DepartureReason::create($data));
 
-        return redirect()->route('employees.departure-reasons.show', $departureReason)->with('success', 'Departure reason created.');
+        return redirect()->route('employees.departure-reasons.show', $departureReason)->with('success', __('employees.departure_reason_created'));
     }
 
     public function edit(DepartureReason $departureReason)
@@ -91,7 +91,7 @@ class DepartureReasonController extends Controller
 
         DB::transaction(fn () => $departureReason->update($data));
 
-        return redirect()->route('employees.departure-reasons.show', $departureReason)->with('success', 'Departure reason updated.');
+        return redirect()->route('employees.departure-reasons.show', $departureReason)->with('success', __('employees.departure_reason_updated'));
     }
 
     public function archive(Request $_request, DepartureReason $departureReason)
@@ -100,7 +100,7 @@ class DepartureReasonController extends Controller
 
         DB::transaction(fn () => $departureReason->update(['active' => false]));
 
-        return redirect()->route('employees.departure-reasons.index')->with('success', 'Departure reason archived.');
+        return redirect()->route('employees.departure-reasons.index')->with('success', __('employees.departure_reason_archived'));
     }
 
     public function unarchive(Request $_request, DepartureReason $departureReason)
@@ -109,7 +109,7 @@ class DepartureReasonController extends Controller
 
         DB::transaction(fn () => $departureReason->update(['active' => true]));
 
-        return redirect()->route('employees.departure-reasons.show', $departureReason)->with('success', 'Departure reason restored.');
+        return redirect()->route('employees.departure-reasons.show', $departureReason)->with('success', __('employees.departure_reason_unarchived'));
     }
 
     public function unlink(Request $_request, DepartureReason $departureReason)
@@ -118,7 +118,7 @@ class DepartureReasonController extends Controller
 
         DB::transaction(fn () => $departureReason->delete());
 
-        return redirect()->route('employees.departure-reasons.index')->with('success', 'Departure reason deleted.');
+        return redirect()->route('employees.departure-reasons.index')->with('success', __('employees.departure_reason_deleted'));
     }
 
     public function addComment(Request $request, DepartureReason $departureReason)
@@ -126,6 +126,6 @@ class DepartureReasonController extends Controller
         $this->authorize('comment', $departureReason);
         $request->validate(['body' => 'required|string|max:5000']);
         DB::transaction(fn () => $departureReason->logComment($request->body));
-        return back()->with('success', 'Comment added.');
+        return back()->with('success', __('employees.comment_added'));
     }
 }

@@ -11,6 +11,7 @@ use App\Models\Inventory\Picking;
 use App\Models\Inventory\Product;
 use App\Models\Inventory\PutawayRule;
 use App\Models\Inventory\Quant;
+use App\Models\Inventory\RouteRule;
 use App\Services\Chatter\ChatterService;
 
 class PickingService
@@ -157,9 +158,15 @@ class PickingService
                 ->lockForUpdate();
 
             if ($strategy === 'fefo') {
+                // FEFO sort key is COALESCE(expiration_date, use_date) — the
+                // hard expiration if set, falling back to Best Before. Lots
+                // with neither sort last (the IS NULL bucket). Without the
+                // use_date fallback, products tracked only by Best Before
+                // (a real Odoo pattern for groceries / pharma) would never
+                // FEFO at all and quietly consume in insertion order.
                 $quantQuery->leftJoin('inventory_lots', 'inventory_quants.lot_id', '=', 'inventory_lots.id')
-                    ->orderByRaw('inventory_lots.expiration_date IS NULL')
-                    ->orderBy('inventory_lots.expiration_date')
+                    ->orderByRaw('COALESCE(inventory_lots.expiration_date, inventory_lots.use_date) IS NULL')
+                    ->orderByRaw('COALESCE(inventory_lots.expiration_date, inventory_lots.use_date)')
                     ->orderBy('inventory_quants.in_date')
                     ->select('inventory_quants.*');
             } elseif ($strategy === 'lifo') {
@@ -377,9 +384,11 @@ class PickingService
             $backorder = $this->createBackorder($picking, $backorderItems);
         }
 
+        $chains = $this->fireChainRulesFor($picking->fresh());
+
         $this->chatterService->log($picking, __('inventory.chatter_transfer_validated'), 'log');
 
-        return ['picking' => $picking->fresh(), 'backorder' => $backorder];
+        return ['picking' => $picking->fresh(), 'backorder' => $backorder, 'chains' => $chains];
     }
 
     public function cancel(Picking $picking): Picking
@@ -655,6 +664,132 @@ class PickingService
                 'requested' => number_format($qty, 4),
             ]));
         }
+    }
+
+    /**
+     * Odoo parity: push-rule chain engine. After a picking is validated, scan
+     * the done moves' destination locations for active push RouteRules. For
+     * each matched rule, auto-create a follow-up picking (Input → Stock,
+     * QC → Stock, etc.) so the multi-step receipt flow continues without
+     * the user re-creating a picking by hand.
+     *
+     * Defense-in-depth: company-scoped (a rule with `company_id = null` is
+     * global; a tenant-specific rule must match the picking's company).
+     * Rules whose `operation_type_id` or `location_dest_id` is null are
+     * skipped — they're malformed for push usage. The created chain picking
+     * carries `origin_picking_id = $origin->id` so the audit feed traces back
+     * to the receipt that triggered it.
+     *
+     * Returns the chain pickings created — the caller folds them into the
+     * validate() return so the UI can show "Auto-created N follow-up
+     * transfers" if needed.
+     *
+     * @return list<Picking>
+     */
+    private function fireChainRulesFor(Picking $origin): array
+    {
+        if (!$origin->isDone()) return [];
+
+        // Only "done" moves chain forward — cancelled or zero-qty moves
+        // produced no stock movement, so there's nothing to push.
+        $doneMoves = $origin->moves()->where('state', 'done')->with(['product', 'uom'])->get();
+        if ($doneMoves->isEmpty()) return [];
+
+        $chains = [];
+        $byDest = $doneMoves->groupBy('location_dest_id');
+
+        foreach ($byDest as $destLocationId => $moves) {
+            $rules = RouteRule::where('inventory_route_rules.active', true)
+                ->where('action', 'push')
+                ->where('location_src_id', $destLocationId)
+                ->where(function ($q) use ($origin) {
+                    $q->whereNull('inventory_route_rules.company_id')
+                      ->orWhere('inventory_route_rules.company_id', $origin->company_id);
+                })
+                ->whereNotNull('operation_type_id')
+                ->whereNotNull('location_dest_id')
+                // Route-level archive must disable its rules. The schema has
+                // no DB-level link between route.active and rule.active, so
+                // without this whereHas a user archiving a Route at the UI
+                // would still see its rules silently fire on every receipt.
+                ->whereHas('route', fn ($q) => $q->where('active', true))
+                ->with(['operationType', 'destLocation'])
+                ->orderBy('sequence')
+                ->get();
+
+            foreach ($rules as $rule) {
+                $chain = $this->createChainPickingFromRule($origin, $rule, $moves);
+                if ($chain) $chains[] = $chain;
+            }
+        }
+
+        return $chains;
+    }
+
+    /**
+     * Create a single chain picking for a matched push rule. The rule's
+     * fields drive the new picking's op_type / src / dest; the parent's
+     * moves carry forward as qty (in their original UoM) on the new moves.
+     *
+     * Returns null when the rule references a cross-tenant op_type or
+     * dest_location — defense-in-depth against multi-company users who
+     * configured a rule that points outside the picking's tenant.
+     */
+    private function createChainPickingFromRule(Picking $origin, RouteRule $rule, \Illuminate\Support\Collection $moves): ?Picking
+    {
+        $opType = $rule->operationType;
+        $dest   = $rule->destLocation;
+        if (!$opType || !$dest || !$dest->active) return null;
+
+        // Op type and dest must be in the picking's company (or shared null).
+        if ($opType->company_id !== null && (int) $opType->company_id !== (int) $origin->company_id) {
+            return null;
+        }
+        if ($dest->company_id !== null && (int) $dest->company_id !== (int) $origin->company_id) {
+            return null;
+        }
+
+        $movesData = [];
+        foreach ($moves as $move) {
+            $movesData[] = [
+                'product_id'  => $move->product_id,
+                'uom_id'      => $move->uom_id,
+                'product_qty' => (float) $move->qty_done,
+                'qty_done'    => 0,
+                'state'       => 'draft',
+                'name'        => $move->name ?: $move->product?->name ?? 'Move',
+                'date'        => now()->toDateString(),
+                'created_by'  => auth()->id(),
+                'updated_by'  => auth()->id(),
+            ];
+        }
+
+        if (empty($movesData)) return null;
+
+        $pickingData = [
+            'company_id'        => $origin->company_id,
+            'operation_type_id' => $opType->id,
+            'partner_id'        => $origin->partner_id,
+            'location_src_id'   => $rule->location_src_id,
+            'location_dest_id'  => $rule->location_dest_id,
+            'origin_picking_id' => $origin->id,
+            'origin'            => $origin->name,
+            'scheduled_date'    => now()->addDays((int) ($rule->delay ?? 0)),
+            'active'            => true,
+            'created_by'        => auth()->id(),
+            'updated_by'        => auth()->id(),
+        ];
+
+        $chain = $this->create($pickingData, $movesData);
+        // Start the chain picking in 'confirmed' state — the worker shouldn't
+        // need to manually click Confirm. The reservation step still needs
+        // a manual "Check Availability" (or runs via the standard validate
+        // flow), so the chain isn't auto-validated.
+        $this->confirm($chain);
+
+        $this->chatterService->log($chain, __('inventory.chatter_chain_of', ['ref' => $origin->name]), 'log');
+
+        return $chain->fresh();
     }
 
     /**

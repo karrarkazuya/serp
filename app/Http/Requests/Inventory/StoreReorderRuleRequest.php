@@ -18,20 +18,25 @@ class StoreReorderRuleRequest extends FormRequest
         $activeCompanyIds = app(CompanyContextService::class)->getActiveCompanyIds();
 
         // Reorder rules drive automatic replenishment pickings. A rule that
-        // targets a Company B product/location/warehouse/route would silently
-        // build picking flows that cross tenant boundaries the next time the
+        // targets a Company B product/location/warehouse would silently build
+        // picking flows that cross tenant boundaries the next time the
         // "Replenish" button runs.
+        //
+        // `route_id` was previously accepted here as a user-pickable field,
+        // but nothing in the replenishment flow ever read it — the receipt
+        // OperationType lookup is hardcoded. The form dropdown was removed
+        // to stop offering users a control that did nothing. The column
+        // stays in the DB so a future route-driven procurement pipeline can
+        // adopt it without a schema change.
         $productRule   = $this->inventoryProductRule($activeCompanyIds);
         $locationRule  = $this->inventoryLocationRule($activeCompanyIds);
         $warehouseRule = $this->companyScopedExists('inventory_warehouses', $activeCompanyIds);
-        $routeRule     = $this->companyScopedExists('inventory_routes', $activeCompanyIds, allowNull: true);
 
         return [
             'company_id'   => ['required', Rule::exists('companies', 'id')->whereIn('id', $activeCompanyIds)],
             'product_id'   => ['required', $productRule],
             'location_id'  => ['required', $locationRule],
             'warehouse_id' => ['nullable', $warehouseRule],
-            'route_id'     => ['nullable', $routeRule],
             'qty_min'      => ['required', 'numeric', 'min:0'],
             'qty_max'      => ['required', 'numeric', 'gte:qty_min'],
             'qty_multiple' => ['nullable', 'numeric', 'min:1'],

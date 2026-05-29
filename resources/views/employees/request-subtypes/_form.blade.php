@@ -22,7 +22,7 @@
 
     <div>
         <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1">{{ __('common.company') }}</label>
-        <x-relation-dropdown name="company_id" table="companies" field="name" :selected="$val('company_id', $defaultCompanyId)" placeholder="Select company..." compact />
+        <x-relation-dropdown name="company_id" table="companies" field="name" :selected="$val('company_id', $defaultCompanyId)" placeholder="{{ __('common.select_company') }}" compact />
     </div>
     <div x-show="type === 'overtime'" style="display:none">
         <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1">{{ __('employees.subtype_factor') }}</label>

@@ -25,28 +25,38 @@
             <x-relation-dropdown table="companies" field="name" name="company_id" relation="many2one"
                 :selected="old('company_id', $lot?->company_id ?? ($defaultCompanyId ?? null))" class="flex-1" compact />
         </div>
+        {{-- `ref` (vendor batch / external reference) was searchable +
+             chatter-tracked + accepted by validation, but no form field set
+             it. The column was always NULL and the search index was empty.
+             Exposing it now so the configured tracking has real values. --}}
+        <div class="flex items-center gap-4 py-2 border-b border-gray-100">
+            <label class="w-40 shrink-0 text-sm text-gray-500">{{ __('inventory.reference') }}</label>
+            <input type="text" name="ref" value="{{ $val('ref') }}" maxlength="128" class="flex-1 text-sm bg-transparent border-0 focus:outline-none px-0 py-0.5" placeholder="-">
+        </div>
     </div>
     <div>
         <div class="flex items-center gap-4 py-2 border-b border-gray-100">
             <label class="w-40 shrink-0 text-sm text-gray-500">{{ __('inventory.expiration_date') }}</label>
             <input type="date" name="expiration_date" value="{{ $val('expiration_date') }}" class="flex-1 text-sm bg-transparent border-0 focus:outline-none px-0 py-0.5">
         </div>
-        {{-- `use_date` (Best Before) is stored on the lot but not yet read by
-             any picking/scrap path — only `expiration_date` drives FEFO sorting
-             and the "expired" badge. Left in the form so data isn't lost when
-             best-before logic ships, but flagged so users know it's inert. --}}
+        {{-- `use_date` (Best Before) feeds FEFO ordering as a fallback: when
+             a lot has no hard expiration_date but has a Best Before, FEFO
+             treats use_date as the expiry-equivalent and consumes oldest
+             Best Before first. Lots with neither still sort last. --}}
         <div class="flex items-center gap-4 py-2 border-b border-gray-100">
             <label class="w-40 shrink-0 text-sm text-gray-500">
                 {{ __('inventory.best_before_date') }}
-                <span class="ml-1 text-[10px] font-medium text-amber-600 uppercase tracking-wide">{{ __('inventory.stored_only') }}</span>
             </label>
-            <input type="date" name="use_date" value="{{ $val('use_date') }}" class="flex-1 text-sm bg-transparent border-0 focus:outline-none px-0 py-0.5"
-                   title="{{ __('inventory.best_before_not_consumed') }}">
+            <input type="date" name="use_date" value="{{ $val('use_date') }}" class="flex-1 text-sm bg-transparent border-0 focus:outline-none px-0 py-0.5">
         </div>
     </div>
 </div>
 
 <div class="flex items-start gap-4 py-2 border-b border-gray-100 mt-2">
-    <label class="w-40 shrink-0 text-sm text-gray-500 pt-0.5">{{ __('inventory.description') }}</label>
-    <textarea name="description" rows="3" class="flex-1 text-sm bg-transparent border-0 focus:outline-none px-0 resize-none" placeholder="-">{{ $val('description') }}</textarea>
+    {{-- Field is `note` in the schema, model fillable, and LotController
+         validation. The form previously posted `name="description"`, which
+         the validator silently dropped — users typed notes and saw them
+         vanish on save. Aligned to the schema name. --}}
+    <label class="w-40 shrink-0 text-sm text-gray-500 pt-0.5">{{ __('inventory.note') }}</label>
+    <textarea name="note" rows="3" class="flex-1 text-sm bg-transparent border-0 focus:outline-none px-0 resize-none" placeholder="-">{{ $val('note') }}</textarea>
 </div>

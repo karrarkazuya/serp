@@ -35,7 +35,7 @@
                     </div>
                     <div>
                         <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1">{{ __('common.company') }}</label>
-                        <x-relation-dropdown name="company_id" table="companies" field="name" :selected="old('company_id')" placeholder="Select company..." compact />
+                        <x-relation-dropdown name="company_id" table="companies" field="name" :selected="old('company_id')" placeholder="{{ __('common.select_company') }}" compact />
                     </div>
                     <div class="sm:col-span-2">
                         <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1">{{ __('employees.location_address') }}</label>

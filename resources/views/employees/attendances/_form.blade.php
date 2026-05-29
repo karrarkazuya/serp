@@ -14,11 +14,11 @@
         <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1">
             {{ __('employees.employee_name') }} <span class="text-red-500">*</span>
         </label>
-        <x-relation-dropdown name="employee_id" table="hr_employees" field="name" :selected="$employeeId" placeholder="Select employee..." compact />
+        <x-relation-dropdown name="employee_id" table="hr_employees" field="name" :selected="$employeeId" placeholder="{{ __('employees.select_employee') }}" compact />
     </div>
     <div>
         <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1">{{ __('common.company') }}</label>
-        <x-relation-dropdown name="company_id" table="companies" field="name" :selected="$companyId" placeholder="Select company..." compact />
+        <x-relation-dropdown name="company_id" table="companies" field="name" :selected="$companyId" placeholder="{{ __('common.select_company') }}" compact />
     </div>
 
     <div>

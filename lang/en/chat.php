@@ -30,4 +30,5 @@ return [
     'remove'                => 'Remove',
     'confirm_leave_group'   => 'Leave this group?',
     'confirm_remove_member' => 'Remove :name from this group?',
+    'ph_message_to'         => 'Message :target',
 ];

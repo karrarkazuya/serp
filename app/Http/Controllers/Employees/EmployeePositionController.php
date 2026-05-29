@@ -215,7 +215,7 @@ class EmployeePositionController extends Controller
 
         DB::transaction(fn () => $position->logComment($request->body));
 
-        return back()->with('success', 'Comment added.');
+        return back()->with('success', __('employees.comment_added'));
     }
 
     private function diffChanges(EmployeePosition $position, array $data): array

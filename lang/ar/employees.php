@@ -10,6 +10,13 @@ return [
     'employee_archived'  => 'تم أرشفة الموظف.',
     'employee_unarchived'=> 'تم استعادة الموظف.',
     'employee_deleted'   => 'تم حذف الموظف.',
+    'employees_bulk_deleted' => 'تم حذف الموظفين المحددين.',
+    'err_circular_reporting' => ':field المحدد سينشئ سلسلة تبعية دائرية.',
+    'job_position_created' => 'تم إنشاء المنصب الوظيفي.',
+    'job_position_updated' => 'تم تحديث المنصب الوظيفي.',
+    'job_position_archived' => 'تم أرشفة المنصب الوظيفي.',
+    'job_position_unarchived' => 'تمت استعادة المنصب الوظيفي.',
+    'job_position_deleted' => 'تم حذف المنصب الوظيفي.',
 
     // Filters
     'probation'        => 'تحت التجربة',
@@ -103,6 +110,7 @@ return [
     'cert_bachelor'    => 'بكالوريوس',
     'cert_master'      => 'ماجستير',
     'cert_doctor'      => 'دكتوراه',
+    'cert_other'       => 'أخرى',
     'field_of_study'   => 'مجال الدراسة',
     'school'           => 'المدرسة / الجامعة',
 
@@ -114,6 +122,13 @@ return [
     'permit_expiration'=> 'انتهاء التصريح',
 
     // HR Settings
+    'employment_status' => 'حالة التوظيف',
+    'emp_status_draft'      => 'مسودة',
+    'emp_status_active'     => 'نشط',
+    'emp_status_probation'  => 'فترة اختبار',
+    'emp_status_suspended'  => 'موقوف',
+    'emp_status_resigned'   => 'استقال',
+    'emp_status_terminated' => 'منتهي',
     'hire_date'        => 'تاريخ التوظيف',
     'first_contract'   => 'أول عقد',
     'end_date'         => 'تاريخ الانتهاء',
@@ -127,6 +142,12 @@ return [
     'bank_transfer'    => 'تحويل بنكي',
     'cheque'           => 'شيك',
     'departure_notes'  => 'ملاحظات المغادرة',
+
+    // Contract status (rendered on the inline contract editor in employee show)
+    'contract_status_draft'     => 'مسودة',
+    'contract_status_open'      => 'مفتوح',
+    'contract_status_close'     => 'مغلق',
+    'contract_status_cancelled' => 'ملغي',
 
     // Skills
     'add_skill'        => '+ إضافة مهارة',
@@ -168,6 +189,7 @@ return [
     'certificate_deleted'    => 'تم حذف الشهادة.',
     'certificate_archived'   => 'تم أرشفة الشهادة.',
     'certificate_unarchived' => 'تم استعادة الشهادة.',
+    'certificates_bulk_deleted' => 'تم حذف الشهادات المحددة.',
     'certificate_type'       => 'نوع الشهادة',
     'study_type'             => 'نوع الدراسة',
     'issuing_institution'    => 'جهة الإصدار',
@@ -188,6 +210,7 @@ return [
     'no_employees_assigned'      => 'لا يوجد موظفون مضافون لهذا المنصب.',
     'add_employee'               => 'إضافة موظف',
     'select_employee'            => 'اختر موظفاً...',
+    'select_department'          => 'اختر القسم...',
     'position_employee_added'    => 'تمت إضافة الموظف إلى المنصب.',
     'position_employee_removed'  => 'تمت إزالة الموظف من المنصب.',
     'position_employees_saved'   => 'تم تحديث الموظفين.',
@@ -252,6 +275,8 @@ return [
     'department_archived' => 'تم أرشفة القسم.',
     'department_unarchived'=> 'تم استعادة القسم.',
     'department_deleted'  => 'تم حذف القسم.',
+    // trans_choice helper for the department tree node meta label
+    'employees_count'     => '{0} لا يوجد موظفون|{1} موظف واحد|{2} موظفان|[3,10] :count موظفين|[11,*] :count موظفاً',
     'department_name'     => 'اسم القسم',
     'parent_department'   => 'القسم الرئيسي',
     'dept_is_archived'    => 'هذا القسم مؤرشف.',
@@ -284,6 +309,7 @@ return [
     'schedule_created'    => 'تم إنشاء جدول العمل.',
     'schedule_updated'    => 'تم تحديث جدول العمل.',
     'schedule_archived'   => 'تم أرشفة جدول العمل.',
+    'schedule_unarchived' => 'تمت استعادة جدول العمل.',
     'schedule_deleted'    => 'تم حذف جدول العمل.',
     'schedule_name'       => 'اسم جدول العمل',
     'flexible_hours'      => 'ساعات مرنة',
@@ -338,6 +364,7 @@ return [
     'skill_type_created'  => 'تم إنشاء نوع المهارة.',
     'skill_type_updated'  => 'تم تحديث نوع المهارة.',
     'skill_type_archived' => 'تم أرشفة نوع المهارة.',
+    'skill_type_unarchived' => 'تمت استعادة نوع المهارة.',
     'skill_type_deleted'  => 'تم حذف نوع المهارة.',
     'skills_section'      => 'المهارات',
     'levels_section'      => 'المستويات',
@@ -355,6 +382,7 @@ return [
     'departure_reason_created'   => 'تم إنشاء سبب المغادرة.',
     'departure_reason_updated'   => 'تم تحديث سبب المغادرة.',
     'departure_reason_archived'  => 'تم أرشفة سبب المغادرة.',
+    'departure_reason_unarchived'=> 'تمت استعادة سبب المغادرة.',
     'departure_reason_deleted'   => 'تم حذف سبب المغادرة.',
 
     // Employee Categories sub-module
@@ -363,6 +391,8 @@ return [
     'no_categories'       => 'لا توجد تصنيفات.',
     'category_created'    => 'تم إنشاء التصنيف.',
     'category_updated'    => 'تم تحديث التصنيف.',
+    'category_archived'   => 'تم أرشفة التصنيف.',
+    'category_unarchived' => 'تمت استعادة التصنيف.',
     'category_deleted'    => 'تم حذف التصنيف.',
     'category_name'       => 'اسم التصنيف',
 
@@ -382,6 +412,7 @@ return [
     'goal_created'        => 'تم إنشاء الهدف.',
     'goal_updated'        => 'تم تحديث الهدف.',
     'goal_archived'       => 'تم أرشفة الهدف.',
+    'goal_unarchived'     => 'تمت استعادة الهدف.',
     'goal_deleted'        => 'تم حذف الهدف.',
 
     // Challenges sub-module
@@ -400,6 +431,7 @@ return [
     'employment_type_created'   => 'تم إنشاء نوع التوظيف.',
     'employment_type_updated'   => 'تم تحديث نوع التوظيف.',
     'employment_type_archived'  => 'تم أرشفة نوع التوظيف.',
+    'employment_type_unarchived'=> 'تمت استعادة نوع التوظيف.',
     'employment_type_deleted'   => 'تم حذف نوع التوظيف.',
 
     // Resume Line Types sub-module
@@ -409,6 +441,7 @@ return [
     'resume_line_type_created'   => 'تم إنشاء نوع السطر.',
     'resume_line_type_updated'   => 'تم تحديث نوع السطر.',
     'resume_line_type_archived'  => 'تم أرشفة نوع السطر.',
+    'resume_line_type_unarchived'=> 'تمت استعادة نوع السطر.',
     'resume_line_type_deleted'   => 'تم حذف نوع السطر.',
 
     // Bonuses sub-module
@@ -450,6 +483,26 @@ return [
     'reward_archived'   => 'تم أرشفة المكافأة.',
     'reward_unarchived' => 'تمت استعادة المكافأة.',
     'reward_deleted'    => 'تم حذف المكافأة.',
+
+    // Contract sub-module
+    'contract_created'  => 'تم إنشاء العقد.',
+    'contract_updated'  => 'تم تحديث العقد.',
+    'contract_deleted'  => 'تم حذف العقد.',
+    'contract_active_set' => 'تم تعيين العقد كنشط.',
+
+    // Work Location sub-module
+    'work_location_created'    => 'تم إنشاء موقع العمل.',
+    'work_location_updated'    => 'تم تحديث موقع العمل.',
+    'work_location_archived'   => 'تم أرشفة موقع العمل.',
+    'work_location_unarchived' => 'تمت استعادة موقع العمل.',
+    'work_location_deleted'    => 'تم حذف موقع العمل.',
+
+    // EmployeeDocument (standalone documents)
+    'document_created'  => 'تم إنشاء المستند.',
+    'document_added'    => 'تمت إضافة المستند.',
+
+    // Challenge restored
+    'challenge_unarchived' => 'تمت استعادة التحدي.',
 
     // Job Grades sub-module
     'job_grades_title'     => 'الدرجات الوظيفية',

@@ -30,9 +30,4 @@ class ProductSupplier extends Model
     public function partner(): BelongsTo  { return $this->belongsTo(Contact::class, 'partner_id'); }
     public function creator(): BelongsTo  { return $this->belongsTo(User::class, 'created_by'); }
     public function updater(): BelongsTo  { return $this->belongsTo(User::class, 'updated_by'); }
-
-    public function getPartnerDisplayName(): string
-    {
-        return $this->partner?->name ?? $this->partner_name ?? '—';
-    }
 }

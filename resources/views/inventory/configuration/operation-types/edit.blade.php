@@ -34,11 +34,13 @@
                 <div class="grid grid-cols-2 gap-x-8">
                     <div>
                         <div class="flex items-center gap-4 py-2 border-b border-gray-100">
-                            <label class="w-40 shrink-0 text-sm text-gray-500">{{ __('inventory.sequence') }}</label>
+                            <label class="w-40 shrink-0 text-sm text-gray-500">{{ __('inventory.sequence_prefix') }}</label>
                             <input type="text" name="sequence_prefix" value="{{ old('sequence_prefix', $operationType->sequence_prefix) }}" required class="flex-1 text-sm bg-transparent border-0 focus:outline-none px-0 py-0.5">
                         </div>
                         <div class="flex items-center gap-4 py-2 border-b border-gray-100">
-                            <label class="w-40 shrink-0 text-sm text-gray-500">{{ __('inventory.reference') }}</label>
+                            {{-- See create.blade.php — label was `inventory.reference`,
+                                 unrelated to this 1-10 digit-count input. --}}
+                            <label class="w-40 shrink-0 text-sm text-gray-500">{{ __('inventory.sequence_padding') }}</label>
                             <input type="number" name="sequence_padding" value="{{ old('sequence_padding', $operationType->sequence_padding) }}" min="1" max="10" class="flex-1 text-sm bg-transparent border-0 focus:outline-none px-0 py-0.5">
                         </div>
                         <div class="flex items-center gap-4 py-2 border-b border-gray-100">
@@ -51,14 +53,9 @@
                         </div>
                     </div>
                     <div>
-                        <div class="flex items-center gap-4 py-2 border-b border-gray-100">
-                            <label class="w-40 shrink-0 text-sm text-gray-500">{{ __('inventory.action') }}</label>
-                            <select name="reservation_method" class="flex-1 text-sm bg-transparent border-0 focus:outline-none px-0 py-0.5">
-                                @foreach(['at_confirm' => __('inventory.reservation_at_confirm'), 'before_scheduled' => __('inventory.reservation_before_scheduled'), 'manual' => __('inventory.reservation_manual')] as $k => $v)
-                                <option value="{{ $k }}" {{ old('reservation_method', $operationType->reservation_method) === $k ? 'selected' : '' }}>{{ $v }}</option>
-                                @endforeach
-                            </select>
-                        </div>
+                        {{-- `reservation_method` was a dead dropdown — no DB
+                             column, no fillable, no validation, no consumer.
+                             Removed; see the create form for the same note. --}}
                         <div class="flex items-center gap-4 py-2 border-b border-gray-100">
                             <label class="w-40 shrink-0 text-sm text-gray-500">{{ __('inventory.create_lots') }}</label>
                             <label class="flex items-center gap-2 text-sm text-gray-800">

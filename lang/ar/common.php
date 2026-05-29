@@ -121,4 +121,15 @@ return [
     'loading'          => 'جارٍ التحميل...',
     'no_records_found' => 'لا توجد سجلات',
     'no_results'       => 'لا توجد نتائج',
+
+    // Common placeholders surfaced by several module forms
+    'none'                  => 'لا شيء',
+    'optional_description'  => 'وصف اختياري...',
+    'search_product'        => 'ابحث عن منتج...',
+    'description_optional'  => 'الوصف (اختياري)',
+    'terms_and_conditions'  => 'الشروط والأحكام',
+    'select_company'        => 'اختر الشركة...',
+    'select_parent'         => 'اختر السجل الرئيسي...',
+    'select_manager'        => 'اختر المدير...',
+    'internal_notes'        => 'ملاحظات داخلية...',
 ];

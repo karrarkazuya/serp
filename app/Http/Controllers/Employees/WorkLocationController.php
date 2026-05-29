@@ -97,7 +97,7 @@ class WorkLocationController extends Controller
 
         $location = DB::transaction(fn () => WorkLocation::create($data));
 
-        return redirect()->route('employees.work-locations.show', $location)->with('success', 'Work location created.');
+        return redirect()->route('employees.work-locations.show', $location)->with('success', __('employees.work_location_created'));
     }
 
     public function edit(WorkLocation $location)
@@ -130,7 +130,7 @@ class WorkLocationController extends Controller
 
         DB::transaction(fn () => $location->update($data));
 
-        return redirect()->route('employees.work-locations.show', $location)->with('success', 'Work location updated.');
+        return redirect()->route('employees.work-locations.show', $location)->with('success', __('employees.work_location_updated'));
     }
 
     public function archive(Request $_request, WorkLocation $location)
@@ -141,7 +141,7 @@ class WorkLocationController extends Controller
 
         DB::transaction(fn () => $location->update(['active' => false]));
 
-        return redirect()->route('employees.work-locations.index')->with('success', 'Work location archived.');
+        return redirect()->route('employees.work-locations.index')->with('success', __('employees.work_location_archived'));
     }
 
     public function unarchive(Request $_request, WorkLocation $location)
@@ -152,7 +152,7 @@ class WorkLocationController extends Controller
 
         DB::transaction(fn () => $location->update(['active' => true]));
 
-        return redirect()->route('employees.work-locations.show', $location)->with('success', 'Work location restored.');
+        return redirect()->route('employees.work-locations.show', $location)->with('success', __('employees.work_location_unarchived'));
     }
 
     public function unlink(Request $_request, WorkLocation $location)
@@ -163,7 +163,7 @@ class WorkLocationController extends Controller
 
         DB::transaction(fn () => $location->delete());
 
-        return redirect()->route('employees.work-locations.index')->with('success', 'Work location deleted.');
+        return redirect()->route('employees.work-locations.index')->with('success', __('employees.work_location_deleted'));
     }
 
     public function addComment(Request $request, WorkLocation $location)
@@ -175,6 +175,6 @@ class WorkLocationController extends Controller
         $request->validate(['body' => 'required|string|max:5000']);
         DB::transaction(fn () => $location->logComment($request->body));
 
-        return back()->with('success', 'Comment added.');
+        return back()->with('success', __('employees.comment_added'));
     }
 }

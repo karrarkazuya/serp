@@ -52,7 +52,13 @@ class RouteController extends Controller
         $this->authorize('view', $route);
         $activeCompanyIds = $this->companyContext->getActiveCompanyIds();
         abort_unless(in_array($route->company_id, $activeCompanyIds), 403);
-        $route->load(['company', 'rules.operationType', 'rules.sourceLocation', 'rules.destLocation', 'creator', 'updater']);
+        // The Eloquent relations on RouteRule are `srcLocation` / `destLocation`
+        // (matching the schema's `location_src_id` / `location_dest_id`). An
+        // older draft of this controller eager-loaded `sourceLocation` /
+        // `destLocation` — `sourceLocation` doesn't exist, so it silently
+        // produced null and the route show page rendered "Any" for every
+        // source. Aliasing the view side to use the real relation names.
+        $route->load(['company', 'rules.operationType', 'rules.srcLocation', 'rules.destLocation', 'creator', 'updater']);
 
         $allIds = Route::active()->forCompanies($activeCompanyIds)->orderBy('name')->pluck('id');
         $currentIndex   = $allIds->search($route->id);
@@ -79,17 +85,13 @@ class RouteController extends Controller
         $this->authorize('create', Route::class);
         $activeCompanyIds = $this->companyContext->getActiveCompanyIds();
 
-        // Rule 11: warehouse FKs must stay in the actor's active companies.
-        // A route that lists a Company B warehouse as supplier_wh / supplied_wh
-        // would silently generate cross-tenant replenishment pickings when the
-        // route fires.
-        $warehouseRule = $this->companyScopedExists('inventory_warehouses', $activeCompanyIds);
-
+        // `supplied_wh_id` / `supplier_wh_id` were validated here but neither
+        // is exposed by any form and no engine queries by them. Removed from
+        // the contract to stop accepting writes the model would silently drop
+        // anyway (now that they're no longer in $fillable).
         $data = $request->validate([
             'company_id'        => ['required', Rule::exists('companies', 'id')->whereIn('id', $activeCompanyIds)],
             'name'              => ['required', 'string', 'max:255'],
-            'supplied_wh_id'    => ['nullable', $warehouseRule],
-            'supplier_wh_id'    => ['nullable', $warehouseRule],
         ]);
         $data['active']     = true;
         $data['created_by'] = auth()->id();
@@ -114,7 +116,7 @@ class RouteController extends Controller
         $this->authorize('update', $route);
         $activeCompanyIds = $this->companyContext->getActiveCompanyIds();
         abort_unless(in_array($route->company_id, $activeCompanyIds), 403);
-        $route->load(['rules.operationType', 'rules.sourceLocation', 'rules.destLocation']);
+        $route->load(['rules.operationType', 'rules.srcLocation', 'rules.destLocation']);
         return view('inventory.configuration.routes.edit', compact('route'));
     }
 
@@ -125,11 +127,12 @@ class RouteController extends Controller
         abort_unless(in_array($route->company_id, $activeCompanyIds), 403);
 
         // Rule 11: every FK in the route + its nested rules must stay inside
-        // the actor's active companies. Without this, an editor could repoint
-        // the route at Company B warehouses or stitch in rules that source/sink
-        // stock at Company B locations — the route engine would later move
-        // stock across tenant boundaries when the rule fires.
-        $warehouseRule  = $this->companyScopedExists('inventory_warehouses',      $activeCompanyIds);
+        // the actor's active companies. Without this, an editor could stitch
+        // in rules that source/sink stock at Company B locations — the route
+        // engine would later move stock across tenant boundaries when the
+        // rule fires.
+        //
+        // `supplied_wh_id` / `supplier_wh_id` dropped — no form, no engine.
         $opTypeRule     = $this->companyScopedExists('inventory_operation_types', $activeCompanyIds);
         $locationRule   = $this->inventoryLocationRule($activeCompanyIds);
         $ruleScopedRule = Rule::exists('inventory_route_rules', 'id')->where(function ($q) use ($route) {
@@ -138,47 +141,46 @@ class RouteController extends Controller
             $q->where('route_id', $route->id);
         });
 
+        // Schema column names are `location_src_id` / `location_dest_id` (see
+        // the warehouse-tables migration and the RouteRule model fillable).
+        // An older draft of this controller validated and wrote
+        // `source_location_id` / `destination_location_id` — neither name
+        // is in $fillable, so Eloquent silently dropped them and every nested
+        // rule edit landed in the DB with both locations null. The form
+        // template was matched to the wrong names too. Now the form, the
+        // validation, and the write all use the same schema names.
         $data = $request->validate([
             'name'              => ['required', 'string', 'max:255'],
-            'supplied_wh_id'    => ['nullable', $warehouseRule],
-            'supplier_wh_id'    => ['nullable', $warehouseRule],
             'rules'             => ['nullable', 'array'],
             'rules.*.id'        => ['nullable', $ruleScopedRule],
-            'rules.*.name'                    => ['required_without:rules.*.delete', 'string', 'max:255'],
-            'rules.*.operation_type_id'       => ['required_without:rules.*.delete', $opTypeRule],
-            'rules.*.source_location_id'      => ['nullable', $locationRule],
-            'rules.*.destination_location_id' => ['nullable', $locationRule],
-            'rules.*.action'                  => ['required_without:rules.*.delete', 'in:pull,push,pull_push'],
-            'rules.*.sequence'                => ['nullable', 'integer'],
-            'rules.*.delete'                  => ['nullable', 'boolean'],
+            'rules.*.name'                => ['required_without:rules.*.delete', 'string', 'max:255'],
+            'rules.*.operation_type_id'   => ['required_without:rules.*.delete', $opTypeRule],
+            'rules.*.location_src_id'     => ['nullable', $locationRule],
+            'rules.*.location_dest_id'    => ['nullable', $locationRule],
+            'rules.*.action'              => ['required_without:rules.*.delete', 'in:pull,push,pull_push'],
+            'rules.*.sequence'            => ['nullable', 'integer'],
+            'rules.*.delete'              => ['nullable', 'boolean'],
         ]);
         $data['updated_by'] = auth()->id();
         DB::transaction(function () use ($route, $data) {
-            $route->update(['name' => $data['name'], 'supplied_wh_id' => $data['supplied_wh_id'] ?? null, 'supplier_wh_id' => $data['supplier_wh_id'] ?? null, 'updated_by' => $data['updated_by']]);
+            $route->update(['name' => $data['name'], 'updated_by' => $data['updated_by']]);
             foreach ($data['rules'] ?? [] as $ruleData) {
                 if (!empty($ruleData['delete']) && !empty($ruleData['id'])) {
                     RouteRule::where('id', $ruleData['id'])->where('route_id', $route->id)->delete();
                     continue;
                 }
+                $payload = [
+                    'name'              => $ruleData['name'],
+                    'operation_type_id' => $ruleData['operation_type_id'],
+                    'location_src_id'   => $ruleData['location_src_id'] ?? null,
+                    'location_dest_id'  => $ruleData['location_dest_id'] ?? null,
+                    'action'            => $ruleData['action'],
+                    'sequence'          => $ruleData['sequence'] ?? 20,
+                ];
                 if (!empty($ruleData['id'])) {
-                    RouteRule::where('id', $ruleData['id'])->where('route_id', $route->id)->update([
-                        'name'                   => $ruleData['name'],
-                        'operation_type_id'      => $ruleData['operation_type_id'],
-                        'source_location_id'     => $ruleData['source_location_id'] ?? null,
-                        'destination_location_id'=> $ruleData['destination_location_id'] ?? null,
-                        'action'                 => $ruleData['action'],
-                        'sequence'               => $ruleData['sequence'] ?? 20,
-                    ]);
+                    RouteRule::where('id', $ruleData['id'])->where('route_id', $route->id)->update($payload);
                 } else {
-                    $route->rules()->create([
-                        'name'                   => $ruleData['name'],
-                        'operation_type_id'      => $ruleData['operation_type_id'],
-                        'source_location_id'     => $ruleData['source_location_id'] ?? null,
-                        'destination_location_id'=> $ruleData['destination_location_id'] ?? null,
-                        'action'                 => $ruleData['action'],
-                        'sequence'               => $ruleData['sequence'] ?? 20,
-                        'company_id'             => $route->company_id,
-                    ]);
+                    $route->rules()->create($payload + ['company_id' => $route->company_id]);
                 }
             }
         });

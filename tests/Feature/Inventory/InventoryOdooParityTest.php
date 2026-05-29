@@ -13,6 +13,8 @@ use App\Models\Inventory\ProductSupplier;
 use App\Models\Inventory\PutawayRule;
 use App\Models\Inventory\Quant;
 use App\Models\Inventory\ReorderRule;
+use App\Models\Inventory\Route;
+use App\Models\Inventory\RouteRule;
 use App\Models\Inventory\Uom;
 use App\Models\Inventory\Warehouse;
 use App\Models\Settings\Company;
@@ -119,6 +121,60 @@ class InventoryOdooParityTest extends TestCase
         $jun = Quant::where('product_id', $product->id)->whereDate('in_date', '2026-06-05')->first();
         $this->assertEqualsWithDelta(0.0, (float) $jan->reserved_quantity, 0.001);
         $this->assertEqualsWithDelta(8.0, (float) $jun->reserved_quantity, 0.001, 'LIFO must reserve the newest in_date first');
+    }
+
+    /**
+     * FEFO falls back to lot.use_date (Best Before) when expiration_date is
+     * null. Without this fallback, products tracked only by Best Before
+     * (groceries, pharma) would never FEFO — they'd silently degrade to
+     * FIFO and the oldest Best Before would not be consumed first.
+     */
+    public function test_fefo_uses_best_before_as_fallback_when_no_expiration_date(): void
+    {
+        $product = $this->makeProduct(strategy: 'fefo', tracking: 'lot');
+
+        // LOT-A: only Best Before (Aug). LOT-B: only Best Before (Oct).
+        // Expect A to reserve first.
+        $lotA = Lot::create(['company_id' => $this->company->id, 'product_id' => $product->id, 'name' => 'LOT-A', 'expiration_date' => null, 'use_date' => '2026-08-01', 'active' => true]);
+        $lotB = Lot::create(['company_id' => $this->company->id, 'product_id' => $product->id, 'name' => 'LOT-B', 'expiration_date' => null, 'use_date' => '2026-10-01', 'active' => true]);
+
+        $this->makeQuant($product, qty: 10, lotId: $lotA->id);
+        $this->makeQuant($product, qty: 10, lotId: $lotB->id);
+
+        $picking = $this->makeDeliveryPicking($product, qty: 7);
+        app(PickingService::class)->checkAvailability($picking);
+
+        $aQuant = Quant::where('product_id', $product->id)->where('lot_id', $lotA->id)->first();
+        $bQuant = Quant::where('product_id', $product->id)->where('lot_id', $lotB->id)->first();
+        $this->assertEqualsWithDelta(7.0, (float) $aQuant->reserved_quantity, 0.001, 'Earlier Best Before must reserve first.');
+        $this->assertEqualsWithDelta(0.0, (float) $bQuant->reserved_quantity, 0.001);
+    }
+
+    /**
+     * When a lot has BOTH expiration_date and use_date, the hard expiration
+     * wins (Odoo treats expiration_date as the removal-by-this-date hard
+     * date; use_date is the soft Best Before). This locks in that priority.
+     */
+    public function test_fefo_prefers_expiration_date_over_use_date_when_both_set(): void
+    {
+        $product = $this->makeProduct(strategy: 'fefo', tracking: 'lot');
+
+        // LOT-A: hard expiration Dec, soft Best Before Mar.
+        // LOT-B: hard expiration Sep, soft Best Before Nov.
+        // FEFO by hard expiration: B (Sep) before A (Dec).
+        $lotA = Lot::create(['company_id' => $this->company->id, 'product_id' => $product->id, 'name' => 'LOT-A', 'expiration_date' => '2026-12-01', 'use_date' => '2026-03-01', 'active' => true]);
+        $lotB = Lot::create(['company_id' => $this->company->id, 'product_id' => $product->id, 'name' => 'LOT-B', 'expiration_date' => '2026-09-01', 'use_date' => '2026-11-01', 'active' => true]);
+
+        $this->makeQuant($product, qty: 5, lotId: $lotA->id);
+        $this->makeQuant($product, qty: 5, lotId: $lotB->id);
+
+        $picking = $this->makeDeliveryPicking($product, qty: 4);
+        app(PickingService::class)->checkAvailability($picking);
+
+        $aQuant = Quant::where('product_id', $product->id)->where('lot_id', $lotA->id)->first();
+        $bQuant = Quant::where('product_id', $product->id)->where('lot_id', $lotB->id)->first();
+        $this->assertEqualsWithDelta(0.0, (float) $aQuant->reserved_quantity, 0.001);
+        $this->assertEqualsWithDelta(4.0, (float) $bQuant->reserved_quantity, 0.001, 'Hard expiration must take precedence over Best Before.');
     }
 
     /** @test FEFO consumes the EARLIEST expiration_date first (lots without expiry sort last). */
@@ -675,6 +731,479 @@ class InventoryOdooParityTest extends TestCase
     }
 
     // ─────────────────────────────────────────────────────────────────────
+    // Push-rule chain engine (Odoo parity Phase 4)
+    // ─────────────────────────────────────────────────────────────────────
+
+    /**
+     * 1-step warehouse — receipt validate must NOT create a chain picking.
+     * Regression guard: the chain engine only fires when push rules match the
+     * destination, which only happens for multi-step warehouses.
+     */
+    public function test_one_step_receipt_does_not_create_chain_picking(): void
+    {
+        // Default warehouse from setUp() is 1-step (reception_steps='one_step').
+        $product = $this->makeProduct();
+        $supplier = Location::where('usage', 'supplier')->whereNull('company_id')->firstOrFail();
+
+        $picking = app(PickingService::class)->create(
+            [
+                'company_id'        => $this->company->id,
+                'operation_type_id' => $this->receiptOp->id,
+                'location_src_id'   => $supplier->id,
+                'location_dest_id'  => $this->stockLocation->id,
+                'scheduled_date'    => now()->toDateString(),
+                'active'            => true,
+            ],
+            [['product_id' => $product->id, 'uom_id' => $this->uom->id, 'product_qty' => 5.0, 'name' => $product->name]]
+        );
+        app(PickingService::class)->confirm($picking);
+        $result = app(PickingService::class)->validate($picking->fresh());
+
+        $this->assertEmpty($result['chains'] ?? [], '1-step receipt must not create chain pickings');
+        // Only the original receipt should exist for this company.
+        $this->assertSame(1, Picking::where('company_id', $this->company->id)->count());
+    }
+
+    /**
+     * 2-step warehouse — validating a receipt at Input auto-creates an
+     * Internal Transfer picking Input → Stock with the same product/qty
+     * (in the same UoM), `origin_picking_id` pointing back to the receipt,
+     * and state = 'confirmed' (ready for the warehouse worker to validate).
+     */
+    public function test_two_step_receipt_auto_creates_input_to_stock_chain(): void
+    {
+        $company = Company::create(['name' => '2-Step Co', 'active' => true, 'currency' => 'USD']);
+        $this->admin->companies()->syncWithoutDetaching([$company->id]);
+
+        app(WarehouseService::class)->create([
+            'company_id'      => $company->id,
+            'name'            => 'Two-Step WH',
+            'short_name'      => 'TS',
+            'reception_steps' => 'two_steps',
+            'delivery_steps'  => 'one_step',
+            'active'          => true,
+        ]);
+        $input    = Location::where('company_id', $company->id)->where('name', 'Input')->firstOrFail();
+        $stock    = Location::where('company_id', $company->id)->where('name', 'Stock')->firstOrFail();
+        $receiptOp = OperationType::where('company_id', $company->id)->where('code', 'incoming')->firstOrFail();
+        $internalOp = OperationType::where('company_id', $company->id)->where('code', 'internal')->firstOrFail();
+
+        // Receipt's default dest should be Input now (was Stock pre-Phase 4).
+        $this->assertSame($input->id, $receiptOp->default_location_dest_id);
+
+        $product = Product::create([
+            'name' => 'Chained Widget', 'company_id' => $company->id,
+            'uom_id' => $this->uom->id, 'uom_po_id' => $this->uom->id,
+            'product_type' => 'storable', 'tracking' => 'none', 'active' => true,
+            'created_by' => $this->admin->id, 'updated_by' => $this->admin->id,
+        ]);
+        $supplier = Location::where('usage', 'supplier')->whereNull('company_id')->firstOrFail();
+
+        $receipt = app(PickingService::class)->create(
+            [
+                'company_id'        => $company->id,
+                'operation_type_id' => $receiptOp->id,
+                'location_src_id'   => $supplier->id,
+                'location_dest_id'  => $input->id, // 2-step: receipt → Input
+                'scheduled_date'    => now()->toDateString(),
+                'active'            => true,
+            ],
+            [['product_id' => $product->id, 'uom_id' => $this->uom->id, 'product_qty' => 10.0, 'name' => $product->name]]
+        );
+        app(PickingService::class)->confirm($receipt);
+        $result = app(PickingService::class)->validate($receipt->fresh());
+
+        $this->assertCount(1, $result['chains'] ?? []);
+        $chain = $result['chains'][0];
+
+        $this->assertSame($input->id, $chain->location_src_id, 'Chain picking must start at Input');
+        $this->assertSame($stock->id, $chain->location_dest_id, 'Chain picking must end at Stock');
+        $this->assertSame($internalOp->id, $chain->operation_type_id, 'Chain uses warehouse internal OpType');
+        $this->assertSame($result['picking']->id, $chain->origin_picking_id, 'Chain origin links back to receipt');
+        $this->assertSame('confirmed', $chain->state, 'Chain starts confirmed, ready for worker validate');
+
+        $chainMove = $chain->moves()->first();
+        $this->assertSame($product->id, $chainMove->product_id);
+        $this->assertEqualsWithDelta(10.0, (float) $chainMove->product_qty, 0.0001);
+
+        // Stock was deposited at Input by the receipt — chain picking can now
+        // be checked-available and validated to complete the multi-step flow.
+        $inputQty = (float) Quant::where('product_id', $product->id)->where('location_id', $input->id)->sum('quantity');
+        $this->assertEqualsWithDelta(10.0, $inputQty, 0.0001);
+    }
+
+    /**
+     * 3-step warehouse — receipt validate creates Input → QC. Validating that
+     * creates QC → Stock. Each chain picking is independent (its own validate
+     * triggers the next link), so the engine effectively cascades.
+     */
+    public function test_three_step_receipt_cascades_input_to_qc_to_stock(): void
+    {
+        $company = Company::create(['name' => '3-Step Co', 'active' => true, 'currency' => 'USD']);
+        $this->admin->companies()->syncWithoutDetaching([$company->id]);
+
+        app(WarehouseService::class)->create([
+            'company_id'      => $company->id,
+            'name'            => 'Three-Step WH',
+            'short_name'      => 'TH',
+            'reception_steps' => 'three_steps',
+            'delivery_steps'  => 'one_step',
+            'active'          => true,
+        ]);
+        $input = Location::where('company_id', $company->id)->where('name', 'Input')->firstOrFail();
+        $qc    = Location::where('company_id', $company->id)->where('name', 'Quality Control')->firstOrFail();
+        $stock = Location::where('company_id', $company->id)->where('name', 'Stock')->firstOrFail();
+        $receiptOp = OperationType::where('company_id', $company->id)->where('code', 'incoming')->firstOrFail();
+
+        $product = Product::create([
+            'name' => 'Cascading Widget', 'company_id' => $company->id,
+            'uom_id' => $this->uom->id, 'uom_po_id' => $this->uom->id,
+            'product_type' => 'storable', 'tracking' => 'none', 'active' => true,
+            'created_by' => $this->admin->id, 'updated_by' => $this->admin->id,
+        ]);
+        $supplier = Location::where('usage', 'supplier')->whereNull('company_id')->firstOrFail();
+
+        // Step 1: Receipt Supplier → Input
+        $receipt = app(PickingService::class)->create(
+            [
+                'company_id'        => $company->id,
+                'operation_type_id' => $receiptOp->id,
+                'location_src_id'   => $supplier->id,
+                'location_dest_id'  => $input->id,
+                'scheduled_date'    => now()->toDateString(),
+                'active'            => true,
+            ],
+            [['product_id' => $product->id, 'uom_id' => $this->uom->id, 'product_qty' => 7.0, 'name' => $product->name]]
+        );
+        app(PickingService::class)->confirm($receipt);
+        $step1 = app(PickingService::class)->validate($receipt->fresh());
+
+        $this->assertCount(1, $step1['chains']);
+        $inputToQc = $step1['chains'][0];
+        $this->assertSame($input->id, $inputToQc->location_src_id);
+        $this->assertSame($qc->id, $inputToQc->location_dest_id);
+
+        // Step 2: validate Input → QC, which auto-creates QC → Stock
+        app(PickingService::class)->checkAvailability($inputToQc);
+        $step2 = app(PickingService::class)->validate($inputToQc->fresh());
+
+        $this->assertCount(1, $step2['chains']);
+        $qcToStock = $step2['chains'][0];
+        $this->assertSame($qc->id,    $qcToStock->location_src_id);
+        $this->assertSame($stock->id, $qcToStock->location_dest_id);
+
+        // Step 3: validate QC → Stock — should NOT trigger another chain
+        app(PickingService::class)->checkAvailability($qcToStock);
+        $step3 = app(PickingService::class)->validate($qcToStock->fresh());
+        $this->assertEmpty($step3['chains'], 'Final chain link must not retrigger');
+
+        // Final state: stock at Stock = 7 (after the full Input→QC→Stock flow)
+        $stockQty = (float) Quant::where('product_id', $product->id)->where('location_id', $stock->id)->sum('quantity');
+        $this->assertEqualsWithDelta(7.0, $stockQty, 0.0001);
+    }
+
+    /**
+     * Chain engine must skip rules whose `operation_type_id` is in a
+     * different company than the picking — defense-in-depth against a
+     * multi-company user who configured a cross-tenant rule.
+     */
+    public function test_chain_engine_rejects_cross_tenant_op_type(): void
+    {
+        $companyB = Company::create(['name' => 'B Co', 'active' => true, 'currency' => 'USD']);
+        $this->admin->companies()->syncWithoutDetaching([$companyB->id]);
+        app(WarehouseService::class)->create([
+            'company_id' => $companyB->id, 'name' => 'B WH', 'short_name' => 'BW',
+            'active' => true,
+        ]);
+        $internalB = OperationType::where('company_id', $companyB->id)->where('code', 'internal')->firstOrFail();
+
+        // Rule in Company A pointing at Company B's internal OpType.
+        $route = Route::create([
+            'company_id' => $this->company->id, 'name' => 'Cross-tenant route', 'sequence' => 10,
+            'product_selectable' => false, 'product_category_selectable' => false,
+            'warehouse_selectable' => false, 'active' => true,
+        ]);
+        $internalBin = Location::create([
+            'company_id' => $this->company->id, 'parent_id' => $this->stockLocation->id,
+            'name' => 'Some bin', 'usage' => 'internal', 'active' => true,
+        ]);
+        RouteRule::create([
+            'company_id'        => $this->company->id,
+            'route_id'          => $route->id,
+            'operation_type_id' => $internalB->id,         // cross-tenant
+            'location_src_id'   => $this->stockLocation->id,
+            'location_dest_id'  => $internalBin->id,
+            'name'              => 'Bad rule',
+            'action'            => 'push',
+            'sequence'          => 10,
+            'active'            => true,
+        ]);
+
+        $product = $this->makeProduct();
+        $supplier = Location::where('usage', 'supplier')->whereNull('company_id')->firstOrFail();
+        $picking = app(PickingService::class)->create(
+            [
+                'company_id'        => $this->company->id,
+                'operation_type_id' => $this->receiptOp->id,
+                'location_src_id'   => $supplier->id,
+                'location_dest_id'  => $this->stockLocation->id,
+                'scheduled_date'    => now()->toDateString(),
+                'active'            => true,
+            ],
+            [['product_id' => $product->id, 'uom_id' => $this->uom->id, 'product_qty' => 5.0, 'name' => $product->name]]
+        );
+        app(PickingService::class)->confirm($picking);
+        $result = app(PickingService::class)->validate($picking->fresh());
+
+        $this->assertEmpty($result['chains'], 'Cross-tenant op_type must be rejected by the chain engine.');
+    }
+
+    public function test_chain_picking_inherits_origin_partner_id(): void
+    {
+        $company = Company::create(['name' => 'Vendor 2-Step Co', 'active' => true, 'currency' => 'USD']);
+        $this->admin->companies()->syncWithoutDetaching([$company->id]);
+        app(WarehouseService::class)->create([
+            'company_id' => $company->id, 'name' => 'V WH', 'short_name' => 'VW',
+            'reception_steps' => 'two_steps', 'delivery_steps' => 'one_step', 'active' => true,
+        ]);
+        $input    = Location::where('company_id', $company->id)->where('name', 'Input')->firstOrFail();
+        $receiptOp = OperationType::where('company_id', $company->id)->where('code', 'incoming')->firstOrFail();
+        $vendor = Contact::create([
+            'company_id' => $company->id, 'name' => 'ACME', 'is_supplier' => true, 'active' => true,
+            'created_by' => $this->admin->id, 'updated_by' => $this->admin->id,
+        ]);
+
+        $product = Product::create([
+            'name' => 'Vendor Widget', 'company_id' => $company->id,
+            'uom_id' => $this->uom->id, 'uom_po_id' => $this->uom->id,
+            'product_type' => 'storable', 'tracking' => 'none', 'active' => true,
+            'created_by' => $this->admin->id, 'updated_by' => $this->admin->id,
+        ]);
+        $supplier = Location::where('usage', 'supplier')->whereNull('company_id')->firstOrFail();
+
+        $receipt = app(PickingService::class)->create(
+            [
+                'company_id'        => $company->id,
+                'operation_type_id' => $receiptOp->id,
+                'partner_id'        => $vendor->id,
+                'location_src_id'   => $supplier->id,
+                'location_dest_id'  => $input->id,
+                'scheduled_date'    => now()->toDateString(),
+                'active'            => true,
+            ],
+            [['product_id' => $product->id, 'uom_id' => $this->uom->id, 'product_qty' => 3.0, 'name' => $product->name]]
+        );
+        app(PickingService::class)->confirm($receipt);
+        $result = app(PickingService::class)->validate($receipt->fresh());
+
+        $this->assertCount(1, $result['chains']);
+        $this->assertSame($vendor->id, $result['chains'][0]->partner_id, 'Chain picking carries the vendor forward for traceability.');
+    }
+
+    /**
+     * Phase 4 audit: archiving the parent Route at the UI must disable its
+     * rules even if `RouteRule.active` is still true. The schema has no DB
+     * cascade between the two, so the engine must enforce it.
+     */
+    public function test_chain_engine_skips_rules_whose_route_is_archived(): void
+    {
+        $company = Company::create(['name' => 'Archive Route Co', 'active' => true, 'currency' => 'USD']);
+        $this->admin->companies()->syncWithoutDetaching([$company->id]);
+        app(WarehouseService::class)->create([
+            'company_id' => $company->id, 'name' => 'AR WH', 'short_name' => 'AR',
+            'reception_steps' => 'two_steps', 'delivery_steps' => 'one_step', 'active' => true,
+        ]);
+        $input = Location::where('company_id', $company->id)->where('name', 'Input')->firstOrFail();
+        $receiptOp = OperationType::where('company_id', $company->id)->where('code', 'incoming')->firstOrFail();
+
+        // Archive the Route that WarehouseService just auto-created.
+        Route::where('company_id', $company->id)->update(['active' => false]);
+
+        $product = Product::create([
+            'name' => 'Archived-route Widget', 'company_id' => $company->id,
+            'uom_id' => $this->uom->id, 'uom_po_id' => $this->uom->id,
+            'product_type' => 'storable', 'tracking' => 'none', 'active' => true,
+            'created_by' => $this->admin->id, 'updated_by' => $this->admin->id,
+        ]);
+        $supplier = Location::where('usage', 'supplier')->whereNull('company_id')->firstOrFail();
+
+        $receipt = app(PickingService::class)->create(
+            [
+                'company_id'        => $company->id,
+                'operation_type_id' => $receiptOp->id,
+                'location_src_id'   => $supplier->id,
+                'location_dest_id'  => $input->id,
+                'scheduled_date'    => now()->toDateString(),
+                'active'            => true,
+            ],
+            [['product_id' => $product->id, 'uom_id' => $this->uom->id, 'product_qty' => 5.0, 'name' => $product->name]]
+        );
+        app(PickingService::class)->confirm($receipt);
+        $result = app(PickingService::class)->validate($receipt->fresh());
+
+        $this->assertEmpty($result['chains'], 'Archived Route must disable its rules.');
+    }
+
+    /**
+     * Multi-product receipt landing at the same Input must produce ONE chain
+     * picking with TWO moves — not one chain per move. Verifies the engine's
+     * group-by-destination logic.
+     */
+    public function test_multi_product_receipt_creates_single_chain_with_multiple_moves(): void
+    {
+        $company = Company::create(['name' => 'Multi-product Co', 'active' => true, 'currency' => 'USD']);
+        $this->admin->companies()->syncWithoutDetaching([$company->id]);
+        app(WarehouseService::class)->create([
+            'company_id' => $company->id, 'name' => 'MP WH', 'short_name' => 'MP',
+            'reception_steps' => 'two_steps', 'delivery_steps' => 'one_step', 'active' => true,
+        ]);
+        $input = Location::where('company_id', $company->id)->where('name', 'Input')->firstOrFail();
+        $receiptOp = OperationType::where('company_id', $company->id)->where('code', 'incoming')->firstOrFail();
+
+        $productA = Product::create([
+            'name' => 'A', 'company_id' => $company->id,
+            'uom_id' => $this->uom->id, 'uom_po_id' => $this->uom->id,
+            'product_type' => 'storable', 'tracking' => 'none', 'active' => true,
+            'created_by' => $this->admin->id, 'updated_by' => $this->admin->id,
+        ]);
+        $productB = Product::create([
+            'name' => 'B', 'company_id' => $company->id,
+            'uom_id' => $this->uom->id, 'uom_po_id' => $this->uom->id,
+            'product_type' => 'storable', 'tracking' => 'none', 'active' => true,
+            'created_by' => $this->admin->id, 'updated_by' => $this->admin->id,
+        ]);
+        $supplier = Location::where('usage', 'supplier')->whereNull('company_id')->firstOrFail();
+
+        $receipt = app(PickingService::class)->create(
+            [
+                'company_id'        => $company->id,
+                'operation_type_id' => $receiptOp->id,
+                'location_src_id'   => $supplier->id,
+                'location_dest_id'  => $input->id,
+                'scheduled_date'    => now()->toDateString(),
+                'active'            => true,
+            ],
+            [
+                ['product_id' => $productA->id, 'uom_id' => $this->uom->id, 'product_qty' => 5.0, 'name' => 'A'],
+                ['product_id' => $productB->id, 'uom_id' => $this->uom->id, 'product_qty' => 3.0, 'name' => 'B'],
+            ]
+        );
+        app(PickingService::class)->confirm($receipt);
+        $result = app(PickingService::class)->validate($receipt->fresh());
+
+        $this->assertCount(1, $result['chains'], 'Both products landing at Input share one chain picking.');
+        $this->assertSame(2, $result['chains'][0]->moves()->count(), 'Chain picking carries both moves.');
+    }
+
+    /**
+     * Partial validate: receipt has 10 ordered but only 7 received. Chain
+     * picking should carry 7 (the actual qty_done), not 10. The backorder
+     * for the remaining 3 will create its own chain when validated later.
+     */
+    public function test_partial_validate_creates_chain_with_qty_done_not_ordered_qty(): void
+    {
+        $company = Company::create(['name' => 'Partial Co', 'active' => true, 'currency' => 'USD']);
+        $this->admin->companies()->syncWithoutDetaching([$company->id]);
+        app(WarehouseService::class)->create([
+            'company_id' => $company->id, 'name' => 'PR WH', 'short_name' => 'PR',
+            'reception_steps' => 'two_steps', 'delivery_steps' => 'one_step', 'active' => true,
+        ]);
+        $input = Location::where('company_id', $company->id)->where('name', 'Input')->firstOrFail();
+        $receiptOp = OperationType::where('company_id', $company->id)->where('code', 'incoming')->firstOrFail();
+
+        $product = Product::create([
+            'name' => 'PartialP', 'company_id' => $company->id,
+            'uom_id' => $this->uom->id, 'uom_po_id' => $this->uom->id,
+            'product_type' => 'storable', 'tracking' => 'none', 'active' => true,
+            'created_by' => $this->admin->id, 'updated_by' => $this->admin->id,
+        ]);
+        $supplier = Location::where('usage', 'supplier')->whereNull('company_id')->firstOrFail();
+
+        $receipt = app(PickingService::class)->create(
+            [
+                'company_id'        => $company->id,
+                'operation_type_id' => $receiptOp->id,
+                'location_src_id'   => $supplier->id,
+                'location_dest_id'  => $input->id,
+                'scheduled_date'    => now()->toDateString(),
+                'active'            => true,
+            ],
+            [['product_id' => $product->id, 'uom_id' => $this->uom->id, 'product_qty' => 10.0, 'name' => $product->name]]
+        );
+        app(PickingService::class)->confirm($receipt);
+        $moveId = $receipt->moves()->first()->id;
+        $result = app(PickingService::class)->validate($receipt->fresh(), [$moveId => 7.0]); // only 7 of 10
+
+        $this->assertCount(1, $result['chains']);
+        $this->assertNotNull($result['backorder'], 'Partial validate must leave a backorder for the remainder.');
+
+        $chainMove = $result['chains'][0]->moves()->first();
+        $this->assertEqualsWithDelta(7.0, (float) $chainMove->product_qty, 0.0001, 'Chain carries qty_done (7), not ordered qty (10).');
+
+        $backorderMove = $result['backorder']->moves()->first();
+        $this->assertEqualsWithDelta(3.0, (float) $backorderMove->product_qty, 0.0001, 'Backorder holds the unshipped 3.');
+    }
+
+    /**
+     * Phase 2 × Phase 4 composition: a 2-step receipt with a putaway rule
+     * at Stock should produce a chain picking Input → Stock whose MOVE dest
+     * is redirected to the putaway bin. The picking-level dest stays at
+     * Stock (the warehouse level), per Phase 2.
+     */
+    public function test_chain_picking_move_dest_honors_putaway_rule(): void
+    {
+        $company = Company::create(['name' => 'Putaway × Chain Co', 'active' => true, 'currency' => 'USD']);
+        $this->admin->companies()->syncWithoutDetaching([$company->id]);
+        app(WarehouseService::class)->create([
+            'company_id' => $company->id, 'name' => 'PC WH', 'short_name' => 'PC',
+            'reception_steps' => 'two_steps', 'delivery_steps' => 'one_step', 'active' => true,
+        ]);
+        $input = Location::where('company_id', $company->id)->where('name', 'Input')->firstOrFail();
+        $stock = Location::where('company_id', $company->id)->where('name', 'Stock')->firstOrFail();
+        $receiptOp = OperationType::where('company_id', $company->id)->where('code', 'incoming')->firstOrFail();
+
+        $bin = Location::create([
+            'company_id' => $company->id, 'parent_id' => $stock->id,
+            'name' => 'Shelf 7', 'usage' => 'internal', 'active' => true,
+        ]);
+        $product = Product::create([
+            'name' => 'Putaway Widget', 'company_id' => $company->id,
+            'uom_id' => $this->uom->id, 'uom_po_id' => $this->uom->id,
+            'product_type' => 'storable', 'tracking' => 'none', 'active' => true,
+            'created_by' => $this->admin->id, 'updated_by' => $this->admin->id,
+        ]);
+        \App\Models\Inventory\PutawayRule::create([
+            'company_id'        => $company->id,
+            'location_id'       => $stock->id,
+            'fixed_location_id' => $bin->id,
+            'product_id'        => $product->id,
+            'sequence'          => 10,
+            'active'            => true,
+        ]);
+
+        $supplier = Location::where('usage', 'supplier')->whereNull('company_id')->firstOrFail();
+        $receipt = app(PickingService::class)->create(
+            [
+                'company_id'        => $company->id,
+                'operation_type_id' => $receiptOp->id,
+                'location_src_id'   => $supplier->id,
+                'location_dest_id'  => $input->id,
+                'scheduled_date'    => now()->toDateString(),
+                'active'            => true,
+            ],
+            [['product_id' => $product->id, 'uom_id' => $this->uom->id, 'product_qty' => 4.0, 'name' => $product->name]]
+        );
+        app(PickingService::class)->confirm($receipt);
+        $result = app(PickingService::class)->validate($receipt->fresh());
+
+        $chain = $result['chains'][0];
+        $this->assertSame($stock->id, $chain->location_dest_id, 'Chain picking header stays at Stock (warehouse level).');
+
+        $chainMove = $chain->moves()->first();
+        $this->assertSame($bin->id, $chainMove->location_dest_id, 'Chain move dest is putaway-redirected to the bin.');
+    }
+
+    // ─────────────────────────────────────────────────────────────────────
     // Helpers
     // ─────────────────────────────────────────────────────────────────────
 
@@ -683,7 +1212,6 @@ class InventoryOdooParityTest extends TestCase
         $category = ProductCategory::create([
             'name'             => 'Cat-' . uniqid(),
             'removal_strategy' => $strategy,
-            'costing_method'   => 'standard_price',
             'active'           => true,
         ]);
         return Product::create([
@@ -703,7 +1231,6 @@ class InventoryOdooParityTest extends TestCase
         $category = ProductCategory::create([
             'name'             => 'Cat-' . uniqid(),
             'removal_strategy' => $strategy,
-            'costing_method'   => 'standard_price',
             'active'           => true,
         ]);
         return Product::create([

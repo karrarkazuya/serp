@@ -24,7 +24,7 @@
                 table="hr_departments"
                 field="name"
                 :selected="old('department_id', $job?->department_id)"
-                placeholder="Select department..."
+                placeholder="{{ __('employees.select_department') }}"
                 compact
             />
         </div>
@@ -36,7 +36,7 @@
                 table="companies"
                 field="name"
                 :selected="old('company_id', $job?->company_id)"
-                placeholder="Select company..."
+                placeholder="{{ __('common.select_company') }}"
                 compact
             />
         </div>

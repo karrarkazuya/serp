@@ -74,7 +74,7 @@ class ProductController extends Controller
         $activeCompanyIds = $this->companyContext->getActiveCompanyIds();
         abort_unless(in_array($product->company_id, $activeCompanyIds) || is_null($product->company_id), 403);
 
-        $product->load(['category', 'uom', 'uomPo', 'company', 'suppliers.partner', 'routes', 'creator', 'updater']);
+        $product->load(['category', 'uom', 'company', 'suppliers.partner', 'creator', 'updater']);
 
         $allIds = Product::active()->forCompanies($activeCompanyIds)->orderBy('name')->pluck('id');
         $currentIndex   = $allIds->search($product->id);
@@ -126,12 +126,15 @@ class ProductController extends Controller
     public function store(StoreProductRequest $request)
     {
         $data       = $request->validated();
-        $routeIds   = $data['routes'] ?? [];
         $suppliers  = $data['suppliers'] ?? [];
         // Unchecked HTML checkbox = no posted value. Without this, the box
         // could never be *un*checked on edit (it'd silently stay true forever).
         $data['has_expiration_date'] = $request->boolean('has_expiration_date');
-        unset($data['routes'], $data['suppliers']);
+        // uom_po_id used to be a separate form dropdown that no PO module
+        // consumed. The field is hidden now; default to uom_id so the NOT
+        // NULL column on inventory_products stays satisfied.
+        $data['uom_po_id'] = $data['uom_po_id'] ?? ($data['uom_id'] ?? null);
+        unset($data['suppliers']);
 
         $imageRecord = null;
         if ($request->hasFile('image')) {
@@ -140,9 +143,8 @@ class ProductController extends Controller
         }
 
         try {
-            $product = DB::transaction(function () use ($data, $routeIds, $suppliers, $imageRecord) {
+            $product = DB::transaction(function () use ($data, $suppliers, $imageRecord) {
                 $product = $this->productService->create($data);
-                $product->routes()->sync($routeIds);
                 $this->productService->syncSuppliers($product, $suppliers);
                 $imageRecord?->update(['source_type' => $product->getTable(), 'source_id' => $product->id]);
                 return $product;
@@ -164,7 +166,7 @@ class ProductController extends Controller
         $activeCompanyIds = $this->companyContext->getActiveCompanyIds();
         abort_unless(in_array($product->company_id, $activeCompanyIds) || is_null($product->company_id), 403);
 
-        $product->load(['category', 'uom', 'uomPo', 'suppliers.partner', 'routes']);
+        $product->load(['category', 'uom', 'suppliers.partner']);
 
         return view('inventory.products.edit', compact('product'));
     }
@@ -176,10 +178,12 @@ class ProductController extends Controller
         abort_unless(in_array($product->company_id, $activeCompanyIds) || is_null($product->company_id), 403);
 
         $data      = $request->validated();
-        $routeIds  = $data['routes'] ?? [];
         $suppliers = $data['suppliers'] ?? [];
         $data['has_expiration_date'] = $request->boolean('has_expiration_date');
-        unset($data['routes'], $data['suppliers']);
+        if (array_key_exists('uom_id', $data) && empty($data['uom_po_id'])) {
+            $data['uom_po_id'] = $data['uom_id'];
+        }
+        unset($data['suppliers']);
 
         $oldImageUuid = $product->image_uuid;
 
@@ -189,9 +193,8 @@ class ProductController extends Controller
         }
 
         try {
-            DB::transaction(function () use ($product, $data, $routeIds, $suppliers) {
+            DB::transaction(function () use ($product, $data, $suppliers) {
                 $this->productService->update($product, $data);
-                $product->routes()->sync($routeIds);
                 $this->productService->syncSuppliers($product, $suppliers);
             });
         } catch (\Throwable $e) {

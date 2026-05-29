@@ -38,19 +38,6 @@
                             <label class="w-40 shrink-0 text-sm text-gray-500">{{ __('inventory.location') }}</label>
                             <span class="flex-1 text-sm text-gray-800">{{ $reorderRule->location?->complete_name ?? '-' }}</span>
                         </div>
-                        {{-- route_id is stored on the rule but NOT consumed
-                             by ReorderRuleController::replenish() — that path
-                             hardcodes a receipt OperationType lookup. Left in
-                             the form so configuration data isn't lost when
-                             route-driven replenishment is wired up later. --}}
-                        <div class="flex items-center gap-4 py-2 border-b border-gray-100">
-                            <label class="w-40 shrink-0 text-sm text-gray-500">
-                                {{ __('inventory.route') }}
-                                <span class="ml-1 text-[10px] font-medium text-amber-600 uppercase tracking-wide">{{ __('inventory.stored_only') }}</span>
-                            </label>
-                            <x-relation-dropdown table="inventory_routes" field="name" name="route_id" relation="many2one"
-                                :selected="old('route_id', $reorderRule->route_id)" class="flex-1" compact />
-                        </div>
                     </div>
                     <div>
                         <div class="flex items-center gap-4 py-2 border-b border-gray-100">

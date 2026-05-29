@@ -505,7 +505,8 @@
                                             <div>
                                                 <label class="block text-xs text-gray-500 mb-1">{{ __('employees.doc_type') }}</label>
                                                 <select name="contract_type" class="w-full px-2 py-1.5 text-sm border border-gray-300 rounded focus:ring-1 focus:ring-purple-500 focus:outline-none">
-                                                    @foreach(['full_time' => 'Full Time', 'part_time' => 'Part Time', 'temporary' => 'Temporary', 'internship' => 'Internship', 'contractor' => 'Contractor'] as $k => $v)
+                                                    {{-- Options were hardcoded English — Arabic users saw "Full Time / Part Time / …" on the inline contract editor. --}}
+                                                    @foreach(['full_time' => __('employees.full_time'), 'part_time' => __('employees.part_time'), 'temporary' => __('employees.temporary'), 'internship' => __('employees.internship'), 'contractor' => __('employees.contractor')] as $k => $v)
                                                         <option value="{{ $k }}">{{ $v }}</option>
                                                     @endforeach
                                                 </select>
@@ -525,7 +526,8 @@
                                             <div>
                                                 <label class="block text-xs text-gray-500 mb-1">{{ __('common.status') }}</label>
                                                 <select name="state" class="w-full px-2 py-1.5 text-sm border border-gray-300 rounded focus:ring-1 focus:ring-purple-500 focus:outline-none">
-                                                    @foreach(['draft' => 'Draft', 'open' => 'Open', 'close' => 'Closed', 'cancelled' => 'Cancelled'] as $k => $v)
+                                                    {{-- Status options were hardcoded English — Arabic users saw "Draft / Open / Closed / Cancelled" on the contract editor. --}}
+                                                    @foreach(['draft' => __('employees.contract_status_draft'), 'open' => __('employees.contract_status_open'), 'close' => __('employees.contract_status_close'), 'cancelled' => __('employees.contract_status_cancelled')] as $k => $v)
                                                         <option value="{{ $k }}">{{ $v }}</option>
                                                     @endforeach
                                                 </select>

@@ -24,7 +24,7 @@
                 table="hr_employees"
                 field="name"
                 :selected="old('manager_id', $department?->manager_id)"
-                placeholder="Select manager..."
+                placeholder="{{ __('common.select_manager') }}"
                 compact
             />
         </div>
@@ -36,7 +36,7 @@
                 table="hr_departments"
                 field="name"
                 :selected="old('parent_id', $department?->parent_id)"
-                placeholder="Select parent department..."
+                placeholder="{{ __('common.select_parent') }}"
                 compact
             />
         </div>
@@ -48,7 +48,7 @@
                 table="companies"
                 field="name"
                 :selected="old('company_id', $department?->company_id)"
-                placeholder="Select company..."
+                placeholder="{{ __('common.select_company') }}"
                 compact
             />
         </div>

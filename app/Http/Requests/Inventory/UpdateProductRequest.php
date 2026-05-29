@@ -20,14 +20,14 @@ class UpdateProductRequest extends FormRequest
     {
         $activeCompanyIds = app(CompanyContextService::class)->getActiveCompanyIds();
 
-        $routeRule   = $this->companyScopedExists('inventory_routes', $activeCompanyIds, allowNull: true);
+        // See StoreProductRequest for the rationale on dropped fields:
+        // uom_po_id, weight, volume, routes are no longer accepted.
         $partnerRule = $this->contactInActiveCompaniesRule($activeCompanyIds);
 
         return [
             'company_id'          => ['nullable', Rule::exists('companies', 'id')->whereIn('id', $activeCompanyIds)],
             'category_id'         => ['nullable', 'exists:inventory_product_categories,id'],
             'uom_id'              => ['required', 'exists:inventory_uoms,id'],
-            'uom_po_id'           => ['required', 'exists:inventory_uoms,id'],
             'name'                => ['required', 'string', 'max:255'],
             'internal_reference'  => ['nullable', 'string', 'max:128'],
             'barcode'             => ['nullable', 'string', 'max:128'],
@@ -38,10 +38,6 @@ class UpdateProductRequest extends FormRequest
             'has_expiration_date' => ['nullable', 'boolean'],
             'cost'                => ['nullable', 'numeric', 'min:0'],
             'sale_price'          => ['nullable', 'numeric', 'min:0'],
-            'weight'              => ['nullable', 'numeric', 'min:0'],
-            'volume'              => ['nullable', 'numeric', 'min:0'],
-            'routes'              => ['nullable', 'array'],
-            'routes.*'            => [$routeRule],
             'suppliers'           => ['nullable', 'array'],
             'suppliers.*.partner_id'   => ['nullable', $partnerRule],
             'suppliers.*.partner_name' => ['nullable', 'string', 'max:255'],

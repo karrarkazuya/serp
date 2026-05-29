@@ -41,10 +41,11 @@
     <div class="flex-1 overflow-y-auto">
         <div class="bg-white mx-4 mt-4 mb-4 rounded-xl border border-gray-200 shadow-sm p-6">
             <h1 class="text-2xl font-bold text-gray-900 mb-6">{{ $productCategory->complete_name }}</h1>
+            {{-- costing_method intentionally omitted from the display loop:
+                 no service code consumes it yet. Re-add when valuation ships. --}}
             @foreach([
                 [__('inventory.parent'), $productCategory->parent?->complete_name],
                 [__('inventory.removal_strategy'), $productCategory->removal_strategy_label],
-                [__('inventory.costing_method'), $productCategory->costing_method_label],
             ] as [$label, $value])
             <div class="flex items-center gap-4 py-2 border-b border-gray-100">
                 <span class="w-40 shrink-0 text-sm text-gray-500">{{ $label }}</span>

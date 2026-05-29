@@ -31,16 +31,22 @@ class Route extends Model
         'created_at' => ['label' => 'Created on', 'column' => 'created_at', 'type' => 'datetime'],
     ];
 
+    // `supplied_wh_id` / `supplier_wh_id` are intentionally absent from
+    // $fillable: the columns exist on the schema (inter-warehouse procurement
+    // routing — "Route X stocks WH A from WH B's stock") but no engine queries
+    // by them and no form exposes them to users. The chain engine matches
+    // RouteRules by location, not by warehouse FK on the parent Route. Same
+    // for the `*_selectable` flags: they would gate visibility on the
+    // Product / Category / Warehouse forms in Odoo's selector but no S-ERP
+    // form reads them either. Listing any of these in $fillable invited
+    // dead writes from the RouteController. Columns stay in the DB for a
+    // future procurement pipeline.
     protected $fillable = [
-        'company_id', 'supplied_wh_id', 'supplier_wh_id', 'name', 'sequence',
-        'product_category_selectable', 'product_selectable', 'warehouse_selectable', 'active',
+        'company_id', 'name', 'sequence', 'active',
     ];
 
     protected $casts = [
-        'product_category_selectable' => 'boolean',
-        'product_selectable'          => 'boolean',
-        'warehouse_selectable'        => 'boolean',
-        'active'                      => 'boolean',
+        'active' => 'boolean',
     ];
 
     public function company(): BelongsTo    { return $this->belongsTo(Company::class); }

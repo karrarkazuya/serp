@@ -86,7 +86,7 @@ class JobController extends Controller
     {
         $job = DB::transaction(fn () => $this->jobService->create($request->validated()));
 
-        return redirect()->route('employees.jobs.show', $job)->with('success', 'Job position created.');
+        return redirect()->route('employees.jobs.show', $job)->with('success', __('employees.job_position_created'));
     }
 
     public function edit(Job $job)
@@ -108,7 +108,7 @@ class JobController extends Controller
 
         DB::transaction(fn () => $this->jobService->update($job, $request->validated()));
 
-        return redirect()->route('employees.jobs.show', $job)->with('success', 'Job position updated.');
+        return redirect()->route('employees.jobs.show', $job)->with('success', __('employees.job_position_updated'));
     }
 
     public function archive(Request $_request, Job $job)
@@ -119,7 +119,7 @@ class JobController extends Controller
 
         DB::transaction(fn () => $this->jobService->archive($job));
 
-        return redirect()->route('employees.jobs.index')->with('success', 'Job position archived.');
+        return redirect()->route('employees.jobs.index')->with('success', __('employees.job_position_archived'));
     }
 
     public function unarchive(Request $_request, Job $job)
@@ -130,7 +130,7 @@ class JobController extends Controller
 
         DB::transaction(fn () => $this->jobService->unarchive($job));
 
-        return redirect()->route('employees.jobs.show', $job)->with('success', 'Job position restored.');
+        return redirect()->route('employees.jobs.show', $job)->with('success', __('employees.job_position_unarchived'));
     }
 
     public function unlink(Request $_request, Job $job)
@@ -141,7 +141,7 @@ class JobController extends Controller
 
         DB::transaction(fn () => $this->jobService->delete($job));
 
-        return redirect()->route('employees.jobs.index')->with('success', 'Job position deleted.');
+        return redirect()->route('employees.jobs.index')->with('success', __('employees.job_position_deleted'));
     }
 
     public function addComment(Request $request, Job $job)
@@ -153,6 +153,6 @@ class JobController extends Controller
         $request->validate(['body' => 'required|string|max:5000']);
         DB::transaction(fn () => $job->logComment($request->body));
 
-        return back()->with('success', 'Comment added.');
+        return back()->with('success', __('employees.comment_added'));
     }
 }

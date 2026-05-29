@@ -49,18 +49,22 @@ class Product extends Model
         'created_at'         => ['label' => 'Created on',         'column' => 'created_at',         'type' => 'datetime'],
     ];
 
+    // `weight` and `volume` are intentionally absent from $fillable + $casts:
+    // the columns exist in the schema for future shipping/forecasting work,
+    // but no service code reads them today and the form no longer collects
+    // them. Listing them invited dead mass-assignment. Same story for
+    // `uom_po_id` — the controller defaults it to `uom_id` at save time so
+    // the NOT NULL column stays satisfied without a user-facing dropdown.
     protected $fillable = [
         'company_id', 'category_id', 'uom_id', 'uom_po_id',
         'name', 'internal_reference', 'barcode', 'description', 'description_picking',
         'product_type', 'tracking', 'has_expiration_date',
-        'cost', 'sale_price', 'weight', 'volume', 'image_uuid', 'active',
+        'cost', 'sale_price', 'image_uuid', 'active',
     ];
 
     protected $casts = [
         'cost'                => 'decimal:4',
         'sale_price'          => 'decimal:4',
-        'weight'              => 'decimal:4',
-        'volume'              => 'decimal:4',
         'has_expiration_date' => 'boolean',
         'active'              => 'boolean',
     ];

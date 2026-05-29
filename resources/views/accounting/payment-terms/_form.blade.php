@@ -44,7 +44,7 @@
         <div class="flex-1">
             <textarea name="note" rows="2"
                       class="w-full border border-gray-300 rounded px-3 py-1.5 text-sm focus:outline-none focus:ring-1 focus:ring-purple-400"
-                      placeholder="Optional description…">{{ old('note', $paymentTerm->note ?? '') }}</textarea>
+                      placeholder="{{ __('common.optional_description') }}">{{ old('note', $paymentTerm->note ?? '') }}</textarea>
         </div>
     </div>
 
