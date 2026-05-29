@@ -34,12 +34,21 @@
         draftRules: [],
         draftMatch: 'any',
         relationSelected: [],
+        favorites: @js($favorites),
+        currentQueryString: @js($currentQueryString),
+        modelClass: @js($model),
+        saveFormOpen: false,
+        saveName: '',
+        saving: false,
+        confirmingDeleteId: null,
         get currentField() { return this.fields[this.draft.field] || this.fieldList[0]; },
         get currentOperators() { return this.currentField?.operators || []; },
         get requiresValue() { return !['is_set', 'is_not_set'].includes(this.draft.operator); },
         get isBetween() { return this.draft.operator === 'between'; },
         get isRelation() { return this.currentField?.type === 'relation'; },
         get isMultiRelation() { return this.isRelation && ['in', 'not_in'].includes(this.draft.operator); },
+        get isSelect() { return this.currentField?.type === 'select'; },
+        get isMultiSelect() { return this.isSelect && ['in', 'not_in'].includes(this.draft.operator); },
         init() {
             this.normalizeDraft();
         },
@@ -49,13 +58,30 @@
             if (!field.operators.includes(this.draft.operator)) {
                 this.draft.operator = field.operators[0] || '=';
             }
-            this.draft.value = '';
             this.draft.value_to = '';
             this.draft.display = '';
             this.relationSelected = [];
+            // Multi-select operators (in / not_in) bind to an array via
+            // <select multiple>; everything else is scalar. Set the right
+            // starting shape so x-model doesn't fight the element's value.
+            this.draft.value = this.isMultiSelect ? [] : '';
             if (field.type === 'boolean') {
                 this.draft.value = '1';
                 this.draft.display = 'Yes';
+            }
+        },
+        labelForSelectValue(value) {
+            const field = this.currentField;
+            if (!field || !Array.isArray(field.options)) return value;
+            const opt = field.options.find(o => String(o.value) === String(value));
+            return opt ? opt.label : value;
+        },
+        updateSelectDisplay() {
+            if (this.isMultiSelect) {
+                const values = Array.isArray(this.draft.value) ? this.draft.value : [];
+                this.draft.display = values.map(v => this.labelForSelectValue(v)).filter(Boolean).join(', ');
+            } else {
+                this.draft.display = this.labelForSelectValue(this.draft.value);
             }
         },
         describe(filter) {
@@ -69,11 +95,30 @@
             const operator = this.operatorLabels[filter.operator] || filter.operator;
             if (['is_set', 'is_not_set'].includes(filter.operator)) return `${label} ${operator}`;
             if (filter.operator === 'between') return `${label} ${operator} ${filter.value} and ${filter.value_to}`;
-            return `${label} ${operator} ${filter.display || filter.value}`;
+
+            // For select-type filters, look up labels from the field options
+            // so pills show option labels (e.g. Current) instead of raw values
+            // (e.g. current) even when a shared URL has no saved display string.
+            let displayValue = filter.display;
+            if (!displayValue && field?.type === 'select' && Array.isArray(field.options)) {
+                const values = Array.isArray(filter.value) ? filter.value : [filter.value];
+                displayValue = values.map(v => {
+                    const opt = field.options.find(o => String(o.value) === String(v));
+                    return opt ? opt.label : v;
+                }).join(', ');
+            }
+            return `${label} ${operator} ${displayValue || filter.value}`;
         },
         canUseDraft() {
             if (!this.currentField) return;
-            if (this.requiresValue && !this.draft.value) return false;
+            if (this.requiresValue) {
+                // For multi-select an empty array is truthy in JS — check length.
+                if (this.isMultiSelect || this.isMultiRelation) {
+                    if (!Array.isArray(this.draft.value) || this.draft.value.length === 0) return false;
+                } else if (!this.draft.value) {
+                    return false;
+                }
+            }
             if (this.isBetween && !this.draft.value_to) return false;
             return true;
         },
@@ -164,6 +209,56 @@
             this.draft.value = detail.value;
             this.draft.display = detail.display || '';
             this.relationSelected = detail.records || [];
+        },
+        openSaveForm() {
+            this.saveFormOpen = true;
+            this.saveName = '';
+            this.$nextTick(() => this.$refs.saveInput?.focus());
+        },
+        cancelSave() {
+            this.saveFormOpen = false;
+            this.saveName = '';
+        },
+        async saveFavorite() {
+            const name = this.saveName.trim();
+            if (!name || this.saving) return;
+            this.saving = true;
+            try {
+                const response = await fetch(@js(route('favorite-searches.store')), {
+                    method: 'POST',
+                    credentials: 'same-origin',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': document.querySelector('meta[name=csrf-token]').content,
+                    },
+                    body: JSON.stringify({
+                        model_class: this.modelClass,
+                        name,
+                        query_string: this.currentQueryString,
+                    }),
+                });
+                if (response.ok || response.redirected) {
+                    window.location.reload();
+                    return;
+                }
+            } catch (e) {}
+            this.saving = false;
+        },
+        async deleteFavorite(deleteUrl) {
+            try {
+                const response = await fetch(deleteUrl, {
+                    method: 'POST',
+                    credentials: 'same-origin',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': document.querySelector('meta[name=csrf-token]').content,
+                    },
+                    body: JSON.stringify({ _method: 'DELETE' }),
+                });
+                if (response.ok || response.redirected) {
+                    window.location.reload();
+                }
+            } catch (e) {}
         },
       }"
       x-ref="form"
@@ -317,9 +412,80 @@
                         <svg class="w-4 h-4 text-yellow-400" fill="currentColor" viewBox="0 0 20 20"><path d="M9.05 2.93c.3-.92 1.6-.92 1.9 0l1.18 3.63h3.82c.97 0 1.37 1.24.59 1.8l-3.09 2.25 1.18 3.63c.3.92-.75 1.69-1.54 1.12L10 13.12l-3.09 2.24c-.79.57-1.84-.2-1.54-1.12l1.18-3.63-3.09-2.25c-.78-.56-.38-1.8.59-1.8h3.82l1.18-3.63z"/></svg>
                         {{ __('common.favorites') }}
                     </div>
-                    <button type="button" class="block px-2 py-1.5 text-sm font-medium text-gray-700 hover:bg-gray-100 rounded">
-                        {{ __('common.save_current_search') }}
-                    </button>
+
+                    {{-- Saved favorite rows --}}
+                    <template x-for="fav in favorites" :key="fav.id">
+                        <div class="flex items-center group rounded hover:bg-gray-100">
+                            <a :href="fav.url"
+                               class="flex-1 min-w-0 px-2 py-1.5 text-sm font-medium text-gray-700 truncate"
+                               x-text="fav.name"></a>
+
+                            <template x-if="confirmingDeleteId !== fav.id">
+                                <button type="button"
+                                        @click.stop="confirmingDeleteId = fav.id"
+                                        class="px-2 py-1 text-gray-300 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-opacity shrink-0"
+                                        :title="@js(__('common.delete'))">
+                                    <svg class="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 20 20">
+                                        <path fill-rule="evenodd" d="M8 2a1 1 0 00-.9.55L6.38 4H4a1 1 0 100 2h.3l.86 10.34A2 2 0 007.16 18h5.68a2 2 0 001.99-1.66L15.7 6H16a1 1 0 100-2h-2.38l-.72-1.45A1 1 0 0012 2H8z" clip-rule="evenodd"/>
+                                    </svg>
+                                </button>
+                            </template>
+                            <template x-if="confirmingDeleteId === fav.id">
+                                <div class="flex items-center gap-1 px-1 py-1 shrink-0" @click.stop>
+                                    <button type="button"
+                                            @click.stop="deleteFavorite(fav.delete_url)"
+                                            class="px-2 py-0.5 bg-red-600 text-white text-xs font-semibold rounded hover:bg-red-700">
+                                        {{ __('common.yes') }}
+                                    </button>
+                                    <button type="button"
+                                            @click.stop="confirmingDeleteId = null"
+                                            class="px-2 py-0.5 text-gray-500 text-xs hover:text-gray-700">
+                                        {{ __('common.cancel') }}
+                                    </button>
+                                </div>
+                            </template>
+                        </div>
+                    </template>
+
+                    <template x-if="favorites.length === 0 && !saveFormOpen">
+                        <p class="px-2 py-1.5 text-xs italic text-gray-400">{{ __('common.no_saved_searches') }}</p>
+                    </template>
+
+                    <div class="border-t border-gray-200 my-2" x-show="favorites.length > 0" style="display:none"></div>
+
+                    {{-- Save current search — inline name input (no native prompt per CLAUDE.md) --}}
+                    <template x-if="!saveFormOpen">
+                        <button type="button"
+                                @click.stop="openSaveForm()"
+                                class="block w-full text-start px-2 py-1.5 text-sm font-medium text-[#714B67] hover:bg-gray-100 rounded">
+                            {{ __('common.save_current_search') }}
+                        </button>
+                    </template>
+                    <template x-if="saveFormOpen">
+                        <div class="px-2 py-1 space-y-2" @click.stop>
+                            <input type="text"
+                                   x-ref="saveInput"
+                                   x-model="saveName"
+                                   maxlength="200"
+                                   @keydown.enter.stop.prevent="saveFavorite()"
+                                   @keydown.escape.stop.prevent="cancelSave()"
+                                   placeholder="{{ __('common.name_this_search') }}"
+                                   class="w-full px-2 py-1 text-sm border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-purple-400">
+                            <div class="flex items-center gap-2">
+                                <button type="button"
+                                        @click.stop="saveFavorite()"
+                                        :disabled="!saveName.trim() || saving"
+                                        class="px-3 py-1 bg-[#714B67] text-white text-xs font-semibold rounded hover:bg-[#5c3d55] disabled:opacity-50 disabled:cursor-not-allowed">
+                                    {{ __('common.save_short') }}
+                                </button>
+                                <button type="button"
+                                        @click.stop="cancelSave()"
+                                        class="px-3 py-1 text-gray-500 text-xs hover:text-gray-700">
+                                    {{ __('common.cancel') }}
+                                </button>
+                            </div>
+                        </div>
+                    </template>
                 </div>
             </div>
         </div>
@@ -414,7 +580,30 @@
                             </select>
                         </template>
 
-                        <template x-if="requiresValue && !isRelation && currentField?.type !== 'boolean'">
+                        {{-- Single-value dropdown for enum / select fields. --}}
+                        <template x-if="requiresValue && isSelect && !isMultiSelect">
+                            <select x-model="draft.value"
+                                    @change="updateSelectDisplay()"
+                                    class="w-full border-0 border-b border-gray-300 bg-white px-2 py-2 text-sm focus:border-[#714B67] focus:ring-0">
+                                <option value="">{{ __('common.select') }}…</option>
+                                <template x-for="opt in (currentField?.options || [])" :key="opt.value">
+                                    <option :value="opt.value" x-text="opt.label"></option>
+                                </template>
+                            </select>
+                        </template>
+
+                        {{-- Multi-value dropdown for `in` / `not_in` on enum fields. --}}
+                        <template x-if="requiresValue && isMultiSelect">
+                            <select x-model="draft.value" multiple size="4"
+                                    @change="updateSelectDisplay()"
+                                    class="w-full border-0 border-b border-gray-300 bg-white px-2 py-2 text-sm focus:border-[#714B67] focus:ring-0">
+                                <template x-for="opt in (currentField?.options || [])" :key="opt.value">
+                                    <option :value="opt.value" x-text="opt.label"></option>
+                                </template>
+                            </select>
+                        </template>
+
+                        <template x-if="requiresValue && !isRelation && !isSelect && currentField?.type !== 'boolean'">
                             <input :type="['date', 'datetime'].includes(currentField?.type) ? (currentField.type === 'datetime' ? 'datetime-local' : 'date') : (['integer', 'decimal', 'number'].includes(currentField?.type) ? 'number' : 'text')"
                                    x-model="draft.value"
                                    class="w-full border-0 border-b border-gray-300 px-2 py-2 text-sm focus:border-[#714B67] focus:ring-0">

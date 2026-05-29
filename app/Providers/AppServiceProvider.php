@@ -79,6 +79,7 @@ use App\Models\Settings\Company;
 use App\Models\Settings\Setting;
 use App\Models\Notification;
 use App\Models\User;
+use App\Models\UserFavoriteSearch;
 use App\Models\Workflow\Group;
 use App\Models\Workflow\Procedure;
 use App\Models\Workflow\ProcedureTemplate;
@@ -256,6 +257,7 @@ class AppServiceProvider extends ServiceProvider
         foreach ([
             Notification::class,
             User::class,
+            UserFavoriteSearch::class,
             Company::class,
             Contact::class,
             \App\Models\Contacts\Tag::class,

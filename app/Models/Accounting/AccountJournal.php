@@ -45,7 +45,7 @@ class AccountJournal extends Model
     public array $searchable = [
         'code'     => ['label' => 'Code', 'column' => 'code', 'type' => 'string'],
         'name'     => ['label' => 'Name', 'column' => 'name', 'type' => 'string'],
-        'type'     => ['label' => 'Type', 'column' => 'type', 'type' => 'string'],
+        'type'     => ['label' => 'Type', 'column' => 'type', 'options' => self::TYPES],
         'currency' => ['label' => 'Currency', 'column' => 'currency', 'type' => 'string'],
         'active'   => ['label' => 'Active', 'column' => 'active', 'type' => 'boolean'],
         'company_id' => [

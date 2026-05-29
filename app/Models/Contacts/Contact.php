@@ -41,7 +41,9 @@ class Contact extends Model
         'name'         => ['label' => 'Name',         'column' => 'name',         'type' => 'string'],
         'email'        => ['label' => 'Email',        'column' => 'email',        'type' => 'email'],
         'company_name' => ['label' => 'Company Name', 'column' => 'company_name', 'type' => 'string'],
-        'contact_type' => ['label' => 'Contact type', 'column' => 'contact_type', 'type' => 'string'],
+        'contact_type' => ['label' => 'Contact type', 'column' => 'contact_type', 'options' => [
+            'individual' => 'Individual', 'company' => 'Company',
+        ]],
         'city'         => ['label' => 'City',         'column' => 'city',         'type' => 'string'],
         'state'        => ['label' => 'State',        'column' => 'state',        'type' => 'string'],
         'country'      => ['label' => 'Country',      'column' => 'country',      'type' => 'string'],

@@ -49,7 +49,9 @@ class RequestSubtype extends Model
 
     public array $searchable = [
         'name'         => ['label' => 'Name',          'column' => 'name',         'type' => 'string'],
-        'type'         => ['label' => 'Type',          'column' => 'type',         'type' => 'string'],
+        'type'         => ['label' => 'Type',          'column' => 'type',         'options' => [
+            'leave' => 'Leave', 'time_off' => 'Time Off', 'overtime' => 'Overtime',
+        ]],
         'cuts_salary'  => ['label' => 'Cuts Salary',   'column' => 'cuts_salary',  'type' => 'boolean'],
         'cuts_balance' => ['label' => 'Cuts Balance',  'column' => 'cuts_balance', 'type' => 'boolean'],
         'active'       => ['label' => 'Active',        'column' => 'active',       'type' => 'boolean'],

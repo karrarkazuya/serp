@@ -18,7 +18,7 @@ class ExportController extends Controller
     public function export(Request $request): StreamedResponse
     {
         $modelKey   = (string) $request->input('model', '');
-        $exportable = config('exportable');
+        $exportable = (array) config('exportable', []);
         $config     = $exportable[$modelKey] ?? null;
 
         abort_unless($config !== null, 404, 'Unknown export model.');
@@ -86,6 +86,7 @@ class ExportController extends Controller
             (string) $request->input('format', 'xlsx'),
             (string) ($config['filename'] ?? $modelKey),
             $request->boolean('import_compatible'),
+            (string) $config['class'],
         );
     }
 

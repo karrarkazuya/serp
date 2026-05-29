@@ -31,7 +31,7 @@ class Procedure extends Model
 
     public array $searchable = [
         'name'       => ['label' => 'Name', 'column' => 'name', 'type' => 'string'],
-        'state'      => ['label' => 'State', 'column' => 'state', 'type' => 'string'],
+        'state'      => ['label' => 'State', 'column' => 'state', 'options' => self::STATES],
         'active'     => ['label' => 'Active', 'column' => 'active', 'type' => 'boolean'],
         'created_at' => ['label' => 'Created on', 'column' => 'created_at', 'type' => 'datetime'],
     ];

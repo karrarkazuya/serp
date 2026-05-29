@@ -36,7 +36,7 @@ class ScrapOrder extends Model
     public array $searchable = [
         'name'       => ['label' => 'Reference',  'column' => 'name',       'type' => 'string'],
         'origin'     => ['label' => 'Source',     'column' => 'origin',     'type' => 'string'],
-        'state'      => ['label' => 'State',      'column' => 'state',      'type' => 'string'],
+        'state'      => ['label' => 'State',      'column' => 'state',      'options' => self::STATE_LABELS],
         'date_done'  => ['label' => 'Date Done',  'column' => 'date_done',  'type' => 'date'],
         'created_at' => ['label' => 'Created on', 'column' => 'created_at', 'type' => 'datetime'],
     ];

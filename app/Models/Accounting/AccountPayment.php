@@ -51,7 +51,9 @@ class AccountPayment extends Model
         'date'         => ['label' => 'Date',          'column' => 'date',         'type' => 'date'],
         'amount'       => ['label' => 'Amount',        'column' => 'amount',       'type' => 'numeric'],
         'currency'     => ['label' => 'Currency',      'column' => 'currency',     'type' => 'string'],
-        'payment_type' => ['label' => 'Payment Type',  'column' => 'payment_type', 'type' => 'string'],
+        'payment_type' => ['label' => 'Payment Type',  'column' => 'payment_type', 'options' => [
+            'inbound' => 'Inbound', 'outbound' => 'Outbound',
+        ]],
         'journal_id'   => [
             'label'    => 'Journal',
             'column'   => 'journal_id',

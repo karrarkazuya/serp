@@ -487,6 +487,47 @@ Where the labels live:
 
 Why: the visible UI must read as the business domain, not the schema. Renaming a column (or supporting a second language) must not require Blade rewrites; an attacker reading view source must not learn the column layout for free.
 
+### 13. Enum-like columns must declare `options` in `$searchable`
+
+Any column whose stored value is one of a fixed set (DB enum, `string(16)` holding `'draft'`/`'posted'`/..., priority `'1'/'2'/'3'`, etc.) must declare its options in the model's `$searchable` array. Filters and exports both consume this single source of truth:
+
+- **Filter dropdown** — fields with non-empty `options` auto-upgrade to type `'select'` and render as a `<select>` in the Add Custom Filter modal (single-value for `=`/`!=`, multi-value for `in`/`not_in`). Without `options`, the user gets a free-text input and has to remember the exact stored value.
+- **Export label mapping** — `ExportService` cross-references the model's `$searchable` and emits the human label (`"Pending"`) instead of the raw enum value (`"pending"`) in the exported XLSX/CSV. Without `options`, the export bleeds DB internals.
+
+```php
+// ❌ Wrong — stored value leaks to both the filter input and the export cells
+public array $searchable = [
+    'state'    => ['label' => 'State',    'column' => 'state',    'type' => 'string'],
+    'priority' => ['label' => 'Priority', 'column' => 'priority', 'type' => 'string'],
+];
+
+// ✅ Correct — single source of truth, picked up by filter + export automatically
+public array $searchable = [
+    'state'    => ['label' => 'State',    'column' => 'state', 'options' => [
+        'draft' => 'Draft', 'pending' => 'Pending', 'completed' => 'Completed',
+        'rejected' => 'Rejected', 'skipped' => 'Skipped', 'closed' => 'Closed',
+    ]],
+    'priority' => ['label' => 'Priority', 'column' => 'priority', 'options' => [
+        '1' => 'Normal', '2' => 'Medium', '3' => 'High',
+    ]],
+];
+
+// ✅ Even better — when the model already has a const map, reference it
+//    so the labels stay in one place across the model, filter, and export.
+public array $searchable = [
+    'state' => ['label' => 'State', 'column' => 'state', 'options' => self::STATES],
+];
+```
+
+Accepted `options` shapes (`SearchFilters::normalizeOptions` coerces all three):
+- Already normalized — `[['value' => 'draft', 'label' => 'Draft'], …]`
+- Associative — `['draft' => 'Draft', 'done' => 'Done']` (also works for stringy-int keys: `['1' => 'Normal', '2' => 'Medium']`)
+- Plain list — `['draft', 'pending', 'done']` (label is auto-title-cased)
+
+`'type' => 'select'` is optional — declaring `options` on a `string` field is enough to opt in; the helper promotes the type automatically. Setting `'type' => 'boolean'` keeps the Yes/No dropdown intact even if `options` is present.
+
+The export path picks this up with **no per-model exportable.php change** — adding options to `$searchable` is the only step needed for both the filter UI and the labelled export. Skipping this is a Rule 12 violation: the user-facing pill/cell ends up showing the raw enum identifier instead of the business label.
+
 ---
 
 ## Controller Method Naming
@@ -609,6 +650,7 @@ When building a new module, follow `docs/implement_new_module.md` using Contacts
 - [ ] Navigation: update `resources/views/components/navbar.blade.php`
 - [ ] Register target tables in `config/relation_dropdowns.php` for any relation dropdown
 - [ ] make sure you added $sortable, $searchable, $chatterTracked, $fillable and make sure they are linked and used
+- [ ] For every enum-like column (DB enum, fixed string set, priority codes), declare `'options' => [...]` in `$searchable` (Rule 13). The filter dropdown and export labels both read from it — no extra exportable.php entry needed.
 - [ ] Export: add entry to `config/exportable.php`, seed `module.export` permission, add `export()` to policy (nullable model param), add `<x-export>` + row checkboxes to index view
 - [ ] Bulk delete (opt-in): make policy `delete()` accept `?Model $model = null`, add `bulkUnlink` controller method, add bulk-delete route, pass `:bulk-delete-url` to `<x-list>`
 - [ ] Group By: add `GroupsQuery` import + group-by detection block to `read()` (before `SortsTable::apply()`), add `@if(isset($groups))` / `@else` branching in the index view with `<x-list :grouped="true">` and `<tbody x-data>` blocks
@@ -777,5 +819,7 @@ Never use `confirm()`, `alert()`, or `prompt()`. These block the thread, cannot 
 - Do not bypass `ExportService::safeValue()` / `setValueExplicit(..., TYPE_STRING)` — raw `setValue` or `fputcsv` re-opens CSV/XLSX formula injection
 - Do not add a new file-serve helper that only checks the parent-child relation (`$doc->employee_id === $employee->id`) without also gating by the actor's active companies — that's the EmployeeDocument IDOR pattern
 - Do not render column identifiers as user-facing labels (`first_name`, `created_at`, `company_id`) — always use a written-out human label or `__('...')` translation (Rule 12)
+- Do not leave enum-like fields as `'type' => 'string'` without `options` — that surfaces the raw enum (`'pending'`) in the filter pill and the export cell instead of the human label (`'Pending'`). Declare options in `$searchable` (Rule 13); the filter dropdown and `ExportService` both auto-pick up from there.
+- Do not duplicate enum option lists into `config/exportable.php` — the export reads option labels from the model's `$searchable` (single source of truth). Adding `options` only to exportable.php leaves the filter dropdown broken; only `$searchable` updates fix both.
 - Do not pass `:can-export` or `:can-delete` manually on `<x-list>` — always pass `:model="ModelClass::class"` and let the component auto-derive permissions from the Gate policy. Manual overrides are only for non-standard edge cases
 - Do not write a new bulk action as a one-off per-view feature — add it to `TableList.php` + `list.blade.php` so all lists gain it automatically via the `:model` auto-derive path

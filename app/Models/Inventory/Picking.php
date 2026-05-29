@@ -42,7 +42,13 @@ class Picking extends Model
     public array $searchable = [
         'name'   => ['label' => 'Reference', 'column' => 'name',   'type' => 'string'],
         'origin' => ['label' => 'Source',    'column' => 'origin', 'type' => 'string'],
-        'state'  => ['label' => 'Status',    'column' => 'state',  'type' => 'string'],
+        'state'  => ['label' => 'Status',    'column' => 'state',  'options' => [
+            self::STATE_DRAFT     => 'Draft',
+            self::STATE_CONFIRMED => 'Waiting',
+            self::STATE_ASSIGNED  => 'Ready',
+            self::STATE_DONE      => 'Done',
+            self::STATE_CANCELLED => 'Cancelled',
+        ]],
         'scheduled_date' => ['label' => 'Scheduled Date', 'column' => 'scheduled_date', 'type' => 'datetime'],
         'created_at'     => ['label' => 'Created on',     'column' => 'created_at',     'type' => 'datetime'],
     ];

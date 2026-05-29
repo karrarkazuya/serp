@@ -35,8 +35,16 @@ class Warehouse extends Model
     public array $searchable = [
         'name'             => ['label' => 'Name',             'column' => 'name',             'type' => 'string'],
         'short_name'       => ['label' => 'Short Name',       'column' => 'short_name',       'type' => 'string'],
-        'reception_steps'  => ['label' => 'Reception Steps',  'column' => 'reception_steps',  'type' => 'string'],
-        'delivery_steps'   => ['label' => 'Delivery Steps',   'column' => 'delivery_steps',   'type' => 'string'],
+        'reception_steps'  => ['label' => 'Reception Steps',  'column' => 'reception_steps',  'options' => [
+            'one_step' => 'Receive in 1 step',
+            'two_steps' => 'Receive in 2 steps',
+            'three_steps' => 'Receive in 3 steps',
+        ]],
+        'delivery_steps'   => ['label' => 'Delivery Steps',   'column' => 'delivery_steps',   'options' => [
+            'one_step' => 'Deliver in 1 step',
+            'two_steps' => 'Deliver in 2 steps',
+            'three_steps' => 'Deliver in 3 steps',
+        ]],
         'active'           => ['label' => 'Active',           'column' => 'active',           'type' => 'boolean'],
         'created_at'       => ['label' => 'Created on',       'column' => 'created_at',       'type' => 'datetime'],
     ];

@@ -63,7 +63,7 @@ class Account extends Model
     public array $searchable = [
         'code'         => ['label' => 'Code',     'column' => 'code',         'type' => 'string'],
         'name'         => ['label' => 'Name',     'column' => 'name',         'type' => 'string'],
-        'account_type' => ['label' => 'Type',     'column' => 'account_type', 'type' => 'string'],
+        'account_type' => ['label' => 'Type',     'column' => 'account_type', 'options' => self::TYPES],
         'currency'     => ['label' => 'Currency', 'column' => 'currency',     'type' => 'string'],
         'reconcile'    => ['label' => 'Reconcilable', 'column' => 'reconcile', 'type' => 'boolean'],
         'active'       => ['label' => 'Active',   'column' => 'active',       'type' => 'boolean'],

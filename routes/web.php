@@ -11,6 +11,7 @@ use App\Http\Controllers\FileController;
 use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\SharedLinkController;
+use App\Http\Controllers\UserFavoriteSearchController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -53,6 +54,14 @@ Route::middleware('auth')->group(function () {
     Route::post('/export', [ExportController::class, 'export'])
         ->middleware('throttle:20,1')
         ->name('export');
+
+    // Personal saved searches — scoped per-user. The Search component's
+    // "Save current search" persists the current URL query string against
+    // the model class so the user can recall it on the same index later.
+    Route::post('/favorite-searches', [UserFavoriteSearchController::class, 'store'])
+        ->name('favorite-searches.store');
+    Route::delete('/favorite-searches/{favoriteSearch}', [UserFavoriteSearchController::class, 'destroy'])
+        ->name('favorite-searches.delete');
 
     // Notifications
     Route::prefix('notifications')->name('notifications.')->group(function () {

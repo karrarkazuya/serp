@@ -40,7 +40,9 @@ class EmployeeJobGrade extends Model
     public array $searchable = [
         'organizational_structure' => ['label' => 'Organizational Structure', 'column' => 'organizational_structure', 'type' => 'string'],
         'assignment_type'          => ['label' => 'Assignment Type',          'column' => 'assignment_type',          'type' => 'string'],
-        'data_status'              => ['label' => 'Data Status',              'column' => 'data_status',              'type' => 'string'],
+        'data_status'              => ['label' => 'Data Status',              'column' => 'data_status',              'options' => [
+            'current' => 'Current', 'previous' => 'Previous',
+        ]],
         'affective_date'           => ['label' => 'Affective Date',           'column' => 'affective_date',           'type' => 'date'],
     ];
 

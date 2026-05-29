@@ -33,7 +33,7 @@ class Location extends Model
     public array $searchable = [
         'name'          => ['label' => 'Name',          'column' => 'name',          'type' => 'string'],
         'complete_name' => ['label' => 'Full Path',     'column' => 'complete_name', 'type' => 'string'],
-        'usage'         => ['label' => 'Location Type', 'column' => 'usage',         'type' => 'string'],
+        'usage'         => ['label' => 'Location Type', 'column' => 'usage',         'options' => self::USAGE_LABELS],
         'active'        => ['label' => 'Active',        'column' => 'active',        'type' => 'boolean'],
     ];
 

@@ -61,8 +61,18 @@ class EmployeeRequest extends Model
     public array $searchable = [
         'title'       => ['label' => 'Title',     'column' => 'title',      'type' => 'string'],
         'description' => ['label' => 'Description','column' => 'description','type' => 'string'],
-        'type'        => ['label' => 'Type',      'column' => 'type',       'type' => 'string'],
-        'state'       => ['label' => 'State',     'column' => 'state',      'type' => 'string'],
+        'type'        => ['label' => 'Type',      'column' => 'type',       'options' => [
+            'leave' => 'Leave', 'time_off' => 'Time Off', 'overtime' => 'Overtime',
+        ]],
+        'state'       => ['label' => 'State',     'column' => 'state',      'options' => [
+            'pending' => 'Pending', 'approved' => 'Approved', 'rejected' => 'Rejected',
+        ]],
+        'manager_status' => ['label' => 'Manager Status', 'column' => 'manager_status', 'options' => [
+            'pending' => 'Pending', 'approved' => 'Approved', 'rejected' => 'Rejected',
+        ]],
+        'hr_status'   => ['label' => 'HR Status',  'column' => 'hr_status',  'options' => [
+            'pending' => 'Pending', 'approved' => 'Approved', 'rejected' => 'Rejected',
+        ]],
         'start_at'    => ['label' => 'From',      'column' => 'start_at',   'type' => 'datetime'],
         'end_at'      => ['label' => 'To',        'column' => 'end_at',     'type' => 'datetime'],
         'employee_id' => [

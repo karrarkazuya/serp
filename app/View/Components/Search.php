@@ -3,8 +3,10 @@
 namespace App\View\Components;
 
 use App\Helpers\SearchFilters;
+use App\Models\UserFavoriteSearch;
 use Closure;
 use Illuminate\Contracts\View\View;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
 use Illuminate\View\Component;
 
@@ -28,6 +30,16 @@ class Search extends Component
     public ?string $activeGroupBy;
 
     public ?string $activeGroupLabel = null;
+
+    /** @var array<int, array<string, mixed>> */
+    public array $favorites = [];
+
+    /**
+     * Query string captured at render time, used as the payload when the user
+     * hits "Save current search". Stripped of `page` so re-opening the saved
+     * search lands on page 1.
+     */
+    public string $currentQueryString = '';
 
     /** @var array<string, string> */
     public array $operatorLabels = [
@@ -112,6 +124,44 @@ class Search extends Component
         if ($this->activeGroupBy && $this->activeGroupLabel === null) {
             $this->activeGroupLabel = $this->fields[$this->activeGroupBy]['label'] ?? $this->activeGroupBy;
         }
+
+        $this->currentQueryString = $this->buildCurrentQueryString();
+        $this->favorites          = $this->loadFavorites();
+    }
+
+    /**
+     * Build the query string that the "Save current search" form will POST.
+     * Drops `page` so a saved search always opens on page 1; keeps every
+     * other parameter (search, filters, group_by, status filters, etc.).
+     */
+    private function buildCurrentQueryString(): string
+    {
+        $params = request()->query();
+        unset($params['page']);
+
+        return http_build_query($params);
+    }
+
+    /**
+     * @return array<int, array<string, mixed>>
+     */
+    private function loadFavorites(): array
+    {
+        $user = Auth::user();
+        if (!$user) return [];
+
+        return UserFavoriteSearch::query()
+            ->forUser($user->id)
+            ->forModel($this->model)
+            ->orderBy('created_at')
+            ->get()
+            ->map(fn (UserFavoriteSearch $fav) => [
+                'id'         => $fav->id,
+                'name'       => $fav->name,
+                'url'        => $this->action . ($fav->query_string ? '?' . $fav->query_string : ''),
+                'delete_url' => route('favorite-searches.delete', $fav),
+            ])
+            ->all();
     }
 
     public function render(): View|Closure|string

@@ -64,8 +64,8 @@ class AccountMove extends Model
         'name' => ['label' => 'Number', 'column' => 'name', 'type' => 'string'],
         'ref'  => ['label' => 'Reference', 'column' => 'ref', 'type' => 'string'],
         'date' => ['label' => 'Date', 'column' => 'date', 'type' => 'date'],
-        'state'=> ['label' => 'State', 'column' => 'state', 'type' => 'string'],
-        'payment_state'=> ['label' => 'Payment State', 'column' => 'payment_state', 'type' => 'string'],
+        'state'=> ['label' => 'State', 'column' => 'state', 'options' => self::STATES],
+        'payment_state'=> ['label' => 'Payment State', 'column' => 'payment_state', 'options' => self::PAYMENT_STATES],
         'amount_total' => ['label' => 'Amount', 'column' => 'amount_total', 'type' => 'numeric'],
         'journal_id' => [
             'label'    => 'Journal',

@@ -20,7 +20,9 @@ class Move extends Model
     public array $sortable   = ['sequence' => 'sequence', 'name' => 'name'];
     public array $searchable = [
         'name'  => ['label' => 'Description', 'column' => 'name',  'type' => 'string'],
-        'state' => ['label' => 'State',       'column' => 'state', 'type' => 'string'],
+        'state' => ['label' => 'State',       'column' => 'state', 'options' => [
+            'draft' => 'Draft', 'cancelled' => 'Cancelled', 'done' => 'Done',
+        ]],
     ];
 
     protected $fillable = [

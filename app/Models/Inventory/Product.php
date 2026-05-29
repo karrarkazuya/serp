@@ -43,8 +43,8 @@ class Product extends Model
         'name'               => ['label' => 'Name',               'column' => 'name',               'type' => 'string'],
         'internal_reference' => ['label' => 'Internal Reference', 'column' => 'internal_reference', 'type' => 'string'],
         'barcode'            => ['label' => 'Barcode',            'column' => 'barcode',            'type' => 'string'],
-        'product_type'       => ['label' => 'Product Type',       'column' => 'product_type',       'type' => 'string'],
-        'tracking'           => ['label' => 'Tracking',           'column' => 'tracking',           'type' => 'string'],
+        'product_type'       => ['label' => 'Product Type',       'column' => 'product_type',       'options' => self::TYPE_LABELS],
+        'tracking'           => ['label' => 'Tracking',           'column' => 'tracking',           'options' => self::TRACKING_LABELS],
         'active'             => ['label' => 'Active',             'column' => 'active',             'type' => 'boolean'],
         'created_at'         => ['label' => 'Created on',         'column' => 'created_at',         'type' => 'datetime'],
     ];

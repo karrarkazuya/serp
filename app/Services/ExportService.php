@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Helpers\SearchFilters;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Collection;
 use PhpOffice\PhpSpreadsheet\Cell\Coordinate;
@@ -28,21 +29,23 @@ class ExportService
         string $format = 'xlsx',
         string $filename = 'export',
         bool $importCompatible = false,
+        ?string $modelClass = null,
     ): StreamedResponse {
         $filename = preg_replace('/[^a-z0-9_\-]/i', '_', $filename);
 
         return match ($format) {
-            'csv'  => $this->csv($records, $columns, $filename, $importCompatible),
-            default => $this->xlsx($records, $columns, $filename, $importCompatible),
+            'csv'  => $this->csv($records, $columns, $filename, $importCompatible, $modelClass),
+            default => $this->xlsx($records, $columns, $filename, $importCompatible, $modelClass),
         };
     }
 
-    private function xlsx(Collection $records, array $columns, string $filename, bool $importCompatible): StreamedResponse
+    private function xlsx(Collection $records, array $columns, string $filename, bool $importCompatible, ?string $modelClass = null): StreamedResponse
     {
         $spreadsheet = new Spreadsheet();
         $sheet       = $spreadsheet->getActiveSheet();
         $colCount    = count($columns);
         $relMaps     = $this->buildRelationMaps($records, $columns);
+        $optionMaps  = $this->buildOptionMaps($modelClass, $columns);
 
         $colIdx = 1;
         foreach ($columns as $col) {
@@ -70,7 +73,7 @@ class ExportService
                 // Excel or pasted out as text.
                 $sheet->setCellValueExplicit(
                     [$colIdx, $rowIdx],
-                    $this->safeValue($record, $col, $relMaps),
+                    $this->safeValue($record, $col, $relMaps, $optionMaps),
                     DataType::TYPE_STRING,
                 );
                 $colIdx++;
@@ -88,11 +91,12 @@ class ExportService
         ]);
     }
 
-    private function csv(Collection $records, array $columns, string $filename, bool $importCompatible): StreamedResponse
+    private function csv(Collection $records, array $columns, string $filename, bool $importCompatible, ?string $modelClass = null): StreamedResponse
     {
-        return new StreamedResponse(function () use ($records, $columns, $importCompatible) {
-            $handle  = fopen('php://output', 'w');
-            $relMaps = $this->buildRelationMaps($records, $columns);
+        return new StreamedResponse(function () use ($records, $columns, $importCompatible, $modelClass) {
+            $handle     = fopen('php://output', 'w');
+            $relMaps    = $this->buildRelationMaps($records, $columns);
+            $optionMaps = $this->buildOptionMaps($modelClass, $columns);
             fwrite($handle, "\xEF\xBB\xBF"); // UTF-8 BOM for Excel
 
             fputcsv($handle, array_map(
@@ -101,7 +105,7 @@ class ExportService
             ));
 
             foreach ($records as $record) {
-                fputcsv($handle, array_map(fn ($col) => $this->safeValue($record, $col, $relMaps), $columns));
+                fputcsv($handle, array_map(fn ($col) => $this->safeValue($record, $col, $relMaps, $optionMaps), $columns));
             }
 
             fclose($handle);
@@ -160,9 +164,55 @@ class ExportService
     }
 
     /**
-     * @param  array<string, array<int, mixed>>  $relMaps
+     * Build a `[column_name => [raw_value => human_label]]` map by reading
+     * the model's `$searchable` declarations. Any field declared with options
+     * (or `'type' => 'select'`) becomes a lookup table so the export emits
+     * the human label ("Current") instead of the raw enum ("current") —
+     * matching what the user sees in the filter dropdown and on detail pages.
+     *
+     * Skips nested-relation columns (handled by buildRelationMaps), and skips
+     * columns that don't carry options in $searchable.
+     *
+     * @param  array<int, array<string, mixed>>  $columns
+     * @return array<string, array<string, string>>
      */
-    private function value(mixed $record, array $col, array $relMaps = []): mixed
+    private function buildOptionMaps(?string $modelClass, array $columns): array
+    {
+        if (!$modelClass || !class_exists($modelClass)) {
+            return [];
+        }
+
+        try {
+            $searchable = SearchFilters::fieldsFor($modelClass);
+        } catch (\Throwable $e) {
+            return [];
+        }
+
+        $maps = [];
+        foreach ($columns as $col) {
+            if (!empty($col['relation_slug'])) continue;
+
+            $searchField = $searchable[$col['key']] ?? null;
+            if (!$searchField || empty($searchField['options'])) continue;
+
+            $valueToLabel = [];
+            foreach ($searchField['options'] as $opt) {
+                if (!is_array($opt) || !array_key_exists('value', $opt)) continue;
+                $valueToLabel[(string) $opt['value']] = (string) ($opt['label'] ?? $opt['value']);
+            }
+            if ($valueToLabel) {
+                $maps[$col['column']] = $valueToLabel;
+            }
+        }
+
+        return $maps;
+    }
+
+    /**
+     * @param  array<string, array<int, mixed>>  $relMaps
+     * @param  array<string, array<string, string>>  $optionMaps
+     */
+    private function value(mixed $record, array $col, array $relMaps = [], array $optionMaps = []): mixed
     {
         if (!empty($col['relation_slug'])) {
             $fk = is_array($record) ? ($record[$col['column']] ?? null) : ($record->{$col['column']} ?? null);
@@ -178,6 +228,14 @@ class ExportService
             $val = is_array($related) ? ($related[$childCol] ?? null) : ($related->{$childCol} ?? null);
         } else {
             $val = is_array($record) ? ($record[$col['column']] ?? null) : ($record->{$col['column']} ?? null);
+
+            // Map enum-like raw values to their declared labels.
+            if ($val !== null && $val !== '' && isset($optionMaps[$col['column']])) {
+                $key = $val instanceof \BackedEnum ? (string) $val->value : (string) $val;
+                if (isset($optionMaps[$col['column']][$key])) {
+                    return $optionMaps[$col['column']][$key];
+                }
+            }
         }
 
         if ($val === null) return '';
@@ -191,10 +249,11 @@ class ExportService
 
     /**
      * @param  array<string, array<int, mixed>>  $relMaps
+     * @param  array<string, array<string, string>>  $optionMaps
      */
-    private function safeValue(mixed $record, array $col, array $relMaps = []): string
+    private function safeValue(mixed $record, array $col, array $relMaps = [], array $optionMaps = []): string
     {
-        $val = (string) $this->value($record, $col, $relMaps);
+        $val = (string) $this->value($record, $col, $relMaps, $optionMaps);
 
         if ($val !== '' && in_array($val[0], self::FORMULA_TRIGGERS, true)) {
             return "'" . $val;

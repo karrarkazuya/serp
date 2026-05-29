@@ -30,7 +30,10 @@ class EmployeeDocument extends Model
 
     public array $searchable = [
         'name'                    => ['label' => 'Name',                    'column' => 'name',                    'type' => 'string'],
-        'document_type'           => ['label' => 'Document Type',           'column' => 'document_type',           'type' => 'string'],
+        'document_type'           => ['label' => 'Document Type',           'column' => 'document_type',           'options' => [
+            'contract' => 'Contract', 'id_card' => 'ID Card', 'passport' => 'Passport',
+            'certificate' => 'Certificate', 'resume' => 'Resume', 'medical' => 'Medical', 'other' => 'Other',
+        ]],
         'issued_by'               => ['label' => 'Issued By',               'column' => 'issued_by',               'type' => 'string'],
         'document_number'         => ['label' => 'Document Number',         'column' => 'document_number',         'type' => 'string'],
         'organizational_structure'=> ['label' => 'Organizational Structure','column' => 'organizational_structure','type' => 'string'],

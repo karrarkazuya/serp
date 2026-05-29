@@ -34,7 +34,9 @@ class InventoryAdjustment extends Model
 
     public array $searchable = [
         'name'   => ['label' => 'Reference', 'column' => 'name',   'type' => 'string'],
-        'state'  => ['label' => 'State',     'column' => 'state',  'type' => 'string'],
+        'state'  => ['label' => 'State',     'column' => 'state',  'options' => [
+            'draft' => 'Draft', 'in_progress' => 'In Progress', 'done' => 'Done',
+        ]],
         'date'   => ['label' => 'Date',      'column' => 'date',   'type' => 'date'],
         'active' => ['label' => 'Active',    'column' => 'active', 'type' => 'boolean'],
     ];

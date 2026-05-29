@@ -15,6 +15,7 @@ class SearchFilters
     private const DATE_OPERATORS = ['=', '!=', '>', '<', '>=', '<=', 'between', 'is_set', 'is_not_set'];
     private const BOOLEAN_OPERATORS = ['=', '!=', 'is_set', 'is_not_set'];
     private const RELATION_OPERATORS = ['=', '!=', 'in', 'not_in', 'is_set', 'is_not_set'];
+    private const SELECT_OPERATORS = ['=', '!=', 'in', 'not_in', 'is_set', 'is_not_set'];
 
     /**
      * Cache of `table => [column => bool]` for the `created_by` / `updated_by`
@@ -117,6 +118,19 @@ class SearchFilters
                 'options' => [],
                 'relation' => null,
             ], $field);
+
+            // Auto-upgrade enum-like string fields to the proper 'select' type.
+            // Several models declare `'type' => 'string', 'options' => [...]`
+            // because the original implementation lacked a select type; the
+            // dropdown UI in the filter modal keys off type='select', so this
+            // upgrade gives those fields a real dropdown without forcing every
+            // model author to migrate. Only string is upgraded — other types
+            // (boolean/date/relation/number) already have specialized inputs.
+            if ($normalized[$key]['type'] === 'string' && !empty($normalized[$key]['options'])) {
+                $normalized[$key]['type'] = 'select';
+            }
+
+            $normalized[$key]['options'] = self::normalizeOptions($normalized[$key]['options']);
         }
 
         // Auto-inject `created_by` / `updated_by` filters for any model whose
@@ -126,6 +140,62 @@ class SearchFilters
         // A model can still override (provide its own entry) — the merge
         // below only adds keys that weren't explicitly set.
         self::injectAuditFilters($instance, $normalized);
+
+        return $normalized;
+    }
+
+    /**
+     * Coerce every accepted `options` shape into a uniform list of
+     * `['value' => ..., 'label' => ...]` so the front-end can iterate
+     * without conditionals.
+     *
+     * Accepted shapes:
+     *   - List of dicts: `[['value' => 'draft', 'label' => 'Draft'], ...]`
+     *   - Associative:   `['draft' => 'Draft', 'done' => 'Done']`
+     *   - List of scalars: `['draft', 'done']` (label = title-cased value)
+     *
+     * @param  mixed  $options
+     * @return array<int, array{value: mixed, label: string}>
+     */
+    private static function normalizeOptions(mixed $options): array
+    {
+        if (!is_array($options) || empty($options)) {
+            return [];
+        }
+
+        // array_is_list() is the only way to distinguish a plain list
+        // (`['draft','done']`) from an associative with stringy-int keys
+        // (`['1' => 'Normal', '2' => 'Medium']`). PHP silently casts `'1'`
+        // to int 1, so a per-entry `is_int($key)` test would misread the
+        // associative case as a list and lose the value→label mapping.
+        $isList = array_is_list($options);
+        $normalized = [];
+        foreach ($options as $key => $value) {
+            if (is_array($value) && array_key_exists('value', $value)) {
+                $normalized[] = [
+                    'value' => $value['value'],
+                    'label' => (string) ($value['label'] ?? $value['value']),
+                ];
+                continue;
+            }
+
+            if ($isList) {
+                // Plain list — scalar value, no label.
+                $normalized[] = [
+                    'value' => $value,
+                    'label' => is_string($value)
+                        ? str($value)->replace('_', ' ')->title()->toString()
+                        : (string) $value,
+                ];
+                continue;
+            }
+
+            // Associative: key => label.
+            $normalized[] = [
+                'value' => $key,
+                'label' => (string) $value,
+            ];
+        }
 
         return $normalized;
     }
@@ -192,6 +262,7 @@ class SearchFilters
             'date', 'datetime' => self::DATE_OPERATORS,
             'boolean' => self::BOOLEAN_OPERATORS,
             'relation' => self::RELATION_OPERATORS,
+            'select' => self::SELECT_OPERATORS,
             default => self::STRING_OPERATORS,
         };
     }

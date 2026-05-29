@@ -40,8 +40,13 @@ class Ticket extends Model
 
     public array $searchable = [
         'name'       => ['label' => 'Name', 'column' => 'name', 'type' => 'string'],
-        'state'      => ['label' => 'State', 'column' => 'state', 'type' => 'string'],
-        'priority'   => ['label' => 'Priority', 'column' => 'priority', 'type' => 'string'],
+        'state'      => ['label' => 'State', 'column' => 'state', 'options' => [
+            'draft' => 'Draft', 'pending' => 'Pending', 'completed' => 'Completed',
+            'rejected' => 'Rejected', 'skipped' => 'Skipped', 'closed' => 'Closed',
+        ]],
+        'priority'   => ['label' => 'Priority', 'column' => 'priority', 'options' => [
+            '1' => 'Normal', '2' => 'Medium', '3' => 'High',
+        ]],
         'active'     => ['label' => 'Active', 'column' => 'active', 'type' => 'boolean'],
         'created_at' => ['label' => 'Created on', 'column' => 'created_at', 'type' => 'datetime'],
     ];

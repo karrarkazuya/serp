@@ -137,12 +137,17 @@ class Employee extends Model
         'job_title'         => ['label' => 'Job Title',     'column' => 'job_title',     'type' => 'string'],
         'timezone'          => ['label' => 'Timezone',      'column' => 'timezone',      'type' => 'string'],
         // Personal
-        'gender'            => ['label' => 'Gender',         'column' => 'gender',         'type' => 'string'],
+        'gender'            => ['label' => 'Gender',         'column' => 'gender',         'options' => [
+            'male' => 'Male', 'female' => 'Female', 'other' => 'Other',
+        ]],
         'birthday'          => ['label' => 'Date of Birth',  'column' => 'birthday',       'type' => 'date'],
         'nationality'       => ['label' => 'Nationality',    'column' => 'nationality',    'type' => 'string'],
         'place_of_birth'    => ['label' => 'Place of Birth', 'column' => 'place_of_birth', 'type' => 'string'],
         'country_of_birth'  => ['label' => 'Country of Birth', 'column' => 'country_of_birth', 'type' => 'string'],
-        'marital_status'    => ['label' => 'Marital Status', 'column' => 'marital_status', 'type' => 'string'],
+        'marital_status'    => ['label' => 'Marital Status', 'column' => 'marital_status', 'options' => [
+            'single' => 'Single', 'married' => 'Married', 'cohabitant' => 'Cohabitant',
+            'widower' => 'Widower', 'divorced' => 'Divorced',
+        ]],
         // Address
         'country'           => ['label' => 'Country', 'column' => 'country', 'type' => 'string'],
         'city'              => ['label' => 'City',    'column' => 'city',    'type' => 'string'],
@@ -153,11 +158,17 @@ class Employee extends Model
         'visa_no'           => ['label' => 'Visa No',        'column' => 'visa_no',           'type' => 'string'],
         'work_permit_no'    => ['label' => 'Work Permit No', 'column' => 'work_permit_no',    'type' => 'string'],
         // Education
-        'certificate_level' => ['label' => 'Certificate Level', 'column' => 'certificate_level', 'type' => 'string'],
+        'certificate_level' => ['label' => 'Certificate Level', 'column' => 'certificate_level', 'options' => [
+            'none' => 'None', 'graduate' => 'Graduate', 'bachelor' => 'Bachelor',
+            'master' => 'Master', 'doctor' => 'Doctor', 'other' => 'Other',
+        ]],
         'study_field'       => ['label' => 'Field of Study',    'column' => 'study_field',       'type' => 'string'],
         'study_school'      => ['label' => 'School',            'column' => 'study_school',      'type' => 'string'],
         // Employment
-        'employment_status'          => ['label' => 'Status',          'column' => 'employment_status',          'type' => 'string'],
+        'employment_status'          => ['label' => 'Status',          'column' => 'employment_status',          'options' => [
+            'draft' => 'Draft', 'active' => 'Active', 'probation' => 'Probation',
+            'suspended' => 'Suspended', 'resigned' => 'Resigned', 'terminated' => 'Terminated',
+        ]],
         'hire_date'                  => ['label' => 'Hire Date',        'column' => 'hire_date',                  'type' => 'date'],
         'first_contract_date'        => ['label' => 'First Contract',   'column' => 'first_contract_date',        'type' => 'date'],
         'end_date'                   => ['label' => 'End Date',         'column' => 'end_date',                   'type' => 'date'],
@@ -167,7 +178,9 @@ class Employee extends Model
         'visa_expire'                => ['label' => 'Visa Expiry',      'column' => 'visa_expire',                'type' => 'date'],
         'work_permit_expiration_date'=> ['label' => 'Permit Expiry',    'column' => 'work_permit_expiration_date','type' => 'date'],
         'wage'                       => ['label' => 'Wage',             'column' => 'wage',                       'type' => 'number'],
-        'payment_method'             => ['label' => 'Payment Method',   'column' => 'payment_method',             'type' => 'string'],
+        'payment_method'             => ['label' => 'Payment Method',   'column' => 'payment_method',             'options' => [
+            'cash' => 'Cash', 'bank_transfer' => 'Bank Transfer', 'cheque' => 'Cheque',
+        ]],
         'active'          => ['label' => 'Active',          'column' => 'active',          'type' => 'boolean'],
         'scientific_title'=> ['label' => 'Scientific Title', 'column' => 'scientific_title', 'type' => 'string'],
         // Relations
