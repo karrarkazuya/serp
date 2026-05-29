@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Collection;
 use PhpOffice\PhpSpreadsheet\Cell\Coordinate;
 use PhpOffice\PhpSpreadsheet\Cell\DataType;
@@ -41,11 +42,12 @@ class ExportService
         $spreadsheet = new Spreadsheet();
         $sheet       = $spreadsheet->getActiveSheet();
         $colCount    = count($columns);
+        $relMaps     = $this->buildRelationMaps($records, $columns);
 
         $colIdx = 1;
         foreach ($columns as $col) {
             $header = $importCompatible ? $col['key'] : $col['label'];
-            $sheet->getCellByColumnAndRow($colIdx, 1)->setValue($header);
+            $sheet->setCellValue([$colIdx, 1], $header);
             $sheet->getColumnDimensionByColumn($colIdx)->setAutoSize(true);
             $colIdx++;
         }
@@ -62,12 +64,15 @@ class ExportService
         foreach ($records as $record) {
             $colIdx = 1;
             foreach ($columns as $col) {
-                // Use setValueExplicit + TYPE_STRING so PhpSpreadsheet never parses
+                // Use setCellValueExplicit + TYPE_STRING so PhpSpreadsheet never parses
                 // a leading "=" as a formula. We also prefix formula triggers with
                 // a single quote so the cell renders identically when opened in
                 // Excel or pasted out as text.
-                $sheet->getCellByColumnAndRow($colIdx, $rowIdx)
-                    ->setValueExplicit($this->safeValue($record, $col), DataType::TYPE_STRING);
+                $sheet->setCellValueExplicit(
+                    [$colIdx, $rowIdx],
+                    $this->safeValue($record, $col, $relMaps),
+                    DataType::TYPE_STRING,
+                );
                 $colIdx++;
             }
             $rowIdx++;
@@ -86,7 +91,8 @@ class ExportService
     private function csv(Collection $records, array $columns, string $filename, bool $importCompatible): StreamedResponse
     {
         return new StreamedResponse(function () use ($records, $columns, $importCompatible) {
-            $handle = fopen('php://output', 'w');
+            $handle  = fopen('php://output', 'w');
+            $relMaps = $this->buildRelationMaps($records, $columns);
             fwrite($handle, "\xEF\xBB\xBF"); // UTF-8 BOM for Excel
 
             fputcsv($handle, array_map(
@@ -95,7 +101,7 @@ class ExportService
             ));
 
             foreach ($records as $record) {
-                fputcsv($handle, array_map(fn ($col) => $this->safeValue($record, $col), $columns));
+                fputcsv($handle, array_map(fn ($col) => $this->safeValue($record, $col, $relMaps), $columns));
             }
 
             fclose($handle);
@@ -105,9 +111,74 @@ class ExportService
         ]);
     }
 
-    private function value(mixed $record, array $col): mixed
+    /**
+     * Pre-load related records for every nested-relation column in a single
+     * query per (slug, fk) pair. Avoids requiring `creator()`/`updater()`
+     * relation methods on every Eloquent model — we just bulk-fetch by id.
+     *
+     * @param  array<int, array<string, mixed>>  $columns
+     * @return array<string, array<int, mixed>>  Keyed by "{slug}:{fk_column}" → id-keyed map of related records.
+     */
+    private function buildRelationMaps(Collection $records, array $columns): array
     {
-        $val = is_array($record) ? ($record[$col['column']] ?? null) : ($record->{$col['column']} ?? null);
+        $maps = [];
+
+        foreach ($columns as $col) {
+            if (empty($col['relation_slug'])) continue;
+
+            $mapKey = $col['relation_slug'] . ':' . $col['column'];
+            if (isset($maps[$mapKey])) continue;
+
+            $relConfig = config('exportable')[$col['relation_slug']] ?? null;
+            if (!$relConfig || empty($relConfig['class'])) {
+                $maps[$mapKey] = [];
+                continue;
+            }
+
+            $ids = $records
+                ->map(fn ($r) => is_array($r) ? ($r[$col['column']] ?? null) : ($r->{$col['column']} ?? null))
+                ->filter(fn ($id) => $id !== null && $id !== '')
+                ->unique()
+                ->values()
+                ->all();
+
+            if (empty($ids)) {
+                $maps[$mapKey] = [];
+                continue;
+            }
+
+            $modelClass = $relConfig['class'];
+            $query      = $modelClass::query();
+            if (in_array(SoftDeletes::class, class_uses_recursive($modelClass), true)) {
+                $query->withTrashed();
+            }
+
+            $maps[$mapKey] = $query->whereIn('id', $ids)->get()->keyBy('id')->all();
+        }
+
+        return $maps;
+    }
+
+    /**
+     * @param  array<string, array<int, mixed>>  $relMaps
+     */
+    private function value(mixed $record, array $col, array $relMaps = []): mixed
+    {
+        if (!empty($col['relation_slug'])) {
+            $fk = is_array($record) ? ($record[$col['column']] ?? null) : ($record->{$col['column']} ?? null);
+            if ($fk === null || $fk === '') return '';
+
+            $mapKey  = $col['relation_slug'] . ':' . $col['column'];
+            $related = $relMaps[$mapKey][$fk] ?? null;
+            if ($related === null) return '';
+
+            $childCol = $col['child_column'] ?? null;
+            if ($childCol === null) return '';
+
+            $val = is_array($related) ? ($related[$childCol] ?? null) : ($related->{$childCol} ?? null);
+        } else {
+            $val = is_array($record) ? ($record[$col['column']] ?? null) : ($record->{$col['column']} ?? null);
+        }
 
         if ($val === null) return '';
 
@@ -118,9 +189,12 @@ class ExportService
         return (string) $val;
     }
 
-    private function safeValue(mixed $record, array $col): string
+    /**
+     * @param  array<string, array<int, mixed>>  $relMaps
+     */
+    private function safeValue(mixed $record, array $col, array $relMaps = []): string
     {
-        $val = (string) $this->value($record, $col);
+        $val = (string) $this->value($record, $col, $relMaps);
 
         if ($val !== '' && in_array($val[0], self::FORMULA_TRIGGERS, true)) {
             return "'" . $val;

@@ -17,26 +17,20 @@ class ExportController extends Controller
 
     public function export(Request $request): StreamedResponse
     {
-        $modelKey = (string) $request->input('model', '');
-        $config   = config('exportable')[$modelKey] ?? null;
+        $modelKey   = (string) $request->input('model', '');
+        $exportable = config('exportable');
+        $config     = $exportable[$modelKey] ?? null;
 
         abort_unless($config !== null, 404, 'Unknown export model.');
 
         $user = $request->user();
         abort_unless($user->hasPermission($config['permission']), 403);
 
-        $allowedKeys = array_column($config['fields'], 'key');
-        $requestedKeys = array_values(array_intersect(
-            (array) $request->input('fields', $allowedKeys),
-            $allowedKeys,
-        ));
+        $fieldsByKey = collect($config['fields'])->keyBy('key')->all();
+        $requested   = (array) $request->input('fields', array_keys($fieldsByKey));
 
-        abort_if(empty($requestedKeys), 422, 'No fields selected for export.');
-
-        $columns = array_values(array_filter(
-            $config['fields'],
-            fn ($f) => in_array($f['key'], $requestedKeys, true),
-        ));
+        $columns = $this->resolveColumns($requested, $fieldsByKey, $exportable);
+        abort_if(empty($columns), 422, 'No fields selected for export.');
 
         $dbColumns = array_unique(array_merge(['id'], array_column($columns, 'column')));
 
@@ -93,5 +87,101 @@ class ExportController extends Controller
             (string) ($config['filename'] ?? $modelKey),
             $request->boolean('import_compatible'),
         );
+    }
+
+    /**
+     * Resolve incoming field keys against the model's exportable config.
+     * Accepts both flat keys (`name`) and path-style nested keys (`created_by/email`).
+     * Unknown keys are silently dropped — the controller never exposes columns
+     * absent from config/exportable.php (whitelist contract).
+     *
+     * For a top-level field that has a `relation` set, the column auto-resolves
+     * to the relation's `name` field so the user sees a name instead of a raw FK id.
+     *
+     * @param  array<int, mixed>  $requested
+     * @param  array<string, array<string, mixed>>  $fieldsByKey
+     * @param  array<string, array<string, mixed>>  $exportable
+     * @return array<int, array<string, mixed>>
+     */
+    private function resolveColumns(array $requested, array $fieldsByKey, array $exportable): array
+    {
+        $columns = [];
+
+        foreach ($requested as $key) {
+            if (!is_string($key) || $key === '') continue;
+
+            if (str_contains($key, '/')) {
+                $resolved = $this->resolveNested($key, $fieldsByKey, $exportable);
+                if ($resolved) $columns[] = $resolved;
+                continue;
+            }
+
+            $field = $fieldsByKey[$key] ?? null;
+            if (!$field) continue;
+
+            if (!empty($field['relation'])) {
+                $resolved = $this->resolveTopLevelRelation($field, $exportable);
+                if ($resolved) {
+                    $columns[] = $resolved;
+                    continue;
+                }
+            }
+
+            $columns[] = $field;
+        }
+
+        return $columns;
+    }
+
+    /**
+     * @param  array<string, array<string, mixed>>  $fieldsByKey
+     * @param  array<string, array<string, mixed>>  $exportable
+     * @return array<string, mixed>|null
+     */
+    private function resolveNested(string $key, array $fieldsByKey, array $exportable): ?array
+    {
+        [$parentKey, $childKey] = explode('/', $key, 2);
+
+        $parentField = $fieldsByKey[$parentKey] ?? null;
+        if (!$parentField || empty($parentField['relation'])) return null;
+
+        $relConfig = $exportable[$parentField['relation']] ?? null;
+        if (!$relConfig) return null;
+
+        $childFields = collect($relConfig['fields'])->keyBy('key')->all();
+        $childField  = $childFields[$childKey] ?? null;
+        if (!$childField) return null;
+
+        return [
+            'key'           => $key,
+            'label'         => $parentField['label'] . ' / ' . $childField['label'],
+            'column'        => $parentField['column'],
+            'relation_slug' => $parentField['relation'],
+            'child_column'  => $childField['column'],
+        ];
+    }
+
+    /**
+     * @param  array<string, mixed>  $field
+     * @param  array<string, array<string, mixed>>  $exportable
+     * @return array<string, mixed>|null
+     */
+    private function resolveTopLevelRelation(array $field, array $exportable): ?array
+    {
+        $relConfig = $exportable[$field['relation']] ?? null;
+        if (!$relConfig) return null;
+
+        $defaultKey  = $field['relation_default'] ?? 'name';
+        $childFields = collect($relConfig['fields'])->keyBy('key')->all();
+        $childField  = $childFields[$defaultKey] ?? null;
+        if (!$childField) return null;
+
+        return [
+            'key'           => $field['key'],
+            'label'         => $field['label'],
+            'column'        => $field['column'],
+            'relation_slug' => $field['relation'],
+            'child_column'  => $childField['column'],
+        ];
     }
 }

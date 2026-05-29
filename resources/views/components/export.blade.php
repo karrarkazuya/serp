@@ -11,6 +11,11 @@
   Opened by dispatching the export:open Alpine event:
     $dispatch('export:open', { mode: 'selected', ids: [1,2,3], selectAllPages: false })
     $dispatch('export:open', { mode: 'all', ids: [], selectAllPages: false })
+
+  Fields whose config has a `relation` slug render an expand toggle that
+  reveals the related model's exportable fields. Selecting a nested child
+  pushes a path-style key (e.g. "created_by/email") into toExport, and the
+  backend resolves it to the related column via ExportController + ExportService.
 --}}
 <div
     x-data="{
@@ -22,6 +27,8 @@
         importCompatible: false,
         fieldSearch: '',
         allFields: @js($fields),
+        relationFields: @js($relationFields),
+        expanded: {},
         toExport: @js($defaultFields),
         queryString: '',
 
@@ -40,17 +47,47 @@
             });
         },
 
+        matches(label) {
+            return this.fieldSearch === '' || label.toLowerCase().includes(this.fieldSearch.toLowerCase());
+        },
+
+        get exportedKeys() {
+            return this.toExport.map(f => f.key);
+        },
+
         get availableFields() {
-            const exportedKeys = this.toExport.map(f => f.key);
-            return this.allFields.filter(f =>
-                !exportedKeys.includes(f.key) &&
-                (this.fieldSearch === '' || f.label.toLowerCase().includes(this.fieldSearch.toLowerCase()))
-            );
+            return this.allFields.filter(f => {
+                if (this.exportedKeys.includes(f.key)) return false;
+                if (this.matches(f.label)) return true;
+                if (this.fieldSearch === '') return true;
+                // Keep the parent visible if any of its children would match.
+                return this.childrenOf(f).length > 0;
+            });
+        },
+
+        isExpanded(field) {
+            // Auto-expand relation fields during a search so matching children surface.
+            return field.relation && (this.expanded[field.key] || this.fieldSearch !== '');
+        },
+
+        childrenOf(field) {
+            const slug = field.relation;
+            if (!slug || !this.relationFields[slug]) return [];
+            return this.relationFields[slug]
+                .map(child => ({
+                    key: `${field.key}/${child.key}`,
+                    label: `${field.label} / ${child.label}`,
+                }))
+                .filter(c => !this.exportedKeys.includes(c.key) && this.matches(c.label));
+        },
+
+        toggleExpand(key) {
+            this.expanded[key] = !this.expanded[key];
         },
 
         addField(field) {
             if (!this.toExport.find(f => f.key === field.key)) {
-                this.toExport.push(field);
+                this.toExport.push({ key: field.key, label: field.label });
             }
         },
 
@@ -171,14 +208,50 @@
                     </div>
                     <div class="overflow-y-auto flex-1 py-1">
                         <template x-for="field in availableFields" :key="field.key">
-                            <div class="flex items-center justify-between px-4 py-1.5 hover:bg-gray-50 group">
-                                <span class="text-sm text-gray-700" x-text="field.label"></span>
-                                <button type="button" @click="addField(field)"
-                                        class="text-gray-300 hover:text-[#714B67] transition-colors opacity-0 group-hover:opacity-100">
-                                    <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-                                        <path fill-rule="evenodd" d="M10 5a1 1 0 011 1v3h3a1 1 0 110 2h-3v3a1 1 0 11-2 0v-3H6a1 1 0 110-2h3V6a1 1 0 011-1z" clip-rule="evenodd"/>
-                                    </svg>
-                                </button>
+                            <div>
+                                {{-- Top-level field row --}}
+                                <div class="flex items-center px-4 py-1.5 hover:bg-gray-50 group">
+                                    {{-- Expand toggle (only for relation fields) --}}
+                                    <button type="button"
+                                            x-show="field.relation && relationFields[field.relation]"
+                                            @click="toggleExpand(field.key)"
+                                            class="text-gray-400 hover:text-gray-700 transition-colors me-1.5 shrink-0">
+                                        <svg class="w-3 h-3 transition-transform"
+                                             :class="isExpanded(field) ? 'rotate-90' : ''"
+                                             fill="currentColor" viewBox="0 0 20 20">
+                                            <path fill-rule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clip-rule="evenodd"/>
+                                        </svg>
+                                    </button>
+                                    {{-- Spacer when no expand toggle, so labels align --}}
+                                    <span x-show="!(field.relation && relationFields[field.relation])" class="w-3 me-1.5 shrink-0"></span>
+                                    <span class="text-sm text-gray-700 flex-1 truncate" x-text="field.label"></span>
+                                    <button type="button" @click="addField(field)"
+                                            class="text-gray-300 hover:text-[#714B67] transition-colors opacity-0 group-hover:opacity-100 shrink-0">
+                                        <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                                            <path fill-rule="evenodd" d="M10 5a1 1 0 011 1v3h3a1 1 0 110 2h-3v3a1 1 0 11-2 0v-3H6a1 1 0 110-2h3V6a1 1 0 011-1z" clip-rule="evenodd"/>
+                                        </svg>
+                                    </button>
+                                </div>
+
+                                {{-- Nested children (visible when expanded or during search) --}}
+                                <template x-if="isExpanded(field)">
+                                    <div class="ms-4 ps-3 border-s border-gray-200">
+                                        <template x-for="child in childrenOf(field)" :key="child.key">
+                                            <div class="flex items-center px-3 py-1 hover:bg-gray-50 group">
+                                                <span class="text-sm text-gray-600 flex-1 truncate" x-text="child.label"></span>
+                                                <button type="button" @click="addField(child)"
+                                                        class="text-gray-300 hover:text-[#714B67] transition-colors opacity-0 group-hover:opacity-100 shrink-0">
+                                                    <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                                                        <path fill-rule="evenodd" d="M10 5a1 1 0 011 1v3h3a1 1 0 110 2h-3v3a1 1 0 11-2 0v-3H6a1 1 0 110-2h3V6a1 1 0 011-1z" clip-rule="evenodd"/>
+                                                    </svg>
+                                                </button>
+                                            </div>
+                                        </template>
+                                        <template x-if="childrenOf(field).length === 0">
+                                            <p class="px-3 py-1 text-xs text-gray-400 italic">{{ __('common.all_fields_added') }}</p>
+                                        </template>
+                                    </div>
+                                </template>
                             </div>
                         </template>
                         <template x-if="availableFields.length === 0">
